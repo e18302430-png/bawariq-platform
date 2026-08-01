@@ -1173,6 +1173,9 @@ const EX = {
     payslipT: "قسيمة الراتب", payslipMonth: "الشهر", printBtn: "طباعة", printedOn: "تاريخ الطباعة", printPayslip: "طباعة قسيمة الراتب",
     totalDeductionLbl: "إجمالي الخصم",
     supReportedLbl: "أبلغ عنها المشرف", violationsVaryNote: "قيمة كل مخالفة تختلف من مندوب لآخر — اكتب المبلغ الفعلي بالريال لكل مندوب مباشرة، مو رقماً موحّداً.",
+    deptPwSelfT: "تغيير كلمة مرور قسمي", deptPwSelfSub: "الحالة الطبيعية: أنت تغيّر كلمة مرور قسمك بنفسك مباشرة، بدون حاجة لمدير الحركة والتشغيل.",
+    deptPwCurrent: "كلمة المرور الحالية", deptPwNew: "كلمة المرور الجديدة", deptPwConfirm: "تأكيد كلمة المرور الجديدة", deptPwSaved: "تم تغيير كلمة مرور القسم بنجاح",
+    errCurrentDeptPw: "كلمة المرور الحالية غير صحيحة.", errPassMatch: "كلمتا المرور غير متطابقتين.",
     payslipProvisional: "لسه ما اعتُمد راتب هذا الشهر نهائياً — الأرقام مبدئية وممكن تتغيّر.",
     warnBefore: "متبقي", warnHours: "ساعة قبل الإغلاق التلقائي", lateForShift: "متأخر عن الشفت",
     sessionExpiredMsg: "انتهت جلستك تلقائياً بسبب عدم النشاط لحمايتك — سجّل الدخول مرة أخرى.",
@@ -1364,6 +1367,9 @@ const EX = {
     payslipT: "Payslip", payslipMonth: "Month", printBtn: "Print", printedOn: "Printed on", printPayslip: "Print payslip",
     totalDeductionLbl: "Total deduction",
     supReportedLbl: "Supervisor reported", violationsVaryNote: "Each violation\u2019s value differs from one rep to another — enter the actual SAR amount per rep directly, not a fixed rate.",
+    deptPwSelfT: "Change my department password", deptPwSelfSub: "Normal case: you change your own department password directly, no need for the Operations Manager.",
+    deptPwCurrent: "Current password", deptPwNew: "New password", deptPwConfirm: "Confirm new password", deptPwSaved: "Department password changed successfully",
+    errCurrentDeptPw: "Current password is incorrect.", errPassMatch: "Passwords do not match.",
     payslipProvisional: "This month\u2019s payroll isn\u2019t finalized yet — figures are provisional and may change.",
     warnBefore: "", warnHours: "h left before auto-close", lateForShift: "Late for shift",
     sessionExpiredMsg: "Your session ended automatically due to inactivity, to protect you — please sign in again.",
@@ -1555,6 +1561,9 @@ const EX = {
     payslipT: "تنخواہ کی پرچی", payslipMonth: "مہینہ", printBtn: "پرنٹ کریں", printedOn: "پرنٹ کی تاریخ", printPayslip: "تنخواہ کی پرچی پرنٹ کریں",
     totalDeductionLbl: "کل کٹوتی",
     supReportedLbl: "سپروائزر کی رپورٹ", violationsVaryNote: "ہر خلاف ورزی کی قیمت ہر نمائندے کے لیے مختلف ہوتی ہے — ہر نمائندے کے لیے اصل ریال کی رقم براہ راست درج کریں، مقررہ شرح نہیں۔",
+    deptPwSelfT: "میرے شعبے کا پاس ورڈ تبدیل کریں", deptPwSelfSub: "عام صورتحال: آپ اپنے شعبے کا پاس ورڈ خود براہ راست تبدیل کرتے ہیں، آپریشنز منیجر کی ضرورت نہیں۔",
+    deptPwCurrent: "موجودہ پاس ورڈ", deptPwNew: "نیا پاس ورڈ", deptPwConfirm: "نئے پاس ورڈ کی تصدیق", deptPwSaved: "شعبے کا پاس ورڈ کامیابی سے تبدیل ہو گیا",
+    errCurrentDeptPw: "موجودہ پاس ورڈ غلط ہے۔", errPassMatch: "پاس ورڈز مماثل نہیں ہیں۔",
     payslipProvisional: "اس مہینے کی تنخواہ ابھی حتمی نہیں ہوئی — اعداد و شمار عارضی ہیں اور تبدیل ہو سکتے ہیں۔",
     warnBefore: "باقی", warnHours: "گھنٹے خودکار بندش سے پہلے", lateForShift: "شفٹ میں تاخیر",
     sessionExpiredMsg: "آپ کی نشست غیرفعالیت کی وجہ سے خودکار ختم ہو گئی — براہ کرم دوبارہ لاگ ان کریں۔",
@@ -1993,6 +2002,41 @@ function DataTable({ headers, rows, onBulkDelete }) {
 }
 
 /* ═══════════  تغيير كلمة المرور  ═══════════ */
+function DeptPasswordCard({ lang, role, deptPasswords, setDeptPasswords, setAuditLog, actingEmployee }) {
+  const t = T[lang], x = EX[lang];
+  const [cur, setCur] = useState("");
+  const [nw, setNw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState(false);
+
+  const submit = () => {
+    if (cur !== (deptPasswords[role.id] || "")) return setErr(x.errCurrentDeptPw);
+    if (nw.length < 4) return setErr(x.errPass);
+    if (nw !== confirm) return setErr(x.errPassMatch);
+    setErr("");
+    setDeptPasswords((prev) => ({ ...prev, [role.id]: nw }));
+    logAudit(setAuditLog, role, "dept_password_self_change", role.id, actingEmployee);
+    setCur(""); setNw(""); setConfirm("");
+    setOk(true);
+    setTimeout(() => setOk(false), 3500);
+  };
+
+  return (
+    <Panel title={x.deptPwSelfT}>
+      <p className="text-[11.5px] mb-3.5" style={{ color: "var(--muted)" }}>{x.deptPwSelfSub}</p>
+      <div className="space-y-3">
+        <GateField label={x.deptPwCurrent} val={cur} set={setCur} ph="" Icon={KeyRound} type="password" accent={role.accent} />
+        <GateField label={x.deptPwNew} val={nw} set={setNw} ph="" Icon={Lock} type="password" accent={role.accent} />
+        <GateField label={x.deptPwConfirm} val={confirm} set={setConfirm} ph="" Icon={Lock} type="password" accent={role.accent} onEnter={submit} />
+      </div>
+      {err && <p className="mt-3 text-[11.5px] flex items-start gap-1.5" style={{ color: "#D6584D" }}><AlertTriangle size={14} className="mt-px shrink-0" />{err}</p>}
+      {ok && <p className="mt-3 text-[11.5px] flex items-start gap-1.5" style={{ color: "#0FA579" }}><CheckCircle2 size={14} className="mt-px shrink-0" />{x.deptPwSaved}</p>}
+      <div className="mt-4"><Btn variant="accent" accent={role.glow} icon={KeyRound} onClick={submit}>{x.save}</Btn></div>
+    </Panel>
+  );
+}
+
 function PasswordCard({ lang, role, activeRep, reps, setReps, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const [cur, setCur] = useState(""); const [nw, setNw] = useState(""); const [cf, setCf] = useState("");
@@ -5855,7 +5899,8 @@ function SettingsPage({ lang, setLang, role, reduce, setReduce, activeRep, reps,
   orders, setOrders, cars, setCars, restaurants, setRestaurants, invoices, setInvoices,
   employees, setEmployees, contracts, setContracts, cases, setCases, approvalReqs, setApprovalReqs,
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
-  deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog }) {
+  deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog,
+  deptPasswords, setDeptPasswords }) {
   const t = T[lang], x = EX[lang];
   const backupData = { reps, reports, tickets, circulars, attendance, shifts, orders, cars, restaurants, invoices,
     employees, contracts, cases, approvalReqs, expenses, iqamaAlerts, payrollRuns, deptChats, repMessages, leaderboardHistory, auditLog };
@@ -5867,6 +5912,9 @@ function SettingsPage({ lang, setLang, role, reduce, setReduce, activeRep, reps,
   return (
     <div className="grid gap-4 lg:grid-cols-2 items-start">
       <PasswordCard lang={lang} role={role} activeRep={activeRep} reps={reps} setReps={setReps} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />
+      {role.id !== "rep" && (
+        <DeptPasswordCard lang={lang} role={role} deptPasswords={deptPasswords} setDeptPasswords={setDeptPasswords} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />
+      )}
       <Panel title={t.settings}>
         <div className="space-y-4 mt-1">
           <div>
