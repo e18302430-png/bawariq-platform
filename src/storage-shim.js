@@ -3,11 +3,17 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error("⚠️ لم يتم ضبط متغيرات Supabase في إعدادات Vercel.");
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  console.warn("⚠️ متغيرات Supabase غير مضبوطة — سيتم تعطيل التخزين السحابي.");
 }
 
-const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");
+function requireClient() {
+  if (!supabase) throw new Error("storage not configured");
+  return supabase;
+}
 
 function getClientId() {
   let id = localStorage.getItem("bq_client_id");
@@ -22,7 +28,7 @@ const SHARED_SCOPE = "shared";
 
 async function get(key, shared = false) {
   const scope = shared ? SHARED_SCOPE : getClientId();
-  const { data, error } = await supabase
+  const { data, error } = await requireClient()
     .from("kv_store").select("value")
     .eq("store_key", key).eq("scope", scope).maybeSingle();
   if (error) throw error;
@@ -32,7 +38,7 @@ async function get(key, shared = false) {
 
 async function set(key, value, shared = false) {
   const scope = shared ? SHARED_SCOPE : getClientId();
-  const { error } = await supabase.from("kv_store").upsert(
+  const { error } = await requireClient().from("kv_store").upsert(
     { store_key: key, scope, value, updated_at: new Date().toISOString() },
     { onConflict: "store_key,scope" }
   );
@@ -42,7 +48,7 @@ async function set(key, value, shared = false) {
 
 async function del(key, shared = false) {
   const scope = shared ? SHARED_SCOPE : getClientId();
-  const { error } = await supabase.from("kv_store").delete()
+  const { error } = await requireClient().from("kv_store").delete()
     .eq("store_key", key).eq("scope", scope);
   if (error) throw error;
   return { key, deleted: true, shared };
@@ -50,7 +56,7 @@ async function del(key, shared = false) {
 
 async function list(prefix = "", shared = false) {
   const scope = shared ? SHARED_SCOPE : getClientId();
-  let query = supabase.from("kv_store").select("store_key").eq("scope", scope);
+  let query = requireClient().from("kv_store").select("store_key").eq("scope", scope);
   if (prefix) query = query.like("store_key", `${prefix}%`);
   const { data, error } = await query;
   if (error) throw error;
