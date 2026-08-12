@@ -216,6 +216,23 @@
   will-change: transform;
 }
 
+@keyframes card-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018);
+  }
+}
+.card-idle {
+  animation: card-breathe 7s ease-in-out infinite;
+}
+.reduce-motion .card-idle,
+.no-anim .card-idle {
+  animation: none !important;
+}
+
 @keyframes drift {
   0% {
     transform: translate(0, 0);
