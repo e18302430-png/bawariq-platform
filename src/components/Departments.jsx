@@ -2,6 +2,7 @@ import React from "react";
 import { Building2 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Reveal from "./Reveal.jsx";
+import GeoPattern from "./visuals/GeoPattern.jsx";
 
 export default function Departments() {
   const { t } = useLanguage();
@@ -24,17 +25,16 @@ export default function Departments() {
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {placeholders.map((_, index) => (
-            <Reveal
-              key={index}
-              delay={index * 70}
-              className="flex items-center gap-4 rounded-2xl border border-dashed border-ink/15 bg-surface p-6"
-            >
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink/5 text-ink-soft">
-                <Building2 className="h-5 w-5" />
-              </span>
-              <div>
-                <h3 className="font-arabic text-base font-semibold text-ink-soft">{t.departments.placeholderTitle}</h3>
-                <p className="mt-1 text-sm text-ink-soft/70">{t.departments.placeholderDesc}</p>
+            <Reveal key={index} delay={index * 70}>
+              <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-ink/15 bg-surface p-6 text-primary-700/25">
+                <GeoPattern progress={0.6} className="absolute inset-0 h-full w-full" />
+                <span className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink/5 text-ink-soft">
+                  <Building2 className="h-5 w-5" />
+                </span>
+                <div className="relative z-10">
+                  <h3 className="font-arabic text-base font-semibold text-ink-soft">{t.departments.placeholderTitle}</h3>
+                  <p className="mt-1 text-sm text-ink-soft/70">{t.departments.placeholderDesc}</p>
+                </div>
               </div>
             </Reveal>
           ))}

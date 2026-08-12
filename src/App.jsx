@@ -12,6 +12,7 @@ import Journey from "./components/Journey.jsx";
 import Appointments from "./components/Appointments.jsx";
 import Contact from "./components/Contact.jsx";
 import Footer from "./components/Footer.jsx";
+import Cursor from "./components/Cursor.jsx";
 
 function DocumentMeta() {
   const { t, lang } = useLanguage();
@@ -28,6 +29,7 @@ function Page() {
   return (
     <>
       <DocumentMeta />
+      <Cursor />
       <a href="#main" className="skip-link rounded-full bg-primary-700 px-4 py-2 text-sm font-semibold text-white">
         {t.a11y.skipToContent}
       </a>

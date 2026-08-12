@@ -2,6 +2,7 @@ import React from "react";
 import { UserRound } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Reveal from "./Reveal.jsx";
+import GeoPattern from "./visuals/GeoPattern.jsx";
 
 export default function Doctors() {
   const { t } = useLanguage();
@@ -24,16 +25,17 @@ export default function Doctors() {
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {placeholders.map((_, index) => (
-            <Reveal
-              key={index}
-              delay={index * 80}
-              className="rounded-2xl border border-ink/8 bg-surface-alt p-6 text-center"
-            >
-              <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-ink/5 text-ink-soft/60">
-                <UserRound className="h-7 w-7" />
-              </span>
-              <h3 className="mt-4 font-arabic text-sm font-semibold text-ink-soft">{t.doctors.placeholderName}</h3>
-              <p className="mt-1 text-xs text-ink-soft/70">{t.doctors.placeholderRole}</p>
+            <Reveal key={index} delay={index * 80}>
+              <div className="relative overflow-hidden rounded-2xl border border-ink/8 bg-surface-alt p-6 text-center text-primary-700/20">
+                <GeoPattern progress={0.6} className="absolute inset-0 h-full w-full" />
+                <span className="relative z-10 mx-auto grid h-16 w-16 place-items-center rounded-full bg-ink/5 text-ink-soft/60">
+                  <UserRound className="h-7 w-7" />
+                </span>
+                <h3 className="relative z-10 mt-4 font-arabic text-sm font-semibold text-ink-soft">
+                  {t.doctors.placeholderName}
+                </h3>
+                <p className="relative z-10 mt-1 text-xs text-ink-soft/70">{t.doctors.placeholderRole}</p>
+              </div>
             </Reveal>
           ))}
         </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { Siren, Stethoscope, ScanLine, FlaskConical, Pill } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Reveal from "./Reveal.jsx";
+import TiltCard from "./visuals/TiltCard.jsx";
 
 const ICONS = [Siren, Stethoscope, ScanLine, FlaskConical, Pill];
 
@@ -26,16 +27,14 @@ export default function Services() {
           {t.services.items.map((item, index) => {
             const Icon = ICONS[index % ICONS.length];
             return (
-              <Reveal
-                key={item.title}
-                delay={index * 80}
-                className="group rounded-2xl border border-ink/8 bg-surface-alt p-6 transition-colors hover:border-primary-300 hover:bg-primary-50"
-              >
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-700 text-white transition-colors group-hover:bg-primary-800">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-5 font-arabic text-lg font-semibold text-ink">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{item.desc}</p>
+              <Reveal key={item.title} delay={index * 80}>
+                <TiltCard className="group rounded-2xl border border-ink/8 bg-surface-alt p-6 transition-colors hover:border-primary-300 hover:bg-primary-50">
+                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-700 text-white transition-colors group-hover:bg-primary-800">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-5 font-arabic text-lg font-semibold text-ink">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{item.desc}</p>
+                </TiltCard>
               </Reveal>
             );
           })}
