@@ -216,6 +216,17 @@
   will-change: transform;
 }
 
+@keyframes preload-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes preload-fade {
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes card-breathe {
   0%,
   100% {

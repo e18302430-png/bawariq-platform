@@ -1,22 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Menu, X, Globe, Accessibility, Activity, PhoneCall } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-
-const NAV_KEYS = [
-  ["home", "hero"],
-  ["about", "about"],
-  ["services", "services"],
-  ["doctors", "doctors"],
-  ["departments", "departments"],
-  ["journey", "journey"],
-  ["appointments", "appointments"],
-  ["contact", "contact"],
-];
-
-function scrollToId(id) {
-  const node = document.getElementById(id);
-  if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+import { NAV_KEYS, scrollToId } from "../nav.js";
 
 export default function Header() {
   const { lang, t, toggleLang, reduceMotion, setReduceMotion } = useLanguage();

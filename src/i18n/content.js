@@ -168,6 +168,7 @@ export const content = {
       closeMenu: "إغلاق القائمة",
       reduceMotion: "تقليل الحركة",
       langToggle: "تبديل اللغة",
+      loading: "جاري التحميل",
     },
   },
 
@@ -340,6 +341,7 @@ export const content = {
       closeMenu: "Close menu",
       reduceMotion: "Reduce motion",
       langToggle: "Switch language",
+      loading: "Loading",
     },
   },
 };
