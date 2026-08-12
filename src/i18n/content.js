@@ -43,6 +43,10 @@ export const content = {
         },
       ],
     },
+    interlude: {
+      line1: "خلف كل إنسان نرعاه",
+      line2: "يقف مجمع كامل من أجله",
+    },
     about: {
       kicker: "عن المجمع",
       title: "مجمع طبي سعودي، بُني حول الإنسان قبل أن يُبنى حول المبنى",
@@ -210,6 +214,10 @@ export const content = {
           desc: "Because every case is a person with a story, not a number on a chart.",
         },
       ],
+    },
+    interlude: {
+      line1: "Behind every person we care for",
+      line2: "stands an entire complex built for them",
     },
     about: {
       kicker: "About the Complex",

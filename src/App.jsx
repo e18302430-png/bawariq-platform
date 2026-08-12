@@ -3,6 +3,7 @@ import { LanguageProvider, useLanguage } from "./context/LanguageContext.jsx";
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
 import Pillars from "./components/Pillars.jsx";
+import Interlude from "./components/Interlude.jsx";
 import About from "./components/About.jsx";
 import Services from "./components/Services.jsx";
 import Emergency from "./components/Emergency.jsx";
@@ -37,6 +38,7 @@ function Page() {
       <main id="main">
         <Hero />
         <Pillars />
+        <Interlude />
         <About />
         <Services />
         <Emergency />
