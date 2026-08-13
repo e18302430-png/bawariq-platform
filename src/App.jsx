@@ -194,7 +194,7 @@ const ROLES = [
     ar: { t: "الإدارة المالية", d: "عمولات المطاعم والتحصيل النقدي والرواتب" },
     en: { t: "Finance", d: "Restaurant commissions, cash collection, payroll" },
     ur: { t: "مالیات", d: "ریستوران کمیشن، نقد وصولی اور تنخواہ" },
-    nav: ["overview", "invoices", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "reports", "settings"] },
+    nav: ["overview", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "reports", "settings"] },
   { id: "hr", icon: Users, accent: "#C58BF2", glow: "197,139,242", staff: 8, shape: "shield",
     ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
     en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
@@ -463,7 +463,7 @@ function speak(text, lang) {
 
 function usePersisted(key, initial) {
   const [state, setState] = useState(initial);
-  const [syncStatus, setSyncStatus] = useState("loading"); // loading | ready | error
+  const [syncStatus, setSyncStatus] = useState("loading"); // loading | ready | error | saveError
   const ready = useRef(false);
   useEffect(() => {
     let alive = true;
@@ -492,6 +492,17 @@ function usePersisted(key, initial) {
     return () => { alive = false; };
     // eslint-disable-next-line
   }, []);
+  const saveWithRetry = (k, payload, attempt = 1) => {
+    window.storage.set(k, payload, true)
+      .then(() => { if (syncStatusRef.current === "saveError") setSyncStatus("ready"); })
+      .catch((err) => {
+        console.error(`bq: فشل حفظ "${k}" — محاولة ${attempt}`, err);
+        if (attempt < 3) { setTimeout(() => saveWithRetry(k, payload, attempt + 1), attempt * 1000); }
+        else { setSyncStatus("saveError"); }
+      });
+  };
+  const syncStatusRef = useRef(syncStatus);
+  useEffect(() => { syncStatusRef.current = syncStatus; }, [syncStatus]);
   const update = (updater) => {
     if (!ready.current) {
       console.warn(`bq: تجاهلت محاولة حفظ "${key}" قبل اكتمال أول تحميل ناجح — حماية من الكتابة فوق بيانات حقيقية.`);
@@ -499,7 +510,7 @@ function usePersisted(key, initial) {
     }
     setState((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      window.storage.set(key, JSON.stringify(next), true).catch(() => {});
+      saveWithRetry(key, JSON.stringify(next));
       return next;
     });
   };
@@ -1196,6 +1207,7 @@ const EX = {
     payslipT: "قسيمة الراتب", payslipMonth: "الشهر", printBtn: "طباعة", printedOn: "تاريخ الطباعة", printPayslip: "طباعة قسيمة الراتب",
     totalDeductionLbl: "إجمالي الخصم",
     supReportedLbl: "أبلغ عنها المشرف", violationsVaryNote: "قيمة كل مخالفة تختلف من مندوب لآخر — اكتب المبلغ الفعلي بالريال لكل مندوب مباشرة، مو رقماً موحّداً.",
+    manualPayrollNote: "راتب كل مندوب يُدخل يدوياً بالكامل — لا يوجد أي حساب تلقائي. اكتب المبلغ النهائي الصافي مباشرة لكل مندوب.",
     deptPwSelfT: "تغيير كلمة مرور قسمي", deptPwSelfSub: "الحالة الطبيعية: أنت تغيّر كلمة مرور قسمك بنفسك مباشرة، بدون حاجة لمدير الحركة والتشغيل.",
     deptPwCurrent: "كلمة المرور الحالية", deptPwNew: "كلمة المرور الجديدة", deptPwConfirm: "تأكيد كلمة المرور الجديدة", deptPwSaved: "تم تغيير كلمة مرور القسم بنجاح",
     errCurrentDeptPw: "كلمة المرور الحالية غير صحيحة.", errPassMatch: "كلمتا المرور غير متطابقتين.",
@@ -1215,7 +1227,7 @@ const EX = {
     addFineBtn: "تسجيل مخالفة هيئة نقل", fineRepSelect: "المندوب", fineAmountLbl2: "قيمة الغرامة",
     fineReasonLbl: "سبب المخالفة", tgaFinesHistoryT: "سجل مخالفات الهيئة",
     errExpAmount: "أدخل مبلغاً صحيحاً أكبر من صفر.", errExpReason: "لازم تكتب سبباً واقعياً واضحاً (٨ أحرف على الأقل) — بدون سبب، ما يُسجّل المصروف.",
-    errExpNeedsReceipt: "المبالغ فوق الحد المسموح تتطلب إرفاق صورة إيصال أو فاتورة.", expReceiptLbl: "صورة الإيصال / الفاتورة",
+    errExpNeedsReceipt: "المبالغ فوق الحد المسموح تتطلب إرفاق صورة إيصال أو فاتورة.", expReceiptLbl: "صورة الإيصال / الفاتورة", viewPdfBtn: "عرض ملف PDF",
     expReasonLbl: "سبب الصرف (إلزامي)", expReasonPh: "مثال: تعبئة وقود سيارة رقم ٣ ليوم التسليم الطويل",
     expNeedsGm: "هذا المبلغ يتجاوز الحد — يحتاج اعتماد المدير العام قبل ما يُحتسب نهائياً.",
     expPendingGmT: "بانتظار اعتماد المدير العام", submittedByLbl: "قدّمه", expLedgerT: "سجل كل مصروف بالتفصيل",
@@ -1411,6 +1423,7 @@ const EX = {
     payslipT: "Payslip", payslipMonth: "Month", printBtn: "Print", printedOn: "Printed on", printPayslip: "Print payslip",
     totalDeductionLbl: "Total deduction",
     supReportedLbl: "Supervisor reported", violationsVaryNote: "Each violation\u2019s value differs from one rep to another — enter the actual SAR amount per rep directly, not a fixed rate.",
+    manualPayrollNote: "Every rep\u2019s salary is entered fully manually — no automatic calculation. Type the final net amount directly for each rep.",
     deptPwSelfT: "Change my department password", deptPwSelfSub: "Normal case: you change your own department password directly, no need for the Operations Manager.",
     deptPwCurrent: "Current password", deptPwNew: "New password", deptPwConfirm: "Confirm new password", deptPwSaved: "Department password changed successfully",
     errCurrentDeptPw: "Current password is incorrect.", errPassMatch: "Passwords do not match.",
@@ -1620,6 +1633,7 @@ const EX = {
     payslipT: "تنخواہ کی پرچی", payslipMonth: "مہینہ", printBtn: "پرنٹ کریں", printedOn: "پرنٹ کی تاریخ", printPayslip: "تنخواہ کی پرچی پرنٹ کریں",
     totalDeductionLbl: "کل کٹوتی",
     supReportedLbl: "سپروائزر کی رپورٹ", violationsVaryNote: "ہر خلاف ورزی کی قیمت ہر نمائندے کے لیے مختلف ہوتی ہے — ہر نمائندے کے لیے اصل ریال کی رقم براہ راست درج کریں، مقررہ شرح نہیں۔",
+    manualPayrollNote: "ہر نمائندے کی تنخواہ مکمل طور پر دستی طور پر درج کی جاتی ہے — کوئی خودکار حساب نہیں۔ ہر نمائندے کے لیے حتمی خالص رقم براہ راست لکھیں۔",
     deptPwSelfT: "میرے شعبے کا پاس ورڈ تبدیل کریں", deptPwSelfSub: "عام صورتحال: آپ اپنے شعبے کا پاس ورڈ خود براہ راست تبدیل کرتے ہیں، آپریشنز منیجر کی ضرورت نہیں۔",
     deptPwCurrent: "موجودہ پاس ورڈ", deptPwNew: "نیا پاس ورڈ", deptPwConfirm: "نئے پاس ورڈ کی تصدیق", deptPwSaved: "شعبے کا پاس ورڈ کامیابی سے تبدیل ہو گیا",
     errCurrentDeptPw: "موجودہ پاس ورڈ غلط ہے۔", errPassMatch: "پاس ورڈز مماثل نہیں ہیں۔",
@@ -2881,7 +2895,7 @@ const EXPENSE_APPROVAL_THRESHOLD = 1000; // فوق هذا المبلغ لازم 
 function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const catOpts = Object.keys(EXP_LABEL).map((k) => ({ value: k, label: EXP_LABEL[k][lang] }));
-  const [form, setForm] = useState({ k: "fuel", amt: "", reason: "", photo: null });
+  const [form, setForm] = useState({ k: "fuel", amt: "", reason: "", photo: null, photoType: "" });
   const [err, setErr] = useState("");
   const [viewPhoto, setViewPhoto] = useState(null);
 
@@ -2889,7 +2903,7 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setForm((f) => ({ ...f, photo: reader.result }));
+    reader.onload = () => setForm((f) => ({ ...f, photo: reader.result, photoType: file.type }));
     reader.readAsDataURL(file);
   };
 
@@ -2901,11 +2915,11 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
     setErr("");
     const needsGm = amt > EXPENSE_APPROVAL_THRESHOLD;
     const entry = { id: "EXP-" + Date.now(), k: form.k, v: amt, reason: form.reason.trim(), date: riyadhToday(),
-      photo: form.photo, submittedBy: actingEmployee?.name || role.id, status: needsGm ? "pending" : "approved",
+      photo: form.photo, photoType: form.photoType, submittedBy: actingEmployee?.name || role.id, status: needsGm ? "pending" : "approved",
       approvedBy: needsGm ? null : (actingEmployee?.name || role.id), approvedAt: needsGm ? null : riyadhNow().toISOString() };
     setExpenses((prev) => [entry, ...prev]);
     logAudit(setAuditLog, role, "expense_add", `${EXP_LABEL[form.k][lang]}: ${amt} — ${form.reason.slice(0, 40)}`, actingEmployee);
-    setForm({ k: "fuel", amt: "", reason: "", photo: null });
+    setForm({ k: "fuel", amt: "", reason: "", photo: null, photoType: "" });
   };
 
   const decide = (id, status) => {
@@ -2947,9 +2961,13 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
             {x.expReceiptLbl} {form.amt > EXPENSE_APPROVAL_THRESHOLD && <span style={{ color: "#D6584D" }}>*</span>}
           </span>
           <span className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 cursor-pointer" style={{ background: "rgba(0,0,0,.22)", border: `1px dashed ${form.photo ? role.accent : "var(--line)"}` }}>
-            {form.photo ? <img src={form.photo} alt="" className="w-9 h-9 rounded-lg object-cover" /> : <ImagePlus size={16} style={{ color: "var(--muted)" }} />}
+            {form.photo ? (
+              form.photoType === "application/pdf"
+                ? <span className="w-9 h-9 rounded-lg grid place-items-center shrink-0" style={{ background: `${role.accent}22` }}><FileSignature size={16} style={{ color: role.accent }} /></span>
+                : <img src={form.photo} alt="" className="w-9 h-9 rounded-lg object-cover" />
+            ) : <ImagePlus size={16} style={{ color: "var(--muted)" }} />}
             <span className="text-[12px] font-semibold" style={{ color: form.photo ? role.accent : "var(--muted)" }}>{form.photo ? x.uploaded : x.attachFile}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            <input type="file" accept="image/*,application/pdf" className="hidden" onChange={onPhoto} />
           </span>
         </label>
         {err && <p className="mt-2 text-[11.5px]" style={{ color: "#D6584D" }}>{err}</p>}
@@ -2958,7 +2976,11 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
 
       {viewPhoto && (
         <div className="fixed inset-0 z-[95] grid place-items-center p-6" style={{ background: "rgba(10,14,25,.85)" }} onClick={() => setViewPhoto(null)}>
-          <img src={viewPhoto} alt="" className="max-w-full max-h-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+          {viewPhoto.type === "application/pdf" ? (
+            <iframe title="receipt-pdf" src={viewPhoto.data} className="w-full h-full max-w-3xl rounded-2xl bg-white" onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <img src={viewPhoto.data} alt="" className="max-w-full max-h-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+          )}
         </div>
       )}
 
@@ -2972,9 +2994,11 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
                   <span className="num font-bold" style={{ color: "#B8862E" }}>{money(e.v)} {t.sar}</span>
                 </div>
                 <p className="text-[11.5px] mb-2.5" style={{ color: "var(--muted)" }}>{e.reason} — {x.submittedByLbl}: {e.submittedBy}</p>
-                {e.photo && (
-                  <img src={e.photo} alt="" className="w-14 h-14 rounded-lg object-cover mb-2.5 cursor-pointer" onClick={() => setViewPhoto(e.photo)} />
-                )}
+                  {e.photo && (
+                    e.photoType === "application/pdf"
+                      ? <button onClick={() => setViewPhoto({ data: e.photo, type: e.photoType })} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg mb-2.5 text-[11px] font-bold" style={{ background: `${role.accent}18`, color: role.accent }}><FileSignature size={13} />{x.viewPdfBtn}</button>
+                      : <img src={e.photo} alt="" className="w-14 h-14 rounded-lg object-cover mb-2.5 cursor-pointer" onClick={() => setViewPhoto({ data: e.photo, type: e.photoType })} />
+                  )}
                 <div className="flex gap-2">
                   <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => decide(e.id, "approved")}>{x.approvedLbl}</Btn>
                   <Btn variant="danger" icon={X} onClick={() => decide(e.id, "rejected")}>{x.rejectedLbl}</Btn>
@@ -3011,7 +3035,11 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
                 { v: EXP_LABEL[e.k][lang] }, { v: money(e.v) + " " + t.sar, mono: 1, strong: 1 },
                 { v: e.reason || "—", dim: 1 }, { v: e.submittedBy || "—", dim: 1 },
                 { v: e.status === "approved" || !e.status ? x.approvedLbl : e.status === "rejected" ? x.rejectedLbl : x.pendingLbl },
-                { custom: e.photo ? <img src={e.photo} alt="" className="w-9 h-9 rounded-lg object-cover cursor-pointer" onClick={() => setViewPhoto(e.photo)} /> : <span style={{ color: "var(--muted)" }}>—</span> },
+                { custom: e.photo ? (
+                  e.photoType === "application/pdf"
+                    ? <button onClick={() => setViewPhoto({ data: e.photo, type: e.photoType })} className="w-9 h-9 rounded-lg grid place-items-center" style={{ background: `${role.accent}18` }}><FileSignature size={14} style={{ color: role.accent }} /></button>
+                    : <img src={e.photo} alt="" className="w-9 h-9 rounded-lg object-cover cursor-pointer" onClick={() => setViewPhoto({ data: e.photo, type: e.photoType })} />
+                ) : <span style={{ color: "var(--muted)" }}>—</span> },
               ],
             }))} />
         )}
@@ -4549,26 +4577,18 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const appBreakdown = Object.keys(appRevenue).map((aid) => ({ id: aid, name: appName(aid), total: appRevenue[aid] })).sort((a, b) => b.total - a.total);
 
   const live = activeReps.map((r) => {
-    const isAjeer = r.empType === "ajeer";
     const entries = monthEntriesFor(reports, r.id, month);
     const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
     const km = entries.reduce((a, e) => a + (e.km || 0), 0);
     const hours = entries.reduce((a, e) => a + (e.hours || 0), 0);
     const weekendCount = entries.reduce((a, e) => a + (e.weekendViolations || 0), 0);
     const appCount = entries.reduce((a, e) => a + (e.appViolations || 0), 0);
-    const amt = deductAmounts[r.id] || {};
-    const weekendDeductAmt = amt.weekend ?? 0;
-    const appDeductAmt = amt.app ?? 0;
     const bill = companyBilling(orders, km);
     const reward = rewardFor(r.id);
-    if (isAjeer) {
-      const manual = ajeerAmounts[r.id] ?? 0;
-      return { repId: r.id, name: lang === "en" ? r.en : r.ar, empType: "ajeer", app: r.app, orders, km, hours, weekendCount, appCount,
-        salary: manual, violationDeduction: 0, reward, total: manual + reward, billing: bill.total };
-    }
-    const sal = repMonthlySalary(orders, km, 35, weekendDeductAmt, appDeductAmt);
-    return { repId: r.id, name: lang === "en" ? r.en : r.ar, empType: "kafala", app: r.app, orders, km, hours, weekendCount, appCount,
-      weekendDeductAmt, appDeductAmt, salary: sal.total, violationDeduction: sal.violationDeduction, reward, total: sal.total + reward, billing: bill.total };
+    // كل مندوب — كفالة أو أجير — راتبه يُدخل يدوياً من المالية بالكامل، بدون أي معادلة تلقائية
+    const manual = ajeerAmounts[r.id] ?? 0;
+    return { repId: r.id, name: lang === "en" ? r.en : r.ar, empType: r.empType, app: r.app, orders, km, hours, weekendCount, appCount,
+      salary: manual, violationDeduction: 0, reward, total: manual + reward, billing: bill.total };
   });
   const liveKafala = live.filter((r) => r.empType !== "ajeer");
   const liveAjeer = live.filter((r) => r.empType === "ajeer");
@@ -4628,7 +4648,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
       {role.id === "fin" && (
         <div className="rounded-2xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.25)" }}>
           <AlertTriangle size={15} style={{ color: "#B8862E" }} className="mt-0.5 shrink-0" />
-          <p className="text-[11.5px] leading-relaxed" style={{ color: "#8A611E" }}>{x.violationsVaryNote}</p>
+          <p className="text-[11.5px] leading-relaxed" style={{ color: "#8A611E" }}>{x.manualPayrollNote}</p>
         </div>
       )}
 
@@ -4636,47 +4656,27 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
         <Panel title={month} extra={<Chip tone={alreadyClosed ? "n" : "warn"} sm>{alreadyClosed ? x.alreadyClosedMonth : month}</Chip>}>
           {live.length === 0 ? <EmptyHint lang={lang} /> : (
             <div className="space-y-2 mb-4">
-              <p className="text-[10.5px] font-bold mb-2" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>
+              {liveKafala.length > 0 && (
+                <p className="text-[10.5px] font-bold mb-2" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>
+              )}
               {liveKafala.map((r) => (
-                <div key={r.repId} className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)" }}>
-                  <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-                    <span className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-[12.5px]">{r.name}</span>
-                      {r.reward > 0 && <Chip tone="warn" sm><Trophy size={11} />+{r.reward}</Chip>}
-                      <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.km} {lang === "ar" ? "كم" : "km"} · {r.hours.toFixed(1)} {x.hoursCol}</span>
-                    </span>
-                    <span className="num font-bold" style={{ color: role.accent }}>{r.total.toFixed(2)} {t.sar}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg px-2.5 py-1.5" style={{ background: "#fff", border: "1px solid var(--line)" }}>
-                      <span className="flex items-center gap-1.5 text-[9.5px] mb-1" style={{ color: "var(--muted)" }}>
-                        <CalendarDays size={11} style={{ color: "#D6584D" }} />{x.weekendViolCol} {r.weekendCount > 0 && `(${x.supReportedLbl}: ${r.weekendCount})`}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <input type="number" value={deductAmounts[r.repId]?.weekend ?? 0} onChange={(e) => setDeductAmounts((prev) => ({ ...prev, [r.repId]: { ...prev[r.repId], weekend: +e.target.value } }))}
-                          className="num flex-1 bg-transparent border-0 outline-none text-[13px] font-bold" style={{ color: "#12151D" }} placeholder="0" />
-                        <span className="text-[10px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
-                      </span>
-                    </div>
-                    <div className="rounded-lg px-2.5 py-1.5" style={{ background: "#fff", border: "1px solid var(--line)" }}>
-                      <span className="flex items-center gap-1.5 text-[9.5px] mb-1" style={{ color: "var(--muted)" }}>
-                        <AlertTriangle size={11} style={{ color: "#D6584D" }} />{x.appViolCol} {r.appCount > 0 && `(${x.supReportedLbl}: ${r.appCount})`}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <input type="number" value={deductAmounts[r.repId]?.app ?? 0} onChange={(e) => setDeductAmounts((prev) => ({ ...prev, [r.repId]: { ...prev[r.repId], app: +e.target.value } }))}
-                          className="num flex-1 bg-transparent border-0 outline-none text-[13px] font-bold" style={{ color: "#12151D" }} placeholder="0" />
-                        <span className="text-[10px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
-                      </span>
-                    </div>
-                  </div>
-                  {r.violationDeduction > 0 && (
-                    <p className="text-[10px] mt-1.5" style={{ color: "#D6584D" }}>{x.totalDeductionLbl}: -{r.violationDeduction.toFixed(2)} {t.sar}</p>
-                  )}
+                <div key={r.repId} className="flex items-center justify-between rounded-xl p-2.5 text-[12px] mb-2" style={{ background: "rgba(20,27,45,.035)" }}>
+                  <span className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold">{r.name}</span>
+                    {r.reward > 0 && <Chip tone="warn" sm><Trophy size={11} />+{r.reward}</Chip>}
+                    <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.km} {lang === "ar" ? "كم" : "km"} · {r.hours.toFixed(1)} {x.hoursCol}
+                      {r.weekendCount > 0 && ` · ${x.weekendViolCol}: ${r.weekendCount}`}{r.appCount > 0 && ` · ${x.appViolCol}: ${r.appCount}`}</span>
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <input type="number" value={ajeerAmounts[r.repId] ?? 0} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                      className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
+                    <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
+                  </span>
                 </div>
               ))}
               {liveAjeer.length > 0 && (
                 <>
-                  <p className="text-[10.5px] font-bold mb-2 mt-4 pt-3" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]} · {x.ajeerManualNote}</p>
+                  <p className="text-[10.5px] font-bold mb-2 mt-4 pt-3" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p>
                   {liveAjeer.map((r) => (
                     <div key={r.repId} className="flex items-center justify-between rounded-xl p-2.5 text-[12px]" style={{ background: "rgba(228,184,92,.06)", border: "1px solid rgba(228,184,92,.25)" }}>
                       <span className="flex items-center gap-2">
@@ -7043,13 +7043,16 @@ export default function App() {
   return (
     <div dir={dir} className={`bq min-h-screen w-full ${reduce ? "reduce" : ""}`}>
       <style>{CSS}</style>
-      {repsSyncStatus === "error" && (
+      {(repsSyncStatus === "error" || repsSyncStatus === "saveError") && (
         <div className="fixed top-0 inset-x-0 z-[999] px-4 py-3 flex items-center justify-center gap-2.5 text-center"
           style={{ background: "#D6584D", color: "#fff" }}>
           <AlertTriangle size={16} className="shrink-0" />
           <span className="text-[12.5px] font-bold">
-            {lang === "ar" ? "تعذّر الاتصال بقاعدة البيانات — البيانات المعروضة قد لا تكون محدّثة. لا تعدّل أي شي الآن، وأعد تحميل الصفحة بعد دقيقة."
-              : "Could not reach the database — data shown may be stale. Don't make changes now; reload the page in a minute."}
+            {repsSyncStatus === "saveError"
+              ? (lang === "ar" ? "⚠️ فشل حفظ آخر تعديل بقاعدة البيانات فعلياً! أعد تحميل الصفحة وتأكد قبل ما تكمل، وجرّب تسويها مرة ثانية."
+                : "⚠️ The last change failed to save to the database! Reload and verify before continuing, then try again.")
+              : (lang === "ar" ? "تعذّر الاتصال بقاعدة البيانات — البيانات المعروضة قد لا تكون محدّثة. لا تعدّل أي شي الآن، وأعد تحميل الصفحة بعد دقيقة."
+                : "Could not reach the database — data shown may be stale. Don't make changes now; reload the page in a minute.")}
           </span>
         </div>
       )}
