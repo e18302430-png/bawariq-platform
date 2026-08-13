@@ -179,7 +179,7 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "invAnalysis", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "payrollRuns", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "reports", "settings"] },
+    nav: ["overview", "invoices", "expenses", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "reports", "settings"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
@@ -463,27 +463,47 @@ function speak(text, lang) {
 
 function usePersisted(key, initial) {
   const [state, setState] = useState(initial);
+  const [syncStatus, setSyncStatus] = useState("loading"); // loading | ready | error
   const ready = useRef(false);
   useEffect(() => {
     let alive = true;
-    (async () => {
+    let attempt = 0;
+    const tryLoad = async () => {
+      attempt++;
       try {
         const r = await window.storage.get(key, true);
-        if (alive) setState(r && r.value ? JSON.parse(r.value) : initial);
-      } catch { if (alive) setState(initial); }
-      finally { ready.current = true; }
-    })();
+        if (!alive) return;
+        setState(r && r.value ? JSON.parse(r.value) : initial);
+        setSyncStatus("ready");
+        ready.current = true;
+      } catch (e) {
+        const notFound = e && String(e.message || e).includes("not found");
+        if (notFound) {
+          // مفتاح جديد فعلاً وما خُزّن فيه شي قبل — آمن نعتبره فاضياً
+          if (alive) { setState(initial); setSyncStatus("ready"); ready.current = true; }
+          return;
+        }
+        // فشل اتصال حقيقي (شبكة بطيئة، قاعدة البيانات كانت نايمة...) — نعيد المحاولة، ما نفترض إنها فاضية
+        if (alive && attempt < 6) { setTimeout(tryLoad, Math.min(attempt * 1200, 6000)); }
+        else if (alive) { setSyncStatus("error"); } // نوقف هنا بدل ما نسمح بالكتابة فوق بيانات حقيقية محتملة
+      }
+    };
+    tryLoad();
     return () => { alive = false; };
     // eslint-disable-next-line
   }, []);
   const update = (updater) => {
+    if (!ready.current) {
+      console.warn(`bq: تجاهلت محاولة حفظ "${key}" قبل اكتمال أول تحميل ناجح — حماية من الكتابة فوق بيانات حقيقية.`);
+      return;
+    }
     setState((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       window.storage.set(key, JSON.stringify(next), true).catch(() => {});
       return next;
     });
   };
-  return [state, update];
+  return [state, update, syncStatus];
 }
 function usePersonalFlag(key) {
   const [seen, setSeen] = useState(true); // افتراضياً true حتى يتأكد التحميل، لتفادي ومضة الظهور
@@ -506,6 +526,7 @@ function usePersonalFlag(key) {
 }
 function usePersonalList(key) {
   const [list, setList] = useState([]);
+  const ready = useRef(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -513,11 +534,13 @@ function usePersonalList(key) {
         const r = await window.storage.get(key, false);
         if (alive) setList(r && r.value ? JSON.parse(r.value) : []);
       } catch { if (alive) setList([]); }
+      finally { if (alive) ready.current = true; }
     })();
     return () => { alive = false; };
     // eslint-disable-next-line
   }, [key]);
   const update = (updater) => {
+    if (!ready.current) return;
     setList((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       window.storage.set(key, JSON.stringify(next), false).catch(() => {});
@@ -6937,7 +6960,7 @@ export default function App() {
   const [roleId, setRoleId] = useState(null);
   const [reduce, setReduce] = useState(false);
   const [loginErr, setLoginErr] = useState("");
-  const [reps, setReps] = usePersisted("bq_reps", REP_SEED);
+  const [reps, setReps, repsSyncStatus] = usePersisted("bq_reps", REP_SEED);
   const [reports, setReports] = usePersisted("bq_daily_reports", REPORTS_SEED);
   const [tickets, setTickets] = usePersisted("bq_tickets", []);
   const [circulars, setCirculars] = usePersisted("bq_circulars", []);
@@ -7020,6 +7043,16 @@ export default function App() {
   return (
     <div dir={dir} className={`bq min-h-screen w-full ${reduce ? "reduce" : ""}`}>
       <style>{CSS}</style>
+      {repsSyncStatus === "error" && (
+        <div className="fixed top-0 inset-x-0 z-[999] px-4 py-3 flex items-center justify-center gap-2.5 text-center"
+          style={{ background: "#D6584D", color: "#fff" }}>
+          <AlertTriangle size={16} className="shrink-0" />
+          <span className="text-[12.5px] font-bold">
+            {lang === "ar" ? "تعذّر الاتصال بقاعدة البيانات — البيانات المعروضة قد لا تكون محدّثة. لا تعدّل أي شي الآن، وأعد تحميل الصفحة بعد دقيقة."
+              : "Could not reach the database — data shown may be stale. Don't make changes now; reload the page in a minute."}
+          </span>
+        </div>
+      )}
       {step === "lang" && <LangScreen lang={lang} setLang={setLang} next={() => setStep("gate")} />}
       {step === "gate" && (
         <DeptGate lang={lang} setLang={setLang} reps={reps} employees={employees} err={loginErr} setErr={setLoginErr} sessionExpired={sessionExpired}
