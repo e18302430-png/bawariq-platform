@@ -6804,7 +6804,8 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, appInvoices, setAppInvoices, costModel, setCostModel,
   equipStatus, setEquipStatus, tgaFines, setTgaFines, query, setQuery }) {
   const t = T[lang], x = EX[lang];
-  const [page, setPage] = useState("overview");
+  const [page, setPage] = useState(() => (role.nav && role.nav[0]) || "overview");
+  useEffect(() => { if (role.nav && !role.nav.includes(page)) setPage(role.nav[0]); }, [role.id]); // eslint-disable-line
   const [drawer, setDrawer] = useState(false);
   const [bell, setBell] = useState(false);
   const [logShift, setLogShift] = useState(false);
