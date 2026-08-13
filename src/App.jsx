@@ -4923,7 +4923,7 @@ function PeoplePage({ lang, role, employees, setEmployees, setAuditLog, actingEm
             <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.empDept}</span>
             <select value={form.dept} onChange={(e) => set("dept")(e.target.value)} className="w-full rounded-xl px-3 py-3 text-[13px] outline-none"
               style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#12151D" }}>
-              {ROLES.map((r) => <option key={r.id} value={r.id} style={{ background: "#FFFFFF" }}>{r[lang].t}</option>)}
+              {[...ROLES, ADVISOR_ROLE].map((r) => <option key={r.id} value={r.id} style={{ background: "#FFFFFF" }}>{r[lang].t}</option>)}
             </select>
           </label>
           <GateField label={x.empPosition} val={form.position} set={set("position")} ph="" Icon={BadgeCheck} type="text" accent={role.accent} />
