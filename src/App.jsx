@@ -179,12 +179,12 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "invoices", "expenses", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "reports", "settings"] },
+    nav: ["overview", "invoices", "expenses", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
     ur: { t: "آپریشنز منیجر", d: "علاقے، نمائندے اور گاڑیوں کی کارکردگی" },
-    nav: ["overview", "leaderboard", "hall", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "reports", "settings"] },
+    nav: ["overview", "leaderboard", "hall", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "ops", icon: UtensilsCrossed, accent: "#FF9153", glow: "255,145,83", staff: 34, shape: "diamond",
     ar: { t: "إدارة التشغيل", d: "غرفة الطلبات: الإسناد والمتابعة اللحظية" },
     en: { t: "Operations", d: "Order room: dispatching and live tracking" },
@@ -194,7 +194,7 @@ const ROLES = [
     ar: { t: "الإدارة المالية", d: "عمولات المطاعم والتحصيل النقدي والرواتب" },
     en: { t: "Finance", d: "Restaurant commissions, cash collection, payroll" },
     ur: { t: "مالیات", d: "ریستوران کمیشن، نقد وصولی اور تنخواہ" },
-    nav: ["overview", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "reports", "settings"] },
+    nav: ["overview", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings"] },
   { id: "hr", icon: Users, accent: "#C58BF2", glow: "197,139,242", staff: 8, shape: "shield",
     ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
     en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
@@ -206,6 +206,11 @@ const ROLES = [
     ur: { t: "قانونی امور", d: "ریستوران معاہدے، خلاف ورزیاں اور ضابطے" },
     nav: ["overview", "charter", "contracts", "cases", "tickets", "compliance", "chat", "circulars", "permissions", "attendance", "settings"] },
 ];
+const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216,180,254", staff: 2, shape: "shieldTall",
+  ar: { t: "هيئة المستشارين", d: "الحلقة الوصل الحصرية مع المدير العام — اعتماد القرارات الاستراتيجية" },
+  en: { t: "Advisory Board", d: "Exclusive link with the General Manager — strategic decision approval" },
+  ur: { t: "مشاورتی بورڈ", d: "جنرل منیجر کے ساتھ خصوصی رابطہ — اسٹریٹجک فیصلوں کی منظوری" },
+  nav: ["boardCouncil", "payrollRuns"] };
 const REP = {
   id: "rep", icon: Car, accent: "#3FD8B4", glow: "63,216,180", staff: 128, shape: "chevron",
   ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
@@ -213,7 +218,7 @@ const REP = {
   ur: { t: "ڈیلیوری نمائندہ", d: "شفٹ کے آرڈرز اور ثبوتِ ترسیل" },
   nav: ["overview", "mystory", "leaderboard", "hall", "messages", "tickets", "circulars", "attendance", "settings"],
 };
-const ALL_ROLES = [...ROLES, REP];
+const ALL_ROLES = [...ROLES, REP, ADVISOR_ROLE];
 
 const EMBLEM_CLIP = {
   octagon: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
@@ -1129,6 +1134,7 @@ const EX = {
     closeMonth: "إقفال الشهر وإرسال للمدير العام", monthClosed: "تم إقفال الشهر وإرساله للاعتماد",
     runStatusSent: "بانتظار اعتماد المدير العام", runStatusApproved: "معتمد من المدير العام",
     approveRun: "اعتماد المسير", runArchive: "أرشيف المسيرات السابقة", noRuns: "لا توجد مسيرات رواتب بعد",
+    forwardToBoardBtn: "إرسال لهيئة المستشارين", boardReviewT: "بانتظار اعتماد هيئة المستشارين", awaitingBoardLbl: "بانتظار قرار المستشارين",
     runId: "رقم المسير", runDate: "تاريخ الإقفال", alreadyClosedMonth: "هذا الشهر مُقفل مسبقاً.",
     hrOnlyHiring: "توظيف الموظفين الإداريين من اختصاص الموارد البشرية فقط.",
     dammamTime: "بتوقيت الدمام", empPhoto: "الصورة الشخصية", isSupervisorLbl: "مشرف تشغيل يدير مناديب",
@@ -1208,6 +1214,13 @@ const EX = {
     totalDeductionLbl: "إجمالي الخصم",
     supReportedLbl: "أبلغ عنها المشرف", violationsVaryNote: "قيمة كل مخالفة تختلف من مندوب لآخر — اكتب المبلغ الفعلي بالريال لكل مندوب مباشرة، مو رقماً موحّداً.",
     manualPayrollNote: "راتب كل مندوب يُدخل يدوياً بالكامل — لا يوجد أي حساب تلقائي. اكتب المبلغ النهائي الصافي مباشرة لكل مندوب.",
+    boardT: "مجلس المستشارين", boardSub: "الحلقة الوصل الحصرية مع المدير العام — تحليل شامل للشركة واعتماد القرارات الاستراتيجية النهائية",
+    boardPendingNote: "توجد قرارات بانتظار مراجعتكم", boardPendingCount: "قراراً معلّقاً",
+    boardActiveReps: "المناديب النشطون", boardMonthOrders: "طلبات الشهر", boardMonthExpenses: "مصروفات الشهر المعتمدة", boardLastPayroll: "آخر مسير رواتب معتمد",
+    boardOfficeCost: "تكلفة الرواتب الإدارية", boardCompliance: "نسبة الامتثال بالمعدات",
+    boardTgaWarn: "إجمالي غرامات هيئة النقل المسجّلة", boardDecisionsT: "القرارات بانتظار اعتماد المجلس",
+    boardGoToPayroll: "لاتخاذ القرار (اعتماد أو رفض)، افتح صفحة «مسيرات الرواتب» من القائمة الجانبية.",
+    boardApprovedHistoryT: "سجل القرارات المعتمدة", boardDecidedByLbl: "اعتمدها",
     deptPwSelfT: "تغيير كلمة مرور قسمي", deptPwSelfSub: "الحالة الطبيعية: أنت تغيّر كلمة مرور قسمك بنفسك مباشرة، بدون حاجة لمدير الحركة والتشغيل.",
     deptPwCurrent: "كلمة المرور الحالية", deptPwNew: "كلمة المرور الجديدة", deptPwConfirm: "تأكيد كلمة المرور الجديدة", deptPwSaved: "تم تغيير كلمة مرور القسم بنجاح",
     errCurrentDeptPw: "كلمة المرور الحالية غير صحيحة.", errPassMatch: "كلمتا المرور غير متطابقتين.",
@@ -1345,6 +1358,7 @@ const EX = {
     closeMonth: "Close month & send to GM", monthClosed: "Month closed and sent for approval",
     runStatusSent: "Awaiting GM approval", runStatusApproved: "Approved by GM",
     approveRun: "Approve run", runArchive: "Previous runs archive", noRuns: "No payroll runs yet",
+    forwardToBoardBtn: "Send to Advisory Board", boardReviewT: "Awaiting Advisory Board approval", awaitingBoardLbl: "Awaiting board decision",
     runId: "Run ID", runDate: "Closed on", alreadyClosedMonth: "This month is already closed.",
     hrOnlyHiring: "Hiring administrative staff is HR's responsibility only.",
     dammamTime: "Dammam time", empPhoto: "Personal photo", isSupervisorLbl: "Operations supervisor (manages reps)",
@@ -1555,6 +1569,7 @@ const EX = {
     closeMonth: "ماہ بند کریں اور جی ایم کو بھیجیں", monthClosed: "ماہ بند ہو کر منظوری کے لیے بھیج دیا گیا",
     runStatusSent: "جی ایم کی منظوری کا انتظار", runStatusApproved: "جی ایم سے منظور شدہ",
     approveRun: "مسیر منظور کریں", runArchive: "پرانے مسیروں کا ریکارڈ", noRuns: "ابھی کوئی تنخواہ مسیر نہیں",
+    forwardToBoardBtn: "مشاورتی بورڈ کو بھیجیں", boardReviewT: "مشاورتی بورڈ کی منظوری کا انتظار", awaitingBoardLbl: "بورڈ کے فیصلے کا انتظار",
     runId: "مسیر نمبر", runDate: "بند ہونے کی تاریخ", alreadyClosedMonth: "یہ مہینہ پہلے ہی بند ہو چکا ہے۔",
     hrOnlyHiring: "انتظامی عملے کی بھرتی صرف انسانی وسائل کی ذمہ داری ہے۔",
     dammamTime: "دمام کے وقت کے مطابق", empPhoto: "ذاتی تصویر", isSupervisorLbl: "آپریشنز سپروائزر (نمائندوں کا انتظام)",
@@ -1828,13 +1843,21 @@ function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gate
       <div className="relative max-w-5xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-8 sm:mb-10">
           <Wordmark t={t} s={46} />
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 items-center">
             {LANGS.map((l) => (
               <button key={l.code} onClick={() => setLang(l.code)} className="num px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition"
                 style={{ background: lang === l.code ? "rgba(228,184,92,.15)" : "rgba(20,27,45,.04)", border: `1px solid ${lang === l.code ? "rgba(228,184,92,.42)" : "var(--line)"}`, color: lang === l.code ? "var(--gold2)" : "var(--muted)" }}>{l.mark}</button>
             ))}
+            <button onClick={() => pick("advisor")} aria-label="." className="w-2 h-2 rounded-full ms-1 opacity-30 hover:opacity-70 transition" style={{ background: "var(--muted)" }} />
           </div>
         </div>
+        {open === "advisor" && (
+          <div className="rise mb-6 max-w-xs ms-auto glass rounded-2xl p-4" style={{ border: `1px solid rgba(${ADVISOR_ROLE.glow},.35)` }}>
+            <GateField label={x.deptPass} val={pw} set={setPw} ph="••••••••" Icon={Lock} af type="password" accent={ADVISOR_ROLE.accent} onEnter={() => goEmp("advisor")} />
+            {err && <p className="mt-2.5 text-[11px] flex items-start gap-1.5" style={{ color: "#E8837A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{err}</p>}
+            <div className="mt-3"><Btn variant="accent" accent={ADVISOR_ROLE.glow} full icon={Fingerprint} onClick={() => goEmp("advisor")}>{busy ? "…" : t.enter}</Btn></div>
+          </div>
+        )}
 
         {sessionExpired && (
           <div className="rise mb-6 rounded-2xl px-4 py-3 flex items-center gap-2.5" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.32)" }}>
@@ -3830,6 +3853,87 @@ const AUDIT_LABELS = {
 /* ═══════════  تحليل فواتير تطبيقات التوصيل  ═══════════ */
 /* ═══════════  الامتثال والمعدات — يمنع غرامات هيئة النقل  ═══════════ */
 const EQUIP_ITEMS = ["shirt", "helmet", "bag"];
+/* ═══════════  مجلس المستشارين — الحلقة الحصرية مع المدير العام  ═══════════ */
+function BoardCouncilPage({ lang, role, reps, reports, expenses, payrollRuns, tgaFines, equipStatus, employees }) {
+  const t = T[lang], x = EX[lang];
+  const month = riyadhNow().toISOString().slice(0, 7);
+  const activeReps = reps.filter((r) => r.status === "active");
+  const monthReports = reports.filter((rp) => rp.date && rp.date.startsWith(month));
+  const monthOrders = monthReports.reduce((a, rp) => a + rp.entries.reduce((b, e) => b + (e.orders || 0), 0), 0);
+  const approvedExpenses = expenses.filter((e) => e.status === "approved" || !e.status);
+  const monthExpenses = approvedExpenses.filter((e) => e.date && e.date.startsWith(month)).reduce((a, e) => a + e.v, 0);
+  const pendingBoard = payrollRuns.filter((r) => r.status === "sent_to_board");
+  const approvedRuns = payrollRuns.filter((r) => r.status === "approved");
+  const lastApprovedPayroll = approvedRuns[0]?.totalPayroll || 0;
+  const totalTgaFines = tgaFines.reduce((a, f) => a + (f.amount || 0), 0);
+  const compliantCount = activeReps.filter((r) => ["shirt", "helmet", "bag"].every((it) => equipStatus[r.id]?.[it] === "valid")).length;
+  const complianceRate = activeReps.length ? Math.round((compliantCount / activeReps.length) * 100) : 0;
+  const officeCost = employees.reduce((a, e) => a + (e.salary || 0), 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(216,180,254,.18),rgba(216,180,254,.02) 60%)", border: "1px solid rgba(216,180,254,.35)" }}>
+        <div className="flex items-center gap-2.5 mb-1">
+          <Scale size={19} style={{ color: "#B892F0" }} />
+          <h2 className="text-[16px] font-extrabold">{x.boardT}</h2>
+        </div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.boardSub}</p>
+      </div>
+
+      {pendingBoard.length > 0 && (
+        <div className="rounded-2xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(216,180,254,.1)", border: "1px solid rgba(216,180,254,.35)" }}>
+          <AlertTriangle size={15} style={{ color: "#B892F0" }} className="mt-0.5 shrink-0" />
+          <p className="text-[11.5px] leading-relaxed" style={{ color: "#6B3FA0" }}>{x.boardPendingNote} — {pendingBoard.length} {x.boardPendingCount}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Kpi label={x.boardActiveReps} value={String(activeReps.length)} icon={Users} accent="216,180,254" />
+        <Kpi label={x.boardMonthOrders} value={fmt(monthOrders)} icon={ShoppingBag} accent="216,180,254" />
+        <Kpi label={x.boardMonthExpenses} value={money(monthExpenses)} unit={t.sar} icon={Wallet} accent="216,180,254" />
+        <Kpi label={x.boardLastPayroll} value={money(lastApprovedPayroll)} unit={t.sar} icon={CircleDollarSign} accent="216,180,254" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Kpi label={x.boardOfficeCost} value={money(officeCost)} unit={t.sar} icon={Building2} accent="216,180,254" />
+        <Kpi label={x.boardCompliance} value={`${complianceRate}%`} icon={ShieldCheck} accent={complianceRate >= 80 ? "15,165,121" : "214,88,77"} />
+      </div>
+
+      {totalTgaFines > 0 && (
+        <div className="rounded-2xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(214,88,77,.08)", border: "1px solid rgba(214,88,77,.25)" }}>
+          <AlertTriangle size={15} style={{ color: "#D6584D" }} className="mt-0.5 shrink-0" />
+          <p className="text-[11.5px] leading-relaxed" style={{ color: "#8B2E25" }}>{x.boardTgaWarn}: {money(totalTgaFines)} {t.sar}</p>
+        </div>
+      )}
+
+      <Panel title={x.boardDecisionsT}>
+        {pendingBoard.length === 0 ? <EmptyHint lang={lang} /> : (
+          <div className="space-y-2">
+            {pendingBoard.map((run) => (
+              <div key={run.id} className="flex items-center justify-between rounded-xl p-3" style={{ background: "rgba(216,180,254,.06)", border: "1px solid rgba(216,180,254,.25)" }}>
+                <span className="text-[12.5px] font-bold">{run.id} · <span className="num">{run.month}</span></span>
+                <span className="num font-bold" style={{ color: "#B892F0" }}>{money(run.totalPayroll)} {t.sar}</span>
+              </div>
+            ))}
+            <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{x.boardGoToPayroll}</p>
+          </div>
+        )}
+      </Panel>
+
+      <Panel title={x.boardApprovedHistoryT}>
+        {approvedRuns.length === 0 ? <EmptyHint lang={lang} /> : (
+          <DataTable
+            headers={[x.invMonth, x.fineAmountLbl2, x.boardDecidedByLbl]}
+            rows={approvedRuns.map((r) => ({
+              key: r.id,
+              cells: [{ v: r.month, mono: 1 }, { v: money(r.totalPayroll) + " " + t.sar, mono: 1, strong: 1 }, { v: r.boardDecidedBy || "—", dim: 1 }],
+            }))} />
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 function ComplianceEquipmentPage({ lang, role, reps, equipStatus, setEquipStatus, tgaFines, setTgaFines, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const [showFineForm, setShowFineForm] = useState(false);
@@ -4601,9 +4705,13 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
       totalPayroll: liveTotalPayroll, totalBilling: liveTotalBilling, status: "sent_to_gm" }, ...prev]);
     logAudit(setAuditLog, role, "payroll_close_month", month, actingEmployee);
   };
-  const approveRun = (id) => {
-    setPayrollRuns((prev) => prev.map((r) => (r.id === id ? { ...r, status: "approved" } : r)));
-    logAudit(setAuditLog, role, "payroll_approve_run", id, actingEmployee);
+  const forwardToBoard = (id) => {
+    setPayrollRuns((prev) => prev.map((r) => (r.id === id ? { ...r, status: "sent_to_board" } : r)));
+    logAudit(setAuditLog, role, "payroll_forward_board", id, actingEmployee);
+  };
+  const boardDecide = (id, decision) => {
+    setPayrollRuns((prev) => prev.map((r) => (r.id === id ? { ...r, status: decision, boardDecidedBy: actingEmployee?.name || role.id, boardDecidedAt: riyadhNow().toISOString() } : r)));
+    logAudit(setAuditLog, role, "payroll_board_" + decision, id, actingEmployee);
   };
   const exportRun = (run) => {
     const rows = run.entries.map((e) => ({
@@ -4711,9 +4819,37 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                   <div className="flex items-center gap-2">
                     <Btn icon={Download} onClick={() => exportRun(run)}>{t.export}</Btn>
                     {role.id === "gm" ? (
-                      <Btn variant="gold" icon={CheckCircle2} onClick={() => approveRun(run.id)}>{x.approveRun}</Btn>
+                      <Btn variant="gold" icon={Send} onClick={() => forwardToBoard(run.id)}>{x.forwardToBoardBtn}</Btn>
                     ) : (
                       <Chip tone="warn" sm>{x.runStatusSent}</Chip>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {payrollRuns.filter((r) => r.status === "sent_to_board").length > 0 && (role.id === "gm" || role.id === "fin" || role.id === "advisor") && (
+        <Panel title={x.boardReviewT}>
+          <div className="space-y-2.5">
+            {payrollRuns.filter((r) => r.status === "sent_to_board").map((run) => (
+              <div key={run.id} className="rounded-2xl p-3.5" style={{ background: "rgba(216,180,254,.08)", border: "1px solid rgba(216,180,254,.3)" }}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <span className="block text-[13px] font-bold">{run.id} · <span className="num">{run.month}</span></span>
+                    <span className="num block text-[11px]" style={{ color: "var(--muted)" }}>{money(run.totalPayroll)} {t.sar}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Btn icon={Download} onClick={() => exportRun(run)}>{t.export}</Btn>
+                    {role.id === "advisor" ? (
+                      <>
+                        <Btn variant="accent" accent="216,180,254" icon={CheckCircle2} onClick={() => boardDecide(run.id, "approved")}>{x.approvedLbl}</Btn>
+                        <Btn variant="danger" icon={X} onClick={() => boardDecide(run.id, "rejected")}>{x.rejectedLbl}</Btn>
+                      </>
+                    ) : (
+                      <Chip tone="info" sm>{x.awaitingBoardLbl}</Chip>
                     )}
                   </div>
                 </div>
@@ -6487,6 +6623,7 @@ const PAGES = {
   chat: CommsPage, messages: RepMessagesPage, leaderboard: LeaderboardPage, audit: AuditLogPage,
   hall: HallOfFamePage, charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
   permissions: PermissionsMapPage, mystory: MyStoryPage, invAnalysis: InvoiceAnalysisPage, equipCompliance: ComplianceEquipmentPage,
+  boardCouncil: BoardCouncilPage,
 };
 const NAV_ICON = {
   overview: LayoutDashboard, orders: ShoppingBag, cars: Car, zones: MapPin,
@@ -6497,6 +6634,7 @@ const NAV_ICON = {
   iqama: ShieldAlert, payrollRuns: CircleDollarSign, chat: MessageSquare, messages: MessageSquare,
   leaderboard: Trophy, audit: ClipboardList, hall: Crown, charter: Scale, checklist: Rocket, growth: TrendingUp,
   security: ShieldAlert, permissions: ShieldCheck, mystory: Sparkles, invAnalysis: ReceiptText, equipCompliance: ShieldAlert,
+  boardCouncil: Scale,
 };
 
 /* ═══════════  الهيكل  ═══════════ */
