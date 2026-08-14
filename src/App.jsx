@@ -179,7 +179,7 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "invoices", "expenses", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "decisions", "invoices", "invAnalysis", "expenses", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
@@ -210,7 +210,7 @@ const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216
   ar: { t: "هيئة المستشارين", d: "الحلقة الوصل الحصرية مع المدير العام — اعتماد القرارات الاستراتيجية" },
   en: { t: "Advisory Board", d: "Exclusive link with the General Manager — strategic decision approval" },
   ur: { t: "مشاورتی بورڈ", d: "جنرل منیجر کے ساتھ خصوصی رابطہ — اسٹریٹجک فیصلوں کی منظوری" },
-  nav: ["boardCouncil", "payrollRuns"] };
+  nav: ["boardCouncil", "decisions", "payrollRuns", "invoices", "invAnalysis", "expenses"] };
 const REP = {
   id: "rep", icon: Car, accent: "#3FD8B4", glow: "63,216,180", staff: 128, shape: "chevron",
   ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
@@ -1221,6 +1221,15 @@ const EX = {
     boardTgaWarn: "إجمالي غرامات هيئة النقل المسجّلة", boardDecisionsT: "القرارات بانتظار اعتماد المجلس",
     boardGoToPayroll: "لاتخاذ القرار (اعتماد أو رفض)، افتح صفحة «مسيرات الرواتب» من القائمة الجانبية.",
     boardApprovedHistoryT: "سجل القرارات المعتمدة", boardDecidedByLbl: "اعتمدها",
+    financeReviewT: "مراجعة المالية قبل الإرسال", financeApproveBtn: "اعتماد وإرسال للمدير العام",
+    invStatusReview: "تحت المراجعة", invStatusPaid: "تم الدفع", addAppInvoice: "رفع فاتورة تطبيق جديدة",
+    invTotalExpenses: "إجمالي المصروفات المعتمدة", invTotalPayroll: "إجمالي الرواتب المعتمدة", invNetResultT: "الصافي النهائي (إيراد − مصروفات − رواتب)",
+    decisionsT: "القرارات", decisionsSub: "لا يُعتمد أي قرار إلا بموافقة المدير العام وهيئة المستشارين معاً — إجباري للطرفين",
+    newDecisionBtn: "قرار جديد", decisionTitleLbl: "عنوان القرار", decisionDescLbl: "التفاصيل",
+    decisionsPendingT: "قرارات بانتظار الاعتماد الكامل", gmApprovalLbl: "موافقة المدير العام", boardApprovalLbl: "موافقة هيئة المستشارين",
+    decisionDualNote: "لازم موافقة الطرفين معاً — موافقة طرف واحد ما تكفي لاعتماد القرار نهائياً.",
+    decisionsFinalT: "القرارات المعتمدة نهائياً", decisionFinalizedLbl: "معتمد نهائياً",
+    financeReviewNote: "راجع الأرقام جيداً قبل الإرسال — بعد الإرسال ما يرجع المسير لك للتعديل إلا برفضه من المدير العام أو المستشارين.",
     deptPwSelfT: "تغيير كلمة مرور قسمي", deptPwSelfSub: "الحالة الطبيعية: أنت تغيّر كلمة مرور قسمك بنفسك مباشرة، بدون حاجة لمدير الحركة والتشغيل.",
     deptPwCurrent: "كلمة المرور الحالية", deptPwNew: "كلمة المرور الجديدة", deptPwConfirm: "تأكيد كلمة المرور الجديدة", deptPwSaved: "تم تغيير كلمة مرور القسم بنجاح",
     errCurrentDeptPw: "كلمة المرور الحالية غير صحيحة.", errPassMatch: "كلمتا المرور غير متطابقتين.",
@@ -2659,20 +2668,23 @@ function QuickAddPanel({ lang, role, title, icon: Icon, fields, onSubmit, submit
   const [open, setOpen] = useState(false);
   const [vals, setVals] = useState(init);
   const [names, setNames] = useState({});
+  const [types, setTypes] = useState({});
   const set = (k) => (v) => setVals((p) => ({ ...p, [k]: v }));
   const onFile = (k) => (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     setNames((p) => ({ ...p, [k]: file.name }));
+    setTypes((p) => ({ ...p, [k]: file.type }));
     const reader = new FileReader();
     reader.onload = () => set(k)(reader.result);
     reader.readAsDataURL(file);
   };
   const submit = () => {
     if (fields.some((f) => f.required && f.type !== "file" && !String(vals[f.key] || "").trim())) return;
-    onSubmit({ ...vals, __fileNames: names });
+    onSubmit({ ...vals, __fileNames: names, __fileTypes: types });
     setVals(init());
     setNames({});
+    setTypes({});
     setOpen(false);
   };
   if (!open) return <Btn variant="gold" icon={Plus} onClick={() => setOpen(true)}>{title}</Btn>;
@@ -2869,46 +2881,83 @@ function RestaurantsPage({ lang, role, restaurants, setRestaurants }) {
   );
 }
 
-function InvoicesPage({ lang, role, invoices, setInvoices }) {
+function InvoicesPage({ lang, role, invoices, setInvoices, expenses, payrollRuns, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
-  const statusOpts = ["pending", "paid", "overdue"].map((s) => ({ value: s, label: t.s[s] }));
-  const add = (v) => setInvoices((prev) => [{ no: "INV-" + Date.now().toString().slice(-8), restaurant: v.restaurant, amt: +v.amt || 0, due: v.due, st: v.st,
-    attachment: v.doc || null, attachmentName: (v.__fileNames && v.__fileNames.doc) || "" }, ...prev]);
-  const open = invoices.filter((v) => v.st === "pending").reduce((a, v) => a + v.amt, 0);
-  const overdue = invoices.filter((v) => v.st === "overdue").reduce((a, v) => a + v.amt, 0);
-  const paid = invoices.filter((v) => v.st === "paid").reduce((a, v) => a + v.amt, 0);
+  const statusOpts = [{ value: "review", label: x.invStatusReview }, { value: "paid", label: x.invStatusPaid }];
+  const [viewDoc, setViewDoc] = useState(null);
+
+  const add = (v) => {
+    const entry = { no: "INV-" + Date.now().toString().slice(-8), app: v.app, amt: +v.amt || 0, date: riyadhToday(), st: v.st,
+      attachment: v.doc || null, attachmentType: (v.__fileTypes && v.__fileTypes.doc) || "", attachmentName: (v.__fileNames && v.__fileNames.doc) || "",
+      uploadedBy: actingEmployee?.name || role.id };
+    setInvoices((prev) => [entry, ...prev]);
+    logAudit(setAuditLog, role, "app_invoice_upload", `${APPS.find((a) => a.id === v.app)?.[lang] || v.app}: ${v.amt}`, actingEmployee);
+  };
+
+  const appName = (id) => APPS.find((a) => a.id === id)?.[lang] || id;
+  const totalReview = invoices.filter((v) => v.st === "review").reduce((a, v) => a + v.amt, 0);
+  const totalPaid = invoices.filter((v) => v.st === "paid").reduce((a, v) => a + v.amt, 0);
+
+  const approvedExpenses = expenses.filter((e) => e.status === "approved" || !e.status).reduce((a, e) => a + e.v, 0);
+  const approvedPayroll = payrollRuns.filter((r) => r.status === "approved").reduce((a, r) => a + r.totalPayroll, 0);
+  const netResult = totalPaid - approvedExpenses - approvedPayroll;
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi label={t.k.open} value={money(open)} unit={t.sar} icon={ReceiptText} accent={role.glow} />
-        <Kpi label={t.k.overdue} value={money(overdue)} unit={t.sar} icon={AlertTriangle} accent={role.glow} />
-        <Kpi label={t.s.paid} value={money(paid)} unit={t.sar} icon={CheckCircle2} accent={role.glow} />
-        <Kpi label={t.k.partners} value={String(invoices.length)} icon={Store} accent={role.glow} />
+        <Kpi label={x.invStatusReview} value={money(totalReview)} unit={t.sar} icon={ReceiptText} accent={role.glow} />
+        <Kpi label={x.invStatusPaid} value={money(totalPaid)} unit={t.sar} icon={CheckCircle2} accent="15,165,121" />
+        <Kpi label={x.invTotalExpenses} value={money(approvedExpenses)} unit={t.sar} icon={Wallet} accent="214,88,77" />
+        <Kpi label={x.invTotalPayroll} value={money(approvedPayroll)} unit={t.sar} icon={CircleDollarSign} accent="214,88,77" />
       </div>
-      <QuickAddPanel lang={lang} role={role} title={x.addInvoice} icon={ReceiptText} onSubmit={add}
+
+      <div className="glass rounded-2xl p-5 relative overflow-hidden" style={{ background: netResult >= 0 ? "linear-gradient(100deg,rgba(15,165,121,.14),rgba(15,165,121,.02))" : "linear-gradient(100deg,rgba(214,88,77,.14),rgba(214,88,77,.02))", border: `1px solid ${netResult >= 0 ? "rgba(15,165,121,.35)" : "rgba(214,88,77,.35)"}` }}>
+        <div className="flex items-center gap-3">
+          {netResult >= 0 ? <TrendingUp size={26} style={{ color: "#0FA579" }} /> : <TrendingDown size={26} style={{ color: "#D6584D" }} />}
+          <div>
+            <p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{x.invNetResultT}</p>
+            <p className="num text-[24px] font-extrabold" style={{ color: netResult >= 0 ? "#0FA579" : "#D6584D" }}>{netResult >= 0 ? "+" : ""}{money(netResult)} {t.sar}</p>
+            <p className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.invStatusPaid}: {money(totalPaid)} − {x.invTotalExpenses}: {money(approvedExpenses)} − {x.invTotalPayroll}: {money(approvedPayroll)}</p>
+          </div>
+        </div>
+      </div>
+
+      <QuickAddPanel lang={lang} role={role} title={x.addAppInvoice} icon={ReceiptText} onSubmit={add}
         fields={[
-          { key: "restaurant", label: x.orderRestaurant, required: true, icon: Store },
+          { key: "app", label: x.invApp, type: "select", required: true, options: APPS.map((a) => ({ value: a.id, label: a[lang] })) },
           { key: "amt", label: t.h.amount, type: "number", required: true },
-          { key: "due", label: t.h.due, type: "date" },
           { key: "st", label: t.h.status, type: "select", options: statusOpts },
           { key: "doc", label: x.invoiceAttach, type: "file" },
         ]} />
+
       <Panel title={t.nav.invoices}>
         {invoices.length === 0 ? <EmptyHint lang={lang} /> : (
           <DataTable
-            headers={[t.h.invoice, t.h.restaurant, t.h.amount, t.h.due, t.h.status, x.invoiceAttach]}
+            headers={[t.h.invoice, x.invApp, t.h.amount, x.invMonth, t.h.status, x.invoiceAttach]}
             rows={invoices.map((v) => ({
               key: v.no,
               onDelete: () => setInvoices((prev) => prev.filter((x2) => x2.no !== v.no)),
               cells: [
-                { v: v.no, mono: 1 }, { v: v.restaurant }, { v: fmt(v.amt), mono: 1, strong: 1 },
-                { v: v.due, mono: 1, dim: 1 }, { chip: { tone: TONE[v.st], label: t.s[v.st] } },
-                { v: v.attachment ? "📎" : "—", dim: 1 },
+                { v: v.no, mono: 1 }, { v: appName(v.app) }, { v: fmt(v.amt), mono: 1, strong: 1 },
+                { v: v.date, mono: 1, dim: 1 }, { chip: { tone: v.st === "paid" ? "ok" : "warn", label: v.st === "paid" ? x.invStatusPaid : x.invStatusReview } },
+                { custom: v.attachment ? (
+                  <button onClick={() => setViewDoc(v)} className="flex items-center gap-1 text-[11px] font-bold" style={{ color: role.accent }}>📎 {x.viewPdfBtn}</button>
+                ) : <span style={{ color: "var(--muted)" }}>—</span> },
               ],
             }))}
             onBulkDelete={(keys) => setInvoices((prev) => prev.filter((v) => !keys.includes(v.no)))} />
         )}
       </Panel>
+
+      {viewDoc && (
+        <div className="fixed inset-0 z-[95] grid place-items-center p-6" style={{ background: "rgba(10,14,25,.85)" }} onClick={() => setViewDoc(null)}>
+          {viewDoc.attachmentType === "application/pdf" ? (
+            <iframe title="invoice-pdf" src={viewDoc.attachment} className="w-full h-full max-w-3xl rounded-2xl bg-white" onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <img src={viewDoc.attachment} alt="" className="max-w-full max-h-full rounded-2xl" onClick={(e) => e.stopPropagation()} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -3854,6 +3903,116 @@ const AUDIT_LABELS = {
 /* ═══════════  الامتثال والمعدات — يمنع غرامات هيئة النقل  ═══════════ */
 const EQUIP_ITEMS = ["shirt", "helmet", "bag"];
 /* ═══════════  مجلس المستشارين — الحلقة الحصرية مع المدير العام  ═══════════ */
+/* ═══════════  القرارات — اعتماد إجباري مزدوج (المدير العام + هيئة المستشارين)  ═══════════ */
+function DecisionsPage({ lang, role, decisions, setDecisions, setAuditLog, actingEmployee }) {
+  const t = T[lang], x = EX[lang];
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", desc: "" });
+
+  const addDecision = () => {
+    if (form.title.trim().length < 3) return;
+    const entry = { id: "DEC-" + Date.now(), title: form.title.trim(), desc: form.desc.trim(),
+      createdBy: actingEmployee?.name || role.id, createdAt: riyadhNow().toISOString(),
+      gmApproved: false, boardApproved: false, boardComment: "" };
+    setDecisions((prev) => [entry, ...prev]);
+    logAudit(setAuditLog, role, "decision_create", form.title, actingEmployee);
+    setForm({ title: "", desc: "" }); setShowForm(false);
+  };
+  const setGmApproval = (id, val) => {
+    setDecisions((prev) => prev.map((d) => (d.id === id ? { ...d, gmApproved: val } : d)));
+    logAudit(setAuditLog, role, "decision_gm_" + (val ? "approve" : "unapprove"), id, actingEmployee);
+  };
+  const setBoardApproval = (id, val, comment) => {
+    setDecisions((prev) => prev.map((d) => (d.id === id ? { ...d, boardApproved: val, boardComment: comment || d.boardComment } : d)));
+    logAudit(setAuditLog, role, "decision_board_" + (val ? "approve" : "unapprove"), id, actingEmployee);
+  };
+
+  const isFinal = (d) => d.gmApproved && d.boardApproved;
+  const pending = decisions.filter((d) => !isFinal(d));
+  const final = decisions.filter(isFinal);
+
+  return (
+    <div className="space-y-4">
+      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(216,180,254,.16),rgba(216,180,254,.02) 60%)", border: "1px solid rgba(216,180,254,.32)" }}>
+        <div className="flex items-center gap-2.5 mb-1">
+          <Gavel size={19} style={{ color: "#B892F0" }} />
+          <h2 className="text-[16px] font-extrabold">{x.decisionsT}</h2>
+        </div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.decisionsSub}</p>
+      </div>
+
+      {role.id === "gm" && (
+        !showForm ? (
+          <Btn variant="accent" accent="216,180,254" icon={Plus} onClick={() => setShowForm(true)}>{x.newDecisionBtn}</Btn>
+        ) : (
+          <Panel title={x.newDecisionBtn}>
+            <GateField label={x.decisionTitleLbl} val={form.title} set={(v) => setForm((f) => ({ ...f, title: v }))} ph="" Icon={Gavel} type="text" accent="#B892F0" />
+            <label className="block mt-3">
+              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.decisionDescLbl}</span>
+              <textarea value={form.desc} onChange={(e) => setForm((f) => ({ ...f, desc: e.target.value }))} rows={3}
+                className="w-full rounded-xl px-3.5 py-3 text-[13px] outline-none" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#EAF0FF" }} />
+            </label>
+            <div className="flex gap-2 mt-4">
+              <Btn onClick={() => setShowForm(false)}>{x.cancel}</Btn>
+              <Btn variant="accent" accent="216,180,254" icon={CheckCircle2} onClick={addDecision}>{x.save}</Btn>
+            </div>
+          </Panel>
+        )
+      )}
+
+      <Panel title={x.decisionsPendingT}>
+        {pending.length === 0 ? <EmptyHint lang={lang} /> : (
+          <div className="space-y-3">
+            {pending.map((d) => (
+              <div key={d.id} className="rounded-2xl p-4" style={{ background: "rgba(216,180,254,.06)", border: "1px solid rgba(216,180,254,.25)" }}>
+                <p className="text-[13.5px] font-extrabold">{d.title}</p>
+                {d.desc && <p className="text-[12px] mt-1.5" style={{ color: "var(--muted)" }}>{d.desc}</p>}
+                <p className="num text-[10px] mt-2" style={{ color: "var(--muted)" }}>{d.createdBy} · {d.createdAt.slice(0, 16).replace("T", " ")}</p>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-xl px-3 py-2.5 flex items-center justify-between" style={{ background: d.gmApproved ? "rgba(15,165,121,.1)" : "rgba(0,0,0,.03)", border: `1px solid ${d.gmApproved ? "rgba(15,165,121,.3)" : "var(--line)"}` }}>
+                    <span className="text-[11px] font-bold">{x.gmApprovalLbl}</span>
+                    {role.id === "gm" ? (
+                      <button onClick={() => setGmApproval(d.id, !d.gmApproved)} className="text-[10.5px] font-bold px-2.5 py-1 rounded-lg" style={{ background: d.gmApproved ? "#0FA579" : "rgba(0,0,0,.08)", color: d.gmApproved ? "#fff" : "var(--muted)" }}>
+                        {d.gmApproved ? x.approvedLbl : x.pendingLbl}
+                      </button>
+                    ) : (
+                      <Chip tone={d.gmApproved ? "ok" : "warn"} sm>{d.gmApproved ? x.approvedLbl : x.pendingLbl}</Chip>
+                    )}
+                  </div>
+                  <div className="rounded-xl px-3 py-2.5 flex items-center justify-between" style={{ background: d.boardApproved ? "rgba(15,165,121,.1)" : "rgba(0,0,0,.03)", border: `1px solid ${d.boardApproved ? "rgba(15,165,121,.3)" : "var(--line)"}` }}>
+                    <span className="text-[11px] font-bold">{x.boardApprovalLbl}</span>
+                    {role.id === "advisor" ? (
+                      <button onClick={() => setBoardApproval(d.id, !d.boardApproved)} className="text-[10.5px] font-bold px-2.5 py-1 rounded-lg" style={{ background: d.boardApproved ? "#0FA579" : "rgba(0,0,0,.08)", color: d.boardApproved ? "#fff" : "var(--muted)" }}>
+                        {d.boardApproved ? x.approvedLbl : x.pendingLbl}
+                      </button>
+                    ) : (
+                      <Chip tone={d.boardApproved ? "ok" : "warn"} sm>{d.boardApproved ? x.approvedLbl : x.pendingLbl}</Chip>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[10px] mt-2" style={{ color: "#8A611E" }}>{x.decisionDualNote}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel title={x.decisionsFinalT}>
+        {final.length === 0 ? <EmptyHint lang={lang} /> : (
+          <div className="space-y-2">
+            {final.map((d) => (
+              <div key={d.id} className="flex items-center justify-between rounded-xl p-3" style={{ background: "rgba(15,165,121,.06)", border: "1px solid rgba(15,165,121,.25)" }}>
+                <span className="text-[12.5px] font-bold">{d.title}</span>
+                <Chip tone="ok" sm><CheckCircle2 size={11} />{x.decisionFinalizedLbl}</Chip>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 function BoardCouncilPage({ lang, role, reps, reports, expenses, payrollRuns, tgaFines, equipStatus, employees }) {
   const t = T[lang], x = EX[lang];
   const month = riyadhNow().toISOString().slice(0, 7);
@@ -4046,7 +4205,7 @@ function ComplianceEquipmentPage({ lang, role, reps, equipStatus, setEquipStatus
   );
 }
 
-function InvoiceAnalysisPage({ lang, role, appInvoices, setAppInvoices, payrollRuns, setAuditLog, actingEmployee }) {
+function InvoiceAnalysisPage({ lang, role, appInvoices, setAppInvoices, payrollRuns, expenses, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const [showForm, setShowForm] = useState(false);
   const blank = { month: riyadhNow().toISOString().slice(0, 7), app: "hs", grossExclVat: "", vat: "", netPayable: "",
@@ -4078,9 +4237,10 @@ function InvoiceAnalysisPage({ lang, role, appInvoices, setAppInvoices, payrollR
   const ridersActiveSum = thisMonthInvoices.reduce((a, i) => a + i.ridersActive, 0);
   const activeRatio = ridersTotalSum > 0 ? Math.round((ridersActiveSum / ridersTotalSum) * 100) : null;
 
-  const payrollThisMonth = (payrollRuns || []).find((r) => r.month === curMonth);
+  const payrollThisMonth = (payrollRuns || []).find((r) => r.month === curMonth && r.status === "approved");
   const payrollCost = payrollThisMonth ? payrollThisMonth.totalPayroll : null;
-  const margin = payrollCost != null ? thisMonthNet - payrollCost : null;
+  const monthExpenses = (expenses || []).filter((e) => (e.status === "approved" || !e.status) && e.date && e.date.startsWith(curMonth)).reduce((a, e) => a + e.v, 0);
+  const margin = payrollCost != null ? thisMonthNet - payrollCost - monthExpenses : null;
 
   const byApp = {};
   thisMonthInvoices.forEach((i) => { byApp[i.app] = (byApp[i.app] || 0) + i.netPayable; });
@@ -4113,7 +4273,7 @@ function InvoiceAnalysisPage({ lang, role, appInvoices, setAppInvoices, payrollR
             <div>
               <p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{margin >= 0 ? x.profitLbl : x.lossLbl} — {curMonth}</p>
               <p className="num text-[26px] font-extrabold" style={{ color: margin >= 0 ? "#0FA579" : "#D6584D" }}>{margin >= 0 ? "+" : ""}{money(margin)} {t.sar}</p>
-              <p className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.invNetIn}: {money(thisMonthNet)} — {x.payrollOut}: {money(payrollCost)}</p>
+              <p className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.invNetIn}: {money(thisMonthNet)} − {x.payrollOut}: {money(payrollCost)} − {x.invTotalExpenses}: {money(monthExpenses)}</p>
             </div>
           </div>
         </div>
@@ -4702,8 +4862,12 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const closeMonth = () => {
     if (alreadyClosed) return;
     setPayrollRuns((prev) => [{ id: "RUN-" + Date.now(), month, createdAt: riyadhNow().toISOString(), entries: live,
-      totalPayroll: liveTotalPayroll, totalBilling: liveTotalBilling, status: "sent_to_gm" }, ...prev]);
+      totalPayroll: liveTotalPayroll, totalBilling: liveTotalBilling, status: "finance_review" }, ...prev]);
     logAudit(setAuditLog, role, "payroll_close_month", month, actingEmployee);
+  };
+  const financeApprove = (id) => {
+    setPayrollRuns((prev) => prev.map((r) => (r.id === id ? { ...r, status: "sent_to_gm", financeApprovedBy: actingEmployee?.name || role.id, financeApprovedAt: riyadhNow().toISOString() } : r)));
+    logAudit(setAuditLog, role, "payroll_finance_approve", id, actingEmployee);
   };
   const forwardToBoard = (id) => {
     setPayrollRuns((prev) => prev.map((r) => (r.id === id ? { ...r, status: "sent_to_board" } : r)));
@@ -4803,6 +4967,28 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
             </div>
           )}
           <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={closeMonth}>{alreadyClosed ? x.monthClosed : x.closeMonth}</Btn>
+        </Panel>
+      )}
+
+      {payrollRuns.filter((r) => r.status === "finance_review").length > 0 && role.id === "fin" && (
+        <Panel title={x.financeReviewT}>
+          <div className="space-y-2.5">
+            {payrollRuns.filter((r) => r.status === "finance_review").map((run) => (
+              <div key={run.id} className="rounded-2xl p-3.5" style={{ background: "rgba(228,184,92,.06)", border: "1px solid rgba(228,184,92,.25)" }}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <span className="block text-[13px] font-bold">{run.id} · <span className="num">{run.month}</span></span>
+                    <span className="num block text-[11px]" style={{ color: "var(--muted)" }}>{money(run.totalPayroll)} {t.sar}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Btn icon={Download} onClick={() => exportRun(run)}>{t.export}</Btn>
+                    <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => financeApprove(run.id)}>{x.financeApproveBtn}</Btn>
+                  </div>
+                </div>
+                <p className="text-[10.5px] mt-2" style={{ color: "#8A611E" }}>{x.financeReviewNote}</p>
+              </div>
+            ))}
+          </div>
         </Panel>
       )}
 
@@ -6623,7 +6809,7 @@ const PAGES = {
   chat: CommsPage, messages: RepMessagesPage, leaderboard: LeaderboardPage, audit: AuditLogPage,
   hall: HallOfFamePage, charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
   permissions: PermissionsMapPage, mystory: MyStoryPage, invAnalysis: InvoiceAnalysisPage, equipCompliance: ComplianceEquipmentPage,
-  boardCouncil: BoardCouncilPage,
+  boardCouncil: BoardCouncilPage, decisions: DecisionsPage,
 };
 const NAV_ICON = {
   overview: LayoutDashboard, orders: ShoppingBag, cars: Car, zones: MapPin,
@@ -6634,7 +6820,7 @@ const NAV_ICON = {
   iqama: ShieldAlert, payrollRuns: CircleDollarSign, chat: MessageSquare, messages: MessageSquare,
   leaderboard: Trophy, audit: ClipboardList, hall: Crown, charter: Scale, checklist: Rocket, growth: TrendingUp,
   security: ShieldAlert, permissions: ShieldCheck, mystory: Sparkles, invAnalysis: ReceiptText, equipCompliance: ShieldAlert,
-  boardCouncil: Scale,
+  boardCouncil: Scale, decisions: Gavel,
 };
 
 /* ═══════════  الهيكل  ═══════════ */
@@ -6802,7 +6988,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog, setAuditLog,
   weekendFine, setWeekendFine, charterClauses, setCharterClauses, violationPenalty, setViolationPenalty,
   deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, appInvoices, setAppInvoices, costModel, setCostModel,
-  equipStatus, setEquipStatus, tgaFines, setTgaFines, query, setQuery }) {
+  equipStatus, setEquipStatus, tgaFines, setTgaFines, decisions, setDecisions, query, setQuery }) {
   const t = T[lang], x = EX[lang];
   const [page, setPage] = useState(() => (role.nav && role.nav[0]) || "overview");
   useEffect(() => { if (role.nav && !role.nav.includes(page)) setPage(role.nav[0]); }, [role.id]); // eslint-disable-line
@@ -7029,6 +7215,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               deptPasswords={deptPasswords} setDeptPasswords={setDeptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
               appInvoices={appInvoices} setAppInvoices={setAppInvoices}
               equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
+              decisions={decisions} setDecisions={setDecisions}
               costModel={costModel} setCostModel={setCostModel}
               query={query} setQuery={setQuery} goPage={setPage} />
           </div>
@@ -7128,6 +7315,7 @@ export default function App() {
   const [appInvoices, setAppInvoices] = usePersisted("bq_app_invoices", []);
   const [equipStatus, setEquipStatus] = usePersisted("bq_equip_status", {});
   const [tgaFines, setTgaFines] = usePersisted("bq_tga_fines", []);
+  const [decisions, setDecisions] = usePersisted("bq_decisions", []);
   const [costModel, setCostModel] = usePersisted("bq_cost_model", { perOrderMargin: 7, perOrderInclVat: true, iqamaMonthly: 1000 });
   const [charterClauses, setCharterClauses] = usePersisted("bq_charter_clauses", []);
   const [query, setQuery] = useState("");
@@ -7231,6 +7419,7 @@ export default function App() {
           deptPasswords={deptPasswords} setDeptPasswords={setDeptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
           appInvoices={appInvoices} setAppInvoices={setAppInvoices}
           equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
+          decisions={decisions} setDecisions={setDecisions}
           costModel={costModel} setCostModel={setCostModel}
           query={query} setQuery={setQuery}
           onSwitch={() => setStep("gate")} onLogout={() => { setRoleId(null); setStep("gate"); }} />
