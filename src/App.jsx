@@ -1223,6 +1223,9 @@ const EX = {
     boardApprovedHistoryT: "سجل القرارات المعتمدة", boardDecidedByLbl: "اعتمدها",
     financeReviewT: "مراجعة المالية قبل الإرسال", financeApproveBtn: "اعتماد وإرسال للمدير العام", nextStepBelowHint: "الخطوة التالية بلوحة «مراجعة المالية قبل الإرسال» بالأسفل",
     officeStaffSectionT: "الموظفون الإداريون",
+    decisionsPendingNotif: "قرارات بانتظار موافقتك", payrollWaitingNotif: "مسيرات رواتب بانتظارك",
+    expensesWaitingNotif: "مصروفات بانتظار اعتمادك", invoicesReviewNotif: "فواتير تطبيقات تحت المراجعة",
+    legalForwardedNotif: "بلاغات محالة لكم تحتاج مراجعة", legalOpenCasesNotif: "قضايا مفتوحة", lockedDeptsNotif: "حسابات أقسام مقفلة",
     invStatusReview: "تحت المراجعة", invStatusPaid: "تم الدفع", addAppInvoice: "رفع فاتورة تطبيق جديدة",
     invTotalExpenses: "إجمالي المصروفات المعتمدة", invTotalPayroll: "إجمالي الرواتب المعتمدة", invNetResultT: "الصافي النهائي (إيراد − مصروفات − رواتب)",
     decisionsT: "القرارات", decisionsSub: "لا يُعتمد أي قرار إلا بموافقة المدير العام وهيئة المستشارين معاً — إجباري للطرفين",
@@ -7076,13 +7079,70 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         notifs.unshift({ text: `${x.apptSoonT}: ${rep ? (lang === "en" ? rep.en : rep.ar) : tk.repId} · ${tk.apptAt.slice(11, 16)}`, tone: "warn" });
       }
     });
-    invoices.filter((v) => v.st === "overdue").slice(0, 2).forEach((v) => notifs.push({ text: lang === "ar" ? `فاتورة ${v.no} تجاوزت الاستحقاق` : lang === "en" ? `Invoice ${v.no} is overdue` : `انوائس ${v.no} کی مدت گزر گئی`, tone: "bad" }));
-    contracts.filter((c) => c.st === "expiring").slice(0, 2).forEach((c) => notifs.push({ text: lang === "ar" ? `عقد ${c.party} ينتهي قريباً` : lang === "en" ? `${c.party}'s contract is expiring` : `${c.party} کا معاہدہ ختم ہونے والا ہے`, tone: "warn" }));
-    if (role.id === "hr") {
-      const urgent = reps.filter((r) => r.idExpiry && daysUntil(r.idExpiry) != null && daysUntil(r.idExpiry) <= 30);
-      urgent.slice(0, 3).forEach((r) => notifs.push({ text: `${x.iqamaGmCard}: ${lang === "en" ? r.en : r.ar}`, tone: "bad" }));
+    if (role.id !== "advisor") {
+      circulars.slice(0, 2).forEach((c) => notifs.push({ text: `${x.circulars}: ${c.title}`, tone: "n" }));
+      contracts.filter((c) => c.st === "expiring").slice(0, 2).forEach((c) => notifs.push({ text: lang === "ar" ? `عقد ${c.party} ينتهي قريباً` : lang === "en" ? `${c.party}'s contract is expiring` : `${c.party} کا معاہدہ ختم ہونے والا ہے`, tone: "warn" }));
+      if (role.id === "hr") {
+        const urgent = reps.filter((r) => r.idExpiry && daysUntil(r.idExpiry) != null && daysUntil(r.idExpiry) <= 30);
+        urgent.slice(0, 3).forEach((r) => notifs.push({ text: `${x.iqamaGmCard}: ${lang === "en" ? r.en : r.ar}`, tone: "bad" }));
+      }
     }
-    circulars.slice(0, 2).forEach((c) => notifs.push({ text: `${x.circulars}: ${c.title}`, tone: "n" }));
+
+    // ===== تنبيهات القرارات المعلّقة (المدير العام + المستشارون) =====
+    if (role.id === "gm") {
+      const myPendingDecisions = decisions.filter((d) => !d.gmApproved);
+      if (myPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${myPendingDecisions.length}`, tone: "warn" });
+    }
+    if (role.id === "advisor") {
+      const boardPendingDecisions = decisions.filter((d) => !d.boardApproved);
+      if (boardPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${boardPendingDecisions.length}`, tone: "warn" });
+    }
+
+    // ===== تنبيهات سلسلة اعتماد الرواتب (كل مرحلة لصاحبها) =====
+    if (role.id === "fin") {
+      const financeWaiting = payrollRuns.filter((r) => r.status === "finance_review").length;
+      if (financeWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${financeWaiting}`, tone: "warn" });
+    }
+    if (role.id === "gm") {
+      const gmWaiting = payrollRuns.filter((r) => r.status === "sent_to_gm").length;
+      if (gmWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${gmWaiting}`, tone: "warn" });
+    }
+    if (role.id === "advisor") {
+      const boardWaiting = payrollRuns.filter((r) => r.status === "sent_to_board").length;
+      if (boardWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${boardWaiting}`, tone: "warn" });
+    }
+
+    // ===== تنبيهات المصروفات المعلّقة (المدير العام) =====
+    if (role.id === "gm") {
+      const pendingExpenses = expenses.filter((e) => e.status === "pending").length;
+      if (pendingExpenses > 0) notifs.unshift({ text: `${x.expensesWaitingNotif}: ${pendingExpenses}`, tone: "warn" });
+    }
+
+    // ===== تنبيه فواتير التطبيقات تحت المراجعة (المدير العام) =====
+    if (role.id === "gm") {
+      const reviewInvoices = invoices.filter((v) => v.st === "review").length;
+      if (reviewInvoices > 0) notifs.push({ text: `${x.invoicesReviewNotif}: ${reviewInvoices}`, tone: "n" });
+    }
+
+    // ===== تنبيه المناديب بانتظار التفعيل (الموارد البشرية) =====
+    if (role.id === "hr") {
+      const pendingActivation = reps.filter((r) => r.status === "pending").length;
+      if (pendingActivation > 0) notifs.unshift({ text: `${x.pendingReps}: ${pendingActivation}`, tone: "warn" });
+    }
+
+    // ===== تنبيهات القانونية (بلاغات محالة + قضايا مفتوحة) =====
+    if (role.id === "legal") {
+      const forwarded = tickets.filter((tk) => tk.forwardedToLegal && tk.status !== "resolved").length;
+      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad" });
+      const openCasesCount = cases.filter((c) => c.st === "open").length;
+      if (openCasesCount > 0) notifs.push({ text: `${x.legalOpenCasesNotif}: ${openCasesCount}`, tone: "warn" });
+    }
+
+    // ===== تنبيه حسابات مقفلة (مدير الحركة والتشغيل) =====
+    if (role.id === "opsm") {
+      const lockedDepts = ROLES.filter((r) => (deptSecurity[r.id] || {}).locked).length;
+      if (lockedDepts > 0) notifs.unshift({ text: `${x.lockedDeptsNotif}: ${lockedDepts}`, tone: "bad" });
+    }
   }
 
   const SideInner = () => (
