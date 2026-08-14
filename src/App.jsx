@@ -1221,7 +1221,7 @@ const EX = {
     boardTgaWarn: "إجمالي غرامات هيئة النقل المسجّلة", boardDecisionsT: "القرارات بانتظار اعتماد المجلس",
     boardGoToPayroll: "لاتخاذ القرار (اعتماد أو رفض)، افتح صفحة «مسيرات الرواتب» من القائمة الجانبية.",
     boardApprovedHistoryT: "سجل القرارات المعتمدة", boardDecidedByLbl: "اعتمدها",
-    financeReviewT: "مراجعة المالية قبل الإرسال", financeApproveBtn: "اعتماد وإرسال للمدير العام",
+    financeReviewT: "مراجعة المالية قبل الإرسال", financeApproveBtn: "اعتماد وإرسال للمدير العام", nextStepBelowHint: "الخطوة التالية بلوحة «مراجعة المالية قبل الإرسال» بالأسفل",
     invStatusReview: "تحت المراجعة", invStatusPaid: "تم الدفع", addAppInvoice: "رفع فاتورة تطبيق جديدة",
     invTotalExpenses: "إجمالي المصروفات المعتمدة", invTotalPayroll: "إجمالي الرواتب المعتمدة", invNetResultT: "الصافي النهائي (إيراد − مصروفات − رواتب)",
     decisionsT: "القرارات", decisionsSub: "لا يُعتمد أي قرار إلا بموافقة المدير العام وهيئة المستشارين معاً — إجباري للطرفين",
@@ -4966,7 +4966,14 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
               )}
             </div>
           )}
-          <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={closeMonth}>{alreadyClosed ? x.monthClosed : x.closeMonth}</Btn>
+          {alreadyClosed ? (
+            <div className="flex items-center gap-2.5 rounded-xl px-4 py-3" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.25)" }}>
+              <CheckCircle2 size={16} style={{ color: "#0FA579" }} className="shrink-0" />
+              <span className="text-[12.5px] font-bold" style={{ color: "#0B5C46" }}>{x.monthClosed} — {x.nextStepBelowHint}</span>
+            </div>
+          ) : (
+            <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={closeMonth}>{x.closeMonth}</Btn>
+          )}
         </Panel>
       )}
 
