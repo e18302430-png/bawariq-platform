@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   بوارق — Design System
+   لوحة الألوان: أسود عميق (Obsidian) + أحمر داكن + ذهبي دافئ + أبيض دافئ
+   ========================================================================== */
+
+:root {
+  /* -- Core palette -- */
+  --color-obsidian: #0a0908;
+  --color-obsidian-2: #131110;
+  --color-obsidian-3: #1c1917;
+  --color-red: #7a1420;
+  --color-red-deep: #4f0d15;
+  --color-red-bright: #a4212f;
+  --color-gold: #c9a24b;
+  --color-gold-soft: #e4c98a;
+  --color-off-white: #f6f1e7;
+  --color-off-white-dim: #d9d2c3;
+  --color-line: rgba(246, 241, 231, 0.12);
+  --color-line-strong: rgba(246, 241, 231, 0.22);
+
+  --background: var(--color-obsidian);
+  --foreground: var(--color-off-white);
+
+  /* -- Motion tokens -- */
+  --ease-signature: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.45, 0, 0.2, 1);
+  --dur-fast: 180ms;
+  --dur-base: 420ms;
+  --dur-slow: 900ms;
+}
+
+@theme inline {
+  --color-obsidian: var(--color-obsidian);
+  --color-obsidian-2: var(--color-obsidian-2);
+  --color-obsidian-3: var(--color-obsidian-3);
+  --color-red: var(--color-red);
+  --color-red-deep: var(--color-red-deep);
+  --color-red-bright: var(--color-red-bright);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-off-white: var(--color-off-white);
+  --color-off-white-dim: var(--color-off-white-dim);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --breakpoint-xs: 22.5rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), "Tajawal", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), "El Messiri", serif;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-obsidian);
+}
+
+/* Focus visibility for keyboard nav — never remove outlines without a replacement */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Thin gold-tinted scrollbar for a premium feel (progressive enhancement) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-obsidian);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-obsidian-3);
+  border-radius: 999px;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.sr-only-focusable:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
