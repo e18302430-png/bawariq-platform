@@ -1226,6 +1226,7 @@ const EX = {
     decisionsPendingNotif: "قرارات بانتظار موافقتك", payrollWaitingNotif: "مسيرات رواتب بانتظارك",
     expensesWaitingNotif: "مصروفات بانتظار اعتمادك", invoicesReviewNotif: "فواتير تطبيقات تحت المراجعة",
     legalForwardedNotif: "بلاغات محالة لكم تحتاج مراجعة", legalOpenCasesNotif: "قضايا مفتوحة", lockedDeptsNotif: "حسابات أقسام مقفلة",
+    deptMsgsNotif: "رسائل جديدة من إدارات أخرى",
     invStatusReview: "تحت المراجعة", invStatusPaid: "تم الدفع", addAppInvoice: "رفع فاتورة تطبيق جديدة",
     invTotalExpenses: "إجمالي المصروفات المعتمدة", invTotalPayroll: "إجمالي الرواتب المعتمدة", invNetResultT: "الصافي النهائي (إيراد − مصروفات − رواتب)",
     decisionsT: "القرارات", decisionsSub: "لا يُعتمد أي قرار إلا بموافقة المدير العام وهيئة المستشارين معاً — إجباري للطرفين",
@@ -6346,10 +6347,16 @@ function CommsPage({ lang, role, user, reps, deptChats, setDeptChats, repMessage
   const others = ROLES.filter((r) => r.id !== role.id);
   const pairKey = (a, b) => [a, b].sort().join("::");
   const thread = withDept ? deptChats.filter((m) => pairKey(m.from, m.to) === pairKey(role.id, withDept)) : [];
+  useEffect(() => {
+    if (!withDept) return;
+    const hasUnseen = deptChats.some((m) => m.to === role.id && m.from === withDept && !m.seen);
+    if (hasUnseen) setDeptChats((prev) => prev.map((m) => (m.to === role.id && m.from === withDept && !m.seen ? { ...m, seen: true } : m)));
+    // eslint-disable-next-line
+  }, [withDept]);
 
   const sendDept = () => {
     if (!withDept || text.trim().length < 1) return;
-    setDeptChats((prev) => [...prev, { id: "MSG-" + Date.now(), from: role.id, to: withDept, text: text.trim(), at: riyadhNow().toISOString() }]);
+    setDeptChats((prev) => [...prev, { id: "MSG-" + Date.now(), from: role.id, to: withDept, text: text.trim(), at: riyadhNow().toISOString(), seen: false }]);
     setText("");
   };
 
@@ -6378,12 +6385,16 @@ function CommsPage({ lang, role, user, reps, deptChats, setDeptChats, repMessage
       {tab === "dept" ? (
         <Panel title={x.chatT}>
           <div className="flex gap-2 flex-wrap mb-4">
-            {others.map((r) => (
-              <button key={r.id} onClick={() => setWithDept(r.id)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-bold transition"
-                style={{ background: withDept === r.id ? `rgba(${r.glow},.15)` : "rgba(20,27,45,.04)", border: `1px solid ${withDept === r.id ? `rgba(${r.glow},.4)` : "var(--line)"}`, color: withDept === r.id ? r.accent : "var(--muted)" }}>
-                <Emblem role={r} size={20} />{r[lang].t}
-              </button>
-            ))}
+            {others.map((r) => {
+              const unseenFromR = deptChats.filter((m) => m.to === role.id && m.from === r.id && !m.seen).length;
+              return (
+                <button key={r.id} onClick={() => setWithDept(r.id)} className="relative flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-bold transition"
+                  style={{ background: withDept === r.id ? `rgba(${r.glow},.15)` : "rgba(20,27,45,.04)", border: `1px solid ${withDept === r.id ? `rgba(${r.glow},.4)` : "var(--line)"}`, color: withDept === r.id ? r.accent : "var(--muted)" }}>
+                  <Emblem role={r} size={20} />{r[lang].t}
+                  {unseenFromR > 0 && <span className="num text-[9.5px] font-bold px-1.5 rounded-full" style={{ background: "#E8837A", color: "#fff" }}>{unseenFromR}</span>}
+                </button>
+              );
+            })}
           </div>
           {!withDept ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.chatSelectDept}</p> : (
             <>
@@ -7072,6 +7083,10 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
     });
   } else {
     if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets });
+
+    // ===== تنبيه رسائل الإدارات غير المقروءة (كل الأقسام) =====
+    const unseenDeptMsgs = deptChats.filter((m) => m.to === role.id && !m.seen).length;
+    if (unseenDeptMsgs > 0) notifs.unshift({ text: `${x.deptMsgsNotif}: ${unseenDeptMsgs}`, tone: "info", page: "chat", count: unseenDeptMsgs });
     tickets.forEach((tk) => {
       const mins = minutesUntilAppt(tk);
       if (mins != null && mins >= 0 && mins <= 60 && ticketVisibleToRole(tk, role.id) && (ticketCurrentOwner(tk) === role.id)) {
