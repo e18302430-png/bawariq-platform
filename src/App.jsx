@@ -1222,6 +1222,7 @@ const EX = {
     boardGoToPayroll: "لاتخاذ القرار (اعتماد أو رفض)، افتح صفحة «مسيرات الرواتب» من القائمة الجانبية.",
     boardApprovedHistoryT: "سجل القرارات المعتمدة", boardDecidedByLbl: "اعتمدها",
     financeReviewT: "مراجعة المالية قبل الإرسال", financeApproveBtn: "اعتماد وإرسال للمدير العام", nextStepBelowHint: "الخطوة التالية بلوحة «مراجعة المالية قبل الإرسال» بالأسفل",
+    officeStaffSectionT: "الموظفون الإداريون",
     invStatusReview: "تحت المراجعة", invStatusPaid: "تم الدفع", addAppInvoice: "رفع فاتورة تطبيق جديدة",
     invTotalExpenses: "إجمالي المصروفات المعتمدة", invTotalPayroll: "إجمالي الرواتب المعتمدة", invNetResultT: "الصافي النهائي (إيراد − مصروفات − رواتب)",
     decisionsT: "القرارات", decisionsSub: "لا يُعتمد أي قرار إلا بموافقة المدير العام وهيئة المستشارين معاً — إجباري للطرفين",
@@ -4856,12 +4857,20 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   });
   const liveKafala = live.filter((r) => r.empType !== "ajeer");
   const liveAjeer = live.filter((r) => r.empType === "ajeer");
-  const liveTotalPayroll = live.reduce((a, r) => a + r.total, 0);
+
+  const officeStaff = employees.filter((e) => e.status !== "suspended" && e.dept !== "advisor");
+  const [officeAmounts, setOfficeAmounts] = useState({});
+  const liveOffice = officeStaff.map((e) => ({
+    empId: e.id, name: e.name, dept: e.dept, position: e.position,
+    salary: officeAmounts[e.id] ?? (e.salary || 0),
+  }));
+
+  const liveTotalPayroll = live.reduce((a, r) => a + r.total, 0) + liveOffice.reduce((a, r) => a + r.salary, 0);
   const liveTotalBilling = live.reduce((a, r) => a + r.billing, 0);
 
   const closeMonth = () => {
     if (alreadyClosed) return;
-    setPayrollRuns((prev) => [{ id: "RUN-" + Date.now(), month, createdAt: riyadhNow().toISOString(), entries: live,
+    setPayrollRuns((prev) => [{ id: "RUN-" + Date.now(), month, createdAt: riyadhNow().toISOString(), entries: live, officeEntries: liveOffice,
       totalPayroll: liveTotalPayroll, totalBilling: liveTotalBilling, status: "finance_review" }, ...prev]);
     logAudit(setAuditLog, role, "payroll_close_month", month, actingEmployee);
   };
@@ -4885,7 +4894,14 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
       [`${x.weekendViolCol} (${t.sar})`]: e.weekendDeductAmt || 0, [`${x.appViolCol} (${t.sar})`]: e.appDeductAmt || 0,
       [x.totalSalary]: e.salary, [x.lbReward]: e.reward || 0, [t.sar]: e.total,
     }));
-    exportToExcel(rows, `payroll-${run.month}`, run.month);
+    const officeRows = (run.officeEntries || []).map((e) => ({
+      [t.h.employee]: e.name, [x.empTypeCol]: x.officeStaffSectionT,
+      [x.ordersCol]: "—", [x.kmCol]: "—", [x.hoursCol]: "—",
+      [`${x.weekendViolCol} (${x.supReportedLbl})`]: "—", [`${x.appViolCol} (${x.supReportedLbl})`]: "—",
+      [`${x.weekendViolCol} (${t.sar})`]: "—", [`${x.appViolCol} (${t.sar})`]: "—",
+      [x.totalSalary]: e.salary, [x.lbReward]: 0, [t.sar]: e.salary,
+    }));
+    exportToExcel([...rows, ...officeRows], `payroll-${run.month}`, run.month);
   };
 
   return (
@@ -4957,6 +4973,24 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                       </span>
                       <span className="flex items-center gap-2">
                         <input type="number" value={ajeerAmounts[r.repId] ?? 0} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                          className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
+                        <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {liveOffice.length > 0 && (
+                <>
+                  <p className="text-[10.5px] font-bold mb-2 mt-4 pt-3" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{x.officeStaffSectionT}</p>
+                  {liveOffice.map((e) => (
+                    <div key={e.empId} className="flex items-center justify-between rounded-xl p-2.5 text-[12px] mb-2" style={{ background: "rgba(91,141,239,.06)", border: "1px solid rgba(91,141,239,.2)" }}>
+                      <span className="flex items-center gap-2">
+                        <span className="font-bold">{e.name}</span>
+                        <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{e.position || "—"}</span>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <input type="number" value={officeAmounts[e.empId] ?? (e.salary || 0)} onChange={(ev) => setOfficeAmounts((prev) => ({ ...prev, [e.empId]: +ev.target.value }))}
                           className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                         <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                       </span>
