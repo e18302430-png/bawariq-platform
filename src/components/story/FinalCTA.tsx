@@ -32,6 +32,16 @@ export function FinalCTA() {
           باقي تعرف وش طلع لك.
         </motion.h2>
 
+        <motion.p
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUp}
+          className="mt-4 text-off-white-dim"
+        >
+          ٢٥ كوب بأشكال مثيرة — بـ٩.٩٩ ريال بس.
+        </motion.p>
+
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -43,7 +53,7 @@ export function FinalCTA() {
             href="/cups"
             className="inline-block rounded-full bg-gold px-10 py-4 text-base font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98]"
           >
-            اكتشف كوبك
+            اطلب الباكيت الآن
           </Link>
         </motion.div>
 

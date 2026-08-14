@@ -7,17 +7,17 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="font-display text-2xl text-off-white">بوارق</p>
+            <p className="font-display text-2xl text-off-white">وش طلع لك</p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed">
-              مو مجرد كوب — تجربة يومية تبدأ بفضول وتنتهي بابتسامة.
+              مصنع أكواب سعودي — ٢٥ كوب بأشكال مثيرة ومتطورة، مباشر من المصنع بدون وسطاء.
             </p>
           </div>
 
           <FooterColumn
             title="المتجر"
             links={[
-              { href: "/cups", label: "كل الأكواب" },
-              { href: "/#collection", label: "المجموعة المميزة" },
+              { href: "/cups", label: "كل الباكيتات" },
+              { href: "/#collection", label: "التشكيلة المميزة" },
               { href: "/cart", label: "السلة" },
             ]}
           />
@@ -42,7 +42,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} بوارق. جميع الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} وش طلع لك. جميع الحقوق محفوظة.</p>
           <p className="text-off-white-dim/70">
             الأسعار والسياسات المعروضة تجريبية لغرض العرض — سيتم تحديثها قبل الإطلاق الرسمي.
           </p>

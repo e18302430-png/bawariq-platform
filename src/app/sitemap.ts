@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { products } from "@/lib/products";
 
-const SITE_URL = "https://bawariq.example.com"; // PLACEHOLDER — set real production domain
+const SITE_URL = "https://weshtala3lak.example.com"; // PLACEHOLDER — set real production domain
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = ["", "/cups", "/cart", "/checkout"].map((path) => ({

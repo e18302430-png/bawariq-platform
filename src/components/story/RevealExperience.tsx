@@ -5,12 +5,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { analytics } from "@/lib/analytics";
 import { EASE_SIGNATURE } from "@/lib/motion";
 
-// PLACEHOLDER content teasers — replace with real per-cup content before launch.
+// PLACEHOLDER shape teasers — replace with real shape names/photos before launch.
 const TEASERS = [
-  { kind: "سؤال", text: "لو تقدر تلغي عادة وحدة من حياتك، وش بتلغي؟" },
-  { kind: "حظك اليوم", text: "اليوم يومك تبدأ فيه شي كنت مؤجله من زمان." },
-  { kind: "فزورة", text: "شيء كل ما تاخذ منه يكبر… وش هو؟" },
-  { kind: "تحدي", text: "قول لشخص اليوم شيء تقدره فيه بصراحة." },
+  { kind: "شكل مثير", text: "شكل يخلي ضيوفك يسألون وين جبتها." },
+  { kind: "تصميم غريب", text: "تصميم متطور ما شفته بأي مكان ثاني." },
+  { kind: "الأكثر تميزًا", text: "الشكل اللي الكل بيسأل عنه بالحفلة." },
+  { kind: "مفاجأة الباكيت", text: "كل باكيت فيه خلطة أشكال مختلفة." },
 ];
 
 export function RevealExperience() {
@@ -25,7 +25,7 @@ export function RevealExperience() {
           وش ممكن يطلع لك؟
         </h2>
         <p className="mt-4 text-off-white-dim">
-          يمكن كوبك القادم يحمل شيئًا مختلفًا. جرّب الآن.
+          يمكن باكيتك القادم يحمل شكل ما توقعته. جرّب الآن.
         </p>
 
         <div className="relative mx-auto mt-10 h-64 max-w-sm [perspective:1200px]">
@@ -74,7 +74,7 @@ export function RevealExperience() {
             transition={{ delay: 0.9 }}
             className="mt-6 text-sm text-off-white-dim"
           >
-            كل كوب من بوارق يحمل شيء مختلف. جاهز تكتشف كوبك؟
+            كل باكيت فيه ٢٥ شكل مختلف. جاهز تطلب باكيتك؟
           </motion.p>
         )}
       </div>

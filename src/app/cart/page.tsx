@@ -21,7 +21,7 @@ export default function CartPage() {
           </div>
           <p className="text-off-white-dim">سلتك فاضية… وش طلع لك اليوم؟</p>
           <Link href="/cups" className="rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian">
-            استكشف الأكواب
+            استكشف الباكيتات
           </Link>
         </div>
       ) : (

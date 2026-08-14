@@ -7,10 +7,10 @@ import { analytics } from "@/lib/analytics";
 import { usePrefersReducedMotion } from "@/lib/use-reduced-motion";
 
 const SCENES = [
-  { lines: ["كل يوم تبدأ", "بنفس الشيء."], sub: "" },
-  { lines: ["قهوة."], sub: "روتين يتكرر… بلا مفاجآت." },
-  { lines: ["لكن ليه", "تكون نفس التجربة؟"], sub: "" },
-  { lines: ["هنا تبدأ", "الحكاية."], sub: "وهنا تبدأ التجربة." },
+  { lines: ["كل مناسبة", "نفس الكاسات."], sub: "" },
+  { lines: ["كاسات عادية."], sub: "شكل يتكرر… بدون أي إثارة." },
+  { lines: ["بس ليه", "تكون نفس الشكل دايم؟"], sub: "" },
+  { lines: ["هنا تبدأ", "الإثارة."], sub: "٢٥ شكل مختلف بانتظارك." },
 ];
 
 export function ScrollStory() {

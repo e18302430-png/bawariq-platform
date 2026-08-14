@@ -24,7 +24,7 @@ export function Reviews({ reviews = [] }: { reviews?: Review[] }) {
           className="mb-12 max-w-xl"
         >
           <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">آراء حقيقية</p>
-          <h2 className="font-display text-4xl text-off-white sm:text-5xl">وش قالوا عن بوارق؟</h2>
+          <h2 className="font-display text-4xl text-off-white sm:text-5xl">وش قالوا عن الباكيت؟</h2>
         </motion.div>
 
         {reviews.length > 0 ? (
@@ -59,7 +59,7 @@ export function Reviews({ reviews = [] }: { reviews?: Review[] }) {
         ) : (
           <div className="rounded-2xl border border-dashed border-line px-6 py-14 text-center">
             <p className="text-off-white-dim">
-              التقييمات قادمة قريبًا — كن أول من يشارك تجربته مع بوارق.
+              التقييمات قادمة قريبًا — كن أول من يشارك تجربته مع باكيتك.
             </p>
           </div>
         )}

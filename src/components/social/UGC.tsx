@@ -20,12 +20,12 @@ export function UGC() {
           className="mb-12 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end"
         >
           <div>
-            <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">مجتمع بوارق</p>
+            <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">مجتمع وش طلع لك</p>
             <h2 className="font-display text-4xl text-off-white sm:text-5xl">
               كوبك… على طريقتك.
             </h2>
           </div>
-          <p className="text-off-white-dim">شارك تجربتك بوسم #بوارق</p>
+          <p className="text-off-white-dim">شارك تجربتك بوسم #وش_طلع_لك</p>
         </motion.div>
 
         <motion.div

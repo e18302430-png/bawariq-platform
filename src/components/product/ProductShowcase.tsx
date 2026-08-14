@@ -16,12 +16,12 @@ export function ProductShowcase() {
           variants={fadeUp}
           className="mb-12 max-w-xl"
         >
-          <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">المجموعة</p>
+          <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">التشكيلة</p>
           <h2 className="font-display text-4xl text-off-white sm:text-5xl">
-            كل كوب… شخصية مستقلة.
+            كل باكيت… ٢٥ شكل مختلف.
           </h2>
           <p className="mt-4 text-off-white-dim">
-            ما نصمم أكواب فقط، نصمم لحظات. اختر الكوب اللي يشبه يومك.
+            ٩.٩٩ ريال بس للباكيت الواحد. اختر التشكيلة اللي تناسبك.
           </p>
         </motion.div>
       </div>

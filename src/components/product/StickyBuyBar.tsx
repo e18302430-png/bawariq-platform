@@ -47,24 +47,26 @@ export function StickyBuyBar({
                   <p className="truncate font-display text-base text-off-white sm:text-lg">
                     {product.name}
                   </p>
-                  <p className="text-sm text-gold">{product.price} ر.س</p>
+                  <p className="text-sm text-gold">{(product.price * quantity).toFixed(2)} ر.س</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => addItem(product, variantId ?? product.variants[0].id, quantity)}
                   className="shrink-0 rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
                 >
-                  أضف للسلة
+                  أضف الباكيت للسلة
                 </button>
               </>
             ) : (
               <>
-                <p className="text-sm text-off-white-dim sm:text-base">جاهز تعرف وش طلع لك؟</p>
+                <p className="text-sm text-off-white-dim sm:text-base">
+                  ٢٥ كوب بـ٩.٩٩ ريال — جاهز تعرف وش طلع لك؟
+                </p>
                 <a
                   href="/cups"
                   className="shrink-0 rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
                 >
-                  اكتشف كوبك
+                  اطلب الآن
                 </a>
               </>
             )}

@@ -7,9 +7,9 @@ import { useCartStore, cartCount } from "@/lib/cart-store";
 
 const NAV_LINKS = [
   { href: "/#idea", label: "اكتشف الفكرة" },
-  { href: "/cups", label: "الأكواب" },
-  { href: "/#reveal", label: "كيف تعمل" },
-  { href: "/#experience", label: "عن التجربة" },
+  { href: "/cups", label: "الباكيتات" },
+  { href: "/#reveal", label: "وش بيطلع لك؟" },
+  { href: "/#faq", label: "الأسئلة الشائعة" },
 ];
 
 export function Header() {
@@ -35,7 +35,7 @@ export function Header() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="font-display text-xl tracking-wide text-off-white sm:text-2xl">
-          بوارق
+          وش طلع لك
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

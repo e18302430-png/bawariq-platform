@@ -17,7 +17,7 @@ export function Hero() {
           transition={{ duration: 0.6, ease: EASE_SIGNATURE, delay: 0.2 }}
           className="mb-4 text-sm tracking-[0.3em] text-gold-soft uppercase"
         >
-          بوارق
+          مصنع أكواب — بيع مباشر
         </motion.p>
 
         <motion.h1
@@ -35,26 +35,37 @@ export function Hero() {
           transition={{ duration: 0.7, ease: EASE_SIGNATURE, delay: 0.5 }}
           className="mt-5 max-w-md text-lg text-off-white-dim sm:text-xl"
         >
-          مو كل كوب… مجرد كوب.
+          ٢٥ كوب بأشكال ما شفتها قبل… بـ٩.٩٩ ريال بس!
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE_SIGNATURE, delay: 0.6 }}
+          className="mt-6 inline-flex items-center gap-3 rounded-full border border-gold/40 bg-obsidian/70 px-5 py-2.5 backdrop-blur-sm"
+        >
+          <span className="text-2xl font-bold text-gold">٩.٩٩ ر.س</span>
+          <span className="text-sm text-off-white-dim/70 line-through">١٩.٩٩ ر.س</span>
+          <span className="text-sm text-off-white-dim">للباكيت / ٢٥ كوب</span>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE_SIGNATURE, delay: 0.65 }}
+          transition={{ duration: 0.7, ease: EASE_SIGNATURE, delay: 0.75 }}
           className="mt-8 flex flex-wrap items-center gap-4"
         >
           <Link
             href="/cups"
             className="rounded-full bg-gold px-8 py-4 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:text-base"
           >
-            اكتشف كوبك
+            اطلب الباكيت الآن
           </Link>
           <Link
             href="#idea"
             className="rounded-full border border-off-white/30 px-8 py-4 text-sm font-bold text-off-white transition-colors hover:border-gold hover:text-gold sm:text-base"
           >
-            شوف كيف الفكرة
+            شوف الأشكال المثيرة
           </Link>
         </motion.div>
       </div>

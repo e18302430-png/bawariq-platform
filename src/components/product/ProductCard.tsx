@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CupIllustration } from "@/components/ui/CupIllustration";
-import type { Product } from "@/lib/products";
+import { PACK_SIZE, type Product } from "@/lib/products";
 import { analytics } from "@/lib/analytics";
 import { EASE_SIGNATURE } from "@/lib/motion";
 
@@ -57,6 +57,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
                 {product.compareAtPrice} ر.س
               </p>
             )}
+            <p className="text-[11px] text-off-white-dim/70">{PACK_SIZE} كوب</p>
           </div>
         </div>
       </Link>

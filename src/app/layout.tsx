@@ -5,29 +5,29 @@ import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import "./globals.css";
 
-const SITE_NAME = "بوارق";
-const SITE_URL = "https://bawariq.example.com"; // PLACEHOLDER — set real production domain
+const SITE_NAME = "وش طلع لك";
+const SITE_URL = "https://weshtala3lak.example.com"; // PLACEHOLDER — set real production domain
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "بوارق — وش طلع لك؟",
-    template: "%s | بوارق",
+    default: "وش طلع لك؟ — ٢٥ كوب بأشكال مثيرة بـ٩.٩٩ ريال",
+    template: "%s | وش طلع لك",
   },
   description:
-    "أكواب بوارق مو مجرد أدوات قهوة — كل كوب يحمل فكرة أو رسالة أو مفاجأة تكتشفها كل يوم.",
+    "باكيت ٢٥ كوب بأشكال متطورة ومثيرة بسعر ٩.٩٩ ريال بس — مباشر من المصنع بدون وسطاء. اطلب الآن وشوف وش طلع لك.",
   openGraph: {
-    title: "بوارق — وش طلع لك؟",
+    title: "وش طلع لك؟ — ٢٥ كوب بأشكال مثيرة بـ٩.٩٩ ريال",
     description:
-      "أكواب بوارق مو مجرد أدوات قهوة — كل كوب يحمل فكرة أو رسالة أو مفاجأة تكتشفها كل يوم.",
+      "باكيت ٢٥ كوب بأشكال متطورة ومثيرة بسعر ٩.٩٩ ريال بس — مباشر من المصنع بدون وسطاء.",
     siteName: SITE_NAME,
     locale: "ar_SA",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "بوارق — وش طلع لك؟",
-    description: "أكواب تحمل فكرة، مو مجرد أكواب.",
+    title: "وش طلع لك؟ — ٢٥ كوب بـ٩.٩٩ ريال",
+    description: "أشكال ما شفتها قبل، مباشر من المصنع.",
   },
   robots: { index: true, follow: true },
 };

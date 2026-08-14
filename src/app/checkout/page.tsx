@@ -28,7 +28,7 @@ export default function CheckoutPage() {
         </div>
         <p className="text-off-white-dim">سلتك فاضية حالياً.</p>
         <Link href="/cups" className="rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian">
-          استكشف الأكواب
+          استكشف الباكيتات
         </Link>
       </div>
     );
@@ -55,7 +55,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     setPlacing(true);
     // Simulated order placement — wire to a real payment/order API before launch.
-    const orderId = `BQ-${Date.now().toString().slice(-6)}`;
+    const orderId = `WTL-${Date.now().toString().slice(-6)}`;
     window.setTimeout(() => {
       analytics.purchase(orderId, total);
       clear();

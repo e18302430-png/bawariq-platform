@@ -6,7 +6,7 @@ import { CupIllustration } from "@/components/ui/CupIllustration";
 import { StickyBuyBar } from "./StickyBuyBar";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import type { Product } from "@/lib/products";
-import { trustSignals } from "@/lib/products";
+import { trustSignals, PACK_SIZE, QUANTITY_PRESETS } from "@/lib/products";
 import { useCartStore } from "@/lib/cart-store";
 import { analytics } from "@/lib/analytics";
 import { fadeUp } from "@/lib/motion";
@@ -54,6 +54,7 @@ export function ProductDetail({ product }: { product: Product }) {
                 {product.compareAtPrice} ر.س
               </span>
             )}
+            <span className="text-sm text-off-white-dim">/ باكيت ({PACK_SIZE} كوب)</span>
           </div>
 
           {/* UNDERSTANDING */}
@@ -77,9 +78,9 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
 
             <div className="mt-6 rounded-2xl border border-line bg-obsidian-3 p-5">
-              <p className="mb-2 text-sm font-semibold text-gold">وش ممكن يطلع لك؟</p>
+              <p className="mb-2 text-sm font-semibold text-gold">وش ممكن يطلع لك بالباكيت؟</p>
               <ul className="space-y-1 text-sm text-off-white-dim">
-                {product.contentTeasers.map((teaser) => (
+                {product.shapeTeasers.map((teaser) => (
                   <li key={teaser.hint}>
                     <span className="text-off-white">{teaser.kind}:</span> {teaser.hint}
                   </li>
@@ -87,27 +88,50 @@ export function ProductDetail({ product }: { product: Product }) {
               </ul>
             </div>
 
-            <div className="mt-6 flex items-center gap-4">
-              <p className="text-sm font-semibold text-off-white">الكمية</p>
-              <div className="flex items-center gap-3 rounded-full border border-line px-3 py-1.5">
-                <button
-                  type="button"
-                  aria-label="إنقاص الكمية"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="h-6 w-6 text-off-white-dim hover:text-gold"
-                >
-                  −
-                </button>
-                <span className="w-4 text-center text-off-white">{quantity}</span>
-                <button
-                  type="button"
-                  aria-label="زيادة الكمية"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="h-6 w-6 text-off-white-dim hover:text-gold"
-                >
-                  +
-                </button>
+            <div className="mt-6">
+              <p className="mb-3 text-sm font-semibold text-off-white">عدد الباكيتات</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {QUANTITY_PRESETS.map((preset) => (
+                  <button
+                    key={preset.packs}
+                    type="button"
+                    onClick={() => setQuantity(preset.packs)}
+                    className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                      quantity === preset.packs
+                        ? "border-gold bg-gold text-obsidian font-bold"
+                        : "border-line text-off-white-dim hover:border-gold hover:text-gold"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+
+                <div className="flex items-center gap-3 rounded-full border border-line px-3 py-1.5">
+                  <button
+                    type="button"
+                    aria-label="إنقاص عدد الباكيتات"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="h-6 w-6 text-off-white-dim hover:text-gold"
+                  >
+                    −
+                  </button>
+                  <span className="w-4 text-center text-off-white">{quantity}</span>
+                  <button
+                    type="button"
+                    aria-label="زيادة عدد الباكيتات"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="h-6 w-6 text-off-white-dim hover:text-gold"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
+              <p className="mt-3 text-sm text-off-white-dim">
+                = {quantity * PACK_SIZE} كوب مقابل{" "}
+                <span className="font-bold text-gold">
+                  {(quantity * product.price).toFixed(2)} ر.س
+                </span>
+              </p>
             </div>
           </div>
 
@@ -124,7 +148,7 @@ export function ProductDetail({ product }: { product: Product }) {
               onClick={() => addItem(product, variantId, quantity)}
               className="flex-1 rounded-full border border-gold px-8 py-4 text-sm font-bold text-gold transition-colors hover:bg-gold hover:text-obsidian"
             >
-              أضف للسلة
+              أضف الباكيت للسلة
             </button>
             <button
               type="button"
@@ -135,7 +159,7 @@ export function ProductDetail({ product }: { product: Product }) {
               }}
               className="flex-1 rounded-full bg-gold px-8 py-4 text-sm font-bold text-obsidian transition-transform hover:scale-[1.02]"
             >
-              اشترِ الآن
+              اشترِ الآن — {(quantity * product.price).toFixed(2)} ر.س
             </button>
           </motion.div>
 

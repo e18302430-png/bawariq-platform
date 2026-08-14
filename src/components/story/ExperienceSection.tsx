@@ -5,10 +5,10 @@ import { CupIllustration } from "@/components/ui/CupIllustration";
 import { fadeUp, staggerChildren } from "@/lib/motion";
 
 const POINTS = [
-  { title: "تصميم يوقف عينك.", side: "top-[6%] start-[6%]" },
-  { title: "محتوى يخليك تبتسم.", side: "top-[8%] end-[4%]" },
-  { title: "فكرة تخليك تنتظر كوبك.", side: "bottom-[14%] start-[2%]" },
-  { title: "هدية لها معنى.", side: "bottom-[10%] end-[8%]" },
+  { title: "٢٥ شكل مثير بعلبة وحدة.", side: "top-[6%] start-[6%]" },
+  { title: "أرخص من أي كوب عادي بالسوق.", side: "top-[8%] end-[4%]" },
+  { title: "تصاميم ما تلقاها بمكان ثاني.", side: "bottom-[14%] start-[2%]" },
+  { title: "مثالي للحفلات والمناسبات.", side: "bottom-[10%] end-[8%]" },
 ];
 
 export function ExperienceSection() {
@@ -22,7 +22,7 @@ export function ExperienceSection() {
           variants={fadeUp}
           className="mb-3 text-sm tracking-[0.3em] text-gold uppercase"
         >
-          ليش هذا الكوب؟
+          ليش الباكيت هذا؟
         </motion.p>
 
         <div className="relative mx-auto mt-10 flex h-[420px] max-w-md items-center justify-center sm:h-[480px]">

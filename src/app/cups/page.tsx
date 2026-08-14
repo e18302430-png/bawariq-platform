@@ -4,8 +4,8 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { StickyBuyBar } from "@/components/product/StickyBuyBar";
 
 export const metadata: Metadata = {
-  title: "الأكواب",
-  description: "استكشف مجموعة أكواب بوارق — كل كوب يحمل فكرة مختلفة.",
+  title: "الباكيتات",
+  description: "باكيت ٢٥ كوب بأشكال متطورة ومثيرة بـ٩.٩٩ ريال بس — مباشر من المصنع.",
 };
 
 export default function CupsPage() {
@@ -14,11 +14,9 @@ export default function CupsPage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 max-w-xl">
           <p className="mb-3 text-sm tracking-[0.3em] text-gold uppercase">المتجر</p>
-          <h1 className="font-display text-4xl text-off-white sm:text-5xl">
-            وش يشبه يومك؟
-          </h1>
+          <h1 className="font-display text-4xl text-off-white sm:text-5xl">وش طلع لك؟</h1>
           <p className="mt-4 text-off-white-dim">
-            كل كوب تصميم وفكرة مختلفة. اختر اللي يشبهك، أو خله يفاجئك.
+            كل باكيت ٢٥ كوب بأشكال متطورة بـ٩.٩٩ ريال بس. اختر التشكيلة، أو خلها تفاجئك.
           </p>
         </div>
 

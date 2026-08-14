@@ -59,7 +59,7 @@ export function CartDrawer() {
                   onClick={closeDrawer}
                   className="rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian"
                 >
-                  استكشف الأكواب
+                  استكشف الباكيتات
                 </Link>
               </div>
             ) : (

@@ -1,13 +1,15 @@
 // ---------------------------------------------------------------------------
 // PLACEHOLDER PRODUCT DATA
-// Prices, SKUs, stock labels and content excerpts below are placeholders for
+// Prices, SKUs, stock labels and shape descriptions below are placeholders for
 // layout/design purposes only. Replace with real catalog data (pricing,
-// inventory, shipping, legal copy) before launch — do not treat these numbers
-// as final commercial decisions.
+// inventory, shipping, legal copy, real shape names/photos) before launch —
+// do not treat these numbers as final commercial decisions.
 // ---------------------------------------------------------------------------
 
-export type ContentTeaser = {
-  kind: "معلومة" | "فزورة" | "نكتة" | "حظك اليوم" | "سؤال" | "تحدي";
+export const PACK_SIZE = 25; // cups per pack
+
+export type ShapeTeaser = {
+  kind: "شكل مثير" | "تصميم غريب" | "الأكثر تميزًا" | "مفاجأة الباكيت";
   hint: string;
 };
 
@@ -16,93 +18,74 @@ export type Product = {
   name: string;
   tagline: string;
   story: string;
-  price: number; // PLACEHOLDER — SAR
+  price: number; // PLACEHOLDER — SAR per pack of 25
   compareAtPrice?: number; // PLACEHOLDER
   badge?: string;
   colorTheme: "red" | "gold" | "obsidian";
   image: string;
   gallery: string[];
   variants: { id: string; label: string }[];
-  contentTeasers: ContentTeaser[];
+  shapeTeasers: ShapeTeaser[];
   isBestseller?: boolean;
 };
 
 export const products: Product[] = [
   {
-    slug: "kaif-halak",
-    name: "كيف حالك اليوم؟",
-    tagline: "كوب يفتح لك حديث كل صباح.",
+    slug: "tashkila-mashkala",
+    name: "التشكيلة المشكلة",
+    tagline: "٢٥ شكل مختلف… ما تعرف وش بيطلع لك.",
     story:
-      "لكل شخص يبدأ يومه بسؤال… هذا الكوب يسألك أنت أولًا، ويترك لك مساحة تكتشف فيها شيئًا جديدًا مع كل رشفة.",
-    price: 89,
-    compareAtPrice: 119,
-    badge: "الأكثر طلبًا",
-    colorTheme: "red",
-    image: "/images/products/cup-01.jpg",
-    gallery: ["/images/products/cup-01.jpg", "/images/products/cup-01-alt.jpg"],
+      "كل باكيت فيه خلطة أشكال مثيرة ما تتكرر بنفس الترتيب. تفتح الباكيت ما تعرف وش بيطلع لك — هذا هو الإحساس اللي نبيعه.",
+    price: 9.99,
+    compareAtPrice: 19.99,
+    badge: "الأكثر مبيعًا",
+    colorTheme: "gold",
+    image: "/images/products/pack-01.jpg",
+    gallery: ["/images/products/pack-01.jpg"],
     variants: [
-      { id: "classic", label: "أسود كلاسيك" },
-      { id: "gold-rim", label: "حافة ذهبية" },
+      { id: "classic", label: "تغليف كلاسيك" },
+      { id: "gold-box", label: "تغليف ذهبي" },
     ],
-    contentTeasers: [
-      { kind: "سؤال", hint: "سؤال يخليك تفكر قبل أول رشفة." },
-      { kind: "حظك اليوم", hint: "توقع صغير يفتح يومك بطاقة مختلفة." },
+    shapeTeasers: [
+      { kind: "شكل مثير", hint: "شكل يخلي ضيوفك يسألون وين جبتها." },
+      { kind: "مفاجأة الباكيت", hint: "كل باكيت فيه خلطة أشكال مختلفة." },
     ],
     isBestseller: true,
   },
   {
-    slug: "wesh-talla3-lak",
-    name: "وش طلع لك؟",
-    tagline: "كل كوب مفاجأة… وكل مفاجأة حكاية.",
+    slug: "tashkila-hafalat",
+    name: "تشكيلة الحفلات",
+    tagline: "أشكال تفرقع الجو في أي مناسبة.",
     story:
-      "صمم لمن يحب الفضول اليومي. لا تعرف وش بينتظرك إلا بعد ما تصب قهوتك — تجربة تتكرر ولا تتشابه.",
-    price: 95,
-    colorTheme: "gold",
-    image: "/images/products/cup-02.jpg",
-    gallery: ["/images/products/cup-02.jpg", "/images/products/cup-02-alt.jpg"],
-    variants: [
-      { id: "classic", label: "أسود كلاسيك" },
-      { id: "matte-red", label: "أحمر مطفي" },
-    ],
-    contentTeasers: [
-      { kind: "فزورة", hint: "فزورة قصيرة تكسر روتين الصباح." },
-      { kind: "تحدي", hint: "تحدي يومي بسيط بينك وبين نفسك." },
-    ],
-  },
-  {
-    slug: "le-nasib",
-    name: "للأصدقاء بس",
-    tagline: "هدية بينكم… مو مجرد كوب.",
-    story:
-      "لحظات الأصدقاء تحتاج شيء يذكرهم فيها كل يوم. كوب يحمل نكتة أو موقف يرجعهم لأجمل الذكريات.",
-    price: 89,
-    colorTheme: "obsidian",
-    image: "/images/products/cup-03.jpg",
-    gallery: ["/images/products/cup-03.jpg", "/images/products/cup-03-alt.jpg"],
-    variants: [
-      { id: "duo", label: "طقم صديقين" },
-      { id: "solo", label: "كوب واحد" },
-    ],
-    contentTeasers: [
-      { kind: "نكتة", hint: "نكتة ما تنقال إلا بين الأصدقاء." },
-      { kind: "معلومة", hint: "معلومة غريبة تسولف فيها بعد." },
-    ],
-  },
-  {
-    slug: "sabah-alkhair",
-    name: "صباح الخير يا فخامة",
-    tagline: "روتينك الصباحي… بلمسة فخمة.",
-    price: 99,
+      "مصممة عشان تكون نجمة الطاولة في أي حفلة أو تجمع. ٢٥ كوب بأشكال متطورة تلفت الأنظار من أول ثانية.",
+    price: 9.99,
     colorTheme: "red",
-    image: "/images/products/cup-04.jpg",
-    gallery: ["/images/products/cup-04.jpg", "/images/products/cup-04-alt.jpg"],
-    story:
-      "لمن يبدأ يومه بجدية وطموح. رسالة تحفيزية قصيرة في كل كوب تدفعك تبدأ يومك بطاقة مختلفة.",
+    image: "/images/products/pack-02.jpg",
+    gallery: ["/images/products/pack-02.jpg"],
     variants: [
-      { id: "classic", label: "أسود كلاسيك" },
-      { id: "gold-rim", label: "حافة ذهبية" },
+      { id: "classic", label: "تغليف كلاسيك" },
+      { id: "gold-box", label: "تغليف ذهبي" },
     ],
-    contentTeasers: [{ kind: "معلومة", hint: "جرعة تحفيز صغيرة قبل أول اجتماع." }],
+    shapeTeasers: [
+      { kind: "تصميم غريب", hint: "تصميم ما شفته بأي مكان ثاني." },
+      { kind: "الأكثر تميزًا", hint: "الشكل اللي الكل بيسأل عنه بالحفلة." },
+    ],
+  },
+  {
+    slug: "tashkila-yawmi",
+    name: "تشكيلة اليومي",
+    tagline: "أشكال مثيرة تكسر روتين القهوة اليومي.",
+    story:
+      "لمن يبغى يكسر روتين الكاسة العادية كل يوم. أشكال متطورة تحول لحظة القهوة اليومية لشيء تتحمس له.",
+    price: 9.99,
+    colorTheme: "obsidian",
+    image: "/images/products/pack-03.jpg",
+    gallery: ["/images/products/pack-03.jpg"],
+    variants: [
+      { id: "classic", label: "تغليف كلاسيك" },
+      { id: "gold-box", label: "تغليف ذهبي" },
+    ],
+    shapeTeasers: [{ kind: "شكل مثير", hint: "شكل مختلف كل ما تفتح باكيت جديد." }],
   },
 ];
 
@@ -110,9 +93,18 @@ export function getProductBySlug(slug: string) {
   return products.find((product) => product.slug === slug);
 }
 
+// Quick quantity presets shown on the product page / sticky bar — pure
+// convenience shortcuts (linear pricing, no hidden bundle math).
+export const QUANTITY_PRESETS = [
+  { packs: 1, label: "باكيت وحدة" },
+  { packs: 3, label: "٣ باكيتات" },
+  { packs: 5, label: "٥ باكيتات" },
+] as const;
+
 // PLACEHOLDER — replace with real shipping/return policy copy.
 export const trustSignals = [
-  { label: "شحن سريع لجميع مناطق المملكة", icon: "shipping" },
+  { label: "توصيل سريع لجميع مناطق المملكة", icon: "shipping" },
+  { label: "بيع مباشر من المصنع بدون وسطاء", icon: "factory" },
   { label: "دفع آمن 100%", icon: "secure" },
   { label: "استبدال خلال 7 أيام", icon: "return" },
 ] as const;
