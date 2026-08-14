@@ -7063,87 +7063,91 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   const notifs = [];
   if (isRep) {
     repMessages.filter((m) => m.repId === user && !m.seen).forEach((m) =>
-      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: "info" }));
+      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: "info", page: "messages" }));
     tickets.filter((tk) => tk.repId === user && (tk.status === "resolved" || tk.status === "rejected" || tk.status === "auto_closed"))
-      .slice(0, 3).forEach((tk) => notifs.push({ text: `${ticketTypeOf(tk.type)[lang]} — ${tk.status === "resolved" ? x.stageResolved : tk.status === "auto_closed" ? x.stageAutoClosed : x.stageRejected}`, tone: tk.status === "resolved" ? "ok" : "n" }));
+      .slice(0, 3).forEach((tk) => notifs.push({ text: `${ticketTypeOf(tk.type)[lang]} — ${tk.status === "resolved" ? x.stageResolved : tk.status === "auto_closed" ? x.stageAutoClosed : x.stageRejected}`, tone: tk.status === "resolved" ? "ok" : "n", page: "tickets" }));
     tickets.filter((tk) => tk.repId === user).forEach((tk) => {
       const mins = minutesUntilAppt(tk);
-      if (mins != null && mins >= 0 && mins <= 60) notifs.unshift({ text: `${x.apptSoonT}: ${tk.apptAt.slice(11, 16)} (${x.apptSoonNote})`, tone: "warn" });
+      if (mins != null && mins >= 0 && mins <= 60) notifs.unshift({ text: `${x.apptSoonT}: ${tk.apptAt.slice(11, 16)} (${x.apptSoonNote})`, tone: "warn", page: "tickets" });
     });
   } else {
-    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn" });
+    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets });
     tickets.forEach((tk) => {
       const mins = minutesUntilAppt(tk);
       if (mins != null && mins >= 0 && mins <= 60 && ticketVisibleToRole(tk, role.id) && (ticketCurrentOwner(tk) === role.id)) {
         const rep = reps.find((r) => r.nid === tk.repId || r.id === tk.repId);
-        notifs.unshift({ text: `${x.apptSoonT}: ${rep ? (lang === "en" ? rep.en : rep.ar) : tk.repId} · ${tk.apptAt.slice(11, 16)}`, tone: "warn" });
+        notifs.unshift({ text: `${x.apptSoonT}: ${rep ? (lang === "en" ? rep.en : rep.ar) : tk.repId} · ${tk.apptAt.slice(11, 16)}`, tone: "warn", page: "tickets" });
       }
     });
     if (role.id !== "advisor") {
-      circulars.slice(0, 2).forEach((c) => notifs.push({ text: `${x.circulars}: ${c.title}`, tone: "n" }));
-      contracts.filter((c) => c.st === "expiring").slice(0, 2).forEach((c) => notifs.push({ text: lang === "ar" ? `عقد ${c.party} ينتهي قريباً` : lang === "en" ? `${c.party}'s contract is expiring` : `${c.party} کا معاہدہ ختم ہونے والا ہے`, tone: "warn" }));
+      circulars.slice(0, 2).forEach((c) => notifs.push({ text: `${x.circulars}: ${c.title}`, tone: "n", page: "circulars" }));
+      contracts.filter((c) => c.st === "expiring").slice(0, 2).forEach((c) => notifs.push({ text: lang === "ar" ? `عقد ${c.party} ينتهي قريباً` : lang === "en" ? `${c.party}'s contract is expiring` : `${c.party} کا معاہدہ ختم ہونے والا ہے`, tone: "warn", page: "contracts" }));
       if (role.id === "hr") {
         const urgent = reps.filter((r) => r.idExpiry && daysUntil(r.idExpiry) != null && daysUntil(r.idExpiry) <= 30);
-        urgent.slice(0, 3).forEach((r) => notifs.push({ text: `${x.iqamaGmCard}: ${lang === "en" ? r.en : r.ar}`, tone: "bad" }));
+        urgent.slice(0, 3).forEach((r) => notifs.push({ text: `${x.iqamaGmCard}: ${lang === "en" ? r.en : r.ar}`, tone: "bad", page: "iqama" }));
       }
     }
 
     // ===== تنبيهات القرارات المعلّقة (المدير العام + المستشارون) =====
     if (role.id === "gm") {
       const myPendingDecisions = decisions.filter((d) => !d.gmApproved);
-      if (myPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${myPendingDecisions.length}`, tone: "warn" });
+      if (myPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${myPendingDecisions.length}`, tone: "warn", page: "decisions", count: myPendingDecisions.length });
     }
     if (role.id === "advisor") {
       const boardPendingDecisions = decisions.filter((d) => !d.boardApproved);
-      if (boardPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${boardPendingDecisions.length}`, tone: "warn" });
+      if (boardPendingDecisions.length > 0) notifs.unshift({ text: `${x.decisionsPendingNotif}: ${boardPendingDecisions.length}`, tone: "warn", page: "decisions", count: boardPendingDecisions.length });
     }
 
     // ===== تنبيهات سلسلة اعتماد الرواتب (كل مرحلة لصاحبها) =====
     if (role.id === "fin") {
       const financeWaiting = payrollRuns.filter((r) => r.status === "finance_review").length;
-      if (financeWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${financeWaiting}`, tone: "warn" });
+      if (financeWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${financeWaiting}`, tone: "warn", page: "payrollRuns", count: financeWaiting });
     }
     if (role.id === "gm") {
       const gmWaiting = payrollRuns.filter((r) => r.status === "sent_to_gm").length;
-      if (gmWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${gmWaiting}`, tone: "warn" });
+      if (gmWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${gmWaiting}`, tone: "warn", page: "payrollRuns", count: gmWaiting });
     }
     if (role.id === "advisor") {
       const boardWaiting = payrollRuns.filter((r) => r.status === "sent_to_board").length;
-      if (boardWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${boardWaiting}`, tone: "warn" });
+      if (boardWaiting > 0) notifs.unshift({ text: `${x.payrollWaitingNotif}: ${boardWaiting}`, tone: "warn", page: "payrollRuns", count: boardWaiting });
     }
 
     // ===== تنبيهات المصروفات المعلّقة (المدير العام) =====
     if (role.id === "gm") {
       const pendingExpenses = expenses.filter((e) => e.status === "pending").length;
-      if (pendingExpenses > 0) notifs.unshift({ text: `${x.expensesWaitingNotif}: ${pendingExpenses}`, tone: "warn" });
+      if (pendingExpenses > 0) notifs.unshift({ text: `${x.expensesWaitingNotif}: ${pendingExpenses}`, tone: "warn", page: "expenses", count: pendingExpenses });
     }
 
     // ===== تنبيه فواتير التطبيقات تحت المراجعة (المدير العام) =====
     if (role.id === "gm") {
       const reviewInvoices = invoices.filter((v) => v.st === "review").length;
-      if (reviewInvoices > 0) notifs.push({ text: `${x.invoicesReviewNotif}: ${reviewInvoices}`, tone: "n" });
+      if (reviewInvoices > 0) notifs.push({ text: `${x.invoicesReviewNotif}: ${reviewInvoices}`, tone: "n", page: "invoices", count: reviewInvoices });
     }
 
     // ===== تنبيه المناديب بانتظار التفعيل (الموارد البشرية) =====
     if (role.id === "hr") {
       const pendingActivation = reps.filter((r) => r.status === "pending").length;
-      if (pendingActivation > 0) notifs.unshift({ text: `${x.pendingReps}: ${pendingActivation}`, tone: "warn" });
+      if (pendingActivation > 0) notifs.unshift({ text: `${x.pendingReps}: ${pendingActivation}`, tone: "warn", page: "hiring", count: pendingActivation });
     }
 
     // ===== تنبيهات القانونية (بلاغات محالة + قضايا مفتوحة) =====
     if (role.id === "legal") {
       const forwarded = tickets.filter((tk) => tk.forwardedToLegal && tk.status !== "resolved").length;
-      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad" });
+      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad", page: "tickets", count: forwarded });
       const openCasesCount = cases.filter((c) => c.st === "open").length;
-      if (openCasesCount > 0) notifs.push({ text: `${x.legalOpenCasesNotif}: ${openCasesCount}`, tone: "warn" });
+      if (openCasesCount > 0) notifs.push({ text: `${x.legalOpenCasesNotif}: ${openCasesCount}`, tone: "warn", page: "cases", count: openCasesCount });
     }
 
     // ===== تنبيه حسابات مقفلة (مدير الحركة والتشغيل) =====
     if (role.id === "opsm") {
       const lockedDepts = ROLES.filter((r) => (deptSecurity[r.id] || {}).locked).length;
-      if (lockedDepts > 0) notifs.unshift({ text: `${x.lockedDeptsNotif}: ${lockedDepts}`, tone: "bad" });
+      if (lockedDepts > 0) notifs.unshift({ text: `${x.lockedDeptsNotif}: ${lockedDepts}`, tone: "bad", page: "security", count: lockedDepts });
     }
   }
+
+  // خريطة عدد العناصر المعلّقة لكل صفحة — تُستخدم لعرض شارة حمراء على عنصر القائمة الجانبية نفسه
+  const navBadges = {};
+  notifs.forEach((n) => { if (n.page && n.count) navBadges[n.page] = (navBadges[n.page] || 0) + n.count; });
 
   const SideInner = () => (
     <div className="flex flex-col h-full">
@@ -7170,7 +7174,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         <nav className="space-y-1">
           {role.nav.map((n) => {
             const Icon = NAV_ICON[n], on = page === n;
-            const badge = n === "tickets" ? (isRep ? myOpenTickets : myInboxTickets) : 0;
+            const badge = n === "tickets" ? (isRep ? myOpenTickets : myInboxTickets) : (navBadges[n] || 0);
             return (
               <button key={n} onClick={() => setPage(n)} className="relative w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[13px] font-semibold text-start transition-all duration-300"
                 style={{ background: on ? `rgba(${role.glow},.12)` : "transparent", color: on ? "#12151D" : "var(--muted)", transitionTimingFunction: "var(--ease-spring)" }}>
@@ -7272,7 +7276,12 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
                     {notifs.length === 0 ? (
                       <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{x.noRecords}</p>
                     ) : notifs.map((n, i) => (
-                      <p key={i} className="text-[11.5px] leading-relaxed rounded-lg p-2" style={{ background: "rgba(20,27,45,.04)", color: n.tone === "bad" ? "#E8837A" : n.tone === "warn" ? "#E4B85C" : n.tone === "ok" ? "#4FD1A5" : "var(--muted)" }}>{n.text}</p>
+                      <button key={i} onClick={() => { if (n.page) { setPage(n.page); setBell(false); } }}
+                        className="w-full text-start text-[11.5px] leading-relaxed rounded-lg p-2 flex items-center gap-2 transition"
+                        style={{ background: "rgba(20,27,45,.04)", color: n.tone === "bad" ? "#E8837A" : n.tone === "warn" ? "#E4B85C" : n.tone === "ok" ? "#4FD1A5" : "var(--muted)", cursor: n.page ? "pointer" : "default" }}>
+                        <span className="flex-1">{n.text}</span>
+                        {n.page && <ChevronRight size={13} className="shrink-0 opacity-60" style={{ transform: (LANGS.find((l) => l.code === lang) || {}).dir === "rtl" ? "rotate(180deg)" : "none" }} />}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -7364,10 +7373,14 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
           <div className="flex items-stretch justify-around gap-1">
             {role.nav.map((n) => {
               const Icon = NAV_ICON[n], on = page === n;
+              const mBadge = n === "tickets" ? (isRep ? myOpenTickets : myInboxTickets) : (navBadges[n] || 0);
               return (
-                <button key={n} onClick={() => setPage(n)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl transition"
+                <button key={n} onClick={() => setPage(n)} className="relative flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl transition"
                   style={{ background: on ? `rgba(${role.glow},.12)` : "transparent", color: on ? role.accent : "var(--muted)" }}>
-                  <Icon size={19} />
+                  <span className="relative">
+                    <Icon size={19} />
+                    {mBadge > 0 && <span className="absolute w-2 h-2 rounded-full" style={{ top: -2, insetInlineEnd: -3, background: "#E8837A" }} />}
+                  </span>
                   <span className="text-[9.5px] font-bold truncate max-w-full px-0.5">{t.nav[n]}</span>
                 </button>
               );
