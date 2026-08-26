@@ -3,6 +3,7 @@ import { displayFont, bodyFont } from "@/lib/fonts";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import "./globals.css";
 
 const SITE_NAME = "وش طلع لك";
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <Footer />
         <CartDrawer />
+        <WhatsAppButton />
       </body>
     </html>
   );

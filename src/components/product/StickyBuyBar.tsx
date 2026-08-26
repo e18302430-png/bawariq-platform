@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Product } from "@/lib/products";
 import { useCartStore } from "@/lib/cart-store";
+import { whatsappLink, whatsappProductMessage, WHATSAPP_DEFAULT_MESSAGE } from "@/lib/whatsapp";
+import { analytics } from "@/lib/analytics";
+import { WhatsAppIcon } from "@/components/whatsapp/WhatsAppButton";
 
 /**
  * Two modes:
@@ -49,25 +52,49 @@ export function StickyBuyBar({
                   </p>
                   <p className="text-sm text-gold">{(product.price * quantity).toFixed(2)} ر.س</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => addItem(product, variantId ?? product.variants[0].id, quantity)}
-                  className="shrink-0 rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
-                >
-                  أضف الباكيت للسلة
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <a
+                    href={whatsappLink(whatsappProductMessage(product.name, quantity))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => analytics.orderViaWhatsapp("sticky_bar")}
+                    aria-label="اطلب عبر واتساب"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <WhatsAppIcon />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => addItem(product, variantId ?? product.variants[0].id, quantity)}
+                    className="rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
+                  >
+                    أضف الباكيت للسلة
+                  </button>
+                </div>
               </>
             ) : (
               <>
                 <p className="text-sm text-off-white-dim sm:text-base">
                   ٢٥ كوب بـ٩.٩٩ ريال — جاهز تعرف وش طلع لك؟
                 </p>
-                <a
-                  href="/cups"
-                  className="shrink-0 rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
-                >
-                  اطلب الآن
-                </a>
+                <div className="flex shrink-0 items-center gap-2">
+                  <a
+                    href={whatsappLink(WHATSAPP_DEFAULT_MESSAGE)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => analytics.orderViaWhatsapp("sticky_bar_browse")}
+                    aria-label="اطلب عبر واتساب"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <WhatsAppIcon />
+                  </a>
+                  <a
+                    href="/cups"
+                    className="rounded-full bg-gold px-6 py-3 text-sm font-bold text-obsidian transition-transform hover:scale-[1.03] active:scale-[0.98] sm:px-8"
+                  >
+                    اطلب الآن
+                  </a>
+                </div>
               </>
             )}
           </div>

@@ -11,6 +11,8 @@ import { useCartStore } from "@/lib/cart-store";
 import { analytics } from "@/lib/analytics";
 import { fadeUp } from "@/lib/motion";
 import { useRouter } from "next/navigation";
+import { whatsappLink, whatsappProductMessage } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/whatsapp/WhatsAppButton";
 
 export function ProductDetail({ product }: { product: Product }) {
   const [variantId, setVariantId] = useState(product.variants[0].id);
@@ -162,6 +164,21 @@ export function ProductDetail({ product }: { product: Product }) {
               اشترِ الآن — {(quantity * product.price).toFixed(2)} ر.س
             </button>
           </motion.div>
+
+          <motion.a
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            href={whatsappLink(whatsappProductMessage(product.name, quantity))}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => analytics.orderViaWhatsapp("product_page")}
+            className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-8 py-4 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+          >
+            <WhatsAppIcon />
+            اطلب عبر واتساب مباشرة
+          </motion.a>
 
           {/* TRUST */}
           <ul className="mt-8 space-y-2 border-t border-line pt-6 text-sm text-off-white-dim">

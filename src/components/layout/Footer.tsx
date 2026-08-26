@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { trustSignals } from "@/lib/products";
+import { whatsappLink, WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_NUMBER_DISPLAY } from "@/lib/whatsapp";
 
 export function Footer() {
   return (
@@ -11,6 +12,17 @@ export function Footer() {
             <p className="mt-3 max-w-xs text-sm leading-relaxed">
               مصنع أكواب سعودي — ٢٥ كوب بأشكال مثيرة ومتطورة، مباشر من المصنع بدون وسطاء.
             </p>
+            <a
+              href={whatsappLink(WHATSAPP_DEFAULT_MESSAGE)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-[#25D366] transition-opacity hover:opacity-80"
+            >
+              اطلب واتساب:{" "}
+              <span dir="ltr" className="font-semibold">
+                {WHATSAPP_NUMBER_DISPLAY}
+              </span>
+            </a>
           </div>
 
           <FooterColumn

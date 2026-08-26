@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { CupIllustration } from "@/components/ui/CupIllustration";
 import { fadeUp } from "@/lib/motion";
 import { trustSignals } from "@/lib/products";
+import { whatsappLink, WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_NUMBER_DISPLAY } from "@/lib/whatsapp";
+import { analytics } from "@/lib/analytics";
+import { WhatsAppIcon } from "@/components/whatsapp/WhatsAppButton";
 
 export function FinalCTA() {
   return (
@@ -47,7 +50,7 @@ export function FinalCTA() {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeUp}
-          className="mt-8"
+          className="mt-8 flex flex-wrap items-center justify-center gap-4"
         >
           <Link
             href="/cups"
@@ -55,7 +58,30 @@ export function FinalCTA() {
           >
             اطلب الباكيت الآن
           </Link>
+          <a
+            href={whatsappLink(WHATSAPP_DEFAULT_MESSAGE)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => analytics.orderViaWhatsapp("final_cta")}
+            className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-8 py-4 text-base font-bold text-white transition-transform hover:scale-[1.03] active:scale-[0.98]"
+          >
+            <WhatsAppIcon />
+            اطلب واتساب
+          </a>
         </motion.div>
+
+        <motion.p
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUp}
+          className="mt-4 text-sm text-off-white-dim/70"
+        >
+          للطلب المباشر واتساب:{" "}
+          <span className="text-gold-soft" dir="ltr">
+            {WHATSAPP_NUMBER_DISPLAY}
+          </span>
+        </motion.p>
 
         <motion.ul
           initial="hidden"

@@ -1,6 +1,7 @@
 import { Hero } from "@/components/hero/Hero";
 import { ScrollStory } from "@/components/story/ScrollStory";
 import { ExperienceSection } from "@/components/story/ExperienceSection";
+import { CinematicScrub } from "@/components/story/CinematicScrub";
 import { ProductShowcase } from "@/components/product/ProductShowcase";
 import { RevealExperience } from "@/components/story/RevealExperience";
 import { Reviews } from "@/components/social/Reviews";
@@ -17,6 +18,7 @@ export default function Home() {
       <Hero />
       <ScrollStory />
       <ExperienceSection />
+      <CinematicScrub />
       <ProductShowcase />
       <RevealExperience />
       <Reviews />

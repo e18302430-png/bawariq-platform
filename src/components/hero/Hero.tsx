@@ -4,6 +4,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { HeroVideo } from "./HeroVideo";
 import { EASE_SIGNATURE } from "@/lib/motion";
+import { whatsappLink, WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_NUMBER_DISPLAY } from "@/lib/whatsapp";
+import { analytics } from "@/lib/analytics";
+import { WhatsAppIcon } from "@/components/whatsapp/WhatsAppButton";
 
 export function Hero() {
   return (
@@ -67,7 +70,29 @@ export function Hero() {
           >
             شوف الأشكال المثيرة
           </Link>
+          <a
+            href={whatsappLink(WHATSAPP_DEFAULT_MESSAGE)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => analytics.orderViaWhatsapp("hero")}
+            className="flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-4 text-sm font-bold text-white transition-transform hover:scale-[1.03] active:scale-[0.98] sm:text-base"
+          >
+            <WhatsAppIcon />
+            اطلب واتساب
+          </a>
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+          className="mt-4 text-sm text-off-white-dim/80"
+        >
+          للطلب المباشر واتساب:{" "}
+          <span className="text-gold-soft" dir="ltr">
+            {WHATSAPP_NUMBER_DISPLAY}
+          </span>
+        </motion.p>
       </div>
 
       <motion.div

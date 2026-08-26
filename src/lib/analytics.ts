@@ -40,6 +40,7 @@ export const analytics = {
   checkoutAbandon: (step: string) => dispatch("checkout_abandon", { step }),
   purchase: (orderId: string, value: number) =>
     dispatch("purchase", { order_id: orderId, value }),
+  orderViaWhatsapp: (source: string) => dispatch("order_via_whatsapp", { source }),
 };
 
 declare global {
