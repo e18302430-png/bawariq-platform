@@ -8,7 +8,7 @@ import {
   Languages, Download, SlidersHorizontal, Plus, User, KeyRound, Eye, EyeOff, Bike,
   UserPlus, Upload, CreditCard, Target, Percent, Route, Footprints, ImagePlus, Phone, Camera, Printer,
   CalendarDays, ClipboardList, Trash2, Megaphone, Mic, Square, PlayCircle, Send, Paperclip,
-  MessageSquare, CheckCheck, Copy,
+  MessageSquare, CheckCheck, Copy, Hash,
   HandCoins, ShieldAlert, Sparkles, Award, Rocket, Zap, Radio, ChevronLeft, Trophy, Medal, Plane,
 } from "lucide-react";
 import {
@@ -179,7 +179,7 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "decisions", "invoices", "invAnalysis", "expenses", "repAccounting", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "decisions", "invoices", "expenses", "repAccounting", "receiptsAdmin", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
@@ -194,7 +194,7 @@ const ROLES = [
     ar: { t: "الإدارة المالية", d: "عمولات المطاعم والتحصيل النقدي والرواتب" },
     en: { t: "Finance", d: "Restaurant commissions, cash collection, payroll" },
     ur: { t: "مالیات", d: "ریستوران کمیشن، نقد وصولی اور تنخواہ" },
-    nav: ["overview", "repAccounting", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings"] },
+    nav: ["overview", "repAccounting", "receiptsAdmin", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings"] },
   { id: "hr", icon: Users, accent: "#C58BF2", glow: "197,139,242", staff: 8, shape: "shield",
     ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
     en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
@@ -210,13 +210,13 @@ const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216
   ar: { t: "هيئة المستشارين", d: "الحلقة الوصل الحصرية مع المدير العام — اعتماد القرارات الاستراتيجية" },
   en: { t: "Advisory Board", d: "Exclusive link with the General Manager — strategic decision approval" },
   ur: { t: "مشاورتی بورڈ", d: "جنرل منیجر کے ساتھ خصوصی رابطہ — اسٹریٹجک فیصلوں کی منظوری" },
-  nav: ["boardCouncil", "decisions", "repAccounting", "payrollRuns", "invoices", "invAnalysis", "expenses"] };
+  nav: ["boardCouncil", "decisions", "repAccounting", "payrollRuns", "invoices", "expenses"] };
 const REP = {
   id: "rep", icon: Car, accent: "#3FD8B4", glow: "63,216,180", staff: 128, shape: "chevron",
   ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
   en: { t: "Delivery Rep", d: "Shift orders and proof of delivery" },
   ur: { t: "ڈیلیوری نمائندہ", d: "شفٹ کے آرڈرز اور ثبوتِ ترسیل" },
-  nav: ["overview", "myEarnings", "mystory", "leaderboard", "hall", "messages", "tickets", "circulars", "attendance", "settings"],
+  nav: ["riderHome", "myEarnings", "riderReceipts", "mystory", "leaderboard", "hall", "messages", "tickets", "circulars", "attendance", "settings"],
 };
 const ALL_ROLES = [...ROLES, REP, ADVISOR_ROLE];
 
@@ -287,97 +287,134 @@ const APPS = [
   { id: "jahez", ar: "جاهز", en: "Jahez", ur: "جاہز" },
   { id: "noon", ar: "نون مينتس", en: "Noon Minutes", ur: "نون منٹس" },
   { id: "lokit", ar: "لوكيت", en: "Lokit", ur: "لوکیٹ" },
+  { id: "noonsm", ar: "نون سوبر مول", en: "Noon Super Mall", ur: "نون سپر مال" },
 ];
 const DAILY_TARGET = { orders: 16, km: 113 };
 
-/* ═══════════  محرك الرواتب والعمولات  ═══════════ */
-// المكوّن الأول: 1400 ر.س ثابت مقابل 480 طلب/شهر — الطلب الزائد أو الناقص بـ 8 ر.س
-function ordersComponent(orders) { return 1400 + (orders - MONTH_TARGET.orders) * 8; }
-// المكوّن الثاني: 600 ر.س ثابت مقابل 3400 كم/شهر (114 كم/يوم) — الكيلو الزائد أو الناقص بـ 0.50 هللة
-function kmComponent(km) { return 600 + (km - MONTH_TARGET.km) * 0.5; }
-function repMonthlySalary(orders, km, fuelAllowance, weekendDeductionAmt, appDeductionAmt) {
-  const a = ordersComponent(orders), b = kmComponent(km);
-  const weekendDeduction = weekendDeductionAmt || 0;
-  const appDeduction = appDeductionAmt || 0;
-  const totalDeduction = weekendDeduction + appDeduction;
-  return { ordersPart: a, kmPart: b, fuel: fuelAllowance || 0, weekendDeduction, appDeduction, violationDeduction: totalDeduction, total: a + b + (fuelAllowance || 0) - totalDeduction };
-}
-// حسبة شركة التشغيل: 8 ر.س لكل طلب + 1.15 ر.س لكل كيلو (بعد أول كيلو)
-function companyBilling(orders, km) {
-  const kmBillable = Math.max(0, km - 1);
-  return { orderRevenue: orders * 8, kmRevenue: kmBillable * 1.15, total: orders * 8 + kmBillable * 1.15 };
-}
-const MONTH_TARGET = { orders: 480, km: 3400 };
-
-/* ═══════════  محرك التسعير ومحاسبة المناديب  ═══════════ */
-// تسعيرتان لكل تطبيق: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب
-const DEFAULT_APP_PRICING = { mode: "unit", perOrder: 8, perKm: 1.15, freeKm: 1, fixedMonthly: 0 };
-const DEFAULT_REP_PRICING = { mode: "target", ordersBase: 1400, ordersTarget: 480, perOrderDelta: 8, kmBase: 600, kmTarget: 3400, perKmDelta: 0.5, fixedMonthly: 0 };
-const PRICE_BASE_FIELDS = { perOrder: 8, perKm: 1.15, freeKm: 0, fixedMonthly: 0, ordersBase: 1400, ordersTarget: 480, perOrderDelta: 8,
-  kmBase: 600, kmTarget: 3400, perKmDelta: 0.5, tiers: [{ from: 0, rate: 8 }] };
-const getAppPrice = (pricing, appId) => (pricing && pricing.app && pricing.app[appId]) || DEFAULT_APP_PRICING;
-const getRepPrice = (pricing, appId) => (pricing && pricing.rep && pricing.rep[appId]) || DEFAULT_REP_PRICING;
+/* ═══════════  محرك التسعير ومحاسبة المناديب (بدون كيلومترات)  ═══════════ */
+// تسعيرتان لكل تطبيق يضعهما المحاسب: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب. لا توجد أرقام افتراضية.
+const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", tiers: [{ from: 0, rate: "" }] };
+const getAppPrice = (pricing, appId) => (pricing && pricing.app && pricing.app[appId]) || null;
+const getRepPrice = (pricing, appId) => (pricing && pricing.rep && pricing.rep[appId]) || null;
 const r2 = (n) => Math.round((+n || 0) * 100) / 100;
-function priceCalc(p, orders, km) {
+function validPrice(p) {
+  if (!p) return false;
+  if (p.mode === "target") return +p.ordersBase > 0 && +p.ordersTarget > 0 && p.perOrderDelta !== "";
+  if (p.mode === "tiers") return (p.tiers || []).length > 0 && (p.tiers || []).every((x) => x.rate !== "" && x.from !== "");
+  return +p.perOrder > 0;
+}
+function monthFactor(month) {
+  const now = riyadhNow().toISOString();
+  if (month !== now.slice(0, 7)) return 1;
+  const [y, m] = month.split("-").map(Number);
+  const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return Math.min(1, Math.max(1 / dim, +now.slice(8, 10) / dim));
+}
+function priceCalc(p, orders, f) {
   const n = (v) => +v || 0;
-  p = p || DEFAULT_APP_PRICING;
-  if (!orders && !km) return { orders: 0, km: 0, fixed: 0, total: 0 };
-  let o = 0, k = 0;
+  f = f || 1;
+  if (!p || !orders) return { orders: 0, fixed: 0, total: 0, configured: !!p };
+  let o = 0;
   if (p.mode === "target") {
-    o = n(p.ordersBase) + (orders - n(p.ordersTarget)) * n(p.perOrderDelta);
-    k = n(p.kmBase) + (km - n(p.kmTarget)) * n(p.perKmDelta);
+    o = n(p.ordersBase) * f + (orders - n(p.ordersTarget) * f) * n(p.perOrderDelta);
   } else if (p.mode === "tiers") {
     const tiers = (p.tiers || []).map((x) => ({ from: n(x.from), rate: n(x.rate) })).sort((a, b) => a.from - b.from);
     tiers.forEach((tr, i) => {
       const hi = i + 1 < tiers.length ? tiers[i + 1].from : Infinity;
       o += Math.max(0, Math.min(orders, hi) - tr.from) * tr.rate;
     });
-    k = Math.max(0, km - n(p.freeKm)) * n(p.perKm);
   } else {
     o = orders * n(p.perOrder);
-    k = Math.max(0, km - n(p.freeKm)) * n(p.perKm);
   }
-  const fixed = n(p.fixedMonthly);
-  return { orders: r2(o), km: r2(k), fixed, total: r2(o + k + fixed) };
+  const fixed = n(p.fixedMonthly) * f;
+  return { orders: r2(o), fixed, total: Math.max(0, r2(o + fixed)), configured: true };
 }
-// أرباح مندوب واحد لشهر: تُجمَّع إدخالات المشرف اليومية حسب التطبيق ثم تُسعَّر بتسعيرة المندوب لذلك التطبيق
-function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty) {
+// أرباح مندوب من الإدخال اليومي للمشرف (تُجمَّع حسب التطبيق ثم تُسعَّر بتسعيرة المندوب لذلك التطبيق)
+function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty, f) {
   const byApp = {};
   entries.forEach((e) => {
     const a = e.app || rep.app || "hs";
-    const g = byApp[a] || (byApp[a] = { orders: 0, km: 0, hours: 0 });
-    g.orders += e.orders || 0; g.km += e.km || 0; g.hours += e.hours || 0;
-  });
-  let gross = 0, orders = 0, km = 0, hours = 0, main = null, mainO = -1;
-  Object.keys(byApp).forEach((a) => {
-    const g = byApp[a];
-    g.pay = priceCalc(getRepPrice(pricing, a), g.orders, g.km).total;
-    gross += g.pay; orders += g.orders; km += g.km; hours += g.hours;
-    if (g.orders > mainO) { mainO = g.orders; main = a; }
+    const g = byApp[a] || (byApp[a] = { orders: 0, hours: 0 });
+    g.orders += e.orders || 0; g.hours += e.hours || 0;
   });
   const weekendCount = entries.reduce((s, e) => s + (e.weekendViolations || 0), 0);
   const appCount = entries.reduce((s, e) => s + (e.appViolations || 0), 0);
-  return { byApp, gross: r2(gross), orders, km, hours, main: main || rep.app, weekendCount, appCount,
-    weekendAuto: weekendCount * (+weekendFine || 0), appAuto: appCount * (+violationPenalty || 0) };
+  const out = { byApp, weekendCount, appCount, weekendAuto: weekendCount * (+weekendFine || 0), appAuto: appCount * (+violationPenalty || 0), f };
+  return finishRepCalc(out, rep, pricing);
 }
-const EMPTY_SETTLE_INPUTS = { appActual: {}, appFines: {}, fineOverride: {}, manual: [] };
-function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine, violationPenalty, expenses) {
+function finishRepCalc(c, rep, pricing) {
+  let gross = 0, orders = 0, hours = 0, main = null, mainO = -1, unpriced = false;
+  Object.keys(c.byApp).forEach((a) => {
+    const g = c.byApp[a], price = getRepPrice(pricing, a);
+    if (!price) unpriced = true;
+    g.pay = priceCalc(price, g.orders, c.f).total;
+    gross += g.pay; orders += g.orders; hours += g.hours || 0;
+    if (g.orders > mainO) { mainO = g.orders; main = a; }
+  });
+  return { ...c, gross: r2(gross), orders, hours, main: main || rep.app, unpriced };
+}
+// قراءة فاتورة التطبيق (Excel): صف لكل معرف مندوب — الطلبات + مجموع الدفعات والخصومات + الغرامات
+async function parseStatement(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  for (const name of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null });
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const row = rows[i] || [];
+      const ci = row.findIndex((c) => typeof c === "string" && /completed_orders/i.test(c));
+      const ri = row.findIndex((c) => typeof c === "string" && /rider_id/i.test(c));
+      if (ci < 0 || ri < 0) continue;
+      const money = [], pen = [];
+      row.forEach((c, k) => { if (typeof c === "string" && k !== ci && k !== ri && /(payment|deduction|penalt)/i.test(c)) { money.push(k); if (/penalt/i.test(c)) pen.push(k); } });
+      const out = []; let orders = 0, net = 0, penalties = 0;
+      for (let j = i + 1; j < rows.length; j++) {
+        const r = rows[j];
+        if (!r || r[ri] == null || r[ri] === "" || typeof r[ci] !== "number") continue;
+        const rn = money.reduce((s, k) => s + (typeof r[k] === "number" ? r[k] : 0), 0);
+        const rp = pen.reduce((s, k) => s + (typeof r[k] === "number" && r[k] < 0 ? -r[k] : 0), 0);
+        out.push({ id: String(r[ri]).trim(), orders: r[ci], net: r2(rn), penalties: r2(rp) });
+        orders += r[ci]; net += rn; penalties += rp;
+      }
+      if (out.length) return { file: file.name, rows: out, orders, net: r2(net), penalties: r2(penalties), riders: out.length };
+    }
+  }
+  return null;
+}
+const EMPTY_SETTLE_INPUTS = { appActual: {}, appFines: {}, fineOverride: {}, manual: [], appStatement: {} };
+function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine, violationPenalty, expenses, receipts) {
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...(rawInputs || {}) };
+  const f = monthFactor(month);
+  const stm = inputs.appStatement || {};
+  const matched = {};
   const repLines = [];
   reps.forEach((r) => {
     const entries = monthEntriesFor(reports, r.id, month);
-    if (!entries.length && r.status !== "active") return;
-    const c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty);
+    const st = stm[r.app];
+    const rid = String(r.riderId || "").trim();
+    const row = st && rid ? st.rows.find((z) => z.id === rid) : null;
+    if (!entries.length && r.status !== "active" && !row) return;
+    let c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty, f);
+    const recOrders = (c.byApp[r.app] || {}).orders || 0;
+    let source = "daily", appAmtAuto = c.appAuto;
+    if (row) {
+      source = "invoice";
+      matched[r.app] = (matched[r.app] || new Set()); matched[r.app].add(row.id);
+      const byApp = { ...c.byApp, [r.app]: { orders: row.orders, hours: (c.byApp[r.app] || {}).hours || 0 } };
+      c = finishRepCalc({ ...c, byApp, f: 1 }, r, pricing);
+      appAmtAuto = row.penalties;
+    }
     const fo = inputs.fineOverride[r.id] || {};
     const weekendAmt = fo.weekend != null ? +fo.weekend : c.weekendAuto;
-    const appAmt = fo.app != null ? +fo.app : c.appAuto;
+    const appAmt = fo.app != null ? +fo.app : appAmtAuto;
     const manual = (inputs.manual || []).filter((m) => m.repId === r.id);
     const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + (+m.amount || 0), 0);
     const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
     const totalDed = weekendAmt + appAmt + deds;
-    repLines.push({ repId: r.id, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, orders: c.orders, km: c.km, hours: c.hours,
+    const reimb = r2((receipts || []).filter((q) => q.repId === r.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
+    repLines.push({ repId: r.id, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced,
+      orders: c.orders, recOrders, invOrders: row ? row.orders : null, invNet: row ? row.net : null, hours: c.hours,
       gross: c.gross, weekendCount: c.weekendCount, appCount: c.appCount, weekendAmt, appAmt, manualAdds: adds, manualDeds: deds, totalDed,
-      net: r2(c.gross + adds - totalDed) });
+      reimb, net: r2(c.gross + adds + reimb - totalDed) });
   });
   const agg = {};
   reports.forEach((rp) => {
@@ -385,27 +422,33 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     rp.entries.forEach((e) => {
       const rep = reps.find((r) => r.id === e.id);
       const a = e.app || (rep && rep.app) || "hs";
-      const g = agg[a] || (agg[a] = { orders: 0, km: 0, reps: new Set() });
-      g.orders += e.orders || 0; g.km += e.km || 0; g.reps.add(e.id);
+      const g = agg[a] || (agg[a] = { orders: 0, reps: new Set() });
+      g.orders += e.orders || 0; g.reps.add(e.id);
     });
   });
+  Object.keys(stm).forEach((a) => { if (!agg[a]) agg[a] = { orders: 0, reps: new Set() }; });
   const appLines = Object.keys(agg).map((a) => {
-    const g = agg[a];
-    const calc = priceCalc(getAppPrice(pricing, a), g.orders, g.km).total;
+    const g = agg[a], st = stm[a];
+    const orders = st ? st.orders : g.orders;
+    const appPrice = getAppPrice(pricing, a);
+    const calc = priceCalc(appPrice, orders, st ? 1 : f).total;
     const hasActual = inputs.appActual[a] != null && inputs.appActual[a] !== "";
-    const actual = hasActual ? +inputs.appActual[a] : null;
+    const base = hasActual ? +inputs.appActual[a] : st ? st.net : calc;
     const fines = +inputs.appFines[a] || 0;
-    const revenue = r2((hasActual ? actual : calc) - fines);
+    const revenue = r2(base - fines);
     const repGross = repLines.reduce((s, l) => s + ((l.byApp[a] && l.byApp[a].pay) || 0), 0);
-    const adjust = repLines.filter((l) => l.app === a).reduce((s, l) => s + (l.totalDed - l.manualAdds), 0);
-    return { app: a, orders: g.orders, km: g.km, reps: g.reps.size, calc, actual, fines, revenue, repGross: r2(repGross), adjust: r2(adjust),
-      margin: r2(revenue - repGross + adjust) };
+    const adjust = repLines.filter((l) => l.app === a).reduce((s, l) => s + (l.totalDed - l.manualAdds - (l.reimb || 0)), 0);
+    const unmatched = st ? st.rows.filter((z) => !(matched[a] && matched[a].has(z.id))) : [];
+    return { app: a, orders, recOrders: g.orders, reps: g.reps.size, calc, appPriced: !!appPrice, repPriced: !!getRepPrice(pricing, a), hasStatement: !!st, file: st ? st.file : "",
+      invNet: st ? st.net : null, invPenalties: st ? st.penalties : null, actual: hasActual ? +inputs.appActual[a] : null, fines, revenue,
+      repGross: r2(repGross), adjust: r2(adjust), margin: r2(revenue - repGross + adjust), unmatched };
   }).sort((p, q) => q.revenue - p.revenue);
   const totals = {
     revenue: r2(appLines.reduce((s, l) => s + l.revenue, 0)),
     repGross: r2(repLines.reduce((s, l) => s + l.gross, 0)),
     deductions: r2(repLines.reduce((s, l) => s + l.totalDed, 0)),
     additions: r2(repLines.reduce((s, l) => s + l.manualAdds, 0)),
+    reimb: r2(repLines.reduce((s, l) => s + (l.reimb || 0), 0)),
     repNet: r2(repLines.reduce((s, l) => s + l.net, 0)),
   };
   totals.companyNet = r2(totals.revenue - totals.repNet);
@@ -413,6 +456,7 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
   totals.afterExpenses = r2(totals.companyNet - totals.expenses);
   return { repLines, appLines, totals };
 }
+const MONTH_TARGET = { orders: 480, km: 3400 };
 
 const WHATS_NEW = {
   ar: [
@@ -511,6 +555,8 @@ const TICKET_TYPES = [
     ar: "طلب إجازة", en: "Leave request", ur: "چھٹی کی درخواست", icon: CalendarDays },
   { id: "appointment", mode: "sequential", chain: ["ops", "opsm", "hr"],
     ar: "حجز موعد بالمكتب", en: "Office visit appointment", ur: "دفتر ملاقات کی بکنگ", icon: CalendarClock },
+  { id: "dispute", mode: "sequential", chain: ["ops", "opsm"],
+    ar: "اعتراض على إدخال يوم", en: "Dispute a day entry", ur: "اندراج پر اعتراض", icon: ClipboardList },
   { id: "urgent_supervisor", mode: "broadcast", to: ["ops"], confidential: false,
     ar: "أحتاج المشرف عاجلاً", en: "Need supervisor urgently", ur: "فوری سپروائزر درکار", icon: Radio },
   { id: "urgent_report", mode: "broadcast", to: ["opsm", "gm", "hr"], confidential: false,
@@ -3534,142 +3580,6 @@ function computeLeaderboard(reps, reports, month) {
   return { first, second, stats };
 }
 
-function PayrollPage({ lang, role, reps, reports, setReports, employees, setAuditLog, actingEmployee }) {
-  const t = T[lang], x = EX[lang];
-  const month = riyadhNow().toISOString().slice(0, 7);
-  const activeReps = reps.filter((r) => r.status === "active");
-  const [fuelMap, setFuelMap] = useState({});
-
-  if (role.id === "hr") {
-    const pending = reports.filter((rp) => rp.hrStatus !== "sent");
-    const sent = reports.filter((rp) => rp.hrStatus === "sent");
-    const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? (lang === "en" ? r.en : r.ar) : id; };
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <Kpi label={x.awaitingHR} value={String(pending.length)} icon={ClipboardList} accent={role.glow} />
-          <Kpi label={x.sentToFinance} value={String(sent.length)} icon={Send} accent={role.glow} />
-          <Kpi label={t.k.activeReps} value={String(activeReps.length)} icon={Bike} accent={role.glow} />
-        </div>
-        <Panel title={x.payrollHR}>
-          {pending.length === 0 ? <EmptyHint lang={lang} /> : (
-            <div className="space-y-2.5">
-              {pending.map((rp) => (
-                <div key={rp.id} className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                      <span className="block text-[13px] font-bold">{rp.id} · <span className="num">{rp.date}</span></span>
-                      <span className="block text-[11px]" style={{ color: "var(--muted)" }}>{rp.entries.length} · {repName(rp.entries[0]?.id)}{rp.entries.length > 1 ? " +" + (rp.entries.length - 1) : ""}</span>
-                    </div>
-                    <Btn variant="accent" accent={role.glow} icon={Send} onClick={() => { setReports((prev) => prev.map((r) => (r.id === rp.id ? { ...r, hrStatus: "sent" } : r))); logAudit(setAuditLog, role, "report_send_finance", rp.id, actingEmployee); }}>{x.sendToFinance}</Btn>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-      </div>
-    );
-  }
-
-  if (role.id === "fin") {
-    const rows = activeReps.map((r) => {
-      const entries = monthEntriesFor(reports, r.id, month);
-      const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-      const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-      const fuel = fuelMap[r.id] ?? 35;
-      const sal = repMonthlySalary(orders, km, fuel);
-      const bill = companyBilling(orders, km);
-      return { r, orders, km, fuel, sal, bill };
-    });
-    const totalPayroll = rows.reduce((a, x2) => a + x2.sal.total, 0);
-    const totalBilling = rows.reduce((a, x2) => a + x2.bill.total, 0);
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Kpi label={x.finalPayroll} value={money(totalPayroll)} unit={t.sar} icon={Wallet} accent={role.glow} />
-          <Kpi label={x.companyRevenue} value={money(totalBilling)} unit={t.sar} icon={CircleDollarSign} accent={role.glow} />
-          <Kpi label={x.netCompany} value={money(totalBilling - totalPayroll)} unit={t.sar} icon={TrendingUp} accent={role.glow} />
-          <Kpi label={t.k.activeReps} value={String(activeReps.length)} icon={Bike} accent={role.glow} />
-        </div>
-        <Panel title={x.finalPayroll} extra={<span className="num text-[11px]" style={{ color: "var(--muted)" }}>{month}</span>}>
-          {rows.length === 0 ? <EmptyHint lang={lang} /> : (
-            <div className="space-y-2.5">
-              {rows.map(({ r, orders, km, fuel, sal }) => (
-                <div key={r.id} className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                  <div className="flex items-center justify-between gap-3 flex-wrap mb-2.5">
-                    <span className="text-[13px] font-bold">{lang === "en" ? r.en : r.ar}</span>
-                    <span className="num text-[16px] font-extrabold" style={{ color: role.accent }}>{sal.total.toFixed(2)} {t.sar}</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]" style={{ color: "var(--muted)" }}>
-                    <span>{x.ordersPart}: <b className="num" style={{ color: "#12151D" }}>{sal.ordersPart.toFixed(2)}</b> ({orders} {t.orders})</span>
-                    <span>{x.kmPart}: <b className="num" style={{ color: "#12151D" }}>{sal.kmPart.toFixed(2)}</b> ({km} {lang === "ar" ? "كم" : "km"})</span>
-                    <span className="flex items-center gap-1.5">{x.fuelAllow}:
-                      <input type="number" value={fuel} min={30} max={40} onChange={(e) => setFuelMap((m) => ({ ...m, [r.id]: +e.target.value }))}
-                        className="num w-14 rounded-lg px-1.5 py-1 text-[11px]" style={{ background: "rgba(0,0,0,.3)", border: "1px solid var(--line)", color: "#12151D" }} />
-                    </span>
-                    <span>{x.totalSalary}: <b className="num" style={{ color: "#4FD1A5" }}>{sal.total.toFixed(2)}</b></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-      </div>
-    );
-  }
-
-  if (role.id === "gm") {
-    const totalBilling = activeReps.reduce((a, r) => {
-      const entries = monthEntriesFor(reports, r.id, month);
-      const orders = entries.reduce((s, e) => s + (e.orders || 0), 0);
-      const km = entries.reduce((s, e) => s + (e.km || 0), 0);
-      return a + companyBilling(orders, km).total;
-    }, 0);
-    const totalPayroll = activeReps.reduce((a, r) => {
-      const entries = monthEntriesFor(reports, r.id, month);
-      const orders = entries.reduce((s, e) => s + (e.orders || 0), 0);
-      const km = entries.reduce((s, e) => s + (e.km || 0), 0);
-      return a + repMonthlySalary(orders, km, 35).total;
-    }, 0);
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <Kpi label={x.companyRevenue} value={money(totalBilling)} unit={t.sar} icon={CircleDollarSign} accent={role.glow} />
-          <Kpi label={x.finalPayroll} value={money(totalPayroll)} unit={t.sar} icon={Wallet} accent={role.glow} />
-          <Kpi label={x.netCompany} value={money(totalBilling - totalPayroll)} unit={t.sar} icon={TrendingUp} accent={role.glow} />
-        </div>
-        <Panel title={x.gmOversight}>
-          <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.allDeptsSnapshot} — {month}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-            {ALL_ROLES.map((r) => (
-              <div key={r.id} className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                <div className="text-[11px] truncate" style={{ color: "var(--muted)" }}>{r[lang].t}</div>
-                <div className="num text-[15px] font-bold mt-1">{r.id === "rep" ? activeReps.length : employees.filter((e) => e.dept === r.id).length} {t.k.head.split(" ")[0]}</div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <Panel title={t.nav.payroll}>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.payrollNote}</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-          {ALL_ROLES.map((r) => (
-            <div key={r.id} className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-              <div className="text-[11px] truncate" style={{ color: "var(--muted)" }}>{r[lang].t}</div>
-              <div className="num text-[15px] font-bold mt-1">{r.id === "rep" ? activeReps.length : employees.filter((e) => e.dept === r.id).length}</div>
-            </div>
-          ))}
-        </div>
-      </Panel>
-    </div>
-  );
-}
 
 /* ═══════════  تنبيهات انتهاء الإقامات (الموارد البشرية)  ═══════════ */
 function daysUntil(dateStr) {
@@ -3734,73 +3644,9 @@ function PodiumCard({ lang, role, rank, entry, rewardAmt, desc, icon: Icon, tone
   );
 }
 
-function Payslip({ lang, role, rep, month, orders, km, hours, weekendDeductAmt, appDeductAmt, finalized, reward, sal, onClose }) {
-  const t = T[lang], x = EX[lang];
-  return (
-    <div className="fixed inset-0 z-[85] grid place-items-start sm:place-items-center px-4 py-6 overflow-y-auto" style={{ background: "rgba(20,27,45,.55)" }}>
-      <div className="w-full max-w-lg">
-        <div className="flex justify-end gap-2 mb-3 no-print">
-          <Btn onClick={onClose}>{t.back}</Btn>
-          <Btn variant="gold" icon={Printer} onClick={() => window.print()}>{x.printBtn}</Btn>
-        </div>
-        <div className="print-area rounded-2xl overflow-hidden" style={{ background: "#fff", border: "1px solid #E4E7EC" }}>
-          <div className="p-6" style={{ background: "linear-gradient(100deg,#B8862E,#8A611E)" }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,.75)" }}>{x.payslipT}</p>
-                <h2 className="text-[19px] font-extrabold mt-0.5" style={{ color: "#fff" }}>{lang === "en" ? "Bawariq Al-Sharq Logistics" : "بوارق الشرق للخدمات اللوجستية"}</h2>
-              </div>
-              <Emblem role={role} size={44} />
-            </div>
-          </div>
-          <div className="p-6">
-            {!finalized && (
-              <div className="rounded-xl p-2.5 mb-4 flex items-center gap-2" style={{ background: "#FFF7E8", border: "1px solid #F2DBA7" }}>
-                <AlertTriangle size={13} style={{ color: "#B8862E" }} />
-                <p className="text-[10.5px]" style={{ color: "#8A611E" }}>{x.payslipProvisional}</p>
-              </div>
-            )}
-            <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: "2px solid #F1F3F5" }}>
-              <div className="flex items-center gap-3">
-                {rep.photo ? <img src={rep.photo} alt="" className="w-12 h-12 rounded-xl object-cover" /> : <span className="grid place-items-center w-12 h-12 rounded-xl" style={{ background: "#F1F3F5" }}><User size={20} color="#8A611E" /></span>}
-                <div>
-                  <p className="text-[14px] font-extrabold" style={{ color: "#12151D" }}>{lang === "en" ? rep.en : rep.ar}</p>
-                  <p className="num text-[11px]" style={{ color: "#667085" }}>{rep.nid} · {rep.phone}</p>
-                </div>
-              </div>
-              <div className="text-end">
-                <p className="text-[10.5px]" style={{ color: "#667085" }}>{x.payslipMonth}</p>
-                <p className="num text-[14px] font-bold" style={{ color: "#12151D" }}>{month}</p>
-                <p className="num text-[10.5px] mt-1" style={{ color: "#667085" }}>{hours.toFixed(1)} {x.hoursCol}</p>
-              </div>
-            </div>
-
-            <table className="w-full text-[13px]" style={{ color: "#12151D" }}>
-              <tbody>
-                <tr><td className="py-2" style={{ color: "#667085" }}>{x.ordersPart} ({orders} {x.lbOrders})</td><td className="num py-2 text-end font-bold">{sal.ordersPart.toFixed(2)}</td></tr>
-                <tr><td className="py-2" style={{ color: "#667085" }}>{x.kmPart} ({km} {lang === "ar" ? "كم" : "km"})</td><td className="num py-2 text-end font-bold">{sal.kmPart.toFixed(2)}</td></tr>
-                <tr><td className="py-2" style={{ color: "#667085" }}>{x.fuelAllow}</td><td className="num py-2 text-end font-bold">{sal.fuel.toFixed(2)}</td></tr>
-                {reward > 0 && <tr><td className="py-2" style={{ color: "#B8862E" }}>{x.lbReward}</td><td className="num py-2 text-end font-bold" style={{ color: "#B8862E" }}>+{reward.toFixed(2)}</td></tr>}
-                {weekendDeductAmt > 0 && <tr><td className="py-2" style={{ color: "#D6584D" }}>{x.weekendViolCol}</td><td className="num py-2 text-end font-bold" style={{ color: "#D6584D" }}>-{weekendDeductAmt.toFixed(2)}</td></tr>}
-                {appDeductAmt > 0 && <tr><td className="py-2" style={{ color: "#D6584D" }}>{x.appViolCol}</td><td className="num py-2 text-end font-bold" style={{ color: "#D6584D" }}>-{appDeductAmt.toFixed(2)}</td></tr>}
-              </tbody>
-            </table>
-
-            <div className="flex items-center justify-between mt-4 pt-4" style={{ borderTop: "2px solid #12151D" }}>
-              <p className="text-[13px] font-extrabold" style={{ color: "#12151D" }}>{x.totalSalary}</p>
-              <p className="num text-[22px] font-extrabold" style={{ color: "#0FA579" }}>{(sal.total + reward).toFixed(2)} <span className="text-[13px]">{t.sar}</span></p>
-            </div>
-            <p className="text-[10px] mt-5 text-center" style={{ color: "#98A2B3" }}>{x.printedOn}: {riyadhToday()} · {x.dammamTime}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shifts, user, weekendFine, violationPenalty, payrollRuns }) {
   const t = T[lang], x = EX[lang];
-  const [showPayslip, setShowPayslip] = useState(false);
   if (!activeRep) return <div className="space-y-4"><Panel title={x.myStoryT}><EmptyHint lang={lang} /></Panel></div>;
 
   const allEntries = [];
@@ -3814,20 +3660,6 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
   const shiftsCount = (shifts || []).filter((s) => s.repId === user).length;
   const joinDate = allEntries.length ? allEntries.map((e) => e.date).sort()[0] : null;
 
-  const month = riyadhNow().toISOString().slice(0, 7);
-  const monthEntries = allEntries.filter((e) => e.date.startsWith(month));
-  const pHours = monthEntries.reduce((a, e) => a + (e.hours || 0), 0);
-  const pOrders = monthEntries.reduce((a, e) => a + (e.orders || 0), 0);
-  const pKm = monthEntries.reduce((a, e) => a + (e.km || 0), 0);
-  const closedRun = (payrollRuns || []).find((r) => r.month === month);
-  const closedEntry = closedRun?.entries.find((e) => e.repId === activeRep.id);
-  const pWeekendDeduct = closedEntry?.weekendDeductAmt ?? 0;
-  const pAppDeduct = closedEntry?.appDeductAmt ?? 0;
-  const pFinalized = !!closedRun;
-  const pSal = repMonthlySalary(pOrders, pKm, 35, pWeekendDeduct, pAppDeduct);
-  const pLb = computeLeaderboard([activeRep], reports, month);
-  const pReward = pLb.first && pLb.first.rep.id === activeRep.id ? LB_REWARDS.first : pLb.second && pLb.second.rep.id === activeRep.id ? LB_REWARDS.second : 0;
-
   const stats = [
     { icon: ShoppingBag, label: x.storyOrders, value: fmt(totalOrders) },
     { icon: Route, label: x.storyKm, value: fmt(totalKm) },
@@ -3839,14 +3671,6 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
 
   return (
     <div className="space-y-4">
-      {showPayslip && (
-        <Payslip lang={lang} role={role} rep={activeRep} month={month} orders={pOrders} km={pKm} hours={pHours}
-          weekendDeductAmt={pWeekendDeduct} appDeductAmt={pAppDeduct} finalized={pFinalized}
-          reward={pReward} sal={pSal} onClose={() => setShowPayslip(false)} />
-      )}
-      <div className="flex justify-end">
-        <Btn variant="gold" icon={Printer} onClick={() => setShowPayslip(true)}>{x.printPayslip}</Btn>
-      </div>
       <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(125deg,rgba(${role.glow},.18),rgba(${role.glow},.02) 60%)`, border: `1px solid rgba(${role.glow},.32)` }}>
         <RepHeroArt accent={role.glow} />
         <div className="relative flex items-center gap-3">
@@ -4330,182 +4154,6 @@ function ComplianceEquipmentPage({ lang, role, reps, equipStatus, setEquipStatus
   );
 }
 
-function InvoiceAnalysisPage({ lang, role, appInvoices, setAppInvoices, payrollRuns, expenses, setAuditLog, actingEmployee }) {
-  const t = T[lang], x = EX[lang];
-  const [showForm, setShowForm] = useState(false);
-  const blank = { month: riyadhNow().toISOString().slice(0, 7), app: "hs", grossExclVat: "", vat: "", netPayable: "",
-    totalDeductions: "", carRentalDeduction: "", ordersCount: "", ridersTotal: "", ridersActive: "" };
-  const [form, setForm] = useState(blank);
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-  const appName = (aid) => (APPS.find((a) => a.id === aid) || {})[lang] || aid;
-
-  const submit = () => {
-    if (!form.netPayable || !form.month) return;
-    const entry = { id: "INV-" + Date.now(), ...form,
-      grossExclVat: +form.grossExclVat || 0, vat: +form.vat || 0, netPayable: +form.netPayable || 0,
-      totalDeductions: +form.totalDeductions || 0, carRentalDeduction: +form.carRentalDeduction || 0,
-      ordersCount: +form.ordersCount || 0, ridersTotal: +form.ridersTotal || 0, ridersActive: +form.ridersActive || 0,
-      createdAt: riyadhNow().toISOString() };
-    setAppInvoices((prev) => [entry, ...prev]);
-    logAudit(setAuditLog, role, "app_invoice_add", `${appName(form.app)} — ${form.month}`, actingEmployee);
-    setForm(blank);
-    setShowForm(false);
-  };
-  const remove = (id) => { setAppInvoices((prev) => prev.filter((i) => i.id !== id)); logAudit(setAuditLog, role, "app_invoice_delete", id, actingEmployee); };
-
-  const months = [...new Set(appInvoices.map((i) => i.month))].sort();
-  const curMonth = riyadhNow().toISOString().slice(0, 7);
-  const thisMonthInvoices = appInvoices.filter((i) => i.month === curMonth);
-  const thisMonthNet = thisMonthInvoices.reduce((a, i) => a + i.netPayable, 0);
-  const thisMonthOrders = thisMonthInvoices.reduce((a, i) => a + i.ordersCount, 0);
-  const ridersTotalSum = thisMonthInvoices.reduce((a, i) => a + i.ridersTotal, 0);
-  const ridersActiveSum = thisMonthInvoices.reduce((a, i) => a + i.ridersActive, 0);
-  const activeRatio = ridersTotalSum > 0 ? Math.round((ridersActiveSum / ridersTotalSum) * 100) : null;
-
-  const payrollThisMonth = (payrollRuns || []).find((r) => r.month === curMonth && r.status === "approved");
-  const payrollCost = payrollThisMonth ? payrollThisMonth.totalPayroll : null;
-  const monthExpenses = (expenses || []).filter((e) => (e.status === "approved" || !e.status) && e.date && e.date.startsWith(curMonth)).reduce((a, e) => a + e.v, 0);
-  const margin = payrollCost != null ? thisMonthNet - payrollCost - monthExpenses : null;
-
-  const byApp = {};
-  thisMonthInvoices.forEach((i) => { byApp[i.app] = (byApp[i.app] || 0) + i.netPayable; });
-  const appChart = Object.keys(byApp).map((aid) => ({ n: appName(aid), v: +byApp[aid].toFixed(0) }));
-
-  const trendChart = months.map((m) => {
-    const inv = appInvoices.filter((i) => i.month === m);
-    const net = inv.reduce((a, i) => a + i.netPayable, 0);
-    const pr = (payrollRuns || []).find((r) => r.month === m);
-    return { m: m.slice(2), net: +net.toFixed(0), cost: pr ? +pr.totalPayroll.toFixed(0) : null };
-  });
-
-  const deductionsThisMonth = thisMonthInvoices.reduce((a, i) => a + i.totalDeductions, 0);
-  const carRentalThisMonth = thisMonthInvoices.reduce((a, i) => a + i.carRentalDeduction, 0);
-
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(125deg,rgba(${role.glow},.16),rgba(${role.glow},.02) 60%)`, border: `1px solid rgba(${role.glow},.32)` }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <ReceiptText size={19} style={{ color: role.accent }} />
-          <h2 className="text-[16px] font-extrabold">{x.invAnalysisT}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.invAnalysisSub}</p>
-      </div>
-
-      {margin != null && (
-        <div className="glass rounded-2xl p-5 relative overflow-hidden" style={{ background: margin >= 0 ? "linear-gradient(100deg,rgba(15,165,121,.14),rgba(15,165,121,.02))" : "linear-gradient(100deg,rgba(214,88,77,.14),rgba(214,88,77,.02))", border: `1px solid ${margin >= 0 ? "rgba(15,165,121,.35)" : "rgba(214,88,77,.35)"}` }}>
-          <div className="flex items-center gap-3">
-            {margin >= 0 ? <TrendingUp size={26} style={{ color: "#0FA579" }} /> : <TrendingDown size={26} style={{ color: "#D6584D" }} />}
-            <div>
-              <p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{margin >= 0 ? x.profitLbl : x.lossLbl} — {curMonth}</p>
-              <p className="num text-[26px] font-extrabold" style={{ color: margin >= 0 ? "#0FA579" : "#D6584D" }}>{margin >= 0 ? "+" : ""}{money(margin)} {t.sar}</p>
-              <p className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.invNetIn}: {money(thisMonthNet)} − {x.payrollOut}: {money(payrollCost)} − {x.invTotalExpenses}: {money(monthExpenses)}</p>
-            </div>
-          </div>
-        </div>
-      )}
-      {margin == null && (
-        <div className="rounded-2xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.25)" }}>
-          <AlertTriangle size={15} style={{ color: "#B8862E" }} className="mt-0.5 shrink-0" />
-          <p className="text-[11.5px] leading-relaxed" style={{ color: "#8A611E" }}>{x.needsPayrollClosed}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi label={x.invNetIn} value={money(thisMonthNet)} unit={t.sar} icon={CircleDollarSign} accent={role.glow} />
-        <Kpi label={x.lbOrders} value={fmt(thisMonthOrders)} icon={ShoppingBag} accent={role.glow} />
-        <Kpi label={x.riderUtilization} value={activeRatio != null ? `${activeRatio}%` : "—"} icon={Bike} accent={role.glow} />
-        <Kpi label={x.totalDeductLbl} value={money(deductionsThisMonth)} unit={t.sar} icon={AlertTriangle} accent={role.glow} />
-      </div>
-
-      {activeRatio != null && activeRatio < 60 && (
-        <div className="rounded-2xl p-3.5 flex items-start gap-2.5" style={{ background: "rgba(214,88,77,.08)", border: "1px solid rgba(214,88,77,.25)" }}>
-          <AlertTriangle size={15} style={{ color: "#D6584D" }} className="mt-0.5 shrink-0" />
-          <p className="text-[11.5px] leading-relaxed" style={{ color: "#D6584D" }}>{x.lowActiveWarn} ({activeRatio}%)</p>
-        </div>
-      )}
-
-      {appChart.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title={x.invByAppT}>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={appChart} margin={{ top: 6, right: 4, left: -24, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(20,27,45,.06)" vertical={false} />
-                  <XAxis dataKey="n" tick={{ ...AXIS, fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
-                  <YAxis tick={AXIS} axisLine={false} tickLine={false} />
-                  <Tooltip {...TIP} />
-                  <Bar dataKey="v" name={t.sar} radius={[8, 8, 2, 2]} fill={role.accent} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-          <Panel title={x.invTrendT}>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendChart} margin={{ top: 6, right: 4, left: -24, bottom: 0 }}>
-                  <defs><linearGradient id="gInv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor="#0FA579" stopOpacity=".5" />
-                    <stop offset="1" stopColor="#0FA579" stopOpacity="0" />
-                  </linearGradient></defs>
-                  <CartesianGrid stroke="rgba(20,27,45,.06)" vertical={false} />
-                  <XAxis dataKey="m" tick={AXIS} axisLine={false} tickLine={false} />
-                  <YAxis tick={AXIS} axisLine={false} tickLine={false} />
-                  <Tooltip {...TIP} />
-                  <Area type="monotone" dataKey="net" name={x.invNetIn} stroke="#0FA579" strokeWidth={2.2} fill="url(#gInv)" />
-                  <Line type="monotone" dataKey="cost" name={x.payrollOut} stroke="#D6584D" strokeWidth={1.8} dot={false} strokeDasharray="4 4" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-        </div>
-      )}
-
-      {!showForm ? (
-        <Btn variant="gold" icon={Plus} onClick={() => setShowForm(true)}>{x.addInvoiceBtn}</Btn>
-      ) : (
-        <Panel title={x.addInvoiceBtn}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.invApp}</span>
-              <select value={form.app} onChange={(e) => set("app")(e.target.value)} className="w-full rounded-xl px-3 py-3 text-[13px] outline-none" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#fff" }}>
-                {APPS.map((a) => <option key={a.id} value={a.id} style={{ background: "#0A0F1C" }}>{a[lang]}</option>)}
-              </select>
-            </label>
-            <GateField label={x.invMonth} val={form.month} set={set("month")} ph="" Icon={CalendarClock} type="month" accent={role.accent} />
-            <GateField label={x.invGrossExclVat} val={form.grossExclVat} set={set("grossExclVat")} ph="0" Icon={CircleDollarSign} type="number" accent={role.accent} />
-            <GateField label={x.invVat} val={form.vat} set={set("vat")} ph="0" Icon={Percent} type="number" accent={role.accent} />
-            <GateField label={x.invNetIn} val={form.netPayable} set={set("netPayable")} ph="0" Icon={Wallet} type="number" accent={role.accent} />
-            <GateField label={x.totalDeductLbl} val={form.totalDeductions} set={set("totalDeductions")} ph="0" Icon={AlertTriangle} type="number" accent={role.accent} />
-            <GateField label={x.invCarRental} val={form.carRentalDeduction} set={set("carRentalDeduction")} ph="0" Icon={Car} type="number" accent={role.accent} />
-            <GateField label={x.lbOrders} val={form.ordersCount} set={set("ordersCount")} ph="0" Icon={ShoppingBag} type="number" accent={role.accent} />
-            <GateField label={x.invRidersTotal} val={form.ridersTotal} set={set("ridersTotal")} ph="0" Icon={Bike} type="number" accent={role.accent} />
-            <GateField label={x.invRidersActive} val={form.ridersActive} set={set("ridersActive")} ph="0" Icon={CheckCircle2} type="number" accent={role.accent} />
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Btn onClick={() => setShowForm(false)}>{x.cancel}</Btn>
-            <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={submit}>{x.save}</Btn>
-          </div>
-        </Panel>
-      )}
-
-      <Panel title={x.invHistoryT}>
-        {appInvoices.length === 0 ? <EmptyHint lang={lang} /> : (
-          <DataTable
-            headers={[x.invMonth, x.invApp, x.invNetIn, x.lbOrders, x.invRidersActive]}
-            rows={appInvoices.map((i) => ({
-              key: i.id,
-              onDelete: () => remove(i.id),
-              cells: [
-                { v: i.month, mono: 1 }, { v: appName(i.app) },
-                { v: money(i.netPayable) + " " + t.sar, mono: 1, strong: 1 },
-                { v: fmt(i.ordersCount), mono: 1 }, { v: `${i.ridersActive}/${i.ridersTotal}`, mono: 1, dim: 1 },
-              ],
-            }))} />
-        )}
-      </Panel>
-    </div>
-  );
-}
 
 function GrowthPage({ lang, role, reps, reports, invoices, payrollRuns, contracts }) {
   const t = T[lang], x = EX[lang];
@@ -4955,17 +4603,11 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const [deductAmounts, setDeductAmounts] = useState({}); // القيمة الفعلية بالريال اللي تقرّرها المالية لكل مندوب: { [repId]: { weekend, app } }
 
   const appName = (aid) => (APPS.find((a) => a.id === aid) || {})[lang] || aid;
+  const settleRec = (repSettlements || []).find((s) => s.month === month && s.closed && s.snapshot);
   const appRevenue = {};
-  activeReps.forEach((r) => {
-    const entries = monthEntriesFor(reports, r.id, month);
-    const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-    const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-    const bill = companyBilling(orders, km).total;
-    appRevenue[r.app] = (appRevenue[r.app] || 0) + bill;
-  });
+  if (settleRec) settleRec.snapshot.appLines.forEach((l) => { appRevenue[l.app] = l.revenue; });
   const appBreakdown = Object.keys(appRevenue).map((aid) => ({ id: aid, name: appName(aid), total: appRevenue[aid] })).sort((a, b) => b.total - a.total);
 
-  const settleRec = (repSettlements || []).find((s) => s.month === month && s.closed && s.snapshot);
   const settledNet = (id) => { const l = settleRec && settleRec.snapshot.repLines.find((z) => z.repId === id); return l ? l.net : 0; };
   const live = activeReps.map((r) => {
     const entries = monthEntriesFor(reports, r.id, month);
@@ -4974,12 +4616,11 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
     const hours = entries.reduce((a, e) => a + (e.hours || 0), 0);
     const weekendCount = entries.reduce((a, e) => a + (e.weekendViolations || 0), 0);
     const appCount = entries.reduce((a, e) => a + (e.appViolations || 0), 0);
-    const bill = companyBilling(orders, km);
     const reward = rewardFor(r.id);
     // كل مندوب — كفالة أو أجير — راتبه يُدخل يدوياً من المالية بالكامل، بدون أي معادلة تلقائية
     const manual = ajeerAmounts[r.id] ?? settledNet(r.id);
     return { repId: r.id, name: lang === "en" ? r.en : r.ar, empType: r.empType, app: r.app, orders, km, hours, weekendCount, appCount,
-      salary: manual, violationDeduction: 0, reward, total: manual + reward, billing: bill.total };
+      salary: manual, violationDeduction: 0, reward, total: manual + reward, billing: 0 };
   });
   const liveKafala = live.filter((r) => r.empType !== "ajeer");
   const liveAjeer = live.filter((r) => r.empType === "ajeer");
@@ -4992,7 +4633,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   }));
 
   const liveTotalPayroll = live.reduce((a, r) => a + r.total, 0) + liveOffice.reduce((a, r) => a + r.salary, 0);
-  const liveTotalBilling = live.reduce((a, r) => a + r.billing, 0);
+  const liveTotalBilling = settleRec ? settleRec.snapshot.totals.revenue : 0;
 
   const closeMonth = () => {
     if (alreadyClosed) return;
@@ -5651,11 +5292,11 @@ function RepPerformanceAnalytics({ lang, role, reps }) {
 }
 
 /* ═══════════  توظيف المناديب — الموارد البشرية  ═══════════ */
-function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingEmployee }) {
+function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingEmployee, applications, setApplications }) {
   const t = T[lang], x = EX[lang];
   const canManage = role.id === "opsm" || role.id === "gm";
   const SUP_LIST = supervisorsOf(employees);
-  const [form, setForm] = useState({ name: "", phone: "", nid: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
+  const [form, setForm] = useState({ name: "", phone: "", nid: "", riderId: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [pickSup, setPickSup] = useState(null);
@@ -5679,15 +5320,16 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
     if (!/^\d{10}$/.test(form.nid)) return setErr(x.errRepNid);
     if (reps.some((r) => r.nid === form.nid)) return setErr(x.errRepNid);
     if (!form.idExpiry) return setErr(x.errRepExpiry);
+    if (form.riderId.trim() && reps.some((r) => r.app === form.app && String(r.riderId || "").trim() === form.riderId.trim())) return setErr(RA[lang].errRiderDup);
     if (!form.idPhoto || !form.licPhoto) return setErr(x.errRepPhotos);
     if (form.password.length < 4) return setErr(x.errRepPass);
     setErr("");
     const id = "R-" + (1000 + reps.length + Math.floor(Math.random() * 90));
-    setReps((prev) => [...prev, { id, ar: form.name, en: form.name, phone: form.phone, nid: form.nid, idExpiry: form.idExpiry,
+    setReps((prev) => [...prev, { id, ar: form.name, en: form.name, phone: form.phone, nid: form.nid, riderId: form.riderId.trim(), idExpiry: form.idExpiry,
       vehicle: form.vehicle, app: form.app, empType: form.empType, status: "pending", sup: null, password: form.password, photo: form.photo,
       orders: 0, hours: 0, km: 0, weekendViolations: 0, appViolations: 0 }]);
     logAudit(setAuditLog, role, "rep_add", `${form.name} (${id})`, actingEmployee);
-    setForm({ name: "", phone: "", nid: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
+    setForm({ name: "", phone: "", nid: "", riderId: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
     setOk(x.repAdded);
     setTimeout(() => setOk(""), 3500);
   };
@@ -5699,9 +5341,9 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
     setPickSup(null); setChosenSup("");
   };
   const deleteRep = (id) => { setReps((prev) => prev.filter((r) => r.id !== id)); logAudit(setAuditLog, role, "rep_delete", id, actingEmployee); };
-  const startEdit = (r) => { setEditId(r.id); setEditForm({ name: r.ar, phone: r.phone, idExpiry: r.idExpiry, vehicle: r.vehicle, app: r.app, empType: r.empType, sup: r.sup || "" }); };
+  const startEdit = (r) => { setEditId(r.id); setEditForm({ name: r.ar, phone: r.phone, riderId: r.riderId || "", idExpiry: r.idExpiry, vehicle: r.vehicle, app: r.app, empType: r.empType, sup: r.sup || "" }); };
   const saveEdit = () => {
-    setReps((prev) => prev.map((r) => (r.id === editId ? { ...r, ar: editForm.name, en: editForm.name, phone: editForm.phone, idExpiry: editForm.idExpiry, vehicle: editForm.vehicle, app: editForm.app, empType: editForm.empType, sup: editForm.sup || r.sup } : r)));
+    setReps((prev) => prev.map((r) => (r.id === editId ? { ...r, ar: editForm.name, en: editForm.name, phone: editForm.phone, riderId: (editForm.riderId || "").trim(), idExpiry: editForm.idExpiry, vehicle: editForm.vehicle, app: editForm.app, empType: editForm.empType, sup: editForm.sup || r.sup } : r)));
     setEditId(null); setEditForm(null);
   };
 
@@ -5727,11 +5369,13 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
 
   return (
     <div className="space-y-4">
+      {applications && <ApplicationsPanel lang={lang} role={role} applications={applications} setApplications={setApplications} reps={reps} setReps={setReps} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
       <Panel title={x.addRepBtn} extra={<span className="grid place-items-center w-8 h-8 rounded-xl" style={{ background: `rgba(${role.glow},.13)`, border: `1px solid rgba(${role.glow},.28)` }}><UserPlus size={15} style={{ color: role.accent }} /></span>}>
         <div className="grid gap-3.5 sm:grid-cols-2">
           <GateField label={x.repName} val={form.name} set={set("name")} ph="محمد العنزي" Icon={User} type="text" accent={role.accent} />
           <GateField label={x.repPhone} val={form.phone} set={set("phone")} ph="05xxxxxxxx" Icon={Phone} type="tel" accent={role.accent} />
           <GateField label={x.repNid} val={form.nid} set={set("nid")} ph="10xxxxxxxx" Icon={CreditCard} type="text" accent={role.accent} />
+          <GateField label={RA[lang].riderId} val={form.riderId} set={set("riderId")} ph={RA[lang].riderIdPh} Icon={Hash} accent={role.accent} />
           <GateField label={x.repIdExpiry} val={form.idExpiry} set={set("idExpiry")} ph="" Icon={CalendarDays} type="date" accent={role.accent} />
           <GateField label={x.repPassword} val={form.password} set={set("password")} ph="••••••••" Icon={KeyRound} type="text" accent={role.accent} />
         </div>
@@ -5859,6 +5503,7 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
             <div className="space-y-3">
               <GateField label={x.repName} val={editForm.name} set={(v) => setEditForm((f) => ({ ...f, name: v }))} ph="" Icon={User} type="text" accent={role.accent} />
               <GateField label={x.repPhone} val={editForm.phone} set={(v) => setEditForm((f) => ({ ...f, phone: v }))} ph="" Icon={Phone} type="tel" accent={role.accent} />
+              <GateField label={RA[lang].riderId} val={editForm.riderId || ""} set={(v) => setEditForm((f) => ({ ...f, riderId: v }))} ph={RA[lang].riderIdPh} Icon={Hash} accent={role.accent} />
               <GateField label={x.repIdExpiry} val={editForm.idExpiry} set={(v) => setEditForm((f) => ({ ...f, idExpiry: v }))} ph="" Icon={CalendarDays} type="date" accent={role.accent} />
               <div className="flex gap-2">
                 {["car", "bike"].map((v) => (
@@ -5893,7 +5538,6 @@ function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
   const [open, setOpen] = useState(false);
   const tier = tierOf(r);
   const tierLabel = { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key];
-  const sal = repMonthlySalary(r.orders || 0, r.km || 0, 35);
   const stateLabel = state === "onDuty" ? x.onDutyLive : state === "late" ? x.lateForShift : state === "booked" ? x.bookedNotIn : state === "done" ? t.s.closed : x.noShiftToday;
   const borderColor = state === "onDuty" ? "rgba(63,216,180,.4)" : state === "late" ? "rgba(232,131,122,.45)" : "var(--line)";
   return (
@@ -5931,8 +5575,8 @@ function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
             <p className="num text-[15px] font-bold mt-0.5">{r.km || 0}</p>
           </div>
           <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{x.totalSalary}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{sal.total.toFixed(0)}</p>
+            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].riderId}</p>
+            <p className="num text-[15px] font-bold mt-0.5">{r.riderId || "—"}</p>
           </div>
           <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
             <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{tierLabel}</p>
@@ -7107,6 +6751,40 @@ const RA = {
     finCloseNotif: "اس مہینے کا نمائندہ حساب ابھی بند نہیں ہوا", repClosedNotif: "آپ کا ماہانہ حساب منظور ہو گیا",
   },
 };
+/* ═══════════  معرف المندوب + مطابقة فاتورة التطبيق  ═══════════ */
+Object.assign(RA.ar, {
+  riderId: "معرّف المندوب في التطبيق", riderIdPh: "مثال: 4821937", errRiderDup: "هذا المعرّف مسجّل لمندوب آخر في نفس التطبيق",
+  colInvNet: "صافي الفاتورة", colRecorded: "مسجّل يومياً", noPolicy: "بدون تسعيرة", noRiderId: "بدون معرّف",
+  srcInv: "فاتورة", srcDaily: "يومي",
+  stSub: "ارفع فاتورة كل تطبيق (Excel) — يربط النظام كل صف بالمندوب عبر معرّفه ويحسب طلباته ومخالفاته وربحه، ثم يعطيك صافي ربح الشركة.",
+  ridersN: "مندوب", matchedN: "تمت مطابقتهم", noInvoice: "لم تُرفع فاتورة بعد — تُحتسب الطلبات من إدخال المشرف", stReplace: "استبدال الفاتورة",
+  unmatchedT: "معرّفات في الفاتورة بدون مندوب", linkTo: "اربطه بمندوب…",
+  wT: "ملاحظات قبل الإقفال", wRepPrice: "لا توجد تسعيرة مندوب — أرباح المناديب 0", wAppPrice: "لا توجد تسعيرة تطبيق ولا فاتورة — الإيراد 0", wNoId: "مندوب بدون معرّف تطبيق (لن يُطابَق مع الفاتورة)",
+  noRateYet: "لم يحدّد المحاسب تسعيرتك بعد — سيظهر ربحك فور اعتمادها", rhMonthOrders: "طلبات الشهر",
+  usingDefault: "غير مضبوطة", resetDefault: "حذف التسعيرة",
+});
+Object.assign(RA.en, {
+  riderId: "Rider ID in the app", riderIdPh: "e.g. 4821937", errRiderDup: "This ID is already used by another rider on the same app",
+  colInvNet: "Invoice net", colRecorded: "logged daily", noPolicy: "No pricing", noRiderId: "No ID",
+  srcInv: "invoice", srcDaily: "daily",
+  stSub: "Upload each app's invoice (Excel) — every row is matched to a rider by ID, showing orders, violations and profit, then the company's net profit.",
+  ridersN: "riders", matchedN: "Matched", noInvoice: "No invoice uploaded yet — orders come from the supervisor's entries", stReplace: "Replace invoice",
+  unmatchedT: "Invoice IDs with no rider", linkTo: "Link to a rider…",
+  wT: "Before closing", wRepPrice: "No rider pricing set — rider earnings are 0", wAppPrice: "No app pricing and no invoice — revenue is 0", wNoId: "rider(s) without an app ID (won't match the invoice)",
+  noRateYet: "The accountant hasn't set your pricing yet — your earnings appear once approved", rhMonthOrders: "Orders this month",
+  usingDefault: "Not set", resetDefault: "Remove pricing",
+});
+Object.assign(RA.ur, {
+  riderId: "ایپ میں رائیڈر آئی ڈی", riderIdPh: "مثال: 4821937", errRiderDup: "یہ آئی ڈی اسی ایپ پر دوسرے رائیڈر کے پاس ہے",
+  colInvNet: "انوائس خالص", colRecorded: "روزانہ درج", noPolicy: "قیمت مقرر نہیں", noRiderId: "آئی ڈی نہیں",
+  srcInv: "انوائس", srcDaily: "روزانہ",
+  stSub: "ہر ایپ کی انوائس (Excel) اپ لوڈ کریں — ہر صف آئی ڈی سے رائیڈر سے ملتی ہے، پھر کمپنی کا خالص منافع۔",
+  ridersN: "رائیڈرز", matchedN: "ملائے گئے", noInvoice: "ابھی انوائس اپ لوڈ نہیں ہوئی", stReplace: "انوائس تبدیل کریں",
+  unmatchedT: "انوائس میں بغیر رائیڈر آئی ڈیز", linkTo: "رائیڈر سے جوڑیں…",
+  wT: "بند کرنے سے پہلے", wRepPrice: "رائیڈر کی قیمت مقرر نہیں — کمائی 0", wAppPrice: "ایپ کی قیمت نہ انوائس — آمدنی 0", wNoId: "رائیڈرز بغیر ایپ آئی ڈی",
+  noRateYet: "اکاؤنٹنٹ نے ابھی آپ کی قیمت مقرر نہیں کی", rhMonthOrders: "اس ماہ آرڈرز",
+  usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
+});
 Object.assign(T.ar.nav, { repAccounting: "محاسبة المناديب", myEarnings: "أرباحي" });
 Object.assign(T.en.nav, { repAccounting: "Rep Accounting", myEarnings: "My Earnings" });
 Object.assign(T.ur.nav, { repAccounting: "نمائندہ اکاؤنٹنگ", myEarnings: "میری کمائی" });
@@ -7117,19 +6795,15 @@ const INPUT_ST = { background: "#fff", border: "1px solid var(--line-strong)", c
 function describePrice(p, RAx, sar) {
   const n = (v) => +v || 0;
   if (!p) return [];
-  if (p.mode === "target") return [
-    `${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · ${n(p.perOrderDelta)} ${sar} ${RAx.dAbove}`,
-    `${n(p.kmBase)} ${sar} ${RAx.dTarget} ${n(p.kmTarget)} ${RAx.tryKm} · ${n(p.perKmDelta)} ${sar} ${RAx.dKmAbove}`,
-  ].concat(n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : []);
-  if (p.mode === "tiers") return (p.tiers || []).map((tr) => `${RAx.dFrom} ${n(tr.from)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`)
-    .concat([`${n(p.perKm)} ${sar} ${RAx.dKm}`]).concat(n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : []);
-  return [`${n(p.perOrder)} ${sar} ${RAx.dOrder}`, `${n(p.perKm)} ${sar} ${RAx.dKm}`].concat(n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : []);
+  const fx = n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : [];
+  if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · ${n(p.perOrderDelta)} ${sar} ${RAx.dAbove}`].concat(fx);
+  if (p.mode === "tiers") return (p.tiers || []).map((tr) => `${RAx.dFrom} ${n(tr.from)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
+  return [`${n(p.perOrder)} ${sar} ${RAx.dOrder}`].concat(fx);
 }
 
 function PriceForm({ value, onChange, RAx, sar }) {
   const p = value;
   const [tryO, setTryO] = useState(480);
-  const [tryK, setTryK] = useState(3400);
   const setNum = (k) => (e) => onChange({ ...p, [k]: e.target.value === "" ? "" : +e.target.value });
   const Field = ({ k }) => (
     <label className="block">
@@ -7139,7 +6813,7 @@ function PriceForm({ value, onChange, RAx, sar }) {
   );
   const tiers = p.tiers || [{ from: 0, rate: 0 }];
   const setTier = (i, k, v) => onChange({ ...p, tiers: tiers.map((tr, j) => (j === i ? { ...tr, [k]: v === "" ? "" : +v } : tr)) });
-  const res = priceCalc(p, +tryO || 0, +tryK || 0);
+  const res = priceCalc(p, +tryO || 0);
   const modes = [["unit", RAx.modeUnit], ["target", RAx.modeTarget], ["tiers", RAx.modeTiers]];
   return (
     <div className="space-y-4">
@@ -7147,7 +6821,7 @@ function PriceForm({ value, onChange, RAx, sar }) {
         <p className="text-[11px] font-semibold mb-2" style={{ color: "var(--muted)" }}>{RAx.mode}</p>
         <div className="flex gap-2 flex-wrap">
           {modes.map(([id, label]) => (
-            <button key={id} onClick={() => onChange({ ...PRICE_BASE_FIELDS, ...p, mode: id })}
+            <button key={id} onClick={() => onChange({ ...BLANK_PRICE, ...p, mode: id })}
               className="px-3 py-2 rounded-xl text-[12px] font-bold transition"
               style={{ background: p.mode === id ? "rgba(184,134,46,.14)" : "rgba(20,27,45,.04)", border: `1px solid ${p.mode === id ? "rgba(184,134,46,.5)" : "var(--line)"}`, color: p.mode === id ? "#8A611E" : "var(--muted)" }}>{label}</button>
           ))}
@@ -7156,7 +6830,7 @@ function PriceForm({ value, onChange, RAx, sar }) {
       {p.mode === "target" && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Field k="ordersBase" /><Field k="ordersTarget" /><Field k="perOrderDelta" />
-          <Field k="kmBase" /><Field k="kmTarget" /><Field k="perKmDelta" /><Field k="fixedMonthly" />
+          <Field k="fixedMonthly" />
         </div>
       )}
       {p.mode === "tiers" && (
@@ -7173,19 +6847,17 @@ function PriceForm({ value, onChange, RAx, sar }) {
           <button onClick={() => onChange({ ...p, tiers: [...tiers, { from: (+tiers[tiers.length - 1].from || 0) + 100, rate: 0 }] })}
             className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(20,27,45,.05)", border: "1px solid var(--line)" }}><Plus size={13} />{RAx.addTier}</button>
           <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{RAx.tiersNote}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2"><Field k="perKm" /><Field k="freeKm" /><Field k="fixedMonthly" /></div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2"><Field k="fixedMonthly" /></div>
         </div>
       )}
       {(p.mode === "unit" || !p.mode) && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Field k="perOrder" /><Field k="perKm" /><Field k="freeKm" /><Field k="fixedMonthly" /></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Field k="perOrder" /><Field k="fixedMonthly" /></div>
       )}
       <div className="rounded-xl p-3" style={{ background: "rgba(15,165,121,.06)", border: "1px solid rgba(15,165,121,.22)" }}>
         <p className="text-[11px] font-bold mb-2" style={{ color: "#0B5C46" }}>{RAx.tryIt}</p>
         <div className="flex items-end gap-3 flex-wrap">
           <label className="block"><span className="block text-[10px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tryOrders}</span>
             <input type="number" value={tryO} onChange={(e) => setTryO(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
-          <label className="block"><span className="block text-[10px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tryKm}</span>
-            <input type="number" value={tryK} onChange={(e) => setTryK(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
           <div className="ms-auto text-end"><span className="block text-[10px]" style={{ color: "var(--muted)" }}>{RAx.tryResult}</span>
             <span className="num text-[20px] font-extrabold" style={{ color: "#0B5C46" }}>{fmt(res.total)} <span className="text-[11px]">{sar}</span></span></div>
         </div>
@@ -7199,18 +6871,18 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
   const canEdit = role.id === "fin" || role.id === "gm";
   const [appId, setAppId] = useState(APPS[0].id);
   const stored = pricing && pricing[kind] && pricing[kind][appId];
-  const base = stored || (kind === "app" ? DEFAULT_APP_PRICING : DEFAULT_REP_PRICING);
-  const [draft, setDraft] = useState({ ...PRICE_BASE_FIELDS, ...base });
+  const base = stored || BLANK_PRICE;
+  const [draft, setDraft] = useState({ ...BLANK_PRICE, ...base });
   const [done, setDone] = useState(false);
-  useEffect(() => { setDraft({ ...PRICE_BASE_FIELDS, ...base }); setDone(false); }, [appId, kind]); // eslint-disable-line
-  const dirty = JSON.stringify(draft) !== JSON.stringify({ ...PRICE_BASE_FIELDS, ...base });
+  useEffect(() => { setDraft({ ...BLANK_PRICE, ...base }); setDone(false); }, [appId, kind]); // eslint-disable-line
+  const dirty = JSON.stringify(draft) !== JSON.stringify({ ...BLANK_PRICE, ...base });
   const writeFor = (ids, val) => setPricing((prev) => {
     const cur = prev || { app: {}, rep: {} };
     const map = { ...(cur[kind] || {}) };
     ids.forEach((id) => { if (val) map[id] = val; else delete map[id]; });
     return { ...cur, [kind]: map };
   });
-  const save = () => { writeFor([appId], draft); logAudit(setAuditLog, role, "pricing_" + kind, `${APPS.find((a) => a.id === appId)[lang]}`, actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
+  const save = () => { if (!validPrice(draft)) return; writeFor([appId], draft); logAudit(setAuditLog, role, "pricing_" + kind, `${APPS.find((a) => a.id === appId)[lang]}`, actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
   const copyAll = () => { writeFor(APPS.map((a) => a.id), draft); logAudit(setAuditLog, role, "pricing_" + kind + "_all", "all apps", actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
   return (
     <div className="space-y-4">
@@ -7233,7 +6905,7 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
         </fieldset>
         {canEdit ? (
           <div className="flex items-center gap-2.5 mt-5 flex-wrap">
-            <Btn variant="accent" accent={role.glow} icon={done ? CheckCircle2 : BadgeCheck} onClick={save}>{done ? RAx.saved : RAx.save}</Btn>
+            <Btn variant="accent" accent={role.glow} icon={done ? CheckCircle2 : BadgeCheck} onClick={save} disabled={!validPrice(draft)}>{done ? RAx.saved : RAx.save}</Btn>
             <Btn icon={Copy} onClick={copyAll}>{RAx.copyAll}</Btn>
             {stored && <Btn icon={X} onClick={() => { writeFor([appId], null); }}>{RAx.resetDefault}</Btn>}
             {dirty && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{RAx.unsaved}</span>}
@@ -7244,18 +6916,19 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
   );
 }
 
-function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, setAuditLog, actingEmployee }) {
+function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, repReceipts, setAuditLog, actingEmployee }) {
   const RAx = RA[lang], t = T[lang], x = EX[lang];
   const [month, setMonth] = useState(riyadhNow().toISOString().slice(0, 7));
   const [openRep, setOpenRep] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [adj, setAdj] = useState({ type: "deduct", amount: "", reason: "" });
   const [err, setErr] = useState("");
+  const [stErr, setStErr] = useState("");
   const rec = repSettlements.find((s) => s.month === month);
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const closed = !!(rec && rec.closed && rec.snapshot);
   const canEdit = role.id === "fin" && !closed;
-  const live = computeSettlement(month, reps, reports, pricing, inputs, weekendFine, violationPenalty, expenses);
+  const live = computeSettlement(month, reps, reports, pricing, inputs, weekendFine, violationPenalty, expenses, repReceipts);
   const res = closed ? rec.snapshot : live;
   const appName = (id) => (APPS.find((a) => a.id === id) || {})[lang] || id;
   const patch = (fn) => setRepSettlements((prev) => {
@@ -7290,11 +6963,11 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
     logAudit(setAuditLog, role, "rep_accounting_reopen", month, actingEmployee);
   };
   const exportReps = () => exportToExcel(res.repLines.map((l) => ({
-    [RAx.colRep]: l.name, [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colKm]: l.km, [RAx.colGross]: l.gross,
+    [RAx.colRep]: l.name, [RAx.riderId]: l.riderId, [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colGross]: l.gross,
     [`${RAx.colWeekend} (${RAx.count})`]: l.weekendCount, [RAx.colWeekend]: l.weekendAmt, [`${RAx.colAppViol} (${RAx.count})`]: l.appCount, [RAx.colAppViol]: l.appAmt,
     [RAx.adjAdd]: l.manualAdds, [RAx.adjDeduct]: l.manualDeds, [RAx.colNet]: l.net })), `rep-accounting-${month}`, month);
   const exportApps = () => exportToExcel(res.appLines.map((l) => ({
-    [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colKm]: l.km, [RAx.colCalc]: l.calc, [RAx.colActual]: l.actual ?? "",
+    [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colCalc]: l.calc, [RAx.colInvNet]: l.invNet ?? "", [RAx.colActual]: l.actual ?? "",
     [RAx.colAppFines]: l.fines, [RAx.colRevenue]: l.revenue, [RAx.colRepCost]: l.repGross, [RAx.colMargin]: l.margin })), `app-accounting-${month}`, month);
   const num = (v, colour) => <span className="num font-bold" style={colour ? { color: colour } : null}>{fmt(r2(v))}</span>;
   const cell = "py-2.5 px-2.5 text-[12px] whitespace-nowrap";
@@ -7322,19 +6995,32 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
       </div>
       <p className="text-[11.5px] -mt-1" style={{ color: "var(--muted)" }}>{RAx.kAfterExp}: <b className="num" style={{ color: T_.afterExpenses >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(T_.afterExpenses)} {t.sar}</b> <span className="num">({fmt(T_.expenses)} {t.sar})</span></p>
 
+      {(() => {
+        const miss = [];
+        res.appLines.forEach((l) => { if (!l.repPriced) miss.push(`${appName(l.app)}: ${RAx.wRepPrice}`); if (!l.appPriced && !l.hasStatement && l.actual == null) miss.push(`${appName(l.app)}: ${RAx.wAppPrice}`); });
+        const noId = res.repLines.filter((l) => !l.riderId && res.appLines.some((a) => a.app === l.app && a.hasStatement)).length;
+        if (noId) miss.push(`${noId} ${RAx.wNoId}`);
+        return miss.length && !closed ? (
+          <div className="rounded-xl px-4 py-3" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.4)" }}>
+            <p className="text-[12px] font-bold mb-1" style={{ color: "#8A611E" }}>{RAx.wT}</p>
+            {miss.map((m, i) => <p key={i} className="text-[11.5px]" style={{ color: "#6B4A12" }}>• {m}</p>)}
+          </div>
+        ) : null;
+      })()}
+
       <Panel title={RAx.step1}>
         {res.appLines.length === 0 ? <EmptyHint lang={lang} /> : (
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full" style={{ minWidth: 820, borderCollapse: "collapse" }}>
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
-                {[RAx.colApp, RAx.colOrders, RAx.colKm, RAx.colCalc, RAx.colActual, RAx.colAppFines, RAx.colRevenue, RAx.colRepCost, RAx.colMargin].map((h) => <th key={h} className={head}>{h}</th>)}
+                {[RAx.colApp, RAx.colOrders, RAx.colCalc, RAx.colInvNet, RAx.colActual, RAx.colAppFines, RAx.colRevenue, RAx.colRepCost, RAx.colMargin].map((h) => <th key={h} className={head}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {res.appLines.map((l) => (
                   <tr key={l.app} style={{ borderBottom: "1px solid var(--line)" }}>
                     <td className={cell}><b>{appName(l.app)}</b> <span className="num text-[10px]" style={{ color: "var(--muted)" }}>({l.reps})</span></td>
-                    <td className={cell}>{num(l.orders)}</td><td className={cell}>{num(l.km)}</td><td className={cell}>{num(l.calc)}</td>
-                    <td className={cell}>{canEdit ? mini(inputs.appActual[l.app] ?? "", (v) => setMap("appActual", l.app, v), 100) : num(l.actual ?? l.calc)}</td>
+                    <td className={cell}>{num(l.orders)}</td><td className={cell}>{l.appPriced ? num(l.calc) : <Chip tone="warn" sm>{RAx.noPolicy}</Chip>}</td><td className={cell}>{l.invNet != null ? num(l.invNet) : "—"}</td>
+                    <td className={cell}>{canEdit ? mini(inputs.appActual[l.app] ?? "", (v) => setMap("appActual", l.app, v), 100) : l.actual != null ? num(l.actual) : "—"}</td>
                     <td className={cell}>{canEdit ? mini(inputs.appFines[l.app] ?? "", (v) => setMap("appFines", l.app, v)) : num(l.fines)}</td>
                     <td className={cell}>{num(l.revenue)}</td><td className={cell}>{num(l.repGross)}</td>
                     <td className={cell}>{num(l.margin, l.margin >= 0 ? "#0B5C46" : "#C0443A")}</td>
@@ -7347,12 +7033,70 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
         )}
       </Panel>
 
+      <Panel title={RAx.stT}>
+        <p className="text-[12px] mb-3" style={{ color: "var(--muted)" }}>{RAx.stSub}</p>
+        <div className="space-y-2.5">
+          {APPS.filter((a) => canEdit || closed ? true : true).map((ap) => {
+            const l = res.appLines.find((z) => z.app === ap.id);
+            const st = (inputs.appStatement || {})[ap.id];
+            const matchedN = st ? st.rows.length - (l ? (l.unmatched || []).length : st.rows.length) : 0;
+            if (!st && !canEdit) return null;
+            return (
+              <div key={ap.id} className="rounded-xl p-2.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <b className="text-[12.5px] w-28">{ap[lang]}</b>
+                  {st ? (<>
+                    <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{RAx.stStatement}: <b className="num">{fmt(st.orders)}</b> · {st.riders} {RAx.ridersN}</span>
+                    <Chip tone={l && (l.unmatched || []).length === 0 ? "ok" : "warn"} sm>{RAx.matchedN}: {matchedN}/{st.rows.length}</Chip>
+                    {l && l.recOrders !== st.orders && <Chip tone="bad" sm>{RAx.stDiff}: {st.orders - l.recOrders > 0 ? "+" : ""}{fmt(st.orders - l.recOrders)} ({RAx.colRecorded}: {fmt(l.recOrders)})</Chip>}
+                  </>) : <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{RAx.noInvoice}</span>}
+                  {canEdit && (
+                    <span className="ms-auto inline-flex gap-2">
+                      {st && <button onClick={() => patch((i) => { const m = { ...(i.appStatement || {}) }; delete m[ap.id]; return { ...i, appStatement: m }; })} className="p-2 rounded-xl" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={13} style={{ color: "#E8837A" }} /></button>}
+                      <label className="inline-flex items-center gap-1.5 text-[11.5px] font-bold px-3 py-2 rounded-xl cursor-pointer" style={{ background: "rgba(20,27,45,.06)", border: "1px solid var(--line)" }}>
+                        <Upload size={13} />{st ? RAx.stReplace : RAx.stUpload}
+                        <input type="file" accept=".xlsx,.xls" className="hidden" onChange={async (e) => {
+                          const file = e.target.files && e.target.files[0]; if (!file) return;
+                          try { const r = await parseStatement(file); if (!r) { setStErr(RAx.stErr); return; } setStErr(""); patch((i) => ({ ...i, appStatement: { ...(i.appStatement || {}), [ap.id]: r } })); logAudit(setAuditLog, role, "invoice_upload", `${ap.id} — ${file.name}`, actingEmployee); }
+                          catch (er) { setStErr(RAx.stErr); }
+                          e.target.value = "";
+                        }} />
+                      </label>
+                    </span>
+                  )}
+                </div>
+                {l && (l.unmatched || []).length > 0 && (
+                  <div className="mt-3 rounded-lg p-2.5" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.4)" }}>
+                    <p className="text-[11.5px] font-bold mb-2" style={{ color: "#8A611E" }}>{RAx.unmatchedT} ({(l.unmatched || []).length})</p>
+                    <div className="space-y-1.5">
+                      {(l.unmatched || []).map((u) => (
+                        <div key={u.id} className="flex items-center gap-2 text-[11.5px] flex-wrap">
+                          <b className="num w-24">{u.id}</b><span className="num">{fmt(u.orders)} {t.orders}</span><span className="num" style={{ color: "var(--muted)" }}>{fmt(u.net)} {t.sar}</span>
+                          {canEdit && setReps && (
+                            <select value="" onChange={(e) => { const rid = e.target.value; if (!rid) return; setReps((prev) => prev.map((r) => (r.id === rid ? { ...r, riderId: u.id } : r))); logAudit(setAuditLog, role, "rider_id_link", `${u.id} → ${rid}`, actingEmployee); }}
+                              className="ms-auto rounded-lg px-2 py-1.5 text-[11.5px] font-bold outline-none" style={INPUT_ST}>
+                              <option value="">{RAx.linkTo}</option>
+                              {reps.filter((r) => r.app === ap.id && !String(r.riderId || "").trim()).map((r) => <option key={r.id} value={r.id}>{lang === "en" ? r.en : r.ar}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {stErr && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{stErr}</p>}
+        </div>
+      </Panel>
+
       <Panel title={RAx.step2}>
         {res.repLines.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.noActivity}</p> : (
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full" style={{ minWidth: 900, borderCollapse: "collapse" }}>
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
-                {[RAx.colRep, RAx.colOrders, RAx.colKm, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colNet].map((h) => <th key={h} className={head}>{h}</th>)}
+                {[RAx.colRep, RAx.riderId, RAx.colOrders, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colReimb, RAx.colNet].map((h) => <th key={h} className={head}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {res.repLines.map((l) => {
@@ -7362,7 +7106,10 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
                     <React.Fragment key={l.repId}>
                       <tr style={{ borderBottom: open ? "none" : "1px solid var(--line)" }}>
                         <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span></td>
-                        <td className={cell}>{num(l.orders)}</td><td className={cell}>{num(l.km)}</td><td className={cell}>{num(l.gross)}</td>
+                        <td className={cell}>{l.riderId ? <span className="num text-[11.5px] font-bold">{l.riderId}</span> : <Chip tone="warn" sm>{RAx.noRiderId}</Chip>}</td>
+                        <td className={cell}>{num(l.orders)} {l.source === "invoice" ? <Chip tone="ok" sm>{RAx.srcInv}</Chip> : <Chip tone="n" sm>{RAx.srcDaily}</Chip>}
+                          {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}</td>
+                        <td className={cell}>{l.unpriced ? <Chip tone="warn" sm>{RAx.noPolicy}</Chip> : num(l.gross)}</td>
                         <td className={cell}><span className="inline-flex items-center gap-1.5"><span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{l.weekendCount}×</span>
                           {canEdit ? mini(l.weekendAmt, (v) => setFine(l.repId, "weekend", v), 76) : num(l.weekendAmt, l.weekendAmt ? "#C0443A" : null)}</span></td>
                         <td className={cell}><span className="inline-flex items-center gap-1.5"><span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{l.appCount}×</span>
@@ -7372,10 +7119,11 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
                             <span className="num" style={{ color: "#0B5C46" }}>+{fmt(l.manualAdds)}</span> / <span className="num" style={{ color: "#C0443A" }}>-{fmt(l.manualDeds)}</span>
                           </button>
                         </td>
+                        <td className={cell}>{num(l.reimb || 0)}</td>
                         <td className={cell}>{num(l.net, l.net >= 0 ? "#0B5C46" : "#C0443A")}</td>
                       </tr>
                       {open && (
-                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={8} className="px-2.5 pb-3">
+                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={9} className="px-2.5 pb-3">
                           <div className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
                             <p className="text-[11.5px] font-bold mb-2">{RAx.adjT}</p>
                             {mine.map((m) => (
@@ -7430,7 +7178,7 @@ function SettlementClose({ lang, role, reps, reports, pricing, repSettlements, s
   );
 }
 
-function RepAccountingPage({ lang, role, reps, reports, pricing, setPricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, setAuditLog, actingEmployee }) {
+function RepAccountingPage({ lang, role, reps, setReps, reports, pricing, setPricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, repReceipts, setAuditLog, actingEmployee }) {
   const RAx = RA[lang];
   const [tab, setTab] = useState("close");
   const tabs = [["close", RAx.tabClose, CheckCircle2], ["app", RAx.tabApp, Building2], ["rep", RAx.tabRep, Users]];
@@ -7446,31 +7194,34 @@ function RepAccountingPage({ lang, role, reps, reports, pricing, setPricing, rep
             style={{ background: tab === id ? "#12151D" : "#fff", color: tab === id ? "#fff" : "var(--muted)", border: "1px solid var(--line)" }}><Icon size={14} />{label}</button>
         ))}
       </div>
-      {tab === "close" && <SettlementClose lang={lang} role={role} reps={reps} reports={reports} pricing={pricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
-        weekendFine={weekendFine} violationPenalty={violationPenalty} expenses={expenses} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
+      {tab === "close" && <SettlementClose lang={lang} role={role} reps={reps} setReps={setReps} reports={reports} pricing={pricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
+        weekendFine={weekendFine} violationPenalty={violationPenalty} expenses={expenses} repReceipts={repReceipts} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
       {tab !== "close" && <PricingTab lang={lang} role={role} kind={tab} pricing={pricing} setPricing={setPricing} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
     </div>
   );
 }
 
-function MyEarningsPage({ lang, role, activeRep, reports, pricing, repSettlements, weekendFine, violationPenalty }) {
+function MyEarningsPage({ lang, role, user, activeRep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, tickets, setTickets }) {
   const RAx = RA[lang], t = T[lang];
   const cur = riyadhNow().toISOString().slice(0, 7);
   const prev1 = prevMonthStr(cur), prev2 = prevMonthStr(prev1);
   const [month, setMonth] = useState(cur);
+  const [dp, setDp] = useState(null);
+  const [dpMsg, setDpMsg] = useState("");
   if (!activeRep) return <EmptyHint lang={lang} />;
   const appName = (id) => (APPS.find((a) => a.id === id) || {})[lang] || id;
   const rec = repSettlements.find((s) => s.month === month);
   const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === activeRep.id) : null;
   const entries = monthEntriesFor(reports, activeRep.id, month).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty);
+  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, monthFactor(month));
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const manual = (inputs.manual || []).filter((m) => m.repId === activeRep.id);
+  const reimbLive = r2((repReceipts || []).filter((q) => q.repId === activeRep.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
   const L = closedLine || (() => {
     const fo = inputs.fineOverride[activeRep.id] || {};
     const weekendAmt = fo.weekend != null ? +fo.weekend : c.weekendAuto, appAmt = fo.app != null ? +fo.app : c.appAuto;
     const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + m.amount, 0), deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + m.amount, 0);
-    return { gross: c.gross, weekendAmt, appAmt, weekendCount: c.weekendCount, appCount: c.appCount, manualAdds: adds, manualDeds: deds, net: r2(c.gross + adds - weekendAmt - appAmt - deds), orders: c.orders, km: c.km };
+    return { gross: c.gross, weekendAmt, appAmt, weekendCount: c.weekendCount, appCount: c.appCount, manualAdds: adds, manualDeds: deds, reimb: reimbLive, net: r2(c.gross + adds + reimbLive - weekendAmt - appAmt - deds), orders: c.orders, unpriced: c.unpriced };
   })();
   const isFinal = !!closedLine;
   const rateLines = describePrice(getRepPrice(pricing, activeRep.app), RAx, t.sar);
@@ -7494,14 +7245,16 @@ function MyEarningsPage({ lang, role, activeRep, reports, pricing, repSettlement
         </div>
         <p className="num text-[40px] sm:text-[52px] font-extrabold leading-none mt-3">{fmt(L.net)} <span className="text-[16px] font-semibold opacity-70">{t.sar}</span></p>
         <div className="flex gap-5 mt-4 text-[12px] opacity-80 flex-wrap">
-          <span><b className="num">{L.orders}</b> {t.orders}</span><span><b className="num">{fmt(L.km)}</b> {RAx.tryKm}</span><span>{appName(activeRep.app)}</span>
+          <span><b className="num">{L.orders}</b> {t.orders}</span><span>{appName(activeRep.app)}</span>
         </div>
         <p className="text-[11px] mt-3 opacity-60">{isFinal ? RAx.closeNoteRep : RAx.estNoteRep}</p>
+        {!isFinal && L.unpriced && <p className="text-[11.5px] mt-2 font-bold" style={{ color: "#E4B85C" }}>{RAx.noRateYet}</p>}
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title={RAx.netProfit}>
           {row(RAx.gross, `+${fmt(L.gross)}`)}
           {L.manualAdds > 0 && row(RAx.additions, `+${fmt(L.manualAdds)}`, "#0B5C46")}
+          {(L.reimb || 0) > 0 && row(RAx.reimb, `+${fmt(L.reimb)}`, "#0B5C46")}
           {L.weekendAmt > 0 && row(`${RAx.weekendViol} (${L.weekendCount})`, `-${fmt(L.weekendAmt)}`, "#C0443A")}
           {L.appAmt > 0 && row(`${RAx.appViol} (${L.appCount})`, `-${fmt(L.appAmt)}`, "#C0443A")}
           {L.manualDeds > 0 && row(RAx.deductions, `-${fmt(L.manualDeds)}`, "#C0443A")}
@@ -7517,19 +7270,33 @@ function MyEarningsPage({ lang, role, activeRep, reports, pricing, repSettlement
           <ul className="space-y-1.5">{rateLines.map((ln, i) => <li key={i} className="text-[12.5px] flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full" style={{ background: role.accent }} />{ln}</li>)}</ul>
         </Panel>
       </div>
+      <Btn icon={Send} onClick={() => { try { window.open("https://wa.me/?text=" + encodeURIComponent(`${RAx.waMsg} ${month}\n${RAx.gross}: ${fmt(L.gross)}\n${RAx.deductions}: -${fmt((L.weekendAmt || 0) + (L.appAmt || 0) + (L.manualDeds || 0))}\n${RAx.netProfit}: ${fmt(L.net)} ${t.sar}`), "_blank"); } catch (e) {} }}>{RAx.rhShare}</Btn>
+      {dp && (
+        <Panel title={`${RAx.dpTitle}: ${dp.date}`}>
+          <textarea value={dp.text} onChange={(e) => setDp({ ...dp, text: e.target.value })} placeholder={RAx.dpReason} rows={3} className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none" style={INPUT_ST} />
+          <div className="flex gap-2 mt-3"><Btn variant="accent" accent={role.glow} icon={Send} onClick={() => {
+            if (dp.text.trim().length < 8) { setDpMsg(RAx.dpReason); return; }
+            setTickets((prev) => [{ id: "TK-" + Math.floor(1000 + Math.random() * 8999), repId: user, type: "dispute", mode: "text", text: `${RAx.dpText} ${dp.date}: ${dp.text.trim()}`, audio: null, attachment: null, attachmentName: "", apptAt: null, createdAt: riyadhNow().toISOString(), status: "open", stage: 0, log: [] }, ...prev]);
+            setDp(null); setDpMsg(RAx.dpSent);
+          }}>{RAx.dpSend}</Btn><Btn onClick={() => setDp(null)}>×</Btn></div>
+          {dpMsg && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{dpMsg}</p>}
+        </Panel>
+      )}
+      {!dp && dpMsg && <p className="text-[12px] font-bold" style={{ color: "#0B5C46" }}>{dpMsg}</p>}
       <Panel title={RAx.daily}>
         {entries.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.noDays}</p> : (
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full" style={{ minWidth: 460, borderCollapse: "collapse" }}>
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
-                {[RAx.date, RAx.colApp, RAx.colOrders, RAx.colKm, RAx.hours, RAx.violations].map((h) => <th key={h} className="py-2 px-2 text-[10.5px] font-bold text-start">{h}</th>)}
+                {[RAx.date, RAx.colApp, RAx.colOrders, RAx.hours, RAx.violations, ""].map((h, hi) => <th key={hi} className="py-2 px-2 text-[10.5px] font-bold text-start">{h}</th>)}
               </tr></thead>
               <tbody>{entries.map((e, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid var(--line)" }}>
                   <td className="num py-2.5 px-2 text-[12px]">{e.date}</td><td className="py-2.5 px-2 text-[12px]">{appName(e.app || activeRep.app)}</td>
-                  <td className="num py-2.5 px-2 text-[12.5px] font-bold">{e.orders || 0}</td><td className="num py-2.5 px-2 text-[12.5px] font-bold">{e.km || 0}</td>
+                  <td className="num py-2.5 px-2 text-[12.5px] font-bold">{e.orders || 0}</td>
                   <td className="num py-2.5 px-2 text-[12px]">{(e.hours || 0).toFixed(1)}</td>
                   <td className="num py-2.5 px-2 text-[12px]" style={{ color: (e.weekendViolations || 0) + (e.appViolations || 0) ? "#C0443A" : "var(--muted)" }}>{(e.weekendViolations || 0) + (e.appViolations || 0)}</td>
+                  <td className="py-2 px-2">{!isFinal && <button onClick={() => { setDp({ date: e.date, text: "" }); setDpMsg(""); }} className="text-[11px] font-bold px-2 py-1 rounded-lg" style={{ background: "rgba(228,184,92,.16)", color: "#8A611E" }}>{RAx.dpBtn}</button>}</td>
                 </tr>))}</tbody>
             </table>
           </div>
@@ -7566,7 +7333,7 @@ Object.assign(T.en.nav, { today: "Today", financeHub: "Finance", repsHub: "Rider
 Object.assign(T.ur.nav, { today: "آج", financeHub: "مالیات", repsHub: "نمائندے", commsHub: "رابطہ", hrHub: "انسانی وسائل", legalHub: "قانونی اور معاہدے" });
 
 const HUBS = {
-  financeHub: ["repAccounting", "payrollRuns", "expenses", "invoices", "invAnalysis"],
+  financeHub: ["repAccounting", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
   repsHub: ["pulse", "leaderboard", "hall"],
   commsHub: ["tickets", "chat", "circulars"],
   hrHub: ["hiring", "employees", "iqama"],
@@ -7582,7 +7349,7 @@ const PRIMARY_NAV = {
   hr: ["today", "hrHub", "repsHub", "commsHub", "attendance"],
   legal: ["today", "legalHub", "commsHub", "attendance"],
   advisor: ["today", "boardCouncil", "decisions", "financeHub"],
-  rep: ["overview", "myEarnings", "commsHub", "attendance"],
+  rep: ["riderHome", "myEarnings", "attendance", "commsHub"],
 };
 const TODAY_QUICK = {
   gm: ["decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
@@ -7644,6 +7411,9 @@ function BrandHero({ lang, reps, compact }) {
         <p className="text-[11px] sm:text-[12px] uppercase mt-2" style={{ letterSpacing: ".34em", color: "rgba(255,255,255,.55)" }}>{t.brand2}</p>
         <div className="h-px w-24 my-4" style={{ background: "linear-gradient(90deg,transparent,#E4B85C,transparent)" }} />
         <p className="text-[13px] sm:text-[15px] font-semibold max-w-xl" style={{ color: "rgba(255,255,255,.82)" }}>{RAx.heroTag}</p>
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mt-5 max-w-2xl">
+          {APPS.map((a) => <span key={a.id} className="px-3 py-1.5 rounded-full text-[11.5px] sm:text-[12.5px] font-bold" style={{ background: "rgba(228,184,92,.12)", border: "1px solid rgba(228,184,92,.4)", color: "#F3D58E" }}>{a[lang]}</span>)}
+        </div>
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 w-full max-w-xl">
           {[[active != null ? fmt(active) : "—", RAx.heroReps], [String(APPS.length), RAx.heroApps], ["◎", RAx.heroRegion]].map(([v, l], i) => (
             <div key={i} className="rounded-2xl py-3 px-2" style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)" }}>
@@ -7701,6 +7471,7 @@ function TodayPage({ lang, role, notifs, goPage, reps, reports, activeRep }) {
           </div>
         </Panel>
       )}
+      {["gm", "opsm", "hr"].includes(role.id) && <RiderLinkCard lang={lang} />}
       {quick.length > 0 && (
         <Panel title={RAx.todayQuick}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -7715,19 +7486,606 @@ function TodayPage({ lang, role, notifs, goPage, reps, reports, activeRep }) {
   );
 }
 
+/* ═══════════  تطبيق المندوب: الرئيسية + الدخول المستقل  ═══════════ */
+const RIDER_MODE = (() => {
+  try { if (import.meta.env && import.meta.env.VITE_APP_MODE === "rider") return true; } catch (e) {}
+  try { const l = window.location; return /^\/rider\/?$/i.test(l.pathname) || /[?&]app=rider/i.test(l.search) || /^#\/?rider/i.test(l.hash); } catch (e) { return false; }
+})();
+Object.assign(RA.ar, {
+  rhClockIn: "سجّل حضورك", rhClockOut: "سجّل انصرافك", rhDone: "اكتمل يومك ✓", rhSince: "منذ", rhToday: "اليوم", rhNoEntry: "لم يسجّل المشرف طلباتك بعد",
+  rhGoal: "هدف الشهر", rhRank: "ترتيبك هذا الشهر", rhOf: "من", rhDoc: "إقامتك تنتهي خلال", rhDays: "يوم — راجع الموارد البشرية", rhMsgs: "رسائل جديدة", rhTickets: "طلباتك المفتوحة",
+  rhShift: "ورديتك اليوم", rhNet: "صافي ربحك هذا الشهر", rhShare: "مشاركة كشفي على واتساب",
+  riderLinkT: "رابط تطبيق المندوب", riderLinkSub: "أرسله للمناديب — يفتح مباشرة على دخول المندوب ومتصل بنفس قاعدة البيانات.", copy: "نسخ الرابط", copied: "تم النسخ ✓", waShare: "إرسال واتساب",
+  riderLoginT: "تطبيق المندوب", riderLoginSub: "سجّل دخولك برقم الهوية للبدء", missingEntryNotif: "لم تُدخل طلبات أمس بعد — أدخلها الآن",
+  waMsg: "كشف أرباحي من بوارق الشرق",
+});
+Object.assign(RA.en, {
+  rhClockIn: "Clock in", rhClockOut: "Clock out", rhDone: "Day complete ✓", rhSince: "since", rhToday: "Today", rhNoEntry: "Your supervisor hasn't logged your orders yet",
+  rhGoal: "Month goal", rhRank: "Your rank this month", rhOf: "of", rhDoc: "Your residency expires in", rhDays: "days — contact HR", rhMsgs: "New messages", rhTickets: "Your open requests",
+  rhShift: "Today's shift", rhNet: "Your net profit this month", rhShare: "Share my statement on WhatsApp",
+  riderLinkT: "Rider app link", riderLinkSub: "Send it to riders — opens straight on rider login and uses the same database.", copy: "Copy link", copied: "Copied ✓", waShare: "Send on WhatsApp",
+  riderLoginT: "Rider App", riderLoginSub: "Sign in with your ID number to start", missingEntryNotif: "Yesterday's orders haven't been entered yet — enter them now",
+  waMsg: "My earnings statement from Bawariq Al-Sharq",
+});
+Object.assign(RA.ur, {
+  rhClockIn: "حاضری لگائیں", rhClockOut: "رخصتی لگائیں", rhDone: "دن مکمل ✓", rhSince: "سے", rhToday: "آج", rhNoEntry: "سپروائزر نے ابھی آرڈرز درج نہیں کیے",
+  rhGoal: "ماہانہ ہدف", rhRank: "اس مہینے آپ کا درجہ", rhOf: "میں سے", rhDoc: "آپ کا اقامہ ختم ہو رہا ہے", rhDays: "دن میں — ایچ آر سے رجوع کریں", rhMsgs: "نئے پیغامات", rhTickets: "آپ کی کھلی درخواستیں",
+  rhShift: "آج کی شفٹ", rhNet: "اس مہینے آپ کا خالص منافع", rhShare: "واٹس ایپ پر شیئر کریں",
+  riderLinkT: "نمائندہ ایپ کا لنک", riderLinkSub: "نمائندوں کو بھیجیں — براہ راست لاگ ان کھلتا ہے۔", copy: "لنک کاپی", copied: "کاپی ہو گیا ✓", waShare: "واٹس ایپ پر بھیجیں",
+  riderLoginT: "نمائندہ ایپ", riderLoginSub: "شروع کرنے کے لیے شناختی نمبر سے لاگ ان کریں", missingEntryNotif: "کل کے آرڈرز ابھی درج نہیں ہوئے",
+  waMsg: "بوارق الشرق سے میری کمائی کا گوشوارہ",
+});
+Object.assign(T.ar.nav, { riderHome: "الرئيسية" });
+Object.assign(T.en.nav, { riderHome: "Home" });
+Object.assign(T.ur.nav, { riderHome: "ہوم" });
+
+function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipts) {
+  const rec = repSettlements.find((s) => s.month === month);
+  const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === rep.id) : null;
+  const entries = monthEntriesFor(reports, rep.id, month);
+  const c = repMonthCalc(entries, rep, pricing, wf, vp, monthFactor(month));
+  if (closedLine) return { net: closedLine.net, final: true, orders: closedLine.orders };
+  const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
+  const fo = inputs.fineOverride[rep.id] || {};
+  const manual = (inputs.manual || []).filter((m) => m.repId === rep.id);
+  const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + m.amount, 0), deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + m.amount, 0);
+  const reimb = r2((receipts || []).filter((q) => q.repId === rep.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
+  return { net: r2(c.gross + adds + reimb - deds - (fo.weekend != null ? +fo.weekend : c.weekendAuto) - (fo.app != null ? +fo.app : c.appAuto)), final: false, orders: c.orders, unpriced: c.unpriced };
+}
+
+function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, setAttendance, shifts, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
+  const RAx = RA[lang], t = T[lang], x = EX[lang];
+  const [toast, setToast] = useState("");
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const today = riyadhToday(), month = today.slice(0, 7);
+  const myToday = attendance.find((a) => a.key === user && a.date === today);
+  const todayEntries = monthEntriesFor(reports, activeRep.id, month).filter((e) => e.date === today);
+  const tOrders = todayEntries.reduce((s, e) => s + (e.orders || 0), 0);
+  const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
+  const lb = computeLeaderboard(reps, reports, month);
+  const sorted = [...lb.stats].sort((a, b) => b.orders - a.orders);
+  const rank = Math.max(1, sorted.findIndex((s) => s.rep.id === activeRep.id) + 1);
+  const dd = activeRep.idExpiry ? daysUntil(activeRep.idExpiry) : null;
+  const unread = repMessages.filter((m) => m.repId === user && !m.seen).length;
+  const openTk = tickets.filter((tk) => tk.repId === user && tk.status === "open").length;
+  const sh = shifts.find((s) => s.repId === user && s.date === today);
+  const pct = Math.min(100, Math.round((me.orders / MONTH_TARGET.orders) * 100));
+  const doClock = () => {
+    const at = riyadhTimeHM();
+    if (!myToday) setAttendance((prev) => [...prev, { key: user, role: "rep", name: lang === "en" ? activeRep.en : activeRep.ar, date: today, in: at, out: null }]);
+    else if (!myToday.out) setAttendance((prev) => prev.map((a) => (a.key === user && a.date === today ? { ...a, out: at } : a)));
+    setToast(at); setTimeout(() => setToast(""), 2500);
+  };
+  const state = !myToday ? "in" : !myToday.out ? "out" : "done";
+  const Tile = ({ icon: Ic, label, value, onClick, tone }) => (
+    <button onClick={onClick} className="rounded-2xl p-4 text-start transition active:scale-[.98]" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+      <Ic size={18} style={{ color: tone || role.accent }} /><div className="num text-[22px] font-extrabold mt-2">{value}</div><div className="text-[11.5px]" style={{ color: "var(--muted)" }}>{label}</div>
+    </button>
+  );
+  return (
+    <div className="space-y-4">
+      <InstallBanner lang={lang} />
+      <div className="rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#0E1424,#1B2A4A)", color: "#fff" }}>
+        <p className="text-[12px] opacity-70">{RAx.rhToday} · {today}</p>
+        <h2 className="text-[22px] font-extrabold mt-1">{lang === "en" ? activeRep.en : activeRep.ar}</h2>
+        {sh && <p className="text-[12px] mt-1 opacity-75">{RAx.rhShift}: <b className="num">{sh.start} – {sh.end}</b></p>}
+        <button onClick={doClock} disabled={state === "done"} className="w-full mt-5 rounded-2xl py-4 flex items-center justify-center gap-3 text-[16px] font-extrabold transition active:scale-[.98]"
+          style={{ background: state === "in" ? "linear-gradient(120deg,#3FD8B4,#2BAE8E)" : state === "out" ? "linear-gradient(120deg,#E4B85C,#C08A22)" : "rgba(255,255,255,.1)", color: state === "done" ? "rgba(255,255,255,.7)" : "#06121A" }}>
+          <Fingerprint size={24} />{state === "in" ? RAx.rhClockIn : state === "out" ? `${RAx.rhClockOut} · ${RAx.rhSince} ${myToday.in}` : RAx.rhDone}
+        </button>
+        {toast && <p className="text-center text-[12px] mt-2 font-bold" style={{ color: "#7FF0CF" }}>{x.clockInConfirmed} · {toast}</p>}
+      </div>
+
+      {dd != null && dd <= 30 && (
+        <div className="rounded-2xl p-3.5 flex items-center gap-2.5" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)" }}>
+          <AlertTriangle size={16} style={{ color: "#C0443A" }} className="shrink-0" />
+          <p className="text-[12.5px] font-bold" style={{ color: "#9C2F26" }}>{RAx.rhDoc} <span className="num">{Math.max(0, dd)}</span> {RAx.rhDays}</p>
+        </div>
+      )}
+
+      <button onClick={() => goPage("myEarnings")} className="w-full rounded-3xl p-5 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+        <div className="flex items-center justify-between"><span className="text-[12px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.rhNet}</span><Chip tone={me.final ? "ok" : "warn"} sm>{me.final ? RAx.finalLbl : RAx.estimate}</Chip></div>
+        <p className="num text-[38px] font-extrabold mt-1" style={{ color: me.net >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(me.net)} <span className="text-[14px] font-semibold" style={{ color: "var(--muted)" }}>{t.sar}</span></p>
+        {!me.final && me.unpriced && <p className="text-[11.5px] font-bold mt-1" style={{ color: "#B8862E" }}>{RAx.noRateYet}</p>}
+      </button>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Tile icon={ShoppingBag} label={`${RAx.rhToday} · ${t.orders}`} value={todayEntries.length ? tOrders : "—"} onClick={() => goPage("myEarnings")} />
+        <Tile icon={Route} label={RAx.rhMonthOrders} value={fmt(me.orders)} onClick={() => goPage("myEarnings")} />
+      </div>
+      {!todayEntries.length && <p className="text-[11.5px] -mt-1 px-1" style={{ color: "var(--muted)" }}>{RAx.rhNoEntry}</p>}
+
+      <Panel title={RAx.rhGoal}>
+        <div className="flex items-center gap-5">
+          <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />
+          <div className="space-y-1.5 text-[12.5px]">
+            <p><b className="num">{me.orders}</b> / {MONTH_TARGET.orders} {t.orders}</p>
+            <p style={{ color: "var(--muted)" }}>{RAx.rhRank}: <b className="num" style={{ color: role.accent }}>{rank}</b> {RAx.rhOf} <span className="num">{sorted.length}</span></p>
+          </div>
+        </div>
+      </Panel>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Tile icon={MessageSquare} label={RAx.rhMsgs} value={unread} onClick={() => goPage("messages")} tone={unread ? "#E8837A" : undefined} />
+        <Tile icon={Send} label={RAx.rhTickets} value={openTk} onClick={() => goPage("tickets")} />
+      </div>
+      <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={15} className="opacity-50" /></button>
+    </div>
+  );
+}
+
+function RiderLogin({ lang, setLang, onRep, err, setErr, onBack }) {
+  const t = T[lang], x = EX[lang], RAx = RA[lang];
+  const [nid, setNid] = useState(""); const [pw, setPw] = useState(""); const [local, setLocal] = useState(""); const [busy, setBusy] = useState(false);
+  const go = () => {
+    if (nid.trim().length < 6 || pw.length < 4) { setLocal(x.errRep); return; }
+    setLocal(""); setErr(""); setBusy(true); setTimeout(() => { setBusy(false); onRep(nid.trim(), pw); }, 400);
+  };
+  const shown = local || err;
+  return (
+    <div className="min-h-screen relative px-4 py-6 overflow-hidden">
+      <div className="mesh" />
+      <div className="relative max-w-md mx-auto space-y-4">
+        <BrandHero lang={lang} compact />
+        <InstallBanner lang={lang} />
+        <div className="glass rounded-3xl p-5 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div><h2 className="text-[17px] font-extrabold">{RAx.riderLoginT}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.riderLoginSub}</p></div>
+            <div className="flex gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2 py-1 rounded-lg text-[11px] font-bold" style={{ background: lang === l.code ? "rgba(228,184,92,.2)" : "rgba(20,27,45,.05)" }}>{l.mark}</button>)}</div>
+          </div>
+          <GateField label={x.nationalId} val={nid} set={setNid} ph="1xxxxxxxxx" Icon={User} af type="text" accent={REP.accent} onEnter={go} />
+          <GateField label={t.pass} val={pw} set={setPw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={go} />
+          {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
+          <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={go}>{busy ? "…" : x.repTitle}</Btn>
+          {onBack && <button onClick={onBack} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.ldBack}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RiderLinkCard({ lang }) {
+  const RAx = RA[lang];
+  const [done, setDone] = useState(false);
+  let url = "";
+  try { url = window.location.origin + "/?app=rider"; } catch (e) {}
+  const copy = () => { try { navigator.clipboard.writeText(url); setDone(true); setTimeout(() => setDone(false), 1800); } catch (e) {} };
+  const wa = () => { try { window.open("https://wa.me/?text=" + encodeURIComponent(url), "_blank"); } catch (e) {} };
+  return (
+    <Panel title={RAx.riderLinkT}>
+      <p className="text-[12px] mb-3" style={{ color: "var(--muted)" }}>{RAx.riderLinkSub}</p>
+      <div className="num text-[12px] rounded-xl px-3 py-2.5 mb-3 break-all" style={{ background: "rgba(20,27,45,.05)", border: "1px solid var(--line)" }} dir="ltr">{url}</div>
+      <div className="flex gap-2 flex-wrap"><Btn icon={done ? CheckCircle2 : Copy} onClick={copy}>{done ? RAx.copied : RAx.copy}</Btn><Btn icon={Send} onClick={wa}>{RAx.waShare}</Btn></div>
+    </Panel>
+  );
+}
+
+/* ═══════════  صفحة ترحيب المندوب + التوظيف + الإيصالات + التثبيت  ═══════════ */
+const RIDER_EARN_MAX = 7000;
+Object.assign(RA.ar, {
+  ldJoin: "انضم إلى بوارق الشرق", ldHeadSub: "شبكة توصيل كبيرة تخدم المنطقة الشرقية — وأنت مكانك فيها",
+  ldUpTo: "أرباح تصل إلى", ldPerMonth: "ريال شهرياً", ldDisc: "تقدير يعتمد على عدد طلباتك وكيلومتراتك وانضباطك — وليس مبلغاً مضموناً.",
+  ldWhy: "لماذا بوارق الشرق؟",
+  ldB1T: "أرباح عالية", ldB1D: "كل طلب وكل كيلومتر يُحتسب لك بتسعيرة واضحة، وتشوف ربحك يتحدث يومياً.",
+  ldB2T: "شفافية كاملة", ldB2D: "كشف حسابك بالتفصيل: كل خصم له سبب، وتقدر تعترض على أي يوم.",
+  ldB3T: "تطبيقات توصيل متعددة", ldB3D: "اشتغل على أكثر من تطبيق توصيل عبر شركة واحدة منظّمة.",
+  ldB4T: "مكافآت ومنافسة شريفة", ldB4D: "لوحة صدارة شهرية بمكافآت مالية وفرصة عمرة لأبطال الشهر.",
+  ldB5T: "دعم يتابعك", ldB5D: "مشرف مخصص وطلبات تُحل بسرعة، ومستحقات موثّقة بنظام واضح.",
+  ldB6T: "ترقّى معنا", ldB6D: "المناديب المتميزون يترقّون إلى رقباء ويقودون فرقاً.",
+  ldCalc: "احسب أرباحك المتوقعة", ldOrdersDay: "طلبات في اليوم", ldDaysMonth: "أيام العمل في الشهر", ldKmDay: "كيلومتر في اليوم", ldEst: "أرباحك المتوقعة",
+  ldCalcNote: "حساب تقريبي بتسعيرة هنقرستيشن الحالية قبل أي خصومات.",
+  ldSteps: "كيف تبدأ؟", ldS1: "سجّل بياناتك", ldS2: "الموارد البشرية تراجع وتعتمدك", ldS3: "تستلم بيانات الدخول وتبدأ الكسب",
+  ldApply: "انضم الآن", ldLogin: "لدي حساب — دخول", ldBack: "رجوع",
+  apTitle: "طلب الانضمام", apSub: "عبّئ بياناتك وسنتواصل معك قريباً", apName: "الاسم الكامل", apPhone: "رقم الجوال", apNid: "رقم الهوية / الإقامة", apExpiry: "تاريخ انتهاء الهوية/الإقامة",
+  apVehicle: "المركبة", apCar: "سيارة", apBike: "دباب", apOwn: "عندي مركبة خاصة", apNeed: "أحتاج مركبة من الشركة", apApp: "التطبيق المفضل", apNote: "ملاحظات (اختياري)", apSend: "إرسال الطلب",
+  apErrName: "اكتب اسمك الكامل", apErrPhone: "رقم الجوال غير صحيح", apErrNid: "رقم الهوية/الإقامة 10 أرقام", apErrExpiry: "أدخل تاريخ انتهاء الهوية",
+  apDup: "رقم الهوية مسجّل مسبقاً — سجّل دخولك أو تواصل مع الموارد البشرية", apDone: "تم استلام طلبك ✓", apDoneSub: "سيراجعه فريق الموارد البشرية ويتواصل معك عبر الجوال.",
+  apPanelT: "طلبات الانضمام", apNone: "لا توجد طلبات جديدة", apApprove: "اعتماد وإنشاء حساب", apReject: "رفض", apRejectReason: "سبب الرفض (إلزامي)",
+  apCreds: "بيانات دخول المندوب", apPassword: "كلمة المرور", apSendWA: "إرسال البيانات واتساب", apApproved: "معتمد", apRejected: "مرفوض", apNew: "جديد", apNotif: "طلبات انضمام جديدة",
+  apAfter: "أُنشئ حساب المندوب بحالة «بانتظار التفعيل» — فعّله وحدّد له مشرفاً من قائمة المناديب بالأسفل.",
+  rcT: "إيصالات البنزين", rcSub: "ارفع صورة الإيصال وسيراجعها المحاسب. المبلغ المعتمد يُضاف تلقائياً لحسابك.", rcAmount: "المبلغ", rcNote: "ملاحظة", rcPhoto: "صورة الإيصال",
+  rcErrAmt: "أدخل مبلغاً صحيحاً", rcErrPhoto: "صورة الإيصال إلزامية", rcSend: "إرسال للاعتماد", rcMine: "إيصالاتي", rcPending: "قيد المراجعة", rcApproved: "معتمد", rcRejected: "مرفوض",
+  rcAdminT: "إيصالات المناديب", rcApprove: "اعتماد", rcReject: "رفض", rcReason: "سبب الرفض (5 أحرف على الأقل)", rcNone: "لا توجد إيصالات", rcNotif: "إيصالات بانتظار الاعتماد",
+  colReimb: "إيصالات", reimb: "إيصالات البنزين المعتمدة", rcKindFuel: "بنزين", rcKindOther: "أخرى", rcErrNote: "اكتب ملاحظة توضح الإيصال",
+  dpBtn: "اعتراض", dpTitle: "اعتراض على يوم", dpReason: "اكتب سبب الاعتراض (8 أحرف على الأقل)", dpSend: "إرسال الاعتراض", dpSent: "وصل اعتراضك للمشرف ✓", dpText: "اعتراض على إدخال يوم",
+  stUpload: "رفع كشف التطبيق للمطابقة", stRecorded: "المسجّل", stStatement: "حسب الكشف", stDiff: "الفرق", stMatch: "مطابق ✓", stErr: "تعذّر قراءة الكشف — تأكد أنه ملف Excel لفاتورة التطبيق", stT: "مطابقة كشوف التطبيقات (اختياري)",
+  inT: "ثبّت التطبيق على جوالك", inIOS: "اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»", inAnd: "افتح قائمة المتصفح ⋮ ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»", inBtn: "تثبيت", inLater: "لاحقاً",
+  rhReceipt: "ارفع إيصال بنزين",
+});
+Object.assign(RA.en, {
+  ldJoin: "Join Bawariq Al-Sharq", ldHeadSub: "A large delivery network serving the Eastern Province — and your place is in it",
+  ldUpTo: "Earn up to", ldPerMonth: "SAR per month", ldDisc: "An estimate based on your orders, kilometers and discipline — not a guaranteed amount.",
+  ldWhy: "Why Bawariq Al-Sharq?",
+  ldB1T: "High earnings", ldB1D: "Every order and kilometer is paid at a clear rate, and you watch your profit update daily.",
+  ldB2T: "Full transparency", ldB2D: "A detailed statement: every deduction has a reason, and you can dispute any day.",
+  ldB3T: "Multiple delivery apps", ldB3D: "Work across several delivery apps through one organized company.",
+  ldB4T: "Rewards & fair competition", ldB4D: "A monthly leaderboard with cash rewards and an Umrah trip for the champions.",
+  ldB5T: "Support that follows up", ldB5D: "A dedicated supervisor, fast request handling and documented payouts.",
+  ldB6T: "Grow with us", ldB6D: "Outstanding riders get promoted to team leaders.",
+  ldCalc: "Estimate your earnings", ldOrdersDay: "Orders per day", ldDaysMonth: "Working days per month", ldKmDay: "Km per day", ldEst: "Your expected earnings",
+  ldCalcNote: "Approximate, using the current HungerStation rider rates, before deductions.",
+  ldSteps: "How to start", ldS1: "Submit your details", ldS2: "HR reviews and approves you", ldS3: "Get your login and start earning",
+  ldApply: "Join now", ldLogin: "I have an account — Sign in", ldBack: "Back",
+  apTitle: "Join request", apSub: "Fill in your details and we'll contact you soon", apName: "Full name", apPhone: "Mobile number", apNid: "ID / Iqama number", apExpiry: "ID / Iqama expiry date",
+  apVehicle: "Vehicle", apCar: "Car", apBike: "Motorbike", apOwn: "I have my own vehicle", apNeed: "I need a company vehicle", apApp: "Preferred app", apNote: "Notes (optional)", apSend: "Send request",
+  apErrName: "Enter your full name", apErrPhone: "Invalid mobile number", apErrNid: "ID/Iqama must be 10 digits", apErrExpiry: "Enter the ID expiry date",
+  apDup: "This ID is already registered — sign in or contact HR", apDone: "Request received ✓", apDoneSub: "HR will review it and contact you by phone.",
+  apPanelT: "Join requests", apNone: "No new requests", apApprove: "Approve & create account", apReject: "Reject", apRejectReason: "Rejection reason (required)",
+  apCreds: "Rider login details", apPassword: "Password", apSendWA: "Send details on WhatsApp", apApproved: "Approved", apRejected: "Rejected", apNew: "New", apNotif: "New join requests",
+  apAfter: "The rider account was created as “pending activation” — activate it and assign a supervisor from the riders list below.",
+  rcT: "Fuel receipts", rcSub: "Upload the receipt photo for the accountant to review. The approved amount is added to your statement automatically.", rcAmount: "Amount", rcNote: "Note", rcPhoto: "Receipt photo",
+  rcErrAmt: "Enter a valid amount", rcErrPhoto: "Receipt photo is required", rcSend: "Send for approval", rcMine: "My receipts", rcPending: "Under review", rcApproved: "Approved", rcRejected: "Rejected",
+  rcAdminT: "Rider receipts", rcApprove: "Approve", rcReject: "Reject", rcReason: "Rejection reason (5+ characters)", rcNone: "No receipts", rcNotif: "Receipts awaiting approval",
+  colReimb: "Receipts", reimb: "Approved fuel receipts", rcKindFuel: "Fuel", rcKindOther: "Other", rcErrNote: "Add a note describing the receipt",
+  dpBtn: "Dispute", dpTitle: "Dispute a day", dpReason: "Write the reason (8+ characters)", dpSend: "Send dispute", dpSent: "Your dispute reached the supervisor ✓", dpText: "Dispute of day entry",
+  stUpload: "Upload app statement to reconcile", stRecorded: "Recorded", stStatement: "Per statement", stDiff: "Difference", stMatch: "Match ✓", stErr: "Couldn't read the statement — make sure it's the app's Excel invoice", stT: "App statement reconciliation (optional)",
+  inT: "Install the app on your phone", inIOS: "Tap the Share button then “Add to Home Screen”", inAnd: "Open the browser menu ⋮ then “Install app” or “Add to Home screen”", inBtn: "Install", inLater: "Later",
+  rhReceipt: "Upload a fuel receipt",
+});
+Object.assign(RA.ur, {
+  ldJoin: "بوارق الشرق میں شامل ہوں", ldHeadSub: "مشرقی صوبے میں خدمات دینے والا بڑا ڈیلیوری نیٹ ورک",
+  ldUpTo: "کمائی تک", ldPerMonth: "ریال ماہانہ", ldDisc: "یہ اندازہ ہے، ضمانت شدہ رقم نہیں۔",
+  ldWhy: "بوارق الشرق کیوں؟",
+  ldB1T: "زیادہ کمائی", ldB1D: "ہر آرڈر اور کلومیٹر واضح قیمت پر شمار ہوتا ہے۔", ldB2T: "مکمل شفافیت", ldB2D: "ہر کٹوتی کی وجہ ہے اور آپ کسی بھی دن پر اعتراض کر سکتے ہیں۔",
+  ldB3T: "متعدد ڈیلیوری ایپس", ldB3D: "ایک منظم کمپنی کے ذریعے کئی ایپس پر کام کریں۔", ldB4T: "انعامات", ldB4D: "ماہانہ لیڈر بورڈ اور عمرہ کا موقع۔",
+  ldB5T: "مسلسل تعاون", ldB5D: "مخصوص سپروائزر اور تیز حل۔", ldB6T: "ترقی کریں", ldB6D: "بہترین نمائندے ٹیم لیڈر بنتے ہیں۔",
+  ldCalc: "اپنی کمائی کا اندازہ لگائیں", ldOrdersDay: "روزانہ آرڈرز", ldDaysMonth: "مہینے میں کام کے دن", ldKmDay: "روزانہ کلومیٹر", ldEst: "متوقع کمائی",
+  ldCalcNote: "موجودہ ریٹ پر تقریبی حساب، کٹوتیوں سے پہلے۔",
+  ldSteps: "آغاز کیسے کریں؟", ldS1: "اپنی تفصیل بھریں", ldS2: "ایچ آر جائزہ لے کر منظور کرتا ہے", ldS3: "لاگ ان ملے گا اور کمائی شروع",
+  ldApply: "ابھی شامل ہوں", ldLogin: "میرا اکاؤنٹ ہے — لاگ ان", ldBack: "واپس",
+  apTitle: "شمولیت کی درخواست", apSub: "تفصیل بھریں، ہم رابطہ کریں گے", apName: "پورا نام", apPhone: "موبائل نمبر", apNid: "شناختی / اقامہ نمبر", apExpiry: "اقامہ کی میعاد",
+  apVehicle: "سواری", apCar: "کار", apBike: "موٹر سائیکل", apOwn: "میری اپنی سواری ہے", apNeed: "کمپنی کی سواری چاہیے", apApp: "پسندیدہ ایپ", apNote: "نوٹ (اختیاری)", apSend: "درخواست بھیجیں",
+  apErrName: "پورا نام لکھیں", apErrPhone: "موبائل نمبر درست نہیں", apErrNid: "10 ہندسے", apErrExpiry: "میعاد درج کریں", apDup: "یہ نمبر پہلے سے درج ہے", apDone: "درخواست موصول ہو گئی ✓", apDoneSub: "ایچ آر رابطہ کرے گا۔",
+  apPanelT: "شمولیت کی درخواستیں", apNone: "کوئی نئی درخواست نہیں", apApprove: "منظور کریں", apReject: "مسترد", apRejectReason: "وجہ (لازمی)", apCreds: "لاگ ان تفصیل", apPassword: "پاس ورڈ", apSendWA: "واٹس ایپ پر بھیجیں",
+  apApproved: "منظور", apRejected: "مسترد", apNew: "نیا", apNotif: "نئی درخواستیں", apAfter: "اکاؤنٹ «تفعیل کا منتظر» حالت میں بنا — نیچے فہرست سے فعال کریں۔",
+  rcT: "پیٹرول رسیدیں", rcSub: "رسید کی تصویر بھیجیں، منظوری کے بعد حساب میں شامل ہو گی۔", rcAmount: "رقم", rcNote: "نوٹ", rcPhoto: "رسید کی تصویر", rcErrAmt: "درست رقم", rcErrPhoto: "تصویر لازمی", rcSend: "منظوری کے لیے بھیجیں",
+  rcMine: "میری رسیدیں", rcPending: "زیر جائزہ", rcApproved: "منظور", rcRejected: "مسترد", rcAdminT: "نمائندوں کی رسیدیں", rcApprove: "منظور", rcReject: "مسترد", rcReason: "وجہ (کم از کم 5 حروف)", rcNone: "کوئی رسید نہیں", rcNotif: "منظوری کے منتظر",
+  colReimb: "رسیدیں", reimb: "منظور شدہ پیٹرول رسیدیں", rcKindFuel: "پیٹرول", rcKindOther: "دیگر", rcErrNote: "نوٹ لکھیں",
+  dpBtn: "اعتراض", dpTitle: "دن پر اعتراض", dpReason: "وجہ لکھیں (کم از کم 8 حروف)", dpSend: "اعتراض بھیجیں", dpSent: "اعتراض پہنچ گیا ✓", dpText: "اندراج پر اعتراض",
+  stUpload: "ایپ اسٹیٹمنٹ اپ لوڈ کریں", stRecorded: "درج شدہ", stStatement: "اسٹیٹمنٹ کے مطابق", stDiff: "فرق", stMatch: "مطابق ✓", stErr: "فائل پڑھی نہیں جا سکی", stT: "ایپ اسٹیٹمنٹ ملاپ (اختیاری)",
+  inT: "ایپ فون پر انسٹال کریں", inIOS: "شیئر بٹن دبائیں پھر «ہوم اسکرین میں شامل کریں»", inAnd: "براؤزر مینو ⋮ پھر «انسٹال ایپ»", inBtn: "انسٹال", inLater: "بعد میں",
+  rhReceipt: "پیٹرول رسید اپ لوڈ کریں",
+});
+Object.assign(T.ar.nav, { riderReceipts: "إيصال بنزين", receiptsAdmin: "إيصالات المناديب" });
+Object.assign(T.en.nav, { riderReceipts: "Fuel Receipt", receiptsAdmin: "Rider Receipts" });
+Object.assign(T.ur.nav, { riderReceipts: "پیٹرول رسید", receiptsAdmin: "نمائندوں کی رسیدیں" });
+
+function compressImage(file, max = 1000, q = 0.65) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = reject;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", q));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function parseStatementOrders(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  for (const name of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null });
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const row = rows[i] || [];
+      const ci = row.findIndex((c) => typeof c === "string" && /completed_orders/i.test(c));
+      const ri = row.findIndex((c) => typeof c === "string" && /rider_id/i.test(c));
+      if (ci >= 0 && ri >= 0) {
+        let sum = 0, n = 0;
+        for (let j = i + 1; j < rows.length; j++) { const r = rows[j]; if (r && r[ri] != null && r[ri] !== "" && typeof r[ci] === "number") { sum += r[ci]; n++; } }
+        if (n > 0) return { orders: sum, riders: n };
+      }
+    }
+  }
+  return null;
+}
+
+function InstallBanner({ lang }) {
+  const RAx = RA[lang];
+  const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem("bq_install_dismissed") === "1"; } catch (e) { return false; } });
+  const [evt, setEvt] = useState(null);
+  useEffect(() => {
+    const h = (e) => { e.preventDefault(); setEvt(e); };
+    window.addEventListener("beforeinstallprompt", h);
+    return () => window.removeEventListener("beforeinstallprompt", h);
+  }, []);
+  let standalone = false, ios = false;
+  try { standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; ios = /iphone|ipad|ipod/i.test(navigator.userAgent); } catch (e) {}
+  if (standalone || dismissed) return null;
+  const close = () => { setDismissed(true); try { localStorage.setItem("bq_install_dismissed", "1"); } catch (e) {} };
+  return (
+    <div className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: "rgba(228,184,92,.12)", border: "1px solid rgba(228,184,92,.4)" }}>
+      <Download size={20} style={{ color: "#B8862E" }} className="shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-extrabold" style={{ color: "#6B4A12" }}>{RAx.inT}</p>
+        <p className="text-[11.5px]" style={{ color: "#8A611E" }}>{evt ? "" : ios ? RAx.inIOS : RAx.inAnd}</p>
+      </div>
+      {evt && <button onClick={async () => { try { evt.prompt(); await evt.userChoice; } catch (e) {} setEvt(null); }} className="px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: "#12151D", color: "#fff" }}>{RAx.inBtn}</button>}
+      <button onClick={close} className="text-[11px] font-semibold px-2 py-1" style={{ color: "#8A611E" }}>{RAx.inLater}</button>
+    </div>
+  );
+}
+
+function RiderLanding({ lang, setLang, reps, pricing, go }) {
+  const RAx = RA[lang], t = T[lang];
+  const benefits = [[Wallet, "ldB1T", "ldB1D"], [ShieldCheck, "ldB2T", "ldB2D"], [Building2, "ldB3T", "ldB3D"], [Trophy, "ldB4T", "ldB4D"], [Users, "ldB5T", "ldB5D"], [Rocket, "ldB6T", "ldB6D"]];
+  return (
+    <div className="min-h-screen relative px-4 pt-5 pb-28 overflow-hidden">
+      <div className="mesh" />
+      <div className="relative max-w-2xl mx-auto space-y-5">
+        <div className="flex justify-end gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2.5 py-1.5 rounded-xl text-[11px] font-bold" style={{ background: lang === l.code ? "rgba(228,184,92,.2)" : "rgba(20,27,45,.05)" }}>{l.mark}</button>)}</div>
+        <BrandHero lang={lang} reps={reps} />
+        <InstallBanner lang={lang} />
+        <div className="rounded-[28px] p-6 sm:p-8 text-center relative overflow-hidden" style={{ background: "linear-gradient(135deg,#F3D58E,#E4B85C 55%,#B8862E)", color: "#2A1C04" }}>
+          <p className="text-[13px] font-bold opacity-80">{RAx.ldJoin}</p>
+          <p className="text-[15px] font-semibold mt-1">{RAx.ldUpTo}</p>
+          <p className="num font-extrabold leading-none mt-1" style={{ fontSize: "clamp(54px,16vw,92px)" }}>{fmt(RIDER_EARN_MAX)}</p>
+          <p className="text-[16px] font-extrabold">{RAx.ldPerMonth}</p>
+          <p className="text-[11px] mt-3 opacity-75 max-w-sm mx-auto">{RAx.ldDisc}</p>
+        </div>
+        <p className="text-center text-[13px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.ldHeadSub}</p>
+
+        <div>
+          <h3 className="text-[16px] font-extrabold mb-3">{RAx.ldWhy}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {benefits.map(([Ic, tk, dk]) => (
+              <div key={tk} className="glass rounded-2xl p-4 flex gap-3">
+                <span className="grid place-items-center w-11 h-11 rounded-xl shrink-0" style={{ background: "rgba(228,184,92,.16)" }}><Ic size={20} style={{ color: "#B8862E" }} /></span>
+                <div><p className="text-[13.5px] font-extrabold">{RAx[tk]}</p><p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>{RAx[dk]}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-[16px] font-extrabold mb-3">{RAx.ldSteps}</h3>
+          <div className="grid grid-cols-3 gap-2.5">
+            {["ldS1", "ldS2", "ldS3"].map((k, i) => (
+              <div key={k} className="glass rounded-2xl p-3 text-center">
+                <span className="num grid place-items-center w-8 h-8 mx-auto rounded-full text-[14px] font-extrabold" style={{ background: "#12151D", color: "#F3D58E" }}>{i + 1}</span>
+                <p className="text-[11.5px] font-bold mt-2 leading-snug">{RAx[k]}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="fixed bottom-0 inset-x-0 z-30 px-4 py-3" style={{ background: "rgba(245,246,248,.92)", backdropFilter: "blur(14px)", borderTop: "1px solid var(--line)" }}>
+        <div className="max-w-2xl mx-auto grid grid-cols-2 gap-3">
+          <Btn variant="gold" full icon={UserPlus} onClick={() => go("apply")}>{RAx.ldApply}</Btn>
+          <Btn full icon={Fingerprint} onClick={() => go("login")}>{RAx.ldLogin}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RiderApply({ lang, reps, applications, setApplications, go }) {
+  const RAx = RA[lang], x = EX[lang];
+  const [f, setF] = useState({ name: "", phone: "", nid: "", idExpiry: "", vehicle: "car", own: true, app: "hs", note: "" });
+  const [err, setErr] = useState(""); const [done, setDone] = useState(false);
+  const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  const submit = () => {
+    if (f.name.trim().length < 3) return setErr(RAx.apErrName);
+    if (!/^0?\d{9,10}$/.test(f.phone.replace(/\s/g, ""))) return setErr(RAx.apErrPhone);
+    if (!/^\d{10}$/.test(f.nid)) return setErr(RAx.apErrNid);
+    if (!f.idExpiry) return setErr(RAx.apErrExpiry);
+    if (reps.some((r) => r.nid === f.nid) || applications.some((a) => a.nid === f.nid && a.status !== "rejected")) return setErr(RAx.apDup);
+    setErr("");
+    setApplications((prev) => [{ id: "APP-" + Date.now(), name: f.name.trim(), phone: f.phone.trim(), nid: f.nid, idExpiry: f.idExpiry, vehicle: f.vehicle, own: f.own, app: f.app, note: f.note.trim(), createdAt: riyadhNow().toISOString(), status: "new" }, ...prev]);
+    setDone(true);
+  };
+  if (done) return (
+    <div className="min-h-screen grid place-items-center px-4"><div className="mesh" />
+      <div className="relative glass rounded-3xl p-8 text-center max-w-sm">
+        <CheckCircle2 size={54} style={{ color: "#0FA579" }} className="mx-auto" />
+        <h2 className="text-[20px] font-extrabold mt-4">{RAx.apDone}</h2>
+        <p className="text-[13px] mt-2" style={{ color: "var(--muted)" }}>{RAx.apDoneSub}</p>
+        <div className="mt-6"><Btn full onClick={() => go("landing")}>{RAx.ldBack}</Btn></div>
+      </div>
+    </div>
+  );
+  const opt = (on, label, onClick) => <button type="button" onClick={onClick} className="flex-1 px-3 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: on ? "rgba(228,184,92,.2)" : "rgba(20,27,45,.04)", border: `1px solid ${on ? "rgba(228,184,92,.6)" : "var(--line)"}` }}>{label}</button>;
+  return (
+    <div className="min-h-screen relative px-4 py-6"><div className="mesh" />
+      <div className="relative max-w-md mx-auto space-y-4">
+        <BrandHero lang={lang} compact />
+        <div className="glass rounded-3xl p-5 space-y-3.5">
+          <div><h2 className="text-[17px] font-extrabold">{RAx.apTitle}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.apSub}</p></div>
+          <GateField label={RAx.apName} val={f.name} set={set("name")} ph="" Icon={User} type="text" accent="#B8862E" />
+          <GateField label={RAx.apPhone} val={f.phone} set={set("phone")} ph="05xxxxxxxx" Icon={Phone} type="tel" accent="#B8862E" />
+          <GateField label={RAx.apNid} val={f.nid} set={set("nid")} ph="1xxxxxxxxx" Icon={CreditCard} type="text" accent="#B8862E" />
+          <GateField label={RAx.apExpiry} val={f.idExpiry} set={set("idExpiry")} ph="" Icon={CalendarDays} type="date" accent="#B8862E" />
+          <div><p className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{RAx.apVehicle}</p>
+            <div className="flex gap-2">{opt(f.vehicle === "car", RAx.apCar, () => set("vehicle")("car"))}{opt(f.vehicle === "bike", RAx.apBike, () => set("vehicle")("bike"))}</div></div>
+          <div className="flex gap-2">{opt(f.own, RAx.apOwn, () => set("own")(true))}{opt(!f.own, RAx.apNeed, () => set("own")(false))}</div>
+          <div><p className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{RAx.apApp}</p>
+            <div className="flex flex-wrap gap-1.5">{APPS.map((a) => <button type="button" key={a.id} onClick={() => set("app")(a.id)} className="px-3 py-1.5 rounded-full text-[12px] font-bold" style={{ background: f.app === a.id ? "#12151D" : "rgba(20,27,45,.05)", color: f.app === a.id ? "#F3D58E" : "var(--muted)" }}>{a[lang]}</button>)}</div></div>
+          <GateField label={RAx.apNote} val={f.note} set={set("note")} ph="" Icon={MessageSquare} type="text" accent="#B8862E" />
+          {err && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{err}</p>}
+          <Btn variant="gold" full icon={Send} onClick={submit}>{RAx.apSend}</Btn>
+          <button onClick={() => go("landing")} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.ldBack}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApplicationsPanel({ lang, role, applications, setApplications, reps, setReps, setAuditLog, actingEmployee }) {
+  const RAx = RA[lang];
+  const [rejId, setRejId] = useState(null); const [reason, setReason] = useState(""); const [creds, setCreds] = useState(null);
+  const list = applications.filter((a) => a.status === "new");
+  const appName = (id) => (APPS.find((a) => a.id === id) || {})[lang] || id;
+  const approve = (a) => {
+    const pw = String(Math.floor(100000 + Math.random() * 899999));
+    const id = "R-" + (1000 + reps.length + Math.floor(Math.random() * 90));
+    setReps((prev) => [...prev, { id, ar: a.name, en: a.name, phone: a.phone, nid: a.nid, idExpiry: a.idExpiry, vehicle: a.vehicle, app: a.app, empType: "kafala", status: "pending", sup: null, password: pw, photo: null, orders: 0, hours: 0, km: 0, weekendViolations: 0, appViolations: 0 }]);
+    setApplications((prev) => prev.map((z) => (z.id === a.id ? { ...z, status: "approved", repId: id, decidedBy: actingEmployee?.name || role.id, decidedAt: riyadhNow().toISOString() } : z)));
+    logAudit(setAuditLog, role, "application_approve", `${a.name} (${id})`, actingEmployee);
+    setCreds({ name: a.name, phone: a.phone, nid: a.nid, pw });
+  };
+  const reject = (a) => {
+    if (reason.trim().length < 5) return;
+    setApplications((prev) => prev.map((z) => (z.id === a.id ? { ...z, status: "rejected", reason: reason.trim(), decidedBy: actingEmployee?.name || role.id, decidedAt: riyadhNow().toISOString() } : z)));
+    logAudit(setAuditLog, role, "application_reject", a.name, actingEmployee);
+    setRejId(null); setReason("");
+  };
+  const waCreds = () => {
+    let url = ""; try { url = window.location.origin + "/?app=rider"; } catch (e) {}
+    const ph = creds.phone.replace(/\D/g, "").replace(/^0/, "966");
+    const msg = `${creds.name}\n${RA.ar.ldJoin} ✓\n${RA.ar.nationalId || "رقم الهوية"}: ${creds.nid}\n${RAx.apPassword}: ${creds.pw}\n${url}`;
+    try { window.open(`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`, "_blank"); } catch (e) {}
+  };
+  if (!list.length && !creds) return null;
+  return (
+    <Panel title={`${RAx.apPanelT} (${list.length})`}>
+      {creds && (
+        <div className="rounded-2xl p-4 mb-3" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.3)" }}>
+          <p className="text-[13px] font-extrabold" style={{ color: "#0B5C46" }}>{RAx.apCreds}: {creds.name}</p>
+          <p className="num text-[13px] mt-1">{creds.nid} · {RAx.apPassword}: <b>{creds.pw}</b></p>
+          <p className="text-[11.5px] mt-1" style={{ color: "var(--muted)" }}>{RAx.apAfter}</p>
+          <div className="flex gap-2 mt-3"><Btn icon={Send} onClick={waCreds}>{RAx.apSendWA}</Btn><Btn onClick={() => setCreds(null)}>OK</Btn></div>
+        </div>
+      )}
+      <div className="space-y-2.5">
+        {list.map((a) => (
+          <div key={a.id} className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div><p className="text-[13.5px] font-extrabold">{a.name}</p>
+                <p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{a.phone} · {a.nid} · {a.idExpiry}</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)" }}>{a.vehicle === "car" ? RAx.apCar : RAx.apBike} · {a.own ? RAx.apOwn : RAx.apNeed} · {appName(a.app)}</p>
+                {a.note && <p className="text-[11.5px] mt-1">“{a.note}”</p>}</div>
+              <Chip tone="info" sm>{RAx.apNew}</Chip>
+            </div>
+            {rejId === a.id ? (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={RAx.apRejectReason} className="flex-1 min-w-[160px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={INPUT_ST} />
+                <Btn variant="danger" onClick={() => reject(a)}>{RAx.apReject}</Btn><Btn onClick={() => { setRejId(null); setReason(""); }}>×</Btn>
+              </div>
+            ) : (
+              <div className="flex gap-2 mt-3"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => approve(a)}>{RAx.apApprove}</Btn><Btn variant="danger" onClick={() => setRejId(a.id)}>{RAx.apReject}</Btn></div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function PhotoModal({ src, onClose }) {
+  if (!src) return null;
+  return <div className="fixed inset-0 z-[90] grid place-items-center p-4" style={{ background: "rgba(3,5,10,.8)" }} onClick={onClose}><img src={src} alt="" style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 16 }} /></div>;
+}
+
+function RiderReceiptsPage({ lang, role, user, activeRep, repReceipts, setRepReceipts }) {
+  const RAx = RA[lang], t = T[lang];
+  const [f, setF] = useState({ kind: "fuel", amount: "", note: "", photo: null });
+  const [err, setErr] = useState(""); const [view, setView] = useState(null); const [busy, setBusy] = useState(false);
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const mine = repReceipts.filter((r) => r.repId === activeRep.id);
+  const onPhoto = async (e) => { const file = e.target.files && e.target.files[0]; if (!file) return; setBusy(true); try { setF((p) => ({ ...p, photo: null })); const d = await compressImage(file); setF((p) => ({ ...p, photo: d })); } catch (er) { setErr(RAx.rcErrPhoto); } setBusy(false); };
+  const submit = () => {
+    if (!(+f.amount > 0)) return setErr(RAx.rcErrAmt);
+    if (!f.photo) return setErr(RAx.rcErrPhoto);
+    if (f.kind === "other" && f.note.trim().length < 5) return setErr(RAx.rcErrNote);
+    setErr("");
+    setRepReceipts((prev) => [{ id: "RC-" + Date.now(), repId: activeRep.id, name: activeRep.ar, kind: f.kind, amount: +f.amount, note: f.note.trim(), photo: f.photo, date: riyadhToday(), status: "pending" }, ...prev]);
+    setF({ kind: "fuel", amount: "", note: "", photo: null });
+  };
+  const tone = { pending: "warn", approved: "ok", rejected: "bad" };
+  const lbl = { pending: RAx.rcPending, approved: RAx.rcApproved, rejected: RAx.rcRejected };
+  return (
+    <div className="space-y-4">
+      <PhotoModal src={view} onClose={() => setView(null)} />
+      <Panel title={RAx.rcT}>
+        <p className="text-[12px] mb-4" style={{ color: "var(--muted)" }}>{RAx.rcSub}</p>
+        <div className="flex gap-2 mb-3">{[["fuel", RAx.rcKindFuel], ["other", RAx.rcKindOther]].map(([k, l]) => <button key={k} onClick={() => setF({ ...f, kind: k })} className="flex-1 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: f.kind === k ? "#12151D" : "rgba(20,27,45,.05)", color: f.kind === k ? "#fff" : "var(--muted)" }}>{l}</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <GateField label={RAx.rcAmount} val={f.amount} set={(v) => setF({ ...f, amount: v })} ph="0" Icon={Wallet} type="number" accent={role.accent} />
+          <GateField label={RAx.rcNote} val={f.note} set={(v) => setF({ ...f, note: v })} ph="" Icon={MessageSquare} type="text" accent={role.accent} />
+        </div>
+        <label className="mt-3 flex items-center gap-3 rounded-2xl p-3.5 cursor-pointer" style={{ border: "1.5px dashed var(--line-strong)", background: "rgba(20,27,45,.03)" }}>
+          {f.photo ? <img src={f.photo} alt="" className="w-16 h-16 rounded-xl object-cover" /> : <Camera size={26} style={{ color: role.accent }} />}
+          <span className="text-[12.5px] font-bold">{busy ? "…" : RAx.rcPhoto}</span>
+          <input type="file" accept="image/*" capture="environment" onChange={onPhoto} className="hidden" />
+        </label>
+        {err && <p className="text-[11.5px] mt-3" style={{ color: "#C0443A" }}>{err}</p>}
+        <div className="mt-4"><Btn variant="accent" accent={role.glow} icon={Send} onClick={submit}>{RAx.rcSend}</Btn></div>
+      </Panel>
+      <Panel title={RAx.rcMine}>
+        {mine.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.rcNone}</p> : (
+          <div className="space-y-2.5">{mine.map((r) => (
+            <div key={r.id} className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+              <img src={r.photo} alt="" onClick={() => setView(r.photo)} className="w-14 h-14 rounded-lg object-cover cursor-pointer" />
+              <div className="flex-1 min-w-0"><p className="num text-[15px] font-extrabold">{fmt(r.amount)} {t.sar}</p><p className="num text-[11px]" style={{ color: "var(--muted)" }}>{r.date}</p>
+                {r.status === "rejected" && r.reason && <p className="text-[11px]" style={{ color: "#C0443A" }}>{r.reason}</p>}</div>
+              <Chip tone={tone[r.status]} sm>{lbl[r.status]}</Chip>
+            </div>))}</div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+function ReceiptsAdminPage({ lang, role, repReceipts, setRepReceipts, setAuditLog, actingEmployee }) {
+  const RAx = RA[lang], t = T[lang];
+  const [tab, setTab] = useState("pending"); const [view, setView] = useState(null); const [rej, setRej] = useState(null); const [reason, setReason] = useState("");
+  const list = repReceipts.filter((r) => r.status === tab);
+  const decide = (r, status, why) => {
+    setRepReceipts((prev) => prev.map((z) => (z.id === r.id ? { ...z, status, reason: why || "", decidedBy: actingEmployee?.name || role.id, decidedAt: riyadhNow().toISOString() } : z)));
+    logAudit(setAuditLog, role, "receipt_" + status, `${r.name}: ${r.amount}`, actingEmployee);
+    setRej(null); setReason("");
+  };
+  const counts = (s) => repReceipts.filter((r) => r.status === s).length;
+  return (
+    <div className="space-y-4">
+      <PhotoModal src={view} onClose={() => setView(null)} />
+      <div className="flex gap-2 flex-wrap">{[["pending", RAx.rcPending], ["approved", RAx.rcApproved], ["rejected", RAx.rcRejected]].map(([k, l]) => (
+        <button key={k} onClick={() => setTab(k)} className="px-4 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: tab === k ? "#12151D" : "#fff", color: tab === k ? "#fff" : "var(--muted)", border: "1px solid var(--line)" }}>{l} <span className="num">({counts(k)})</span></button>))}</div>
+      <Panel title={RAx.rcAdminT}>
+        {list.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.rcNone}</p> : (
+          <div className="space-y-3">{list.map((r) => (
+            <div key={r.id} className="rounded-2xl p-3 flex gap-3 flex-wrap" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+              <img src={r.photo} alt="" onClick={() => setView(r.photo)} className="w-24 h-24 rounded-xl object-cover cursor-pointer" />
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-[13.5px] font-extrabold">{r.name}</p>
+                <p className="num text-[18px] font-extrabold">{fmt(r.amount)} {t.sar}</p>
+                <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{r.kind === "fuel" ? RAx.rcKindFuel : RAx.rcKindOther} · <span className="num">{r.date}</span>{r.note ? ` · ${r.note}` : ""}</p>
+                {r.status === "rejected" && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{r.reason}</p>}
+                {r.status === "pending" && (rej === r.id ? (
+                  <div className="flex gap-2 mt-2 flex-wrap"><input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={RAx.rcReason} className="flex-1 min-w-[150px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={INPUT_ST} />
+                    <Btn variant="danger" onClick={() => reason.trim().length >= 5 && decide(r, "rejected", reason.trim())}>{RAx.rcReject}</Btn></div>
+                ) : (
+                  <div className="flex gap-2 mt-2"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => decide(r, "approved")}>{RAx.rcApprove}</Btn><Btn variant="danger" onClick={() => setRej(r.id)}>{RAx.rcReject}</Btn></div>
+                ))}
+              </div>
+            </div>))}</div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 const PAGES = {
   overview: Overview, orders: OrdersPage, cars: CarsPage, zones: ZonesPage,
   restaurants: RestaurantsPage, invoices: InvoicesPage, expenses: ExpensesPage,
-  payroll: PayrollPage, employees: PeoplePage, attendance: AttendancePage,
+  employees: PeoplePage, attendance: AttendancePage,
   contracts: ContractsPage, cases: CasesPage, compliance: CompliancePage,
   approvals: ApprovalsPage, reports: ReportsPage, settings: SettingsPage,
   hiring: HiringPage, shifts: ShiftsPage, tickets: TicketsPage, circulars: CircularsPage,
   pulse: PulsePage, iqama: IqamaAlertsPage, payrollRuns: PayrollRunsPage,
   chat: CommsPage, messages: RepMessagesPage, leaderboard: LeaderboardPage, audit: AuditLogPage,
   hall: HallOfFamePage, charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
-  permissions: PermissionsMapPage, mystory: MyStoryPage, invAnalysis: InvoiceAnalysisPage, equipCompliance: ComplianceEquipmentPage,
+  permissions: PermissionsMapPage, mystory: MyStoryPage, equipCompliance: ComplianceEquipmentPage,
   boardCouncil: BoardCouncilPage, decisions: DecisionsPage,
-  repAccounting: RepAccountingPage, myEarnings: MyEarningsPage, today: TodayPage,
+  repAccounting: RepAccountingPage, myEarnings: MyEarningsPage, today: TodayPage, riderHome: RiderHome, riderReceipts: RiderReceiptsPage, receiptsAdmin: ReceiptsAdminPage,
   financeHub: HubPage, repsHub: HubPage, commsHub: HubPage, hrHub: HubPage, legalHub: HubPage,
 };
 const NAV_ICON = {
@@ -7738,8 +8096,8 @@ const NAV_ICON = {
   hiring: UserPlus, shifts: Target, tickets: Send, circulars: Megaphone, pulse: Radio,
   iqama: ShieldAlert, payrollRuns: CircleDollarSign, chat: MessageSquare, messages: MessageSquare,
   leaderboard: Trophy, audit: ClipboardList, hall: Crown, charter: Scale, checklist: Rocket, growth: TrendingUp,
-  security: ShieldAlert, permissions: ShieldCheck, mystory: Sparkles, invAnalysis: ReceiptText, equipCompliance: ShieldAlert,
-  boardCouncil: Scale, decisions: Gavel, repAccounting: HandCoins, myEarnings: Wallet, today: Sparkles,
+  security: ShieldAlert, permissions: ShieldCheck, mystory: Sparkles, equipCompliance: ShieldAlert,
+  boardCouncil: Scale, decisions: Gavel, repAccounting: HandCoins, myEarnings: Wallet, today: Sparkles, riderHome: LayoutDashboard, riderReceipts: Camera, receiptsAdmin: ReceiptText,
   financeHub: Wallet, repsHub: Trophy, commsHub: MessageSquare, hrHub: Users, legalHub: Scale,
 };
 
@@ -7907,7 +8265,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog, setAuditLog,
   weekendFine, setWeekendFine, charterClauses, setCharterClauses, violationPenalty, setViolationPenalty,
-  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, appInvoices, setAppInvoices, costModel, setCostModel, pricing, setPricing, repSettlements, setRepSettlements,
+  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, pricing, setPricing, repSettlements, setRepSettlements, applications, setApplications, repReceipts, setRepReceipts,
   equipStatus, setEquipStatus, tgaFines, setTgaFines, decisions, setDecisions, query, setQuery }) {
   const t = T[lang], x = EX[lang];
   const navEff = (() => {
@@ -7973,6 +8331,16 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       if (mins != null && mins >= 0 && mins <= 60) notifs.unshift({ text: `${x.apptSoonT}: ${tk.apptAt.slice(11, 16)} (${x.apptSoonNote})`, tone: "warn", page: "tickets" });
     });
   } else {
+    if ((role.id === "opsm" || role.id === "ops") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !reports.some((rp) => rp.date === new Date(riyadhNow().getTime() - 86400000).toISOString().slice(0, 10)))
+      notifs.unshift({ text: RA[lang].missingEntryNotif, tone: "warn", page: "shifts", count: 1 });
+    if (role.id === "hr" || role.id === "opsm") {
+      const na = applications.filter((a) => a.status === "new").length;
+      if (na > 0) notifs.unshift({ text: `${RA[lang].apNotif}: ${na}`, tone: "info", page: "hiring", count: na });
+    }
+    if (role.id === "fin" || role.id === "gm") {
+      const nr = repReceipts.filter((q) => q.status === "pending").length;
+      if (nr > 0) notifs.unshift({ text: `${RA[lang].rcNotif}: ${nr}`, tone: "warn", page: "receiptsAdmin", count: nr });
+    }
     if (role.id === "fin") {
       const pm = prevMonthStr(riyadhNow().toISOString().slice(0, 7));
       const hasPrev = reports.some((rp) => rp.date.startsWith(pm));
@@ -8063,9 +8431,9 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   const badgeOf = (n) => (HUBS[n] ? HUBS[n].reduce((sum, m) => sum + (m === "tickets" ? (isRep ? myOpenTickets : myInboxTickets) : (navBadges[m] || 0)), 0)
     : n === "tickets" ? (isRep ? myOpenTickets : myInboxTickets) : (navBadges[n] || 0));
   const GROUPS = [
-    { id: "main", label: RA[lang].grpMain, pages: ["today", "overview", "boardCouncil", "decisions", "myEarnings", "mystory"] },
+    { id: "main", label: RA[lang].grpMain, pages: ["today", "riderHome", "overview", "boardCouncil", "decisions", "myEarnings", "mystory"] },
     { id: "ops", label: RA[lang].grpOps, pages: ["shifts", "pulse", "cars", "orders", "zones", "restaurants", "attendance", "hrHub"] },
-    { id: "fin", label: RA[lang].grpFin, pages: ["financeHub", "payroll", "growth"] },
+    { id: "fin", label: RA[lang].grpFin, pages: ["financeHub", "growth"] },
     { id: "people", label: RA[lang].grpPeople, pages: ["repsHub", "messages"] },
     { id: "comms", label: RA[lang].grpComms, pages: ["commsHub"] },
     { id: "gov", label: RA[lang].grpGov, pages: ["legalHub", "equipCompliance", "approvals", "reports", "audit", "permissions", "security", "checklist"] },
@@ -8142,8 +8510,8 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       </div>
       <div className="p-3 space-y-1.5" style={{ borderTop: "1px solid rgba(255,255,255,.08)" }}>
         {isRep && <Btn full variant="accent" accent={role.glow} icon={Route} onClick={() => setLogShift(true)}>{x.logNewShift}</Btn>}
-        {[[KeyRound, x.secTitle, () => setPage("settings")], [ShoppingBag, t.switchDept, onSwitch], [LogOut, t.logout, onLogout]].map(([Ic, label, fn], i) => (
-          <button key={i} onClick={fn} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold hover:brightness-125 transition" style={i === 2 ? { ...sideBtn, color: "#F4A8A0" } : sideBtn}><Ic size={14} />{label}</button>
+        {[[KeyRound, x.secTitle, () => setPage("settings")], ...(RIDER_MODE ? [] : [[ShoppingBag, t.switchDept, onSwitch]]), [LogOut, t.logout, onLogout]].map(([Ic, label, fn], i) => (
+          <button key={i} onClick={fn} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold hover:brightness-125 transition" style={fn === onLogout ? { ...sideBtn, color: "#F4A8A0" } : sideBtn}><Ic size={14} />{label}</button>
         ))}
       </div>
     </div>
@@ -8283,11 +8651,10 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               auditLog={auditLog} setAuditLog={setAuditLog} actingEmployee={actingEmployee} weekendFine={weekendFine} setWeekendFine={setWeekendFine} charterClauses={charterClauses} setCharterClauses={setCharterClauses}
               violationPenalty={violationPenalty} setViolationPenalty={setViolationPenalty}
               deptPasswords={deptPasswords} setDeptPasswords={setDeptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
-              appInvoices={appInvoices} setAppInvoices={setAppInvoices}
               equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
               decisions={decisions} setDecisions={setDecisions}
-              costModel={costModel} setCostModel={setCostModel}
               pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
+              applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
               query={query} setQuery={setQuery} goPage={goTo} notifs={notifs} hubId={page} hubTab={hubNav.tab} hubStamp={hubNav.stamp} navBadges={navBadges} />
           </div>
         </main>
@@ -8360,7 +8727,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
 /* ═══════════  الجذر  ═══════════ */
 export default function App() {
   const [lang, setLang] = useState("ar");
-  const [step, setStep] = useState("lang");
+  const [step, setStep] = useState(RIDER_MODE ? "gate" : "lang");
   const [user, setUser] = useState("BQ-GM");
   const [roleId, setRoleId] = useState(null);
   const [reduce, setReduce] = useState(false);
@@ -8391,19 +8758,28 @@ export default function App() {
   const [deptSecurity, setDeptSecurity] = usePersisted("bq_dept_security", {});
   const [weekendFine, setWeekendFine] = usePersisted("bq_weekend_fine", 500);
   const [violationPenalty, setViolationPenalty] = usePersisted("bq_violation_penalty", 50);
-  const [appInvoices, setAppInvoices] = usePersisted("bq_app_invoices", []);
   const [equipStatus, setEquipStatus] = usePersisted("bq_equip_status", {});
   const [tgaFines, setTgaFines] = usePersisted("bq_tga_fines", []);
   const [decisions, setDecisions] = usePersisted("bq_decisions", []);
   const [pricing, setPricing] = usePersisted("bq_pricing", { app: {}, rep: {} });
   const [repSettlements, setRepSettlements] = usePersisted("bq_rep_settlements", []);
-  const [costModel, setCostModel] = usePersisted("bq_cost_model", { perOrderMargin: 7, perOrderInclVat: true, iqamaMonthly: 1000 });
+  const [applications, setApplications] = usePersisted("bq_applications", []);
+  const [repReceipts, setRepReceipts] = usePersisted("bq_rep_receipts", []);
+  const [riderView, setRiderView] = useState("landing");
   const [charterClauses, setCharterClauses] = usePersisted("bq_charter_clauses", []);
   const [query, setQuery] = useState("");
   const dir = LANGS.find((l) => l.code === lang).dir;
   const role = ALL_ROLES.find((r) => r.id === roleId);
   const activeRep = role && role.id === "rep" ? reps.find((r) => r.nid === user) : null;
 
+  useEffect(() => {
+    if (!RIDER_MODE) return;
+    try {
+      document.title = "بوارق | المندوب";
+      const add = (n, c) => { const m = document.createElement("meta"); m.name = n; m.content = c; document.head.appendChild(m); };
+      add("theme-color", "#0E1424"); add("apple-mobile-web-app-capable", "yes"); add("mobile-web-app-capable", "yes"); add("apple-mobile-web-app-title", "بوارق");
+    } catch (e) {}
+  }, []);
   useEffect(() => {
     document.documentElement.setAttribute("dir", dir);
     document.documentElement.setAttribute("lang", lang);
@@ -8465,7 +8841,18 @@ export default function App() {
         </div>
       )}
       {step === "lang" && <LangScreen lang={lang} setLang={setLang} next={() => setStep("gate")} />}
-      {step === "gate" && (
+      {step === "gate" && RIDER_MODE && riderView === "landing" && <RiderLanding lang={lang} setLang={setLang} reps={reps} pricing={pricing} go={setRiderView} />}
+      {step === "gate" && RIDER_MODE && riderView === "apply" && <RiderApply lang={lang} reps={reps} applications={applications} setApplications={setApplications} go={setRiderView} />}
+      {step === "gate" && RIDER_MODE && riderView === "login" && (
+        <RiderLogin lang={lang} setLang={setLang} err={loginErr} setErr={setLoginErr} onBack={() => setRiderView("landing")}
+          onRep={(nid, pass) => {
+            const rec = reps.find((r) => r.nid === nid.trim());
+            if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
+            if (rec.password && rec.password !== pass) { setLoginErr(EX[lang].errRepWrongPass); return; }
+            setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
+          }} />
+      )}
+      {step === "gate" && !RIDER_MODE && (
         <DeptGate lang={lang} setLang={setLang} reps={reps} employees={employees} err={loginErr} setErr={setLoginErr} sessionExpired={sessionExpired}
           deptPasswords={deptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
           onEmployee={(id) => { setRoleId(id); setUser("BQ-" + id.toUpperCase()); setStep("app"); setSessionExpired(false); }}
@@ -8498,11 +8885,10 @@ export default function App() {
           weekendFine={weekendFine} setWeekendFine={setWeekendFine} charterClauses={charterClauses} setCharterClauses={setCharterClauses}
           violationPenalty={violationPenalty} setViolationPenalty={setViolationPenalty}
           deptPasswords={deptPasswords} setDeptPasswords={setDeptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
-          appInvoices={appInvoices} setAppInvoices={setAppInvoices}
           equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
           decisions={decisions} setDecisions={setDecisions}
-          costModel={costModel} setCostModel={setCostModel}
           pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
+          applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
           query={query} setQuery={setQuery}
           onSwitch={() => setStep("gate")} onLogout={() => { setRoleId(null); setStep("gate"); }} />
       )}
