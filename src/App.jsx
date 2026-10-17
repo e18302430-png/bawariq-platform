@@ -179,12 +179,12 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "decisions", "invoices", "expenses", "repAccounting", "receiptsAdmin", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "decisions", "invoices", "expenses", "repAccounting", "receiptsAdmin", "payrollRuns", "equipCompliance", "growth", "checklist", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
     ur: { t: "آپریشنز منیجر", d: "علاقے، نمائندے اور گاڑیوں کی کارکردگی" },
-    nav: ["overview", "leaderboard", "hall", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
   { id: "ops", icon: UtensilsCrossed, accent: "#FF9153", glow: "255,145,83", staff: 34, shape: "diamond",
     ar: { t: "إدارة التشغيل", d: "غرفة الطلبات: الإسناد والمتابعة اللحظية" },
     en: { t: "Operations", d: "Order room: dispatching and live tracking" },
@@ -199,7 +199,7 @@ const ROLES = [
     ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
     en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
     ur: { t: "انسانی وسائل", d: "نمائندے، شفٹیں، بھرتی اور تربیت" },
-    nav: ["overview", "leaderboard", "hall", "hiring", "employees", "iqama", "attendance", "tickets", "chat", "circulars", "permissions", "settings"] },
+    nav: ["overview", "hiring", "repFiles", "employees", "iqama", "attendance", "tickets", "chat", "circulars", "permissions", "settings"] },
   { id: "legal", icon: Scale, accent: "#E2789E", glow: "226,120,158", staff: 4, shape: "shieldTall",
     ar: { t: "الشؤون القانونية", d: "عقود المطاعم والمخالفات والالتزام" },
     en: { t: "Legal Affairs", d: "Restaurant contracts, violations, compliance" },
@@ -216,7 +216,7 @@ const REP = {
   ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
   en: { t: "Delivery Rep", d: "Shift orders and proof of delivery" },
   ur: { t: "ڈیلیوری نمائندہ", d: "شفٹ کے آرڈرز اور ثبوتِ ترسیل" },
-  nav: ["riderHome", "myEarnings", "riderReceipts", "mystory", "leaderboard", "hall", "messages", "tickets", "circulars", "attendance", "settings"],
+  nav: ["riderHome", "myEarnings", "riderReceipts", "mystory", "riderWelcome", "messages", "tickets", "circulars", "settings"],
 };
 const ALL_ROLES = [...ROLES, REP, ADVISOR_ROLE];
 
@@ -1933,48 +1933,6 @@ function LogShiftModal({ lang, role, onClose, onConfirm }) {
   );
 }
 
-function ShiftPickScreen({ lang, rep, onConfirm }) {
-  const t = T[lang], x = EX[lang];
-  const [start, setStart] = useState("13:00");
-  const [end, setEnd] = useState("16:00");
-  const quotes = MOTIVATION[lang];
-  const [quote] = useState(() => quotes[Math.floor(Math.random() * quotes.length)]);
-
-  return (
-    <div className="min-h-full relative grid place-items-center px-5 py-10 overflow-hidden">
-      <div className="mesh" />
-      <div className="relative w-full max-w-md rise">
-        <div className="flex justify-center mb-6"><Wordmark t={t} s={48} /></div>
-        <div className="glass rounded-3xl p-6 sm:p-7">
-          <div className="rounded-2xl p-3.5 mb-5 flex items-start gap-2.5" style={{ background: "rgba(63,216,180,.1)", border: "1px solid rgba(63,216,180,.28)" }}>
-            <Rocket size={17} style={{ color: "#3FD8B4" }} className="mt-0.5 shrink-0" />
-            <p className="text-[12.5px] leading-relaxed font-semibold">{quote}</p>
-          </div>
-          <h1 className="text-[17px] font-extrabold">{x.shiftPickTitle}</h1>
-          {rep && <p className="text-[12.5px] mt-1" style={{ color: "#3FD8B4" }}>{lang === "en" ? rep.en : rep.ar}</p>}
-          <p className="text-[12px] mt-1.5 mb-5" style={{ color: "var(--muted)" }}>{x.shiftPickSub}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftStart}</span>
-              <span className="flex items-center gap-2 rounded-xl px-3 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
-                <Clock size={15} style={{ color: "#3FD8B4" }} />
-                <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
-              </span>
-            </label>
-            <label className="block">
-              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftEnd}</span>
-              <span className="flex items-center gap-2 rounded-xl px-3 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
-                <Clock size={15} style={{ color: "#3FD8B4" }} />
-                <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
-              </span>
-            </label>
-          </div>
-          <div className="mt-5"><Btn variant="accent" accent="63,216,180" full icon={CheckCircle2} onClick={() => onConfirm(start, end)}>{x.confirmShift}</Btn></div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gateErr, setErr: setGateErr, sessionExpired, deptPasswords, deptSecurity, setDeptSecurity }) {
   const t = T[lang], x = EX[lang];
@@ -2418,90 +2376,6 @@ function Overview({ pricing, role, lang, reps, reports, orders, cars, invoices, 
   const [customizing, setCustomizing] = useState(false);
   const [hiddenKpis, setHiddenKpis] = usePersonalList(`kpi_hidden_${role.id}`);
 
-  if (role.id === "rep") {
-    const quotes = MOTIVATION[lang];
-    const quote = quotes[riyadhNow().getUTCDate() % quotes.length];
-    const month = riyadhNow().toISOString().slice(0, 7);
-    const mine = activeRep ? monthEntriesFor(reports, activeRep.id, month) : [];
-    const mOrders = mine.reduce((a, e) => a + (e.orders || 0), 0);
-    const mHours = mine.reduce((a, e) => a + (e.hours || 0), 0);
-    const mWeekendViol = mine.reduce((a, e) => a + (e.weekendViolations || 0), 0);
-    const mAppViol = mine.reduce((a, e) => a + (e.appViolations || 0), 0);
-    const mViol = mWeekendViol + mAppViol;
-    const tgt = activeRep ? monthTargetOf(pricing, activeRep.app) : null;
-    const pct = tgt ? Math.round((mOrders / tgt) * 100) : null;
-    const today = riyadhToday();
-    const myClock = attendance.find((a) => a.key === activeRep?.nid && a.date === today);
-    const myShift = (shifts || []).filter((s) => s.repId === activeRep?.nid && s.date === today).slice(-1)[0];
-    const lb = computeLeaderboard(reps, reports, month);
-    const myRank = activeRep ? lb.stats.findIndex((s) => s.rep.id === activeRep.id) + 1 : 0;
-    return (
-      <div className="space-y-4">
-        <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(125deg,rgba(${A},.16),rgba(${A},.02) 60%)`, border: `1px solid rgba(${A},.32)` }}>
-          <div className="absolute pointer-events-none rounded-full" style={{ width: 220, height: 220, insetInlineEnd: -80, top: -80, background: `radial-gradient(circle,rgba(${A},.22),transparent 70%)` }} />
-          <RepHeroArt accent={A} />
-          <div className="relative flex items-center gap-5 flex-wrap sm:flex-nowrap">
-            {pct != null ? <ProgressRing pct={pct} accent={A} label={x.monthTarget} /> : <div className="shrink-0 text-center px-3"><div className="num text-[34px] font-extrabold leading-none">{mOrders}</div><div className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.ordersPart}</div></div>}
-            <div className="flex-1 min-w-[160px]">
-              <p className="text-[10.5px] font-bold uppercase tracking-wide" style={{ color: role.accent }}>{x.motivHeadline}</p>
-              <p className="text-[14.5px] font-semibold leading-snug mt-1">{quote}</p>
-              <div className="flex flex-wrap gap-4 mt-3">
-                <span><span className="num text-[17px] font-extrabold">{mOrders}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{x.ordersPart}</span></span>
-                <span><span className="num text-[17px] font-extrabold">{mHours.toFixed(1)}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{t.h.time}</span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl overflow-hidden" style={{ border: `1px solid ${myClock && !myClock.out ? "rgba(63,216,180,.4)" : "var(--line)"}` }}>
-          <div className="p-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--line)" }}>
-            <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: myClock && !myClock.out ? "rgba(63,216,180,.16)" : "rgba(20,27,45,.06)" }}>
-              <Fingerprint size={20} style={{ color: myClock && !myClock.out ? "#3FD8B4" : "var(--muted)" }} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-bold">
-                {myClock && !myClock.out ? x.alreadyClockedIn : myClock && myClock.out ? t.s.closed : x.notClockedIn}
-              </p>
-              <p className="text-[11px]" style={{ color: "var(--muted)" }}>
-                {myShift ? `${x.shiftWindow}: ${myShift.start} → ${myShift.end}` : x.noShiftToday} · {x.dammamTime}
-              </p>
-            </div>
-            {myClock && !myClock.out && <span className="w-2 h-2 rounded-full pulse-dot shrink-0" style={{ background: "#3FD8B4" }} />}
-          </div>
-          <div className="p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.06)", borderBottom: activeRep?.idExpiry ? "1px solid var(--line)" : "none" }}>
-            <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: "rgba(228,184,92,.18)" }}>
-              <Trophy size={20} style={{ color: "#E4B85C" }} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold">{x.lbTitle}</p>
-              <p className="text-[11px]" style={{ color: "var(--muted)" }}>{x.lbYourRank}: <span className="num font-bold" style={{ color: "#F7E3B0" }}>#{myRank || "—"}</span> · {x.lbMotivate}</p>
-            </div>
-          </div>
-          {activeRep?.idExpiry && (() => {
-            const days = daysUntil(activeRep.idExpiry);
-            const tier = iqamaTier(days);
-            if (tier.key === "healthy") return null;
-            return (
-              <div className="p-4 flex items-center gap-3">
-                <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: "rgba(232,131,122,.14)" }}>
-                  <ShieldAlert size={20} style={{ color: "#E8837A" }} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold">{x.iqamaT}</p>
-                  <p className="text-[11px]" style={{ color: "var(--muted)" }}>{days} {x.daysLeft} · <Chip tone={tier.tone} sm>{x[tier.key]}</Chip></p>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Kpi label={x.violCol} value={String(mViol)} icon={AlertTriangle} accent={A} />
-          <Kpi label={tgt ? x.monthTarget : x.ordersPart} value={String(tgt || mOrders)} icon={Target} accent={A} />
-        </div>
-      </div>
-    );
-  }
 
   const activeReps = reps.filter((r) => r.status === "active");
   const month = riyadhNow().toISOString().slice(0, 7);
@@ -3496,19 +3370,6 @@ function monthEntriesFor(reports, repId, monthPrefix) {
 }
 
 /* ═══════════  لوحة الصدارة الشهرية  ═══════════ */
-const LB_REWARDS = { first: 300, second: 200, third: 150 };
-function computeLeaderboard(reps, reports, month) {
-  const active = reps.filter((r) => r.status === "active");
-  const stats = active.map((r) => {
-    const entries = monthEntriesFor(reports, r.id, month);
-    const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-    return { rep: r, orders };
-  });
-  const byOrders = [...stats].sort((a, b) => b.orders - a.orders);
-  const first = byOrders[0] || null;
-  const second = byOrders[1] || null;
-  return { first, second, stats };
-}
 
 
 /* ═══════════  تنبيهات انتهاء الإقامات (الموارد البشرية)  ═══════════ */
@@ -3533,45 +3394,6 @@ function prevMonthStr(month) {
   return d.toISOString().slice(0, 7);
 }
 
-function PodiumCard({ lang, role, rank, entry, rewardAmt, desc, icon: Icon, tone, umrah }) {
-  const x = EX[lang];
-  if (!entry) {
-    return (
-      <div className="glass rounded-2xl p-4 flex items-center justify-center" style={{ minHeight: 150, border: `1px dashed ${tone}` }}>
-        <p className="text-[11.5px] text-center" style={{ color: "var(--muted)" }}>{x.lbNoData}</p>
-      </div>
-    );
-  }
-  const rep = entry.rep;
-  return (
-    <div className="glass rounded-2xl p-4 relative overflow-hidden" style={{ border: `1px solid ${tone}66`, background: `linear-gradient(160deg,${tone}22,transparent 70%)` }}>
-      <div className="absolute pointer-events-none rounded-full" style={{ width: 130, height: 130, insetInlineEnd: -40, top: -40, background: `radial-gradient(circle,${tone}33,transparent 70%)` }} />
-      <div className="flex items-center justify-between mb-3 relative">
-        <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: tone }}><Icon size={15} />{rank}</span>
-        <span className="num text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${tone}22`, color: tone }}>+{rewardAmt} {T[lang].sar}</span>
-      </div>
-      <div className="flex items-center gap-3 relative">
-        {rep.photo ? <img src={rep.photo} alt="" className="w-14 h-14 rounded-2xl object-cover" style={{ border: `2px solid ${tone}` }} />
-          : <span className="grid place-items-center w-14 h-14 rounded-2xl" style={{ background: `${tone}22`, border: `2px solid ${tone}` }}>
-              {rep.vehicle === "car" ? <Car size={22} style={{ color: tone }} /> : <Bike size={22} style={{ color: tone }} />}
-            </span>}
-        <div className="min-w-0">
-          <p className="text-[14px] font-extrabold truncate">{lang === "en" ? rep.en : rep.ar}</p>
-          <p className="text-[10.5px] mt-0.5" style={{ color: "var(--muted)" }}>{desc}</p>
-        </div>
-      </div>
-      <div className="flex gap-3 mt-3 pt-3 relative" style={{ borderTop: `1px solid ${tone}33` }}>
-        <span className="text-[11px]"><b className="num">{entry.orders}</b> {x.lbOrders}</span>
-      </div>
-      {umrah && (
-        <div className="mt-3 rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: "rgba(228,184,92,.15)", border: "1px solid rgba(228,184,92,.4)" }}>
-          <Plane size={15} style={{ color: "#E4B85C" }} />
-          <span className="text-[11px] font-bold" style={{ color: "#F7E3B0" }}>{x.lbUmrah}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 
 function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shifts, user, weekendFine, violationPenalty, payrollRuns }) {
@@ -3583,17 +3405,12 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
   const totalOrders = allEntries.reduce((a, e) => a + (e.orders || 0), 0);
   const totalHours = allEntries.reduce((a, e) => a + (e.hours || 0), 0);
   const monthsActive = new Set(allEntries.map((e) => e.date.slice(0, 7))).size;
-  const wins = leaderboardHistory.filter((h) => h.first === activeRep.id).length;
-  const thirdWins = leaderboardHistory.filter((h) => h.third === activeRep.id).length;
-  const shiftsCount = (shifts || []).filter((s) => s.repId === user).length;
   const joinDate = allEntries.length ? allEntries.map((e) => e.date).sort()[0] : null;
 
   const stats = [
     { icon: ShoppingBag, label: x.storyOrders, value: fmt(totalOrders) },
     { icon: Timer, label: x.storyHours, value: totalHours.toFixed(0) },
     { icon: CalendarClock, label: x.storyMonths, value: String(monthsActive) },
-    { icon: Trophy, label: x.storyWins, value: String(wins) },
-    { icon: Award, label: x.storyThird, value: String(thirdWins) },
   ];
 
   return (
@@ -3623,143 +3440,11 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
         ))}
       </div>
 
-      {wins > 0 && (
-        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.35)" }}>
-          <Crown size={20} style={{ color: "#E4B85C" }} />
-          <p className="text-[13px] font-semibold">{x.storyProud} {wins} {x.storyProudEnd}</p>
-        </div>
-      )}
     </div>
   );
 }
 
-function HallOfFamePage({ lang, role, reps, leaderboardHistory }) {
-  const t = T[lang], x = EX[lang];
-  const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? { name: lang === "en" ? r.en : r.ar, photo: r.photo, vehicle: r.vehicle } : { name: id, photo: null, vehicle: "car" }; };
-  const sorted = [...leaderboardHistory].filter((h) => h.first).sort((a, b) => b.month.localeCompare(a.month));
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(228,184,92,.16),rgba(228,184,92,.02) 60%)", border: "1px solid rgba(228,184,92,.32)" }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Trophy size={19} style={{ color: "#E4B85C" }} />
-          <h2 className="text-[16px] font-extrabold">{x.hallOfFameT}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.hallOfFameSub}</p>
-      </div>
-      {sorted.length === 0 ? <EmptyHint lang={lang} /> : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((h) => {
-            const first = repName(h.first);
-            const third = h.third ? repName(h.third) : null;
-            return (
-              <div key={h.month} className="glass rounded-2xl p-4 relative overflow-hidden" style={{ border: "1px solid rgba(228,184,92,.3)" }}>
-                <p className="num text-[11px] font-bold mb-3" style={{ color: "#E4B85C" }}>{h.month}</p>
-                <div className="flex items-center gap-3">
-                  {first.photo ? <img src={first.photo} alt="" className="w-12 h-12 rounded-2xl object-cover" style={{ border: "2px solid #E4B85C" }} />
-                    : <span className="grid place-items-center w-12 h-12 rounded-2xl" style={{ background: "rgba(228,184,92,.16)", border: "2px solid #E4B85C" }}>
-                        <Crown size={18} style={{ color: "#E4B85C" }} />
-                      </span>}
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-extrabold truncate">{first.name}</p>
-                    <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{x.lbFirst}</p>
-                  </div>
-                </div>
-                {third && (
-                  <div className="flex items-center gap-2.5 mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
-                    <Award size={14} style={{ color: "#C58BF2" }} />
-                    <p className="text-[11.5px] truncate">{third.name} · {x.lbThird}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
-function LeaderboardPage({ lang, role, reps, reports, activeRep, leaderboardHistory, setLeaderboardHistory }) {
-  const t = T[lang], x = EX[lang];
-  const month = riyadhNow().toISOString().slice(0, 7);
-  const { first, second, stats } = computeLeaderboard(reps, reports, month);
-  const prevMonth = prevMonthStr(month);
-  const prevRecord = leaderboardHistory.find((h) => h.month === prevMonth);
-  const umrahEligible = !!(first && prevRecord && prevRecord.first === first.rep.id);
-
-  const thisRecord = leaderboardHistory.find((h) => h.month === month);
-  const thirdId = thisRecord?.third || null;
-  const thirdEntry = thirdId ? stats.find((s) => s.rep.id === thirdId) : null;
-
-  useEffect(() => {
-    if (!first) return;
-    setLeaderboardHistory((prev) => {
-      const exists = prev.find((h) => h.month === month);
-      if (exists && exists.first === first.rep.id) return prev;
-      const rest = prev.filter((h) => h.month !== month);
-      return [...rest, { month, first: first.rep.id, third: exists?.third || null }];
-    });
-    // eslint-disable-next-line
-  }, [first?.rep.id, month]);
-
-  const [pickThird, setPickThird] = useState(thirdId || "");
-  const saveThird = () => {
-    if (!pickThird) return;
-    setLeaderboardHistory((prev) => {
-      const exists = prev.find((h) => h.month === month);
-      const rest = prev.filter((h) => h.month !== month);
-      return [...rest, { month, first: exists?.first || (first ? first.rep.id : null), third: pickThird }];
-    });
-  };
-
-  const myRank = activeRep ? stats.findIndex((s) => s.rep.id === activeRep.id) + 1 : 0;
-  const canPickThird = role.id === "hr" || role.id === "opsm" || role.id === "gm";
-
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(228,184,92,.16),rgba(228,184,92,.02) 60%)", border: "1px solid rgba(228,184,92,.32)" }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Trophy size={19} style={{ color: "#E4B85C" }} />
-          <h2 className="text-[16px] font-extrabold">{x.lbTitle}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.lbSub}</p>
-        {role.id === "rep" && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <Chip tone="info" sm>{x.lbYourRank}: #{myRank || "—"}</Chip>
-            <span className="text-[11.5px] font-semibold" style={{ color: "#F7E3B0" }}>{x.lbMotivate}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <PodiumCard lang={lang} role={role} rank={x.lbFirst} entry={first} rewardAmt={LB_REWARDS.first} desc={x.lbFirstDesc} icon={Crown} tone="#E4B85C" umrah={umrahEligible} />
-        <PodiumCard lang={lang} role={role} rank={x.lbSecond} entry={second} rewardAmt={LB_REWARDS.second} desc={x.lbSecondDesc} icon={Medal} tone="#9BB3C9" />
-        <PodiumCard lang={lang} role={role} rank={x.lbThird} entry={thirdEntry} rewardAmt={LB_REWARDS.third} desc={x.lbThirdDesc} icon={Award} tone="#C58BF2" />
-      </div>
-
-      {umrahEligible && (
-        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.35)" }}>
-          <Plane size={20} style={{ color: "#E4B85C" }} />
-          <p className="text-[12.5px] font-semibold">{x.lbUmrah} — {x.lbUmrahHint}</p>
-        </div>
-      )}
-
-      {canPickThird && (
-        <Panel title={x.lbPickThird}>
-          <div className="flex items-center gap-2 flex-wrap">
-            <select value={pickThird} onChange={(e) => setPickThird(e.target.value)} className="rounded-xl px-3 py-2.5 text-[12.5px] font-semibold outline-none"
-              style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#12151D" }}>
-              <option value="" style={{ background: "#FFFFFF" }}>—</option>
-              {reps.filter((r) => r.status === "active").map((r) => <option key={r.id} value={r.id} style={{ background: "#FFFFFF" }}>{lang === "en" ? r.en : r.ar}</option>)}
-            </select>
-            <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveThird}>{x.lbSaveThird}</Btn>
-          </div>
-          <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{x.lbHistoryNote}</p>
-        </Panel>
-      )}
-    </div>
-  );
-}
 
 /* ═══════════  سجل التتبع (Audit Log) — للمدير العام فقط  ═══════════ */
 const AUDIT_LABELS = {
@@ -4524,8 +4209,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const month = riyadhNow().toISOString().slice(0, 7);
   const activeReps = reps.filter((r) => r.status === "active");
   const alreadyClosed = payrollRuns.some((r) => r.month === month);
-  const lb = computeLeaderboard(reps, reports, month);
-  const rewardFor = (repId) => (lb.first && lb.first.rep.id === repId ? LB_REWARDS.first : lb.second && lb.second.rep.id === repId ? LB_REWARDS.second : 0);
+  const rewardFor = () => 0;
   const [ajeerAmounts, setAjeerAmounts] = useState({});
   const [deductAmounts, setDeductAmounts] = useState({}); // القيمة الفعلية بالريال اللي تقرّرها المالية لكل مندوب: { [repId]: { weekend, app } }
 
@@ -7237,9 +6921,9 @@ Object.assign(T.ur.nav, { today: "آج", financeHub: "مالیات", repsHub: "�
 
 const HUBS = {
   financeHub: ["repAccounting", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
-  repsHub: ["pulse", "leaderboard", "hall"],
+  repsHub: ["pulse"],
   commsHub: ["tickets", "chat", "circulars", "messages"],
-  hrHub: ["hiring", "employees", "iqama"],
+  hrHub: ["hiring", "repFiles", "employees", "iqama"],
   legalHub: ["charter", "contracts", "cases", "compliance"],
 };
 const HUB_OF = {};
@@ -7252,11 +6936,11 @@ const PRIMARY_NAV = {
   hr: ["today", "hrHub", "repsHub", "commsHub", "attendance"],
   legal: ["today", "legalHub", "commsHub", "attendance"],
   advisor: ["today", "boardCouncil", "decisions", "financeHub"],
-  rep: ["riderHome", "myEarnings", "riderReceipts", "attendance", "commsHub", "mystory", "leaderboard", "hall"],
+  rep: ["riderHome", "myEarnings", "riderReceipts", "commsHub", "mystory", "riderWelcome"],
 };
 const TODAY_QUICK = {
   gm: ["decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
-  fin: ["repAccounting", "payrollRuns", "expenses"], hr: ["hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
+  fin: ["repAccounting", "payrollRuns", "expenses"], hr: ["repFiles", "hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
   advisor: ["decisions", "payrollRuns", "boardCouncil"],
 };
 
@@ -7418,9 +7102,76 @@ Object.assign(RA.ur, {
   riderLoginT: "نمائندہ ایپ", riderLoginSub: "شروع کرنے کے لیے شناختی نمبر سے لاگ ان کریں", missingEntryNotif: "کل کے آرڈرز ابھی درج نہیں ہوئے",
   waMsg: "بوارق الشرق سے میری کمائی کا گوشوارہ",
 });
-Object.assign(T.ar.nav, { riderHome: "الرئيسية" });
-Object.assign(T.en.nav, { riderHome: "Home" });
-Object.assign(T.ur.nav, { riderHome: "ہوم" });
+/* ═══════════  ترحيب المندوب + ملفات المناديب + استعادة الحساب  ═══════════ */
+Object.assign(RA.ar, {
+  wlHi: "أهلاً وسهلاً", wlJoin: "انضممتَ إلى عائلة بوارق الشرق",
+  wlJoinD: "أنت الآن جزء من شركة كبيرة تعمل في أكثر من تطبيق توصيل، وتضع مندوبيها في المقدمة. وجودك معنا مصدر فخر لنا، وهذا التطبيق وُلد ليخدمك.",
+  wlPrivT: "تطبيق خاص بينك وبين بوارق الشرق فقط",
+  wlPrivD: "هذا التطبيق مخصّص لك ولشركتك فقط. بياناتك وأرباحك ومحادثاتك لا يراها أحد خارج بوارق الشرق، ولا تُشارك مع أي جهة أخرى.",
+  wlWhyT: "لماذا أنشأنا هذا التطبيق؟",
+  wlWhyD: "لنطوّر نظام التوصيل معاً، ونسهّل التواصل بيننا وبينك، ونفتح قنوات مباشرة وواضحة تصل بها إلى الشركة في أي وقت دون واسطة ولا تعقيد.",
+  wlP1T: "أرباحك أمامك", wlP1D: "تعرف أرباحك وطلباتك ومخالفاتك بوضوح، وتتحدث أولاً بأول بعد اعتماد المحاسب.",
+  wlP2T: "تواصل مباشر مع مشرفك", wlP2D: "اتصال أو واتساب لمشرفك بضغطة، وتصلك تعليمات الشركة مباشرة.",
+  wlP3T: "رسائل وتعاميم", wlP3D: "كل قرار أو تنبيه يخصك يصلك في التطبيق ويظهر لنا أنك اطّلعت عليه.",
+  wlP4T: "إيصالات وطلبات", wlP4D: "ارفع إيصال البنزين، وقدّم اعتراضاً على أي يوم، وافتح تذكرة لأي مشكلة.",
+  wlP5T: "نكبر معك", wlP5D: "نطوّر التطبيق بناءً على ملاحظاتك، وكل اقتراح منك يصل مباشرة للإدارة.",
+  wlP6T: "حقك محفوظ", wlP6D: "كل رقم يُحتسب بتسعيرة يعتمدها المحاسب فقط، ونوضّح لك كيف حُسب.",
+  wlPledgeT: "عهدنا لك", wlPledgeD: "شفافية في الحساب، وسرعة في الرد، واحترام لوقتك وجهدك. أنت شريك في نجاح بوارق الشرق.",
+  wlStart: "ابدأ الآن", wlAboutBtn: "عن التطبيق ورسالتنا لك", rhMySup: "مشرفك", rhCall: "اتصال",
+  forgot: "نسيت كلمة السر؟", forgotT: "استعادة الحساب", forgotSub: "أدخل رقم هويتك ورقم جوالك، وسيصل الطلب للموارد البشرية لتزويدك بكلمة سر جديدة.",
+  forgotSend: "إرسال الطلب", forgotDone: "تم إرسال طلبك للموارد البشرية. سيتواصلون معك بكلمة سر جديدة.", forgotErr: "أدخل رقم هوية صحيح (10 أرقام) ورقم جوال.", forgotBack: "رجوع لتسجيل الدخول",
+  rfTitle: "ملفات المناديب", rfSub: "قسم خاص بالموارد البشرية فقط: بيانات كل مندوب ودخوله للتطبيق. عدّل أي بيان أو استعد الحساب.", rfOnlyHr: "هذا القسم للموارد البشرية فقط.",
+  rfResets: "طلبات استعادة الحساب", rfUnknown: "هوية غير مسجّلة", rfNewPw: "كلمة سر جديدة", rfGen: "توليد", rfRestore: "استعادة الحساب", rfReject: "رفض", rfNoMatch: "لا يوجد مندوب بهذه الهوية.",
+  rfAll: "كل المناديب", rfSearch: "بحث بالاسم أو الجوال أو الهوية", rfName: "الاسم", rfPhone: "رقم الجوال", rfNid: "رقم الهوية", rfPw: "كلمة سر التطبيق", rfStatus: "الحالة",
+  rfActive: "نشط", rfPending: "قيد الاعتماد", rfSuspended: "موقوف", rfEdit: "تعديل", rfDupNid: "رقم الهوية مسجّل لمندوب آخر",
+});
+Object.assign(RA.en, {
+  wlHi: "Welcome", wlJoin: "You've joined the Bawariq Al-Sharq family",
+  wlJoinD: "You're now part of a large company working across multiple delivery apps and putting its riders first. Having you with us is a source of pride, and this app was built to serve you.",
+  wlPrivT: "A private app between you and Bawariq Al-Sharq only",
+  wlPrivD: "This app is exclusively for you and your company. Your data, earnings and conversations are not visible outside Bawariq Al-Sharq and are never shared with anyone else.",
+  wlWhyT: "Why did we build this app?",
+  wlWhyD: "To improve the delivery system together, make communication between us easy, and open direct, clear channels to reach the company at any time — no middlemen, no hassle.",
+  wlP1T: "Your earnings, clearly", wlP1D: "See your earnings, orders and violations, updated as soon as the accountant approves.",
+  wlP2T: "Direct line to your supervisor", wlP2D: "Call or WhatsApp your supervisor in one tap; company instructions reach you directly.",
+  wlP3T: "Messages & circulars", wlP3D: "Every decision or alert for you arrives in the app, and we can see you've read it.",
+  wlP4T: "Receipts & requests", wlP4D: "Upload fuel receipts, dispute any day, and open a ticket for any issue.",
+  wlP5T: "We grow with you", wlP5D: "We improve the app from your feedback; every suggestion reaches management.",
+  wlP6T: "Your rights, protected", wlP6D: "Every number uses pricing approved by the accountant only, and we show how it was calculated.",
+  wlPledgeT: "Our promise", wlPledgeD: "Transparent accounting, fast replies, and respect for your time and effort. You're a partner in Bawariq Al-Sharq's success.",
+  wlStart: "Get started", wlAboutBtn: "About the app & our message", rhMySup: "Your supervisor", rhCall: "Call",
+  forgot: "Forgot password?", forgotT: "Recover account", forgotSub: "Enter your ID and phone number; the request goes to HR who will give you a new password.",
+  forgotSend: "Send request", forgotDone: "Your request was sent to HR. They'll contact you with a new password.", forgotErr: "Enter a valid 10-digit ID and a phone number.", forgotBack: "Back to login",
+  rfTitle: "Rider Files", rfSub: "HR-only section: each rider's details and app login. Edit any detail or restore an account.", rfOnlyHr: "This section is for HR only.",
+  rfResets: "Account recovery requests", rfUnknown: "Unregistered ID", rfNewPw: "New password", rfGen: "Generate", rfRestore: "Restore account", rfReject: "Reject", rfNoMatch: "No rider with this ID.",
+  rfAll: "All riders", rfSearch: "Search by name, phone or ID", rfName: "Name", rfPhone: "Phone", rfNid: "ID number", rfPw: "App password", rfStatus: "Status",
+  rfActive: "Active", rfPending: "Pending", rfSuspended: "Suspended", rfEdit: "Edit", rfDupNid: "ID number is registered to another rider",
+});
+Object.assign(RA.ur, {
+  wlHi: "خوش آمدید", wlJoin: "آپ بواریق الشرق کے خاندان میں شامل ہو گئے",
+  wlJoinD: "آپ اب ایک بڑی کمپنی کا حصہ ہیں جو کئی ڈیلیوری ایپس پر کام کرتی ہے اور اپنے رائیڈرز کو اولیت دیتی ہے۔ یہ ایپ آپ کی خدمت کے لیے بنی ہے۔",
+  wlPrivT: "یہ ایپ صرف آپ اور بواریق الشرق کے درمیان ہے",
+  wlPrivD: "آپ کا ڈیٹا، کمائی اور گفتگو بواریق الشرق کے باہر کوئی نہیں دیکھ سکتا۔",
+  wlWhyT: "ہم نے یہ ایپ کیوں بنائی؟",
+  wlWhyD: "ڈیلیوری نظام کو بہتر بنانے، رابطہ آسان کرنے اور کمپنی تک براہِ راست رسائی کے لیے۔",
+  wlP1T: "آپ کی کمائی واضح", wlP1D: "اکاؤنٹنٹ کی منظوری کے بعد کمائی، آرڈرز اور خلاف ورزیاں دیکھیں۔",
+  wlP2T: "سپروائزر سے براہِ راست رابطہ", wlP2D: "ایک ٹیپ میں کال یا واٹس ایپ۔",
+  wlP3T: "پیغامات اور سرکلر", wlP3D: "ہر فیصلہ یا الرٹ ایپ میں آپ تک پہنچتا ہے۔",
+  wlP4T: "رسیدیں اور درخواستیں", wlP4D: "ایندھن کی رسید اپ لوڈ کریں، کسی دن پر اعتراض کریں، ٹکٹ کھولیں۔",
+  wlP5T: "ہم آپ کے ساتھ بڑھتے ہیں", wlP5D: "آپ کی رائے سے ایپ بہتر ہوتی ہے۔",
+  wlP6T: "آپ کا حق محفوظ", wlP6D: "ہر رقم صرف اکاؤنٹنٹ کی منظور شدہ قیمت سے بنتی ہے۔",
+  wlPledgeT: "ہمارا وعدہ", wlPledgeD: "شفاف حساب، فوری جواب، اور آپ کے وقت کا احترام۔",
+  wlStart: "شروع کریں", wlAboutBtn: "ایپ کے بارے میں", rhMySup: "آپ کا سپروائزر", rhCall: "کال",
+  forgot: "پاس ورڈ بھول گئے؟", forgotT: "اکاؤنٹ بحالی", forgotSub: "شناختی نمبر اور فون درج کریں؛ درخواست ایچ آر کو جائے گی۔",
+  forgotSend: "درخواست بھیجیں", forgotDone: "آپ کی درخواست ایچ آر کو بھیج دی گئی۔", forgotErr: "درست 10 ہندسوں کا شناختی نمبر اور فون درج کریں۔", forgotBack: "لاگ اِن پر واپس",
+  rfTitle: "رائیڈر فائلیں", rfSub: "صرف ایچ آر کے لیے: ہر رائیڈر کی معلومات اور ایپ لاگ اِن۔", rfOnlyHr: "یہ سیکشن صرف ایچ آر کے لیے ہے۔",
+  rfResets: "اکاؤنٹ بحالی کی درخواستیں", rfUnknown: "غیر رجسٹرڈ شناخت", rfNewPw: "نیا پاس ورڈ", rfGen: "بنائیں", rfRestore: "اکاؤنٹ بحال کریں", rfReject: "مسترد", rfNoMatch: "اس شناخت کا کوئی رائیڈر نہیں۔",
+  rfAll: "تمام رائیڈرز", rfSearch: "نام، فون یا شناخت سے تلاش", rfName: "نام", rfPhone: "فون", rfNid: "شناختی نمبر", rfPw: "ایپ پاس ورڈ", rfStatus: "حالت",
+  rfActive: "فعال", rfPending: "زیرِ التوا", rfSuspended: "معطل", rfEdit: "ترمیم", rfDupNid: "یہ شناختی نمبر دوسرے رائیڈر کا ہے",
+});
+Object.assign(T.ar.nav, { riderHome: "الرئيسية", repFiles: "ملفات المناديب", riderWelcome: "عن التطبيق" });
+Object.assign(T.en.nav, { riderHome: "Home", repFiles: "Rider Files", riderWelcome: "About the app" });
+Object.assign(T.ur.nav, { riderHome: "ہوم", repFiles: "رائیڈر فائلیں", riderWelcome: "ایپ کے بارے میں" });
 
 function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipts) {
   const rec = repSettlements.find((s) => s.month === month);
@@ -7436,31 +7187,76 @@ function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipt
   return { net: r2(c.gross + adds + reimb - deds - (fo.weekend != null ? +fo.weekend : c.weekendAuto) - (fo.app != null ? +fo.app : c.appAuto)), final: false, orders: c.orders, unpriced: c.unpriced };
 }
 
-function RiderHome({ onLogout, lang, role, user, activeRep, reps, reports, attendance, setAttendance, shifts, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
-  const RAx = RA[lang], t = T[lang], x = EX[lang];
-  const [toast, setToast] = useState("");
+/* ═══════════  ترحيب المندوب — يظهر عند أول دخول ومتاح دائماً من «عن التطبيق»  ═══════════ */
+function RiderWelcome({ lang, rep, onDone, asPage }) {
+  const RAx = RA[lang], t = T[lang];
+  const pillars = [[Wallet, "wlP1T", "wlP1D"], [MessageSquare, "wlP2T", "wlP2D"], [Users, "wlP3T", "wlP3D"], [Camera, "wlP4T", "wlP4D"], [Rocket, "wlP5T", "wlP5D"], [ShieldCheck, "wlP6T", "wlP6D"]];
+  const body = (
+    <div className="relative max-w-xl mx-auto px-4 py-6 space-y-5">
+      <div className="relative overflow-hidden rounded-[28px] px-5 py-8 text-center" style={{ background: "radial-gradient(120% 140% at 50% 0%,#1B2A4A 0%,#0E1424 55%,#080C18 100%)", border: "1px solid rgba(228,184,92,.35)" }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(45% 55% at 50% 0%,rgba(228,184,92,.22),transparent 70%)" }} />
+        <div className="relative flex flex-col items-center">
+          <BigLogo size={96} />
+          <p className="text-[12px] font-bold mt-4" style={{ color: "rgba(255,255,255,.6)" }}>{RAx.wlHi}</p>
+          <h1 className="gold-text font-extrabold mt-1" style={{ fontSize: "clamp(26px,7vw,38px)", lineHeight: 1.15 }}>{rep ? (lang === "en" ? rep.en : rep.ar) : t.brand}</h1>
+          <div className="h-px w-24 my-4" style={{ background: "linear-gradient(90deg,transparent,#E4B85C,transparent)" }} />
+          <p className="text-[16px] font-extrabold" style={{ color: "#fff" }}>{RAx.wlJoin}</p>
+          <p className="text-[12.5px] mt-2 leading-relaxed max-w-md" style={{ color: "rgba(255,255,255,.78)" }}>{RAx.wlJoinD}</p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl p-4 flex gap-3 items-start" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.3)" }}>
+        <Lock size={22} style={{ color: "#0B5C46" }} className="shrink-0 mt-0.5" />
+        <div><p className="text-[14px] font-extrabold" style={{ color: "#0B5C46" }}>{RAx.wlPrivT}</p><p className="text-[12.5px] mt-1 leading-relaxed" style={{ color: "#12151D" }}>{RAx.wlPrivD}</p></div>
+      </div>
+
+      <div className="rounded-2xl p-4" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+        <p className="text-[14px] font-extrabold">{RAx.wlWhyT}</p>
+        <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: "var(--muted)" }}>{RAx.wlWhyD}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {pillars.map(([Ic, tk, dk]) => (
+          <div key={tk} className="rounded-2xl p-4 flex gap-3" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+            <span className="grid place-items-center w-11 h-11 rounded-xl shrink-0" style={{ background: "rgba(228,184,92,.16)" }}><Ic size={20} style={{ color: "#B8862E" }} /></span>
+            <div><p className="text-[13.5px] font-extrabold">{RAx[tk]}</p><p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>{RAx[dk]}</p></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg,#0E1424,#1B2A4A)", color: "#fff" }}>
+        <p className="text-[14px] font-extrabold gold-text">{RAx.wlPledgeT}</p>
+        <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(255,255,255,.82)" }}>{RAx.wlPledgeD}</p>
+      </div>
+
+      {onDone && <Btn variant="gold" full icon={Rocket} onClick={onDone}>{RAx.wlStart}</Btn>}
+    </div>
+  );
+  if (asPage) return body;
+  return (
+    <div className="fixed inset-0 z-[95] overflow-y-auto" style={{ background: "var(--bg, #F5F6F8)" }}>
+      <div className="mesh" />
+      {body}
+    </div>
+  );
+}
+function RiderAboutPage({ lang, activeRep }) { return <RiderWelcome lang={lang} rep={activeRep} asPage />; }
+
+function RiderHome({ onLogout, lang, role, user, activeRep, reps, employees, reports, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
+  const RAx = RA[lang], t = T[lang];
+  const [seenW, markW] = usePersonalFlag("welcome_seen_" + user);
   if (!activeRep) return <EmptyHint lang={lang} />;
   const today = riyadhToday(), month = today.slice(0, 7);
-  const myToday = attendance.find((a) => a.key === user && a.date === today);
   const todayEntries = monthEntriesFor(reports, activeRep.id, month).filter((e) => e.date === today);
   const tOrders = todayEntries.reduce((s, e) => s + (e.orders || 0), 0);
   const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
-  const lb = computeLeaderboard(reps, reports, month);
-  const sorted = [...lb.stats].sort((a, b) => b.orders - a.orders);
-  const rank = Math.max(1, sorted.findIndex((s) => s.rep.id === activeRep.id) + 1);
   const dd = activeRep.idExpiry ? daysUntil(activeRep.idExpiry) : null;
   const unread = repMessages.filter((m) => m.repId === user && !m.seen).length;
   const openTk = tickets.filter((tk) => tk.repId === user && tk.status === "open").length;
-  const sh = shifts.find((s) => s.repId === user && s.date === today);
+  const sup = (employees || []).find((e) => e.id === activeRep.sup);
+  const supPhone = sup && sup.phone ? String(sup.phone).replace(/\D/g, "") : "";
   const tgt = monthTargetOf(pricing, activeRep.app);
   const pct = tgt ? Math.min(100, Math.round((me.orders / tgt) * 100)) : null;
-  const doClock = () => {
-    const at = riyadhTimeHM();
-    if (!myToday) setAttendance((prev) => [...prev, { key: user, role: "rep", name: lang === "en" ? activeRep.en : activeRep.ar, date: today, in: at, out: null }]);
-    else if (!myToday.out) setAttendance((prev) => prev.map((a) => (a.key === user && a.date === today ? { ...a, out: at } : a)));
-    setToast(at); setTimeout(() => setToast(""), 2500);
-  };
-  const state = !myToday ? "in" : !myToday.out ? "out" : "done";
   const Tile = ({ icon: Ic, label, value, onClick, tone }) => (
     <button onClick={onClick} className="rounded-2xl p-4 text-start transition active:scale-[.98]" style={{ background: "#fff", border: "1px solid var(--line)" }}>
       <Ic size={18} style={{ color: tone || role.accent }} /><div className="num text-[22px] font-extrabold mt-2">{value}</div><div className="text-[11.5px]" style={{ color: "var(--muted)" }}>{label}</div>
@@ -7468,16 +7264,13 @@ function RiderHome({ onLogout, lang, role, user, activeRep, reps, reports, atten
   );
   return (
     <div className="space-y-4">
+      {!seenW && <RiderWelcome lang={lang} rep={activeRep} onDone={markW} />}
       <InstallBanner lang={lang} />
       <div className="rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#0E1424,#1B2A4A)", color: "#fff" }}>
         <p className="text-[12px] opacity-70">{RAx.rhToday} · {today}</p>
         <h2 className="text-[22px] font-extrabold mt-1">{lang === "en" ? activeRep.en : activeRep.ar}</h2>
-        {sh && <p className="text-[12px] mt-1 opacity-75">{RAx.rhShift}: <b className="num">{sh.start} – {sh.end}</b></p>}
-        <button onClick={doClock} disabled={state === "done"} className="w-full mt-5 rounded-2xl py-4 flex items-center justify-center gap-3 text-[16px] font-extrabold transition active:scale-[.98]"
-          style={{ background: state === "in" ? "linear-gradient(120deg,#3FD8B4,#2BAE8E)" : state === "out" ? "linear-gradient(120deg,#E4B85C,#C08A22)" : "rgba(255,255,255,.1)", color: state === "done" ? "rgba(255,255,255,.7)" : "#06121A" }}>
-          <Fingerprint size={24} />{state === "in" ? RAx.rhClockIn : state === "out" ? `${RAx.rhClockOut} · ${RAx.rhSince} ${myToday.in}` : RAx.rhDone}
-        </button>
-        {toast && <p className="text-center text-[12px] mt-2 font-bold" style={{ color: "#7FF0CF" }}>{x.clockInConfirmed} · {toast}</p>}
+        {activeRep.riderId && <p className="text-[11.5px] mt-1 opacity-70">{RAx.riderId}: <b className="num">{activeRep.riderId}</b></p>}
+        <button onClick={() => goPage("riderWelcome")} className="mt-3 text-[11.5px] font-bold px-3 py-1.5 rounded-xl" style={{ background: "rgba(228,184,92,.16)", border: "1px solid rgba(228,184,92,.4)", color: "#F3D58E" }}>{RAx.wlAboutBtn}</button>
       </div>
 
       {dd != null && dd <= 30 && (
@@ -7489,8 +7282,9 @@ function RiderHome({ onLogout, lang, role, user, activeRep, reps, reports, atten
 
       <button onClick={() => goPage("myEarnings")} className="w-full rounded-3xl p-5 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}>
         <div className="flex items-center justify-between"><span className="text-[12px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.rhNet}</span><Chip tone={me.final ? "ok" : "warn"} sm>{me.final ? RAx.finalLbl : RAx.estimate}</Chip></div>
-        <p className="num text-[38px] font-extrabold mt-1" style={{ color: me.net >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(me.net)} <span className="text-[14px] font-semibold" style={{ color: "var(--muted)" }}>{t.sar}</span></p>
-        {!me.final && me.unpriced && <p className="text-[11.5px] font-bold mt-1" style={{ color: "#B8862E" }}>{RAx.noRateYet}</p>}
+        {!me.final && me.unpriced
+          ? <p className="text-[14px] font-bold mt-2" style={{ color: "#B8862E" }}>{RAx.noRateYet}</p>
+          : <p className="num text-[38px] font-extrabold mt-1" style={{ color: me.net >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(me.net)} <span className="text-[14px] font-semibold" style={{ color: "var(--muted)" }}>{t.sar}</span></p>}
       </button>
 
       <div className="grid grid-cols-2 gap-3">
@@ -7499,32 +7293,153 @@ function RiderHome({ onLogout, lang, role, user, activeRep, reps, reports, atten
       </div>
       {!todayEntries.length && <p className="text-[11.5px] -mt-1 px-1" style={{ color: "var(--muted)" }}>{RAx.rhNoEntry}</p>}
 
-      <Panel title={RAx.rhGoal}>
-        <div className="flex items-center gap-5">
-          {pct != null && <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />}
-          <div className="space-y-1.5 text-[12.5px]">
-            <p><b className="num">{me.orders}</b>{tgt ? ` / ${tgt}` : ""} {t.orders}</p>
-            <p style={{ color: "var(--muted)" }}>{RAx.rhRank}: <b className="num" style={{ color: role.accent }}>{rank}</b> {RAx.rhOf} <span className="num">{sorted.length}</span></p>
+      {pct != null && (
+        <Panel title={RAx.rhGoal}>
+          <div className="flex items-center gap-5">
+            <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />
+            <p className="text-[12.5px]"><b className="num">{me.orders}</b> / {tgt} {t.orders}</p>
           </div>
+        </Panel>
+      )}
+
+      {sup && (
+        <div className="rounded-2xl p-4" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+          <p className="text-[11.5px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.rhMySup}</p>
+          <p className="text-[15px] font-extrabold mt-0.5">{sup.name}</p>
+          {supPhone && (
+            <div className="grid grid-cols-2 gap-2.5 mt-3">
+              <a href={`tel:+${supPhone.replace(/^00/, "")}`} className="rounded-xl py-2.5 text-center text-[12.5px] font-bold" style={{ background: "rgba(20,27,45,.06)", border: "1px solid var(--line)" }}><Phone size={14} className="inline me-1.5" />{RAx.rhCall}</a>
+              <a href={`https://wa.me/${supPhone.replace(/^00/, "").replace(/^0/, "966")}`} target="_blank" rel="noreferrer" className="rounded-xl py-2.5 text-center text-[12.5px] font-bold" style={{ background: "rgba(15,165,121,.12)", border: "1px solid rgba(15,165,121,.35)", color: "#0B5C46" }}><MessageSquare size={14} className="inline me-1.5" />WhatsApp</a>
+            </div>
+          )}
         </div>
-      </Panel>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Tile icon={MessageSquare} label={RAx.rhMsgs} value={unread} onClick={() => goPage("messages")} tone={unread ? "#E8837A" : undefined} />
         <Tile icon={Send} label={RAx.rhTickets} value={openTk} onClick={() => goPage("tickets")} />
       </div>
-      <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={15} className="opacity-50" /></button>
+      <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={16} style={{ color: "var(--muted)" }} /></button>
       {onLogout && <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-2xl p-3.5 text-[13px] font-bold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }}><LogOut size={16} />{t.logout}</button>}
     </div>
   );
 }
 
-function RiderLogin({ lang, setLang, onRep, err, setErr, onBack }) {
+/* ═══════════  ملفات المناديب — قسم مستقل بالموارد البشرية فقط  ═══════════ */
+function RepFilesPage({ lang, role, reps, setReps, pwResets, setPwResets, setAuditLog, actingEmployee }) {
+  const RAx = RA[lang], x = EX[lang];
+  const [q, setQ] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [f, setF] = useState(null);
+  const [show, setShow] = useState({});
+  const [err, setErr] = useState("");
+  const [newPw, setNewPw] = useState({});
+  const canEdit = role.id === "hr";
+  if (!canEdit) return <Panel title={RAx.rfTitle}><p className="text-[12.5px]" style={{ color: "var(--muted)" }}>{RAx.rfOnlyHr}</p></Panel>;
+  const genPw = () => String(Math.floor(100000 + Math.random() * 900000));
+  const list = reps.filter((r) => { const k = q.trim().toLowerCase(); return !k || [r.ar, r.en, r.phone, r.nid, r.riderId].some((v) => String(v || "").toLowerCase().includes(k)); });
+  const open = (pwResets || []).filter((z) => z.status === "open");
+  const start = (r) => { setEditId(r.id); setErr(""); setF({ name: r.ar, phone: r.phone || "", nid: r.nid || "", riderId: r.riderId || "", password: r.password || "", status: r.status }); };
+  const save = () => {
+    if (f.name.trim().length < 3) return setErr(x.errRepName);
+    if (!/^\d{10}$/.test(f.nid)) return setErr(x.errRepNid);
+    if (reps.some((r) => r.id !== editId && r.nid === f.nid)) return setErr(RAx.rfDupNid);
+    if (f.riderId.trim() && reps.some((r) => r.id !== editId && String(r.riderId || "").trim() === f.riderId.trim() && r.app === (reps.find((z) => z.id === editId) || {}).app)) return setErr(RA[lang].errRiderDup);
+    if (f.password.length < 4) return setErr(x.errRepPass);
+    setReps((prev) => prev.map((r) => (r.id === editId ? { ...r, ar: f.name.trim(), en: f.name.trim(), phone: f.phone.trim(), nid: f.nid, riderId: f.riderId.trim(), password: f.password, status: f.status } : r)));
+    logAudit(setAuditLog, role, "rep_file_edit", editId, actingEmployee);
+    setEditId(null); setF(null); setErr("");
+  };
+  const restore = (reqId, rep, pw) => {
+    if (!rep || pw.length < 4) return;
+    setReps((prev) => prev.map((r) => (r.id === rep.id ? { ...r, password: pw, status: "active" } : r)));
+    setPwResets((prev) => prev.map((z) => (z.id === reqId ? { ...z, status: "done", doneBy: actingEmployee?.name || role.id, doneAt: riyadhNow().toISOString() } : z)));
+    logAudit(setAuditLog, role, "rep_account_restore", rep.id, actingEmployee);
+  };
+  const inp = (k, label, type) => (
+    <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{label}</span>
+      <input type={type || "text"} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
+  );
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
+        <div className="flex items-center gap-2.5 mb-1"><KeyRound size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{RAx.rfTitle}</h2></div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.rfSub}</p>
+      </div>
+
+      {open.length > 0 && (
+        <Panel title={`${RAx.rfResets} (${open.length})`}>
+          <div className="space-y-2.5">
+            {open.map((z) => {
+              const rep = reps.find((r) => r.nid === z.nid);
+              const pw = newPw[z.id] ?? "";
+              return (
+                <div key={z.id} className="rounded-xl p-3" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.35)" }}>
+                  <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
+                    <b>{rep ? (lang === "en" ? rep.en : rep.ar) : RAx.rfUnknown}</b>
+                    <span className="num" style={{ color: "var(--muted)" }}>{z.nid}</span>{z.phone && <span className="num" style={{ color: "var(--muted)" }}>{z.phone}</span>}
+                    <span className="num text-[10.5px] ms-auto" style={{ color: "var(--muted)" }}>{(z.at || "").slice(0, 16).replace("T", " ")}</span>
+                  </div>
+                  {rep ? (
+                    <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                      <input value={pw} onChange={(e) => setNewPw({ ...newPw, [z.id]: e.target.value })} placeholder={RAx.rfNewPw} className="num rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none w-36" style={INPUT_ST} />
+                      <Btn icon={Sparkles} onClick={() => setNewPw({ ...newPw, [z.id]: genPw() })}>{RAx.rfGen}</Btn>
+                      <Btn variant="gold" icon={CheckCircle2} onClick={() => restore(z.id, rep, pw)} disabled={pw.length < 4}>{RAx.rfRestore}</Btn>
+                      <Btn icon={X} onClick={() => setPwResets((prev) => prev.map((w) => (w.id === z.id ? { ...w, status: "rejected" } : w)))}>{RAx.rfReject}</Btn>
+                    </div>
+                  ) : <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{RAx.rfNoMatch}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+      )}
+
+      <Panel title={`${RAx.rfAll} (${list.length})`} extra={<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={RAx.rfSearch} className="rounded-lg px-2.5 py-1.5 text-[12px] outline-none w-44" style={INPUT_ST} />}>
+        {list.length === 0 ? <EmptyHint lang={lang} /> : (
+          <div className="space-y-2.5">
+            {list.map((r) => editId === r.id && f ? (
+              <div key={r.id} className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.035)", border: `1px solid rgba(${role.glow},.4)` }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {inp("name", RAx.rfName)}{inp("phone", RAx.rfPhone)}{inp("nid", RAx.rfNid)}{inp("riderId", RA[lang].riderId)}{inp("password", RAx.rfPw)}
+                  <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.rfStatus}</span>
+                    <select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST}>
+                      <option value="active">{RAx.rfActive}</option><option value="pending">{RAx.rfPending}</option><option value="suspended">{RAx.rfSuspended}</option></select></label>
+                </div>
+                {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+                <div className="flex gap-2 mt-3"><Btn variant="gold" icon={CheckCircle2} onClick={save}>{RAx.save}</Btn><Btn onClick={() => { setEditId(null); setF(null); setErr(""); }}>{RAx.cancel}</Btn></div>
+              </div>
+            ) : (
+              <div key={r.id} className="rounded-2xl p-3.5 flex items-center gap-3 flex-wrap" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap"><b className="text-[13.5px]">{lang === "en" ? r.en : r.ar}</b><Chip tone={r.status === "active" ? "ok" : r.status === "pending" ? "warn" : "bad"} sm>{r.status === "active" ? RAx.rfActive : r.status === "pending" ? RAx.rfPending : RAx.rfSuspended}</Chip></div>
+                  <div className="num text-[11.5px] mt-1 flex gap-x-4 gap-y-0.5 flex-wrap" style={{ color: "var(--muted)" }}>
+                    <span>{RAx.rfPhone}: {r.phone || "—"}</span><span>{RAx.rfNid}: {r.nid || "—"}</span><span>{RA[lang].riderId}: {r.riderId || "—"}</span>
+                    <span>{RAx.rfPw}: <b>{show[r.id] ? (r.password || "—") : "••••••"}</b> <button onClick={() => setShow({ ...show, [r.id]: !show[r.id] })} className="align-middle ms-1" aria-label="show">{show[r.id] ? <EyeOff size={13} /> : <Eye size={13} />}</button></span>
+                  </div>
+                </div>
+                <Btn icon={SlidersHorizontal} onClick={() => start(r)}>{RAx.rfEdit}</Btn>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+
+function RiderLogin({ lang, setLang, onRep, onForgot, err, setErr, onBack }) {
   const t = T[lang], x = EX[lang], RAx = RA[lang];
   const [nid, setNid] = useState(""); const [pw, setPw] = useState(""); const [local, setLocal] = useState(""); const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState("login"); const [fph, setFph] = useState(""); const [sent, setSent] = useState(false);
   const go = () => {
     if (nid.trim().length < 6 || pw.length < 4) { setLocal(x.errRep); return; }
     setLocal(""); setErr(""); setBusy(true); setTimeout(() => { setBusy(false); onRep(nid.trim(), pw); }, 400);
+  };
+  const sendForgot = () => {
+    if (!/^\d{10}$/.test(nid.trim()) || fph.trim().length < 9) { setLocal(RAx.forgotErr); return; }
+    setLocal(""); if (onForgot) onForgot(nid.trim(), fph.trim()); setSent(true);
   };
   const shown = local || err;
   return (
@@ -7535,13 +7450,24 @@ function RiderLogin({ lang, setLang, onRep, err, setErr, onBack }) {
         <InstallBanner lang={lang} />
         <div className="glass rounded-3xl p-5 space-y-3.5">
           <div className="flex items-center justify-between">
-            <div><h2 className="text-[17px] font-extrabold">{RAx.riderLoginT}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.riderLoginSub}</p></div>
-            <div className="flex gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2 py-1 rounded-lg text-[11px] font-bold" style={{ background: lang === l.code ? "rgba(228,184,92,.2)" : "rgba(20,27,45,.05)" }}>{l.mark}</button>)}</div>
+            <div><h2 className="text-[17px] font-extrabold">{mode === "login" ? RAx.riderLoginT : RAx.forgotT}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{mode === "login" ? RAx.riderLoginSub : RAx.forgotSub}</p></div>
+            <div className="flex gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2 py-1 rounded-lg text-[11px] font-bold" style={{ background: lang === l.code ? "#12151D" : "rgba(20,27,45,.06)", color: lang === l.code ? "#fff" : "var(--muted)" }}>{l.code.toUpperCase()}</button>)}</div>
           </div>
-          <GateField label={x.nationalId} val={nid} set={setNid} ph="1xxxxxxxxx" Icon={User} af type="text" accent={REP.accent} onEnter={go} />
-          <GateField label={t.pass} val={pw} set={setPw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={go} />
-          {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
-          <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={go}>{busy ? "…" : x.repTitle}</Btn>
+          <GateField label={x.nationalId} val={nid} set={setNid} ph="1xxxxxxxxx" Icon={User} af type="text" accent={REP.accent} onEnter={mode === "login" ? go : sendForgot} />
+          {mode === "login" ? (<>
+            <GateField label={t.pass} val={pw} set={setPw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={go} />
+            {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
+            <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={go}>{busy ? "…" : x.repTitle}</Btn>
+            <button onClick={() => { setMode("forgot"); setLocal(""); setErr(""); setSent(false); }} className="w-full text-[12.5px] font-bold py-1" style={{ color: "#B8862E" }}>{RAx.forgot}</button>
+          </>) : sent ? (<>
+            <div className="rounded-xl p-3.5 flex gap-2.5" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.3)" }}><CheckCircle2 size={18} style={{ color: "#0FA579" }} className="shrink-0" /><p className="text-[12.5px] font-bold" style={{ color: "#0B5C46" }}>{RAx.forgotDone}</p></div>
+            <Btn full onClick={() => { setMode("login"); setSent(false); }}>{RAx.forgotBack}</Btn>
+          </>) : (<>
+            <GateField label={RAx.rfPhone} val={fph} set={setFph} ph="05xxxxxxxx" Icon={Phone} type="tel" accent={REP.accent} onEnter={sendForgot} />
+            {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
+            <Btn variant="accent" accent={REP.glow} full icon={Send} onClick={sendForgot}>{RAx.forgotSend}</Btn>
+            <button onClick={() => { setMode("login"); setLocal(""); }} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.forgotBack}</button>
+          </>)}
           {onBack && <button onClick={onBack} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.ldBack}</button>}
         </div>
       </div>
@@ -7574,7 +7500,7 @@ Object.assign(RA.ar, {
   ldB1T: "أرباح عالية", ldB1D: "كل طلب وكل كيلومتر يُحتسب لك بتسعيرة واضحة، وتشوف ربحك يتحدث يومياً.",
   ldB2T: "شفافية كاملة", ldB2D: "كشف حسابك بالتفصيل: كل خصم له سبب، وتقدر تعترض على أي يوم.",
   ldB3T: "تطبيقات توصيل متعددة", ldB3D: "اشتغل على أكثر من تطبيق توصيل عبر شركة واحدة منظّمة.",
-  ldB4T: "مكافآت ومنافسة شريفة", ldB4D: "لوحة صدارة شهرية بمكافآت مالية وفرصة عمرة لأبطال الشهر.",
+  ldB4T: "تواصل مباشر مع الشركة", ldB4D: "رسائل وتذاكر ومشرف بضغطة — قنوات واضحة بينك وبين بوارق الشرق.",
   ldB5T: "دعم يتابعك", ldB5D: "مشرف مخصص وطلبات تُحل بسرعة، ومستحقات موثّقة بنظام واضح.",
   ldB6T: "ترقّى معنا", ldB6D: "المناديب المتميزون يترقّون إلى رقباء ويقودون فرقاً.",
   ldCalc: "احسب أرباحك المتوقعة", ldOrdersDay: "طلبات في اليوم", ldDaysMonth: "أيام العمل في الشهر", ldKmDay: "كيلومتر في اليوم", ldEst: "أرباحك المتوقعة",
@@ -7604,7 +7530,7 @@ Object.assign(RA.en, {
   ldB1T: "High earnings", ldB1D: "Every order and kilometer is paid at a clear rate, and you watch your profit update daily.",
   ldB2T: "Full transparency", ldB2D: "A detailed statement: every deduction has a reason, and you can dispute any day.",
   ldB3T: "Multiple delivery apps", ldB3D: "Work across several delivery apps through one organized company.",
-  ldB4T: "Rewards & fair competition", ldB4D: "A monthly leaderboard with cash rewards and an Umrah trip for the champions.",
+  ldB4T: "Direct line to the company", ldB4D: "Messages, tickets and your supervisor in a tap — clear channels to Bawariq Al-Sharq.",
   ldB5T: "Support that follows up", ldB5D: "A dedicated supervisor, fast request handling and documented payouts.",
   ldB6T: "Grow with us", ldB6D: "Outstanding riders get promoted to team leaders.",
   ldCalc: "Estimate your earnings", ldOrdersDay: "Orders per day", ldDaysMonth: "Working days per month", ldKmDay: "Km per day", ldEst: "Your expected earnings",
@@ -7632,7 +7558,7 @@ Object.assign(RA.ur, {
   ldUpTo: "کمائی تک", ldPerMonth: "ریال ماہانہ", ldDisc: "یہ اندازہ ہے، ضمانت شدہ رقم نہیں۔",
   ldWhy: "بوارق الشرق کیوں؟",
   ldB1T: "زیادہ کمائی", ldB1D: "ہر آرڈر اور کلومیٹر واضح قیمت پر شمار ہوتا ہے۔", ldB2T: "مکمل شفافیت", ldB2D: "ہر کٹوتی کی وجہ ہے اور آپ کسی بھی دن پر اعتراض کر سکتے ہیں۔",
-  ldB3T: "متعدد ڈیلیوری ایپس", ldB3D: "ایک منظم کمپنی کے ذریعے کئی ایپس پر کام کریں۔", ldB4T: "انعامات", ldB4D: "ماہانہ لیڈر بورڈ اور عمرہ کا موقع۔",
+  ldB3T: "متعدد ڈیلیوری ایپس", ldB3D: "ایک منظم کمپنی کے ذریعے کئی ایپس پر کام کریں۔", ldB4T: "کمپنی سے براہِ راست رابطہ", ldB4D: "پیغامات، ٹکٹ اور سپروائزر ایک ٹیپ میں۔",
   ldB5T: "مسلسل تعاون", ldB5D: "مخصوص سپروائزر اور تیز حل۔", ldB6T: "ترقی کریں", ldB6D: "بہترین نمائندے ٹیم لیڈر بنتے ہیں۔",
   ldCalc: "اپنی کمائی کا اندازہ لگائیں", ldOrdersDay: "روزانہ آرڈرز", ldDaysMonth: "مہینے میں کام کے دن", ldKmDay: "روزانہ کلومیٹر", ldEst: "متوقع کمائی",
   ldCalcNote: "موجودہ ریٹ پر تقریبی حساب، کٹوتیوں سے پہلے۔",
@@ -7986,14 +7912,15 @@ const PAGES = {
   approvals: ApprovalsPage, reports: ReportsPage, settings: SettingsPage,
   hiring: HiringPage, shifts: ShiftsPage, tickets: TicketsPage, circulars: CircularsPage,
   pulse: PulsePage, iqama: IqamaAlertsPage, payrollRuns: PayrollRunsPage,
-  chat: CommsPage, messages: RepMessagesPage, leaderboard: LeaderboardPage, audit: AuditLogPage,
-  hall: HallOfFamePage, charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
+  chat: CommsPage, messages: RepMessagesPage, audit: AuditLogPage,
+  charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
   permissions: PermissionsMapPage, mystory: MyStoryPage, equipCompliance: ComplianceEquipmentPage,
   boardCouncil: BoardCouncilPage, decisions: DecisionsPage,
-  repAccounting: RepAccountingPage, myEarnings: MyEarningsPage, today: TodayPage, riderHome: RiderHome, riderReceipts: RiderReceiptsPage, receiptsAdmin: ReceiptsAdminPage,
+  repAccounting: RepAccountingPage, repFiles: RepFilesPage, riderWelcome: RiderAboutPage, myEarnings: MyEarningsPage, today: TodayPage, riderHome: RiderHome, riderReceipts: RiderReceiptsPage, receiptsAdmin: ReceiptsAdminPage,
   financeHub: HubPage, repsHub: HubPage, commsHub: HubPage, hrHub: HubPage, legalHub: HubPage,
 };
 const NAV_ICON = {
+  repFiles: KeyRound, riderWelcome: Sparkles,
   overview: LayoutDashboard, orders: ShoppingBag, cars: Car, zones: MapPin,
   restaurants: Store, invoices: ReceiptText, expenses: Wallet, payroll: CircleDollarSign,
   employees: Users, attendance: CalendarClock, contracts: FileSignature, cases: Gavel,
@@ -8170,7 +8097,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog, setAuditLog,
   weekendFine, setWeekendFine, charterClauses, setCharterClauses, violationPenalty, setViolationPenalty,
-  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, pricing, setPricing, repSettlements, setRepSettlements, applications, setApplications, repReceipts, setRepReceipts,
+  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, pricing, setPricing, repSettlements, setRepSettlements, applications, setApplications, pwResets, setPwResets, repReceipts, setRepReceipts,
   equipStatus, setEquipStatus, tgaFines, setTgaFines, decisions, setDecisions, query, setQuery }) {
   const t = T[lang], x = EX[lang];
   const navEff = (() => {
@@ -8562,7 +8489,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
               decisions={decisions} setDecisions={setDecisions}
               pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
-              applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
+              applications={applications} setApplications={setApplications} pwResets={pwResets} setPwResets={setPwResets} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
               query={query} setQuery={setQuery} goPage={goTo} notifs={notifs} hubId={page} hubTab={hubNav.tab} hubStamp={hubNav.stamp} navBadges={navBadges} />
           </div>
         </main>
@@ -8672,6 +8599,7 @@ export default function App() {
   const [pricing, setPricing] = usePersisted("bq_pricing", { app: {}, rep: {} });
   const [repSettlements, setRepSettlements] = usePersisted("bq_rep_settlements", []);
   const [applications, setApplications] = usePersisted("bq_applications", []);
+  const [pwResets, setPwResets] = usePersisted("bq_pw_resets", []);
   const [repReceipts, setRepReceipts] = usePersisted("bq_rep_receipts", []);
   const [riderView, setRiderView] = useState("landing");
   const [charterClauses, setCharterClauses] = usePersisted("bq_charter_clauses", []);
@@ -8730,7 +8658,6 @@ export default function App() {
   }, [step]);
 
   const todayStr = () => riyadhToday();
-  const needsShiftPick = role && role.id === "rep" && !shifts.some((s) => s.repId === user && s.date === todayStr());
 
   return (
     <div dir={dir} className={`bq min-h-screen w-full ${reduce ? "reduce" : ""}`}>
@@ -8753,6 +8680,7 @@ export default function App() {
       {step === "gate" && RIDER_MODE && riderView === "apply" && <RiderApply lang={lang} reps={reps} applications={applications} setApplications={setApplications} go={setRiderView} />}
       {step === "gate" && RIDER_MODE && riderView === "login" && (
         <RiderLogin lang={lang} setLang={setLang} err={loginErr} setErr={setLoginErr} onBack={() => setRiderView("landing")}
+          onForgot={(nid, phone) => setPwResets((prev) => (prev.some((q) => q.nid === nid && q.status === "open") ? prev : [{ id: "PWR-" + Date.now(), nid, phone, at: riyadhNow().toISOString(), status: "open" }, ...prev]))}
           onRep={(nid, pass) => {
             const rec = reps.find((r) => r.nid === nid.trim());
             if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
@@ -8771,12 +8699,7 @@ export default function App() {
             setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
           }} />
       )}
-      {step === "app" && role && role.id === "rep" && needsShiftPick && (
-        <ShiftPickScreen lang={lang} rep={activeRep} onConfirm={(start, end) => {
-          setShifts((prev) => [...prev, { repId: user, date: todayStr(), start, end, loggedAt: riyadhNow().toISOString() }]);
-        }} />
-      )}
-      {step === "app" && role && !(role.id === "rep" && needsShiftPick) && (
+      {step === "app" && role && (
         <Shell lang={lang} setLang={setLang} role={role} user={user} activeRep={activeRep} reduce={reduce} setReduce={setReduce}
           reps={reps} setReps={setReps} reports={reports} setReports={setReports}
           tickets={tickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
@@ -8796,7 +8719,7 @@ export default function App() {
           equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
           decisions={decisions} setDecisions={setDecisions}
           pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
-          applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
+          applications={applications} setApplications={setApplications} pwResets={pwResets} setPwResets={setPwResets} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
           query={query} setQuery={setQuery}
           onSwitch={() => setStep("gate")} onLogout={() => { setRoleId(null); setStep("gate"); }} />
       )}
