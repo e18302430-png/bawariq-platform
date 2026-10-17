@@ -289,7 +289,6 @@ const APPS = [
   { id: "lokit", ar: "لوكيت", en: "Lokit", ur: "لوکیٹ" },
   { id: "noonsm", ar: "نون سوبر مول", en: "Noon Super Mall", ur: "نون سپر مال" },
 ];
-const DAILY_TARGET = { orders: 16, km: 113 };
 
 /* ═══════════  محرك التسعير ومحاسبة المناديب (بدون كيلومترات)  ═══════════ */
 // تسعيرتان لكل تطبيق يضعهما المحاسب: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب. لا توجد أرقام افتراضية.
@@ -456,7 +455,8 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
   totals.afterExpenses = r2(totals.companyNet - totals.expenses);
   return { repLines, appLines, totals };
 }
-const MONTH_TARGET = { orders: 480, km: 3400 };
+// الهدف الشهري يأتي فقط من تسعيرة المندوب التي يضعها المحاسب (نمط الهدف) — لا يوجد رقم افتراضي
+const monthTargetOf = (pricing, appId) => { const p = getRepPrice(pricing, appId); return p && p.mode === "target" && +p.ordersTarget > 0 ? +p.ordersTarget : null; };
 
 const WHATS_NEW = {
   ar: [
@@ -718,13 +718,6 @@ function usePersonalList(key) {
   return [list, update];
 }
 
-function tierOf(rep) {
-  const pct = ((rep.orders / DAILY_TARGET.orders) + (rep.km / DAILY_TARGET.km)) / 2 * 100;
-  if (pct >= 100) return { key: "excellent", tone: "ok", pct };
-  if (pct >= 80) return { key: "good", tone: "info", pct };
-  if (pct >= 60) return { key: "improve", tone: "warn", pct };
-  return { key: "weak", tone: "bad", pct };
-}
 
 const REP_SEED = [];
 const REPORTS_SEED = [];
@@ -2420,7 +2413,7 @@ function RepHeroArt({ accent = "63,216,180" }) {
   );
 }
 
-function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs, shifts }) {
+function Overview({ pricing, role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs, shifts }) {
   const t = T[lang], x = EX[lang], A = role.glow;
   const [customizing, setCustomizing] = useState(false);
   const [hiddenKpis, setHiddenKpis] = usePersonalList(`kpi_hidden_${role.id}`);
@@ -2431,12 +2424,12 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
     const month = riyadhNow().toISOString().slice(0, 7);
     const mine = activeRep ? monthEntriesFor(reports, activeRep.id, month) : [];
     const mOrders = mine.reduce((a, e) => a + (e.orders || 0), 0);
-    const mKm = mine.reduce((a, e) => a + (e.km || 0), 0);
     const mHours = mine.reduce((a, e) => a + (e.hours || 0), 0);
     const mWeekendViol = mine.reduce((a, e) => a + (e.weekendViolations || 0), 0);
     const mAppViol = mine.reduce((a, e) => a + (e.appViolations || 0), 0);
     const mViol = mWeekendViol + mAppViol;
-    const pct = Math.round(((mOrders / MONTH_TARGET.orders) + (mKm / MONTH_TARGET.km)) / 2 * 100);
+    const tgt = activeRep ? monthTargetOf(pricing, activeRep.app) : null;
+    const pct = tgt ? Math.round((mOrders / tgt) * 100) : null;
     const today = riyadhToday();
     const myClock = attendance.find((a) => a.key === activeRep?.nid && a.date === today);
     const myShift = (shifts || []).filter((s) => s.repId === activeRep?.nid && s.date === today).slice(-1)[0];
@@ -2448,13 +2441,12 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
           <div className="absolute pointer-events-none rounded-full" style={{ width: 220, height: 220, insetInlineEnd: -80, top: -80, background: `radial-gradient(circle,rgba(${A},.22),transparent 70%)` }} />
           <RepHeroArt accent={A} />
           <div className="relative flex items-center gap-5 flex-wrap sm:flex-nowrap">
-            <ProgressRing pct={pct} accent={A} label={x.monthTarget} />
+            {pct != null ? <ProgressRing pct={pct} accent={A} label={x.monthTarget} /> : <div className="shrink-0 text-center px-3"><div className="num text-[34px] font-extrabold leading-none">{mOrders}</div><div className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{x.ordersPart}</div></div>}
             <div className="flex-1 min-w-[160px]">
               <p className="text-[10.5px] font-bold uppercase tracking-wide" style={{ color: role.accent }}>{x.motivHeadline}</p>
               <p className="text-[14.5px] font-semibold leading-snug mt-1">{quote}</p>
               <div className="flex flex-wrap gap-4 mt-3">
                 <span><span className="num text-[17px] font-extrabold">{mOrders}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{x.ordersPart}</span></span>
-                <span><span className="num text-[17px] font-extrabold">{mKm}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{x.kmPart}</span></span>
                 <span><span className="num text-[17px] font-extrabold">{mHours.toFixed(1)}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{t.h.time}</span></span>
               </div>
             </div>
@@ -2505,7 +2497,7 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
 
         <div className="grid grid-cols-2 gap-3">
           <Kpi label={x.violCol} value={String(mViol)} icon={AlertTriangle} accent={A} />
-          <Kpi label={x.monthTarget} value={`${MONTH_TARGET.orders}/${MONTH_TARGET.km}`} icon={Target} accent={A} />
+          <Kpi label={tgt ? x.monthTarget : x.ordersPart} value={String(tgt || mOrders)} icon={Target} accent={A} />
         </div>
       </div>
     );
@@ -2620,34 +2612,6 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
         {K.map((k, i) => !hiddenKpis.includes(i) && <Kpi key={i} label={k.l} value={k.v} unit={k.u} icon={k.i} accent={A} />)}
       </div>
 
-      {role.id === "hr" && (() => {
-        const now = riyadhNow();
-        const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
-        const daysLeft = daysInMonth - now.getUTCDate();
-        if (daysLeft > 5) return null;
-        const active = reps.filter((r) => r.status === "active");
-        const atRisk = active.map((r) => {
-          const entries = monthEntriesFor(reports, r.id, month);
-          const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-          const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-          return { r, orders, km, ordersGap: MONTH_TARGET.orders - orders, kmGap: MONTH_TARGET.km - km };
-        }).filter((s) => s.ordersGap > 0 || s.kmGap > 0);
-        if (atRisk.length === 0) return null;
-        return (
-          <Panel title={x.atRiskT} extra={<Chip tone="bad" sm><AlertTriangle size={11} />{daysLeft} {x.daysLeft}</Chip>}>
-            <div className="space-y-2">
-              {atRisk.slice(0, 6).map(({ r, ordersGap, kmGap }) => (
-                <div key={r.id} className="flex items-center justify-between rounded-xl p-2.5 text-[12px]" style={{ background: "rgba(232,131,122,.08)", border: "1px solid rgba(232,131,122,.22)" }}>
-                  <span className="font-bold">{lang === "en" ? r.en : r.ar}</span>
-                  <span className="num" style={{ color: "#E8837A" }}>
-                    {ordersGap > 0 && `${ordersGap} ${x.lbOrders}`}{ordersGap > 0 && kmGap > 0 && " · "}{kmGap > 0 && `${kmGap} ${x.lbKm}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        );
-      })()}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-2" title={t.c.rev}
@@ -2766,34 +2730,6 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
         )}
       </div>
 
-      {role.id === "hr" && (() => {
-        const dayOfMonth = riyadhNow().getUTCDate();
-        const daysInMonth = new Date(Date.UTC(riyadhNow().getUTCFullYear(), riyadhNow().getUTCMonth() + 1, 0)).getUTCDate();
-        const expectedPct = (dayOfMonth / daysInMonth) * 100;
-        const behind = activeReps.map((r) => {
-          const entries = monthEntriesFor(reports, r.id, month);
-          const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-          const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-          const actualPct = ((orders / MONTH_TARGET.orders) + (km / MONTH_TARGET.km)) / 2 * 100;
-          return { r, actualPct, gap: expectedPct - actualPct };
-        }).filter((s) => s.gap > 10).sort((a, b) => b.gap - a.gap);
-        return (
-          <Panel title={x.pacingT} extra={<Chip tone="warn" sm>{behind.length}</Chip>}>
-            <p className="text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{x.pacingSub}</p>
-            {behind.length === 0 ? <p className="text-[12px]" style={{ color: "#4FD1A5" }}>{x.pacingAllGood}</p> : (
-              <div className="space-y-2">
-                {behind.map(({ r, actualPct, gap }) => (
-                  <div key={r.id} className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "rgba(232,131,122,.06)", border: "1px solid rgba(232,131,122,.22)" }}>
-                    <span className="text-[12.5px] font-bold flex-1 truncate">{lang === "en" ? r.en : r.ar}</span>
-                    <span className="num text-[11px]" style={{ color: "var(--muted)" }}>{Math.round(actualPct)}% / {Math.round(expectedPct)}%</span>
-                    <Chip tone="bad" sm>-{Math.round(gap)}%</Chip>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-        );
-      })()}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-2" title={t.alerts}>
@@ -3566,17 +3502,11 @@ function computeLeaderboard(reps, reports, month) {
   const stats = active.map((r) => {
     const entries = monthEntriesFor(reports, r.id, month);
     const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-    const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-    return { rep: r, orders, km };
+    return { rep: r, orders };
   });
   const byOrders = [...stats].sort((a, b) => b.orders - a.orders);
-  const byKm = [...stats].sort((a, b) => b.km - a.km);
-  const rankOf = (list, id) => list.findIndex((s) => s.rep.id === id);
-  const combined = stats
-    .map((s) => ({ ...s, score: rankOf(byOrders, s.rep.id) + rankOf(byKm, s.rep.id) }))
-    .sort((a, b) => a.score - b.score || b.orders - a.orders);
-  const first = combined[0] || null;
-  const second = byKm.find((s) => !first || s.rep.id !== first.rep.id) || null;
+  const first = byOrders[0] || null;
+  const second = byOrders[1] || null;
   return { first, second, stats };
 }
 
@@ -3632,7 +3562,6 @@ function PodiumCard({ lang, role, rank, entry, rewardAmt, desc, icon: Icon, tone
       </div>
       <div className="flex gap-3 mt-3 pt-3 relative" style={{ borderTop: `1px solid ${tone}33` }}>
         <span className="text-[11px]"><b className="num">{entry.orders}</b> {x.lbOrders}</span>
-        <span className="text-[11px]"><b className="num">{entry.km}</b> {x.lbKm}</span>
       </div>
       {umrah && (
         <div className="mt-3 rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: "rgba(228,184,92,.15)", border: "1px solid rgba(228,184,92,.4)" }}>
@@ -3652,7 +3581,6 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
   const allEntries = [];
   reports.forEach((rp) => rp.entries.forEach((e) => { if (e.id === activeRep.id) allEntries.push({ ...e, date: rp.date }); }));
   const totalOrders = allEntries.reduce((a, e) => a + (e.orders || 0), 0);
-  const totalKm = allEntries.reduce((a, e) => a + (e.km || 0), 0);
   const totalHours = allEntries.reduce((a, e) => a + (e.hours || 0), 0);
   const monthsActive = new Set(allEntries.map((e) => e.date.slice(0, 7))).size;
   const wins = leaderboardHistory.filter((h) => h.first === activeRep.id).length;
@@ -3662,7 +3590,6 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
 
   const stats = [
     { icon: ShoppingBag, label: x.storyOrders, value: fmt(totalOrders) },
-    { icon: Route, label: x.storyKm, value: fmt(totalKm) },
     { icon: Timer, label: x.storyHours, value: totalHours.toFixed(0) },
     { icon: CalendarClock, label: x.storyMonths, value: String(monthsActive) },
     { icon: Trophy, label: x.storyWins, value: String(wins) },
@@ -4656,14 +4583,14 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const exportRun = (run) => {
     const rows = run.entries.map((e) => ({
       [t.h.employee]: e.name, [x.empTypeCol]: EMP_TYPES[e.empType]?.[lang] || e.empType,
-      [x.ordersCol]: e.orders, [x.kmCol]: e.km, [x.hoursCol]: (e.hours || 0).toFixed(1),
+      [x.ordersCol]: e.orders, [x.hoursCol]: (e.hours || 0).toFixed(1),
       [`${x.weekendViolCol} (${x.supReportedLbl})`]: e.weekendCount || 0, [`${x.appViolCol} (${x.supReportedLbl})`]: e.appCount || 0,
       [`${x.weekendViolCol} (${t.sar})`]: e.weekendDeductAmt || 0, [`${x.appViolCol} (${t.sar})`]: e.appDeductAmt || 0,
       [x.totalSalary]: e.salary, [x.lbReward]: e.reward || 0, [t.sar]: e.total,
     }));
     const officeRows = (run.officeEntries || []).map((e) => ({
       [t.h.employee]: e.name, [x.empTypeCol]: x.officeStaffSectionT,
-      [x.ordersCol]: "—", [x.kmCol]: "—", [x.hoursCol]: "—",
+      [x.ordersCol]: "—", [x.hoursCol]: "—",
       [`${x.weekendViolCol} (${x.supReportedLbl})`]: "—", [`${x.appViolCol} (${x.supReportedLbl})`]: "—",
       [`${x.weekendViolCol} (${t.sar})`]: "—", [`${x.appViolCol} (${t.sar})`]: "—",
       [x.totalSalary]: e.salary, [x.lbReward]: 0, [t.sar]: e.salary,
@@ -4726,7 +4653,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                   <span className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold">{r.name}</span>
                     {r.reward > 0 && <Chip tone="warn" sm><Trophy size={11} />+{r.reward}</Chip>}
-                    <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.km} {lang === "ar" ? "كم" : "km"} · {r.hours.toFixed(1)} {x.hoursCol}
+                    <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.hours.toFixed(1)} {x.hoursCol}
                       {r.weekendCount > 0 && ` · ${x.weekendViolCol}: ${r.weekendCount}`}{r.appCount > 0 && ` · ${x.appViolCol}: ${r.appCount}`}</span>
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
@@ -5266,27 +5193,17 @@ function ApprovalsPage({ lang, role, approvalReqs, setApprovalReqs }) {
 function RepPerformanceAnalytics({ lang, role, reps }) {
   const t = T[lang], x = EX[lang];
   const active = reps.filter((r) => r.status === "active");
-  const tiers = active.map((r) => ({ r, tier: tierOf(r) }));
-  const avgPct = tiers.length ? Math.round(tiers.reduce((a, b) => a + b.tier.pct, 0) / tiers.length) : 0;
   const totalViol = active.reduce((a, r) => a + (r.weekendViolations || 0) + (r.appViolations || 0), 0);
-  const top = tiers.slice().sort((a, b) => b.tier.pct - a.tier.pct)[0];
-  const weakCount = tiers.filter((o) => o.tier.key === "weak" || o.tier.key === "improve").length;
+  const top = active.slice().sort((a, b) => (b.orders || 0) - (a.orders || 0))[0];
   const name = (r) => (lang === "en" ? r.en : r.ar);
 
   return (
     <Panel title={x.perfAnalytics} extra={<Chip tone="ok" sm><span className="w-1.5 h-1.5 rounded-full bg-current" />{t.live}</Chip>}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label={x.totalActiveReps} value={String(active.length)} icon={Bike} accent={role.glow} />
-        <Kpi label={x.avgAchieve} value={String(avgPct)} unit="%" icon={Target} accent={role.glow} />
         <Kpi label={x.totalViolations} value={String(totalViol)} icon={AlertTriangle} accent={role.glow} />
-        <Kpi label={x.topPerformer} value={top ? name(top.r) : "—"} icon={Star} accent={role.glow} />
+        <Kpi label={x.topPerformer} value={top ? name(top) : "—"} icon={Star} accent={role.glow} />
       </div>
-      {weakCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-xl p-3 mt-3.5" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.22)" }}>
-          <AlertTriangle size={15} style={{ color: "var(--gold)" }} />
-          <span className="text-[12px]" style={{ color: "var(--muted)" }}>{x.needsAttention}: <span className="num font-bold" style={{ color: "#12151D" }}>{weakCount}</span></span>
-        </div>
-      )}
     </Panel>
   );
 }
@@ -5294,7 +5211,7 @@ function RepPerformanceAnalytics({ lang, role, reps }) {
 /* ═══════════  توظيف المناديب — الموارد البشرية  ═══════════ */
 function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingEmployee, applications, setApplications }) {
   const t = T[lang], x = EX[lang];
-  const canManage = role.id === "opsm" || role.id === "gm";
+  const canManage = role.id === "opsm" || role.id === "gm" || role.id === "hr";
   const SUP_LIST = supervisorsOf(employees);
   const [form, setForm] = useState({ name: "", phone: "", nid: "", riderId: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
   const [err, setErr] = useState("");
@@ -5536,8 +5453,6 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
 /* ═══════════  نبض المناديب المباشر  ═══════════ */
 function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
   const [open, setOpen] = useState(false);
-  const tier = tierOf(r);
-  const tierLabel = { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key];
   const stateLabel = state === "onDuty" ? x.onDutyLive : state === "late" ? x.lateForShift : state === "booked" ? x.bookedNotIn : state === "done" ? t.s.closed : x.noShiftToday;
   const borderColor = state === "onDuty" ? "rgba(63,216,180,.4)" : state === "late" ? "rgba(232,131,122,.45)" : "var(--line)";
   return (
@@ -5553,7 +5468,6 @@ function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
         <span className="flex-1 min-w-0">
           <span className="flex items-center gap-1.5">
             <span className="text-[13.5px] font-bold truncate">{lang === "en" ? r.en : r.ar}</span>
-            <Chip tone={tier.tone} sm>{Math.round(tier.pct)}%</Chip>
           </span>
           <span className="block text-[11px] mt-0.5" style={{ color: "var(--muted)" }}>
             {shift ? `${shift.start} → ${shift.end}` : x.noShiftToday}
@@ -5571,15 +5485,11 @@ function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
             <p className="num text-[15px] font-bold mt-0.5">{r.orders || 0}</p>
           </div>
           <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{x.kmCol}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.km || 0}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
             <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].riderId}</p>
             <p className="num text-[15px] font-bold mt-0.5">{r.riderId || "—"}</p>
           </div>
           <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{tierLabel}</p>
+            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].phoneL}</p>
             <p className="num text-[15px] font-bold mt-0.5">{r.phone}</p>
           </div>
         </div>
@@ -5675,8 +5585,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
   };
 
   const RepRow = ({ r }) => {
-    const tier = tierOf(r);
-    const tierLabel = { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key];
     const avg = historicalAvg(r.id);
     const declined = avg != null && r.orders < avg * 0.5;
     return (
@@ -5694,7 +5602,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
               className="rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" style={{ background: "#fff", border: "1px solid var(--line-strong)", color: "#12151D" }}>
               {APPS.map((a) => <option key={a.id} value={a.id}>{a[lang]}</option>)}
             </select>
-            <Chip tone={tier.tone}>{tierLabel} · {Math.round(tier.pct)}%</Chip>
           </span>
         </div>
         {declined && (
@@ -5702,11 +5609,10 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
             <AlertTriangle size={12} />{x.declineAlert} ({avg.toFixed(0)} {x.lbOrders})
           </p>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {[
             { k: "orders", l: x.ordersCol, icon: ShoppingBag },
             { k: "hours", l: x.hoursCol, icon: Timer },
-            { k: "km", l: x.kmCol, icon: Route },
             { k: "weekendViolations", l: x.weekendViolCol, icon: CalendarDays },
             { k: "appViolations", l: x.appViolCol, icon: AlertTriangle },
           ].map((f) => (
@@ -5744,7 +5650,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
               {s[lang]}
             </button>
           ))}
-          <span className="ms-auto num text-[11px]" style={{ color: "var(--muted)" }}>{x.dailyTargetLbl}: {DAILY_TARGET.orders} {x.ordersTarget} · {DAILY_TARGET.km} {x.kmTarget}</span>
         </div>
 
         <div className="mb-2.5 flex items-center gap-2">
@@ -6324,7 +6229,6 @@ function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) 
 
   const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? (lang === "en" ? r.en : r.ar) : id; };
   const supName = (sid) => supervisorsOf(employees).find((s) => s.id === sid)?.[lang] || "—";
-  const tierLabel = (rep) => { const tier = tierOf(rep); return { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key]; };
 
   const filteredReports = !q ? reports : reports.filter((rp) =>
     rp.entries.some((e) => {
@@ -6376,7 +6280,7 @@ function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) 
                 filteredReports.forEach((rp) => rp.entries.forEach((e) => {
                   const rep = reps.find((r) => r.id === e.id) || { ar: e.id, en: e.id, empType: "—" };
                   rows.push({ [t.h.employee]: lang === "en" ? rep.en : rep.ar, [x.empTypeCol]: EMP_TYPES[rep.empType]?.[lang] || rep.empType, Date: rp.date,
-                    [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.kmCol]: e.km, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 });
+                    [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 });
                 }));
                 exportToExcel(rows, `rep-reports-${riyadhToday()}`, "Reports");
               }}>{t.export}</Btn>
@@ -6416,8 +6320,7 @@ function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) 
                         key: e.id,
                         cells: [
                           { v: lang === "en" ? rep.en : rep.ar, strong: 1 }, { v: e.orders, mono: 1 },
-                          { v: e.hours, mono: 1 }, { v: e.km, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 },
-                          { chip: { tone: tierOf(e).tone, label: tierLabel(e) } },
+                          { v: e.hours, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 },
                         ],
                       }));
                       return (
@@ -6425,13 +6328,13 @@ function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) 
                           <div>
                             <p className="text-[10.5px] font-bold mb-1.5" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>
                             {kafalaEntries.length === 0 ? <EmptyHint lang={lang} /> : (
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.kmCol, x.weekendViolCol, x.appViolCol, x.tierCol]} rows={toRows(kafalaEntries)} />
+                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol]} rows={toRows(kafalaEntries)} />
                             )}
                           </div>
                           {ajeerEntries.length > 0 && (
                             <div>
                               <p className="text-[10.5px] font-bold mb-1.5 pt-2" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p>
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.kmCol, x.weekendViolCol, x.appViolCol, x.tierCol]} rows={toRows(ajeerEntries)} />
+                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol]} rows={toRows(ajeerEntries)} />
                             </div>
                           )}
                         </div>
@@ -6761,7 +6664,7 @@ Object.assign(RA.ar, {
   unmatchedT: "معرّفات في الفاتورة بدون مندوب", linkTo: "اربطه بمندوب…",
   wT: "ملاحظات قبل الإقفال", wRepPrice: "لا توجد تسعيرة مندوب — أرباح المناديب 0", wAppPrice: "لا توجد تسعيرة تطبيق ولا فاتورة — الإيراد 0", wNoId: "مندوب بدون معرّف تطبيق (لن يُطابَق مع الفاتورة)",
   noRateYet: "لم يحدّد المحاسب تسعيرتك بعد — سيظهر ربحك فور اعتمادها", rhMonthOrders: "طلبات الشهر",
-  usingDefault: "غير مضبوطة", resetDefault: "حذف التسعيرة",
+  phoneL: "الجوال", usingDefault: "غير مضبوطة", resetDefault: "حذف التسعيرة",
 });
 Object.assign(RA.en, {
   riderId: "Rider ID in the app", riderIdPh: "e.g. 4821937", errRiderDup: "This ID is already used by another rider on the same app",
@@ -6772,7 +6675,7 @@ Object.assign(RA.en, {
   unmatchedT: "Invoice IDs with no rider", linkTo: "Link to a rider…",
   wT: "Before closing", wRepPrice: "No rider pricing set — rider earnings are 0", wAppPrice: "No app pricing and no invoice — revenue is 0", wNoId: "rider(s) without an app ID (won't match the invoice)",
   noRateYet: "The accountant hasn't set your pricing yet — your earnings appear once approved", rhMonthOrders: "Orders this month",
-  usingDefault: "Not set", resetDefault: "Remove pricing",
+  phoneL: "Phone", usingDefault: "Not set", resetDefault: "Remove pricing",
 });
 Object.assign(RA.ur, {
   riderId: "ایپ میں رائیڈر آئی ڈی", riderIdPh: "مثال: 4821937", errRiderDup: "یہ آئی ڈی اسی ایپ پر دوسرے رائیڈر کے پاس ہے",
@@ -6783,7 +6686,7 @@ Object.assign(RA.ur, {
   unmatchedT: "انوائس میں بغیر رائیڈر آئی ڈیز", linkTo: "رائیڈر سے جوڑیں…",
   wT: "بند کرنے سے پہلے", wRepPrice: "رائیڈر کی قیمت مقرر نہیں — کمائی 0", wAppPrice: "ایپ کی قیمت نہ انوائس — آمدنی 0", wNoId: "رائیڈرز بغیر ایپ آئی ڈی",
   noRateYet: "اکاؤنٹنٹ نے ابھی آپ کی قیمت مقرر نہیں کی", rhMonthOrders: "اس ماہ آرڈرز",
-  usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
+  phoneL: "فون", usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
 });
 Object.assign(T.ar.nav, { repAccounting: "محاسبة المناديب", myEarnings: "أرباحي" });
 Object.assign(T.en.nav, { repAccounting: "Rep Accounting", myEarnings: "My Earnings" });
@@ -6803,7 +6706,7 @@ function describePrice(p, RAx, sar) {
 
 function PriceForm({ value, onChange, RAx, sar }) {
   const p = value;
-  const [tryO, setTryO] = useState(480);
+  const [tryO, setTryO] = useState(100);
   const setNum = (k) => (e) => onChange({ ...p, [k]: e.target.value === "" ? "" : +e.target.value });
   const Field = ({ k }) => (
     <label className="block">
@@ -7335,7 +7238,7 @@ Object.assign(T.ur.nav, { today: "آج", financeHub: "مالیات", repsHub: "�
 const HUBS = {
   financeHub: ["repAccounting", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
   repsHub: ["pulse", "leaderboard", "hall"],
-  commsHub: ["tickets", "chat", "circulars"],
+  commsHub: ["tickets", "chat", "circulars", "messages"],
   hrHub: ["hiring", "employees", "iqama"],
   legalHub: ["charter", "contracts", "cases", "compliance"],
 };
@@ -7349,7 +7252,7 @@ const PRIMARY_NAV = {
   hr: ["today", "hrHub", "repsHub", "commsHub", "attendance"],
   legal: ["today", "legalHub", "commsHub", "attendance"],
   advisor: ["today", "boardCouncil", "decisions", "financeHub"],
-  rep: ["riderHome", "myEarnings", "attendance", "commsHub"],
+  rep: ["riderHome", "myEarnings", "riderReceipts", "attendance", "commsHub", "mystory", "leaderboard", "hall"],
 };
 const TODAY_QUICK = {
   gm: ["decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
@@ -7533,7 +7436,7 @@ function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipt
   return { net: r2(c.gross + adds + reimb - deds - (fo.weekend != null ? +fo.weekend : c.weekendAuto) - (fo.app != null ? +fo.app : c.appAuto)), final: false, orders: c.orders, unpriced: c.unpriced };
 }
 
-function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, setAttendance, shifts, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
+function RiderHome({ onLogout, lang, role, user, activeRep, reps, reports, attendance, setAttendance, shifts, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
   const RAx = RA[lang], t = T[lang], x = EX[lang];
   const [toast, setToast] = useState("");
   if (!activeRep) return <EmptyHint lang={lang} />;
@@ -7549,7 +7452,8 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
   const unread = repMessages.filter((m) => m.repId === user && !m.seen).length;
   const openTk = tickets.filter((tk) => tk.repId === user && tk.status === "open").length;
   const sh = shifts.find((s) => s.repId === user && s.date === today);
-  const pct = Math.min(100, Math.round((me.orders / MONTH_TARGET.orders) * 100));
+  const tgt = monthTargetOf(pricing, activeRep.app);
+  const pct = tgt ? Math.min(100, Math.round((me.orders / tgt) * 100)) : null;
   const doClock = () => {
     const at = riyadhTimeHM();
     if (!myToday) setAttendance((prev) => [...prev, { key: user, role: "rep", name: lang === "en" ? activeRep.en : activeRep.ar, date: today, in: at, out: null }]);
@@ -7597,9 +7501,9 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
 
       <Panel title={RAx.rhGoal}>
         <div className="flex items-center gap-5">
-          <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />
+          {pct != null && <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />}
           <div className="space-y-1.5 text-[12.5px]">
-            <p><b className="num">{me.orders}</b> / {MONTH_TARGET.orders} {t.orders}</p>
+            <p><b className="num">{me.orders}</b>{tgt ? ` / ${tgt}` : ""} {t.orders}</p>
             <p style={{ color: "var(--muted)" }}>{RAx.rhRank}: <b className="num" style={{ color: role.accent }}>{rank}</b> {RAx.rhOf} <span className="num">{sorted.length}</span></p>
           </div>
         </div>
@@ -7610,6 +7514,7 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
         <Tile icon={Send} label={RAx.rhTickets} value={openTk} onClick={() => goPage("tickets")} />
       </div>
       <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={15} className="opacity-50" /></button>
+      {onLogout && <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-2xl p-3.5 text-[13px] font-bold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }}><LogOut size={16} />{t.logout}</button>}
     </div>
   );
 }
@@ -8283,7 +8188,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
     const h = HUB_OF[id];
     if (h && navEff.includes(h)) { setHubNav({ tab: id, stamp: Date.now() }); setPage(h); } else setPage(id);
   };
-  const [showAll, setShowAll] = useState(() => { try { return localStorage.getItem("bq_showall") === "1"; } catch (e) { return false; } });
+  const [showAll, setShowAll] = useState(() => { try { return localStorage.getItem("bq_showall") !== "0"; } catch (e) { return true; } });
   const toggleAll = () => setShowAll((v) => { const nv = !v; try { localStorage.setItem("bq_showall", nv ? "1" : "0"); } catch (e) {} return nv; });
   useEffect(() => { if (!navEff.includes(page) && page !== "settings") setPage(navEff[0]); }, [role.id]); // eslint-disable-line
   const [collapsed, setCollapsed] = useState({});
@@ -8615,6 +8520,9 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
                 </div>
               )}
             </div>
+            <button onClick={onLogout} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: "rgba(232,131,122,.12)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }} aria-label={t.logout}>
+              <LogOut size={15} /><span>{t.logout}</span>
+            </button>
             <div className="hidden sm:block">
               <select value={lang} onChange={(e) => setLang(e.target.value)} className="rounded-xl px-2.5 py-2.5 text-[12px] font-semibold outline-none"
                 style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)", color: "#12151D" }}>
@@ -8636,7 +8544,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
             <span className="num hidden sm:block text-[11.5px]" style={{ color: "var(--muted)" }}>{t.thisMonth} · 2026</span>
           </div>
           <div key={page} className="rise">
-            <Page lang={lang} role={role} user={user} activeRep={activeRep} setLang={setLang} reduce={reduce} setReduce={setReduce}
+            <Page lang={lang} role={role} user={user} activeRep={activeRep} onLogout={onLogout} setLang={setLang} reduce={reduce} setReduce={setReduce}
               reps={reps} setReps={setReps} reports={reports} setReports={setReports}
               tickets={tickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
               attendance={attendance} setAttendance={setAttendance} shifts={shifts} setShifts={setShifts}
