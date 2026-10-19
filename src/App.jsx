@@ -292,7 +292,7 @@ const APPS = [
 
 /* ═══════════  محرك التسعير ومحاسبة المناديب (بدون كيلومترات)  ═══════════ */
 // تسعيرتان لكل تطبيق يضعهما المحاسب: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب. لا توجد أرقام افتراضية.
-const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", tiersV: 2, tiers: [{ from: 1, to: "", rate: "" }] };
+const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", perOrderShort: "", belowRate: "", scope: "rider", tiersV: 2, tiers: [{ from: 1, to: "", rate: "" }] };
 const getAppPrice = (pricing, appId) => (pricing && pricing.app && pricing.app[appId]) || null;
 const getRepPrice = (pricing, appId) => (pricing && pricing.rep && pricing.rep[appId]) || null;
 const r2 = (n) => Math.round((+n || 0) * 100) / 100;
@@ -345,7 +345,10 @@ function priceCalc(p, orders, f) {
   if (!p || !orders) return { orders: 0, fixed: 0, total: 0, configured: !!p };
   let o = 0;
   if (p.mode === "target") {
-    o = n(p.ordersBase) * f + (orders - n(p.ordersTarget) * f) * n(p.perOrderDelta);
+    const diff = orders - n(p.ordersTarget) * f;
+    // اتفاق المندوب: دون الهدف يُحسب كل طلب بسعر ثابت (belowRate) ولا راتب ثابت — وعند بلوغ الهدف: الراتب + الزائد
+    if (hasBelow(p) && diff < 0) o = orders * n(p.belowRate);
+    else o = n(p.ordersBase) * f + diff * (diff >= 0 || p.perOrderShort === "" || p.perOrderShort == null ? n(p.perOrderDelta) : n(p.perOrderShort));
   } else if (p.mode === "tiers") {
     const tiers = tiersN(p);
     tiers.forEach((tr, i) => {
@@ -357,6 +360,29 @@ function priceCalc(p, orders, f) {
   }
   const fixed = n(p.fixedMonthly) * f;
   return { orders: r2(o), fixed, total: Math.max(0, r2(o + fixed)), configured: true };
+}
+const hasBelow = (p) => p && p.belowRate !== "" && p.belowRate != null && +p.belowRate > 0;
+// تفصيل الحساب سطراً سطراً (للمحاسب): يطابق priceCalc تماماً. base = عدّاد موروث لحساب التطبيق (شرائح فقط)
+function priceBreakdown(p, own, f, base) {
+  const n = (v) => +v || 0; f = f || 1; base = base || 0; const lines = [];
+  if (!p) return { lines, total: 0, known: false };
+  if (!own) return { lines, total: 0, known: true };
+  if (p.mode === "target") {
+    const T = n(p.ordersTarget) * f, diff = own - T;
+    const rate = diff >= 0 || p.perOrderShort === "" || p.perOrderShort == null ? n(p.perOrderDelta) : n(p.perOrderShort);
+    if (hasBelow(p) && diff < 0) lines.push({ k: "below", qty: own, rate: n(p.belowRate), amt: r2(own * n(p.belowRate)), target: r2(T), f });
+    else lines.push({ k: "base", amt: r2(n(p.ordersBase) * f), f, target: r2(T) });
+    if (!(hasBelow(p) && diff < 0) && diff !== 0) lines.push({ k: diff > 0 ? "extra" : "short", qty: Math.abs(r2(diff)), rate, amt: r2(diff * rate) });
+  } else if (p.mode === "tiers") {
+    const ts = tiersN(p);
+    ts.forEach((tr, i) => {
+      const hi = Math.min(tr.to, i + 1 < ts.length ? ts[i + 1].from - 1 : Infinity);
+      const q = Math.max(0, Math.min(hi, base + own) - Math.max(tr.from - 1, base));
+      if (q > 0) lines.push({ k: "tier", from: tr.from, to: tr.to, qty: q, rate: tr.rate, amt: r2(q * tr.rate) });
+    });
+  } else lines.push({ k: "unit", qty: own, rate: n(p.perOrder), amt: r2(own * n(p.perOrder)) });
+  if (n(p.fixedMonthly) && !base) lines.push({ k: "fixed", amt: r2(n(p.fixedMonthly) * f), f });
+  return { lines, total: Math.max(0, r2(lines.reduce((a, x) => a + x.amt, 0))), known: true };
 }
 // أرباح مندوب من الإدخال اليومي للمشرف (تُجمَّع حسب التطبيق ثم تُسعَّر بتسعيرة المندوب لذلك التطبيق)
 // rep.inherit = عدّاد شريحة التطبيق (الشركة) يكمل من عدد من سبقه — داخلي للشركة فقط. أجر المندوب نفسه يبدأ من أول طلب له ولا يتأثر.
@@ -448,7 +474,7 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
     const totalDed = weekendAmt + appAmt + deds;
     const reimb = r2((receipts || []).filter((q) => q.repId === r.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
-    repLines.push({ repId: r.id, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced, baseOrders: (c.byApp[c.main] || {}).base || 0, baseFrom: (r.inherit && r.inherit.month === month) ? r.inherit.fromName : null,
+    repLines.push({ repId: r.id, repApp: r.app, srcF: row ? 1 : f, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced, baseOrders: (c.byApp[c.main] || {}).base || 0, baseFrom: (r.inherit && r.inherit.month === month) ? r.inherit.fromName : null,
       orders: c.orders, recOrders, invOrders: row ? row.orders : null, invNet: row ? row.net : null, hours: c.hours,
       gross: c.gross, weekendCount: c.weekendCount, appCount: c.appCount, weekendAmt, appAmt, manualAdds: adds, manualDeds: deds, totalDed,
       reimb, net: r2(c.gross + adds + reimb - totalDed) });
@@ -464,11 +490,28 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     });
   });
   Object.keys(stm).forEach((a) => { if (!agg[a]) agg[a] = { orders: 0, reps: new Set() }; });
+  // إيراد الشركة عن كل مندوب: شرائح لوكيت تُحسب على طلبات حسابه هو (إن كان النطاق "لكل مندوب")، أو من فاتورة التطبيق، أو بحصته من الإيراد
+  const perRiderTiers = (a) => { const pp = getAppPrice(pricing, a); return !!pp && pp.mode === "tiers" && pp.scope !== "total"; };
+  repLines.forEach((l) => {
+    l.detail = Object.keys(l.byApp).map((a) => {
+      const g = l.byApp[a], ap = getAppPrice(pricing, a), rp = getRepPrice(pricing, a); const fa = a === l.repApp ? l.srcF : f;
+      const cost = priceBreakdown(rp, g.orders, fa, 0);
+      let rev, est = 0;
+      const sharedAgg = agg[a] ? (stm[a] ? stm[a].orders : agg[a].orders) : 0;
+      if (perRiderTiers(a)) { rev = priceBreakdown(ap, g.orders, fa, g.base || 0); est = rev.total; }
+      else if (ap && sharedAgg > 0) { const tot = priceCalc(ap, sharedAgg, stm[a] ? 1 : f).total; est = r2(tot * (g.orders / sharedAgg)); rev = { lines: [{ k: "share", qty: g.orders, of: sharedAgg, amt: est }], total: est, known: true }; }
+      else rev = { lines: [], total: 0, known: false };
+      if (l.source === "invoice" && a === l.repApp) rev = { lines: [{ k: "invoice", amt: l.invNet }], total: l.invNet, known: true };
+      return { app: a, orders: g.orders, base: g.base || 0, f: fa, cost, rev, est, scope: perRiderTiers(a) ? "rider" : "total" };
+    });
+    l.rev = r2(l.detail.reduce((x, d) => x + d.rev.total, 0)); l.revKnown = l.detail.length > 0 && l.detail.every((d) => d.rev.known);
+    l.profit = r2(l.rev - l.net);
+  });
   const appLines = Object.keys(agg).map((a) => {
     const g = agg[a], st = stm[a];
     const orders = st ? st.orders : g.orders;
     const appPrice = getAppPrice(pricing, a);
-    const calc = priceCalc(appPrice, orders, st ? 1 : f).total;
+    const calc = perRiderTiers(a) ? r2(repLines.reduce((x, l) => x + (((l.detail || []).find((d) => d.app === a) || {}).est || 0), 0)) : priceCalc(appPrice, orders, st ? 1 : f).total;
     const hasActual = inputs.appActual[a] != null && inputs.appActual[a] !== "";
     const base = hasActual ? +inputs.appActual[a] : st ? st.net : calc;
     const fines = +inputs.appFines[a] || 0;
@@ -1922,6 +1965,26 @@ const EX = {
   },
 };
 
+/* ═══════════  حقل رقمي موحّد: يقبل الأرقام العربية (٠-٩) والفاصلة العشرية والآلاف، ولا يفقد المؤشر أثناء الكتابة  ═══════════ */
+const NUM_DIG = { "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4", "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9", "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4", "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9" };
+function cleanNum(v, neg) {
+  let s = String(v == null ? "" : v).replace(/[٠-٩۰-۹]/g, (d) => NUM_DIG[d]).replace(/٫/g, ".").replace(/[,،٬\s]/g, "").replace(/[^0-9.\-]/g, "");
+  const m = neg && s[0] === "-" ? "-" : "";
+  s = s.replace(/-/g, "");
+  const i = s.indexOf("."); if (i >= 0) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, "");
+  return m + s;
+}
+function NumInput({ value, onChange, min, max, step, ...rest }) {
+  const neg = min === undefined || +min < 0;
+  const [txt, setTxt] = useState(value == null ? "" : String(value));
+  useEffect(() => { if ((Number(value) || 0) !== (Number(txt) || 0)) setTxt(value == null ? "" : String(value)); }, [value]); // eslint-disable-line
+  return <input {...rest} type="text" inputMode="decimal" autoComplete="off" value={txt} onChange={(e) => {
+    let c = cleanNum(e.target.value, neg); if (max !== undefined && max !== "" && c !== "" && +c > +max) c = String(max);
+    setTxt(c); const out = c === "-" || c === "." || c === "-." ? "" : c;
+    if (onChange) onChange({ target: { value: out }, currentTarget: { value: out } });
+  }} />;
+}
+
 /* ═══════════  حقل إدخال  ═══════════ */
 function GateField({ label, val, set, ph, Icon, type, accent, onEnter, af, tail }) {
   return (
@@ -1931,9 +1994,12 @@ function GateField({ label, val, set, ph, Icon, type, accent, onEnter, af, tail 
       </span>
       <span className="flex items-center gap-2.5 rounded-xl px-3.5 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
         <Icon size={16} style={{ color: accent }} />
-        <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} type={type} autoFocus={af}
-          onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
-          className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />
+        {type === "number"
+          ? <NumInput value={val} onChange={(e) => set(e.target.value)} placeholder={ph} autoFocus={af} onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
+              className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />
+          : <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} type={type} autoFocus={af}
+              onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
+              className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />}
       </span>
     </label>
   );
@@ -2270,7 +2336,7 @@ function DataTable({ headers, rows, onBulkDelete }) {
                 </td>
               )}
               {r.cells.map((c, i) => (
-                <td key={i} className={`py-3 px-3 whitespace-nowrap group-hover:brightness-95 ${!bulkMode && i === 0 ? "rounded-s-2xl" : ""} ${!hasActions && i === r.cells.length - 1 ? "rounded-e-2xl" : ""}`} style={{ background: "var(--surface-1)" }}><Cell c={c} /></td>
+                <td key={i} className={`py-3 px-3 whitespace-nowrap group-hover:brightness-95 ${!bulkMode && i === 0 ? "rounded-s-2xl" : ""} ${!hasActions && i === r.cells.length - 1 ? "rounded-e-2xl" : ""}`} style={{ background: "var(--surface-1)" }}>{Cell({ c })}</td>
               ))}
               {hasActions && (
                 <td className="py-3 px-3 whitespace-nowrap text-end rounded-e-2xl group-hover:brightness-95" style={{ background: "var(--surface-1)" }}>
@@ -2313,10 +2379,10 @@ function DataTable({ headers, rows, onBulkDelete }) {
             <div className="flex items-center justify-between gap-2 mb-2.5">
               <span className="flex items-center gap-2 min-w-0">
                 {bulkMode && <input type="checkbox" checked={!!selected[r.key]} onChange={() => toggleOne(r.key)} className="w-4 h-4 shrink-0" />}
-                <Cell c={{ ...r.cells[0], strong: true }} />
+                {Cell({ c: { ...r.cells[0], strong: true } })}
               </span>
               <div className="flex items-center gap-2">
-                {r.cells.find((c) => c.chip) && <Cell c={r.cells.find((c) => c.chip)} />}
+                {r.cells.find((c) => c.chip) && Cell({ c: r.cells.find((c) => c.chip) })}
                 {r.onDelete && (
                   <button onClick={r.onDelete} className="p-1.5 rounded-lg" style={{ color: "#E8837A" }} aria-label="delete">
                     <Trash2 size={14} />
@@ -2328,7 +2394,7 @@ function DataTable({ headers, rows, onBulkDelete }) {
               {r.cells.map((c, i) => (i === 0 || c.chip) ? null : (
                 <div key={i} className="min-w-0">
                   <div className="text-[10px] mb-0.5" style={{ color: "rgba(30,38,58,.42)" }}>{headers[i]}</div>
-                  <div className="truncate text-[12.5px]"><Cell c={c} /></div>
+                  <div className="truncate text-[12.5px]">{Cell({ c })}</div>
                 </div>
               ))}
             </div>
@@ -4385,7 +4451,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                       {r.weekendCount > 0 && ` · ${x.weekendViolCol}: ${r.weekendCount}`}{r.appCount > 0 && ` · ${x.appViolCol}: ${r.appCount}`}</span>
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
-                    <input type="number" value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                    <NumInput value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
                       className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                     <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                   </span>
@@ -4401,7 +4467,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                         <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.hours.toFixed(1)} {x.hoursCol}</span>
                       </span>
                       <span className="flex items-center gap-2">
-                        <input type="number" value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                        <NumInput value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
                           className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                         <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                       </span>
@@ -4419,7 +4485,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                         <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{e.position || "—"}</span>
                       </span>
                       <span className="flex items-center gap-2">
-                        <input type="number" value={officeAmounts[e.empId] ?? (e.salary || 0)} onChange={(ev) => setOfficeAmounts((prev) => ({ ...prev, [e.empId]: +ev.target.value }))}
+                        <NumInput value={officeAmounts[e.empId] ?? (e.salary || 0)} onChange={(ev) => setOfficeAmounts((prev) => ({ ...prev, [e.empId]: +ev.target.value }))}
                           className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                         <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                       </span>
@@ -4655,7 +4721,7 @@ function PeoplePage({ lang, role, employees, setEmployees, setAuditLog, actingEm
                 )}
                 {salaryEditId === p.id && (
                   <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
-                    <input value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} placeholder="0" type="number"
+                    <NumInput value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} placeholder="0"
                       className="num flex-1 rounded-lg px-3 py-2 text-[12.5px] outline-none" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#12151D" }} />
                     <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => {
                       setEmployees((prev) => prev.map((e2) => (e2.id === p.id ? { ...e2, salary: +salaryInput || 0 } : e2)));
@@ -4782,7 +4848,7 @@ function CharterPage({ lang, role, weekendFine, setWeekendFine, charterClauses, 
           <div className="flex items-center gap-2.5">
             <span className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)" }}>
               <CircleDollarSign size={15} style={{ color: role.accent }} />
-              <input type="number" value={fineInput} onChange={(e) => setFineInput(+e.target.value)}
+              <NumInput value={fineInput} onChange={(e) => setFineInput(+e.target.value)}
                 className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
               <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
             </span>
@@ -5245,7 +5311,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
           ].map((f) => (
             <label key={f.k} className="block">
               <span className="flex items-center gap-1 text-[10px] mb-1" style={{ color: "var(--muted)" }}><f.icon size={11} />{f.l}</span>
-              <input type="number" value={r[f.k] || 0} onChange={(e) => update(r.id, f.k, e.target.value)}
+              <NumInput value={r[f.k] ? r[f.k] : ""} placeholder="0" onChange={(e) => update(r.id, f.k, e.target.value)}
                 className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none"
                 style={{ background: "rgba(0,0,0,.04)", border: "1px solid var(--line)", color: "#12151D" }} />
             </label>
@@ -5285,7 +5351,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
           <Chip tone="info" sm>{mine.length}</Chip>
         </div>
         <div className="space-y-2.5 mb-5">
-          {mine.length === 0 ? <EmptyHint lang={lang} /> : mine.map((r) => <RepRow key={r.id} r={r} />)}
+          {mine.length === 0 ? <EmptyHint lang={lang} /> : mine.map((r) => <React.Fragment key={r.id}>{RepRow({ r })}</React.Fragment>)}
         </div>
 
         <div className="mb-2.5 flex items-center gap-2 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
@@ -5294,7 +5360,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
           <Chip tone="warn" sm>{mineAjeer.length}</Chip>
         </div>
         <div className="space-y-2.5">
-          {mineAjeer.length === 0 ? <EmptyHint lang={lang} /> : mineAjeer.map((r) => <RepRow key={r.id} r={r} />)}
+          {mineAjeer.length === 0 ? <EmptyHint lang={lang} /> : mineAjeer.map((r) => <React.Fragment key={r.id}>{RepRow({ r })}</React.Fragment>)}
         </div>
 
         <div className="flex items-center gap-3 mt-4">
@@ -6191,6 +6257,16 @@ Object.assign(RA.ur, {
   noRateYet: "اکاؤنٹنٹ نے ابھی آپ کی قیمت مقرر نہیں کی", rhMonthOrders: "اس ماہ آرڈرز",
   phoneL: "فون", usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
 });
+Object.assign(RA.ar, { ordersBase: "الراتب الثابت عند تحقيق الهدف (ريال)", ordersTarget: "هدف الطلبات الشهري", perOrderDelta: "سعر الطلب الزائد عن الهدف (ريال)", perOrderShort: "خصم الطلب الناقص (قديم)", belowRate: "سعر الطلب إذا لم يبلغ الهدف (ريال) — يُحسب كل طلب بهذا السعر بدل الراتب الثابت",
+  scopeT: "تُحسب الشرائح على", scopeRider: "كل مندوب على حدة (حسب طلبات حسابه في التطبيق)", scopeTotal: "إجمالي طلبات التطبيق كلها", scopeNote: "لوكيت وأغلب التطبيقات تحسب الشريحة على طلبات كل حساب مندوب وحده — اختر «كل مندوب على حدة».",
+  colRev: "إيراد الشركة عنه", colProfit: "ربح الشركة منه", explain: "كيف حُسب؟" });
+const RA_NEW_EN = { ordersBase: "Fixed salary when target is met (SAR)", ordersTarget: "Monthly orders target", perOrderDelta: "Price per order above target (SAR)", perOrderShort: "Deduction per short order (legacy)", belowRate: "Price per order if target is NOT reached (SAR) — replaces the fixed salary",
+  scopeT: "Tiers are counted on", scopeRider: "Each rider separately (his own account orders)", scopeTotal: "Total orders of the whole app", scopeNote: "Most apps tier each rider account on its own — choose \"each rider\".",
+  colRev: "Company revenue from him", colProfit: "Company profit from him", explain: "How is it computed?" };
+Object.assign(RA.en, RA_NEW_EN); Object.assign(RA.ur, RA_NEW_EN);
+Object.assign(RA.ar, { ldOpenAll: "التوظيف متاح لجميع الجنسيات", ldOpenAllSub: "داخل المملكة العربية السعودية" });
+Object.assign(RA.en, { ldOpenAll: "Hiring is open to all nationalities", ldOpenAllSub: "inside the Kingdom of Saudi Arabia" });
+Object.assign(RA.ur, { ldOpenAll: "بھرتی تمام قومیتوں کے لیے کھلی ہے", ldOpenAllSub: "سعودی عرب کے اندر" });
 Object.assign(T.ar.nav, { repAccounting: "محاسبة المناديب", myEarnings: "أرباحي" });
 Object.assign(T.en.nav, { repAccounting: "Rep Accounting", myEarnings: "My Earnings" });
 Object.assign(T.ur.nav, { repAccounting: "نمائندہ اکاؤنٹنگ", myEarnings: "میری کمائی" });
@@ -6202,19 +6278,34 @@ function describePrice(p, RAx, sar) {
   const n = (v) => +v || 0;
   if (!p) return [];
   const fx = n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : [];
-  if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · ${n(p.perOrderDelta)} ${sar} ${RAx.dAbove}`].concat(fx);
+  if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · +${n(p.perOrderDelta)} ${sar} ▲ ${RAx.dOrder}${hasBelow(p) ? ` · ▼ ${n(p.belowRate)} ${sar} ${RAx.dOrder}` : ""}`].concat(fx);
   if (p.mode === "tiers") return tiersN(p).map((tr) => `${n(tr.from)} ${RAx.tierTo2} ${tr.to === Infinity ? RAx.andAbove : n(tr.to)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
   return [`${n(p.perOrder)} ${sar} ${RAx.dOrder}`].concat(fx);
 }
 
-function PriceForm({ value, onChange, RAx, sar }) {
+function BreakLines({ lines, lang, sar, tone }) {
+  const t = (x) => {
+    if (x.k === "base") return Lx(lang, `الراتب الثابت${x.f < 1 ? ` (بنسبة ${Math.round(x.f * 100)}% من الشهر، والهدف المحتسب ${x.target} طلب)` : ""}`, `Fixed salary${x.f < 1 ? ` (${Math.round(x.f * 100)}% of month, target ${x.target})` : ""}`);
+    if (x.k === "below") return Lx(lang, `لم يبلغ الهدف (${x.target} طلب) فكل طلب بسعر ثابت: ${x.qty} × ${x.rate}`, `Target (${x.target}) not reached, flat rate: ${x.qty} × ${x.rate}`);
+    if (x.k === "extra") return Lx(lang, `طلبات زائدة عن الهدف: ${x.qty} × ${x.rate}`, `Above target: ${x.qty} × ${x.rate}`);
+    if (x.k === "short") return Lx(lang, `طلبات ناقصة عن الهدف: ${x.qty} × ${x.rate} (خصم)`, `Below target: ${x.qty} × ${x.rate} (deduction)`);
+    if (x.k === "tier") return Lx(lang, `الطلبات ${x.from}–${x.to === Infinity ? "فأكثر" : x.to}: ${x.qty} × ${x.rate}`, `Orders ${x.from}–${x.to === Infinity ? "+" : x.to}: ${x.qty} × ${x.rate}`);
+    if (x.k === "unit") return Lx(lang, `${x.qty} طلب × ${x.rate}`, `${x.qty} orders × ${x.rate}`);
+    if (x.k === "fixed") return Lx(lang, "ثابت شهري", "Fixed monthly");
+    if (x.k === "share") return Lx(lang, `حصته من إيراد التطبيق (${x.qty} من ${x.of} طلب)`, `Share of app revenue (${x.qty} of ${x.of})`);
+    if (x.k === "invoice") return Lx(lang, "من فاتورة التطبيق (صافي الدفعات)", "From app invoice (net payments)");
+    return x.k;
+  };
+  return <div className="space-y-0.5">{lines.map((x, i) => <p key={i} className="num text-[11.5px] flex justify-between gap-3"><span>{t(x)}</span><b style={{ color: x.amt < 0 ? "#C0443A" : tone || "#12151D" }}>{x.amt < 0 ? "−" : ""}{fmt(Math.abs(x.amt))} {sar}</b></p>)}</div>;
+}
+function PriceForm({ value, onChange, RAx, sar, kind, lang }) {
   const p = value;
   const [tryO, setTryO] = useState(100);
   const setNum = (k) => (e) => onChange({ ...p, [k]: e.target.value === "" ? "" : +e.target.value });
   const Field = ({ k }) => (
     <label className="block">
       <span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx[k]}</span>
-      <input type="number" step="any" value={p[k] ?? ""} onChange={setNum(k)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+      <NumInput step="any" value={p[k] ?? ""} onChange={setNum(k)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
     </label>
   );
   const tiers = tiersForm(p);
@@ -6242,21 +6333,33 @@ function PriceForm({ value, onChange, RAx, sar }) {
       </div>
       {p.mode === "target" && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Field k="ordersBase" /><Field k="ordersTarget" /><Field k="perOrderDelta" />
-          <Field k="fixedMonthly" />
+          {Field({ k: "ordersBase" })}{Field({ k: "ordersTarget" })}{Field({ k: "perOrderDelta" })}{Field({ k: "belowRate" })}
+          {Field({ k: "fixedMonthly" })}
+        </div>
+      )}
+      {p.mode === "target" && hasBelow(p) && +p.ordersBase > 0 && +p.ordersTarget > 0 && +p.ordersBase < +p.ordersTarget * +p.belowRate && (
+        <div className="rounded-lg p-2.5 text-[11.5px] font-semibold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.4)", color: "#B3392F" }}>
+          ⚠ {Lx(lang || "ar", `الراتب الثابت (${p.ordersBase}) أقل من ${p.ordersTarget} × ${p.belowRate} = ${fmt(+p.ordersTarget * +p.belowRate)}: المندوب الذي يصل ${(+p.ordersTarget) - 1} طلباً سيستلم أكثر ممن بلغ الهدف تماماً.`, `Fixed salary (${p.ordersBase}) is below ${p.ordersTarget} × ${p.belowRate} = ${fmt(+p.ordersTarget * +p.belowRate)}: a rider at ${(+p.ordersTarget) - 1} orders would earn more than one who hits the target.`)}
         </div>
       )}
       {p.mode === "tiers" && (
         <div className="space-y-2">
+          {kind === "app" && (
+            <div className="rounded-xl p-3" style={{ background: "rgba(184,134,46,.08)", border: "1px solid rgba(184,134,46,.3)" }}>
+              <p className="text-[11px] font-bold mb-2">{RAx.scopeT}</p>
+              <div className="flex gap-2 flex-wrap">{[["rider", RAx.scopeRider], ["total", RAx.scopeTotal]].map(([id, label]) => <button key={id} type="button" onClick={() => onChange({ ...p, scope: id })} className="px-3 py-2 rounded-xl text-[11.5px] font-bold" style={{ background: (p.scope || "rider") === id ? "rgba(184,134,46,.2)" : "rgba(20,27,45,.04)", border: `1px solid ${(p.scope || "rider") === id ? "rgba(184,134,46,.6)" : "var(--line)"}`, color: (p.scope || "rider") === id ? "#6B4A12" : "var(--muted)" }}>{label}</button>)}</div>
+              <p className="text-[10.5px] mt-1.5" style={{ color: "var(--muted)" }}>{RAx.scopeNote}</p>
+            </div>
+          )}
           <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-[10.5px] font-semibold px-0.5" style={{ color: "var(--muted)" }}>
             <span>{RAx.tierFrom}</span><span>{RAx.tierTo}</span><span>{RAx.tierRate}</span><span className="w-9" />
           </div>
           {tiers.map((tr, i) => (
             <div key={i} className="rounded-xl p-2" style={{ background: "rgba(20,27,45,.03)", border: "1px solid var(--line)" }}>
               <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
-                <input type="number" min="1" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
-                <input type="number" min="1" value={tr.to ?? ""} placeholder={RAx.andAbove} onChange={(e) => setTier(i, "to", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
-                <input type="number" step="any" value={tr.rate ?? ""} placeholder="13.50" onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <NumInput min="1" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <NumInput min="1" value={tr.to ?? ""} placeholder={RAx.andAbove} onChange={(e) => setTier(i, "to", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <NumInput step="any" value={tr.rate ?? ""} placeholder="13.50" onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
                 <button disabled={tiers.length <= 1} onClick={() => setTiers(tiers.filter((_, j) => j !== i))} className="p-2.5 rounded-lg disabled:opacity-30" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={14} style={{ color: "#E8837A" }} /></button>
               </div>
               {tr.rate !== "" && tr.rate != null && tr.from !== "" && (
@@ -6274,20 +6377,21 @@ function PriceForm({ value, onChange, RAx, sar }) {
               {issues.map((k) => <p key={k}>⚠ {RAx["tierErr_" + k]}</p>)}
             </div>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2"><Field k="fixedMonthly" /></div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">{Field({ k: "fixedMonthly" })}</div>
         </div>
       )}
       {(p.mode === "unit" || !p.mode) && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Field k="perOrder" /><Field k="fixedMonthly" /></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{Field({ k: "perOrder" })}{Field({ k: "fixedMonthly" })}</div>
       )}
       <div className="rounded-xl p-3" style={{ background: "rgba(15,165,121,.06)", border: "1px solid rgba(15,165,121,.22)" }}>
         <p className="text-[11px] font-bold mb-2" style={{ color: "#0B5C46" }}>{RAx.tryIt}</p>
         <div className="flex items-end gap-3 flex-wrap">
           <label className="block"><span className="block text-[10px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tryOrders}</span>
-            <input type="number" value={tryO} onChange={(e) => setTryO(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
+            <NumInput value={tryO} onChange={(e) => setTryO(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
           <div className="ms-auto text-end"><span className="block text-[10px]" style={{ color: "var(--muted)" }}>{RAx.tryResult}</span>
             <span className="num text-[20px] font-extrabold" style={{ color: "#0B5C46" }}>{fmt(res.total)} <span className="text-[11px]">{sar}</span></span></div>
         </div>
+        {validPrice(p) && +tryO > 0 && <div className="mt-2 pt-2" style={{ borderTop: "1px dashed rgba(15,165,121,.3)" }}><BreakLines lines={priceBreakdown(p, +tryO, 1, 0).lines} lang={lang || "ar"} sar={sar} tone="#0B5C46" /></div>}
       </div>
     </div>
   );
@@ -6309,8 +6413,8 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
     ids.forEach((id) => { if (val) map[id] = val; else delete map[id]; });
     return { ...cur, [kind]: map };
   });
-  const needGm = kind === "rep" && role.id === "fin" && !!setExt;
-  const submitReq = (ids, val) => { extUpd(setExt, "priceReq", (a) => [{ id: uidX("PR"), appIds: ids, price: val, old: (pricing && pricing.rep && pricing.rep[ids[0]]) || null, by: byName(role, actingEmployee), at: riyadhNow().toISOString(), status: "pending" }, ...a]); logAudit(setAuditLog, role, "price_request", ids.map((i) => (APPS.find((a) => a.id === i) || {}).ar || i).join("، "), actingEmployee); };
+  const needGm = role.id === "fin" && !!setExt; // أي تسعيرة (للشركة من التطبيق أو للمندوب) يضعها المحاسب تنتظر اعتماد المدير العام
+  const submitReq = (ids, val) => { extUpd(setExt, "priceReq", (a) => [{ id: uidX("PR"), kind, appIds: ids, price: val, old: (pricing && pricing[kind] && pricing[kind][ids[0]]) || null, by: byName(role, actingEmployee), at: riyadhNow().toISOString(), status: "pending" }, ...a]); logAudit(setAuditLog, role, "price_request", ids.map((i) => (APPS.find((a) => a.id === i) || {}).ar || i).join("، "), actingEmployee); };
   const save = () => { if (!validPrice(draft)) return; if (needGm) { submitReq([appId], draft); setDone(true); setTimeout(() => setDone(false), 1800); return; } writeFor([appId], draft); logAudit(setAuditLog, role, "pricing_" + kind, `${APPS.find((a) => a.id === appId)[lang]}`, actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
   const copyAll = () => { if (needGm) { submitReq(APPS.map((a) => a.id), draft); setDone(true); setTimeout(() => setDone(false), 1800); return; } writeFor(APPS.map((a) => a.id), draft); logAudit(setAuditLog, role, "pricing_" + kind + "_all", "all apps", actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
   return (
@@ -6330,14 +6434,14 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
           })}
         </div>
         <fieldset disabled={!canEdit} style={{ border: 0, padding: 0, margin: 0, opacity: canEdit ? 1 : .85 }}>
-          <PriceForm value={draft} onChange={setDraft} RAx={RAx} sar={t.sar} />
+          <PriceForm value={draft} onChange={setDraft} RAx={RAx} sar={t.sar} kind={kind} lang={lang} />
         </fieldset>
         {canEdit ? (
           <div className="flex items-center gap-2.5 mt-5 flex-wrap">
             <Btn variant="accent" accent={role.glow} icon={done ? CheckCircle2 : BadgeCheck} onClick={save} disabled={!validPrice(draft)}>{done ? RAx.saved : RAx.save}</Btn>
             <Btn icon={Copy} onClick={copyAll}>{RAx.copyAll}</Btn>
             {stored && <Btn icon={X} onClick={() => { if (needGm) submitReq([appId], null); else writeFor([appId], null); }}>{RAx.resetDefault}</Btn>}
-            {needGm && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{Lx(lang, "تسعيرة المندوب تُرسل للمدير العام للاعتماد قبل أن تسري.", "Rider pricing goes to the GM for approval before it applies.")}</span>}
+            {needGm && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{kind === "app" ? Lx(lang, "تسعيرة الشركة (من التطبيق) تُرسل للمدير العام للاعتماد قبل أن تسري.", "Company (app) pricing goes to the GM for approval before it applies.") : Lx(lang, "تسعيرة المندوب تُرسل للمدير العام للاعتماد قبل أن تسري.", "Rider pricing goes to the GM for approval before it applies.")}</span>}
             {dirty && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{RAx.unsaved}</span>}
           </div>
         ) : <p className="text-[11px] mt-4" style={{ color: "var(--muted)" }}>{RAx.viewOnly}</p>}
@@ -6350,6 +6454,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const RAx = RA[lang], t = T[lang], x = EX[lang];
   const [month, setMonth] = useState(riyadhNow().toISOString().slice(0, 7));
   const [openRep, setOpenRep] = useState(null);
+  const [calcRep, setCalcRep] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [adj, setAdj] = useState({ type: "deduct", amount: "", reason: "" });
   const [err, setErr] = useState("");
@@ -6395,7 +6500,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const exportReps = () => exportToExcel(res.repLines.map((l) => ({
     [RAx.colRep]: l.name, [RAx.riderId]: l.riderId, [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colGross]: l.gross,
     [`${RAx.colWeekend} (${RAx.count})`]: l.weekendCount, [RAx.colWeekend]: l.weekendAmt, [`${RAx.colAppViol} (${RAx.count})`]: l.appCount, [RAx.colAppViol]: l.appAmt,
-    [RAx.adjAdd]: l.manualAdds, [RAx.adjDeduct]: l.manualDeds, [RAx.colNet]: l.net })), `rep-accounting-${month}`, month);
+    [RAx.adjAdd]: l.manualAdds, [RAx.adjDeduct]: l.manualDeds, [RAx.colNet]: l.net, [RAx.colRev]: l.revKnown ? l.rev : "", [RAx.colProfit]: l.revKnown ? l.profit : "" })), `rep-accounting-${month}`, month);
   const exportApps = () => exportToExcel(res.appLines.map((l) => ({
     [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colCalc]: l.calc, [RAx.colInvNet]: l.invNet ?? "", [RAx.colActual]: l.actual ?? "",
     [RAx.colAppFines]: l.fines, [RAx.colRevenue]: l.revenue, [RAx.colRepCost]: l.repGross, [RAx.colMargin]: l.margin })), `app-accounting-${month}`, month);
@@ -6403,7 +6508,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const cell = "py-2.5 px-2.5 text-[12px] whitespace-nowrap";
   const head = "py-2 px-2.5 text-[10.5px] font-bold text-start whitespace-nowrap";
   const mini = (val, onCh, w) => (
-    <input type="number" step="any" disabled={!canEdit} value={val} onChange={(e) => onCh(e.target.value)} className="num rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none text-end" style={{ ...INPUT_ST, width: w || 84, opacity: canEdit ? 1 : .7 }} />
+    <NumInput step="any" disabled={!canEdit} value={val} onChange={(e) => onCh(e.target.value)} className="num rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none text-end" style={{ ...INPUT_ST, width: w || 84, opacity: canEdit ? 1 : .7 }} />
   );
   const T_ = res.totals;
   return (
@@ -6526,7 +6631,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full" style={{ minWidth: 900, borderCollapse: "collapse" }}>
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
-                {[RAx.colRep, RAx.riderId, RAx.colOrders, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colReimb, RAx.colNet].map((h) => <th key={h} className={head}>{h}</th>)}
+                {[RAx.colRep, RAx.riderId, RAx.colOrders, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colReimb, RAx.colNet, RAx.colRev, RAx.colProfit].map((h) => <th key={h} className={head}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {res.repLines.map((l) => {
@@ -6535,7 +6640,8 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                   return (
                     <React.Fragment key={l.repId}>
                       <tr style={{ borderBottom: open ? "none" : "1px solid var(--line)" }}>
-                        <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span></td>
+                        <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span>
+                          <button onClick={() => setCalcRep(calcRep === l.repId ? null : l.repId)} className="block text-[10.5px] font-bold underline" style={{ color: "#8A611E" }}>{RAx.explain}</button></td>
                         <td className={cell}>{l.riderId ? <span className="num text-[11.5px] font-bold">{l.riderId}</span> : <Chip tone="warn" sm>{RAx.noRiderId}</Chip>}</td>
                         <td className={cell}>{num(l.orders)} {l.source === "invoice" ? <Chip tone="ok" sm>{RAx.srcInv}</Chip> : <Chip tone="n" sm>{RAx.srcDaily}</Chip>}
                           {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}
@@ -6552,9 +6658,36 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                         </td>
                         <td className={cell}>{num(l.reimb || 0)}</td>
                         <td className={cell}>{num(l.net, l.net >= 0 ? "#0B5C46" : "#C0443A")}</td>
+                        <td className={cell}>{l.revKnown ? num(l.rev) : <Chip tone="warn" sm>{RAx.noPolicy}</Chip>}</td>
+                        <td className={cell}>{l.revKnown ? num(l.profit, l.profit >= 0 ? "#0B5C46" : "#C0443A") : "—"}</td>
                       </tr>
+                      {calcRep === l.repId && (
+                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={11} className="px-2.5 pb-3">
+                          <div className="rounded-xl p-3 grid gap-4 md:grid-cols-2" style={{ background: "rgba(184,134,46,.06)", border: "1px solid rgba(184,134,46,.3)" }}>
+                            {l.detail.map((d) => (
+                              <React.Fragment key={d.app}>
+                                <div>
+                                  <p className="text-[12px] font-extrabold mb-1.5">{Lx(lang, `إيراد الشركة من ${appName(d.app)}`, `Company revenue from ${appName(d.app)}`)}</p>
+                                  <p className="text-[10.5px] mb-1.5" style={{ color: "var(--muted)" }}>{d.rev.lines[0] && d.rev.lines[0].k === "invoice" ? Lx(lang, "حسب فاتورة التطبيق المرفوعة.", "From the uploaded app invoice.") : d.scope === "rider" ? Lx(lang, `الشرائح تُحسب على طلبات هذا المندوب وحده (${d.orders} طلب)${d.base ? ` — العدّاد يكمل من ${d.base}` : ""}.`, `Tiers counted on this rider's own orders (${d.orders})${d.base ? ` — counter continues from ${d.base}` : ""}.`) : Lx(lang, "حصته من إيراد إجمالي التطبيق.", "His share of the app's total revenue.")}</p>
+                                  {d.rev.known ? <BreakLines lines={d.rev.lines} lang={lang} sar={t.sar} tone="#0B5C46" /> : <p className="text-[11.5px]" style={{ color: "#8A611E" }}>{RAx.wAppPrice}</p>}
+                                  <p className="num text-[13px] font-extrabold mt-1.5 flex justify-between"><span>{Lx(lang, "الإيراد", "Revenue")}</span><span style={{ color: "#0B5C46" }}>{fmt(Math.round(d.rev.total))} {t.sar}</span></p>
+                                </div>
+                                <div>
+                                  <p className="text-[12px] font-extrabold mb-1.5">{Lx(lang, "ما يستحقه المندوب", "What the rider earns")}</p>
+                                  {d.cost.known ? <BreakLines lines={d.cost.lines} lang={lang} sar={t.sar} /> : <p className="text-[11.5px]" style={{ color: "#8A611E" }}>{RAx.wRepPrice}</p>}
+                                  <p className="num text-[13px] font-extrabold mt-1.5 flex justify-between"><span>{Lx(lang, "إجمالي أجره", "Gross pay")}</span><span>{fmt(Math.round(d.cost.total))} {t.sar}</span></p>
+                                </div>
+                              </React.Fragment>
+                            ))}
+                            <div className="md:col-span-2 rounded-lg p-2.5 num text-[12.5px]" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+                              {Lx(lang, "ربح الشركة منه", "Company profit from him")} = {fmt(Math.round(l.rev))} {Lx(lang, "(إيراد)", "(revenue)")} − {fmt(Math.round(l.net))} {Lx(lang, "(صافي ما يستلمه بعد الغرامات والتسويات)", "(his net after fines & adjustments)")} = <b style={{ color: l.profit >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(Math.round(l.profit))} {t.sar}</b>
+                              {l.detail.some((d) => d.f < 1) && <span className="block text-[10.5px] mt-1" style={{ color: "#8A611E" }}>{Lx(lang, `الشهر لم ينتهِ بعد: الراتب الثابت والهدف يُحسبان بنسبة ما مضى من الشهر (${Math.round(Math.min(...l.detail.map((d) => d.f)) * 100)}%). سيكتمل الحساب في آخر الشهر.`, "Month still open: fixed salary and target are prorated to date.")}</span>}
+                            </div>
+                          </div>
+                        </td></tr>
+                      )}
                       {open && (
-                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={9} className="px-2.5 pb-3">
+                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={11} className="px-2.5 pb-3">
                           <div className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
                             <p className="text-[11.5px] font-bold mb-2">{RAx.adjT}</p>
                             {mine.map((m) => (
@@ -6568,7 +6701,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                               <div className="flex items-end gap-2 flex-wrap mt-2">
                                 <select value={adj.type} onChange={(e) => setAdj({ ...adj, type: e.target.value })} className="rounded-lg px-2 py-2 text-[12px] font-bold outline-none" style={INPUT_ST}>
                                   <option value="deduct">{RAx.adjDeduct}</option><option value="add">{RAx.adjAdd}</option></select>
-                                <input type="number" placeholder={RAx.adjAmount} value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} className="num rounded-lg px-2.5 py-2 text-[12px] font-bold outline-none w-24" style={INPUT_ST} />
+                                <NumInput placeholder={RAx.adjAmount} value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} className="num rounded-lg px-2.5 py-2 text-[12px] font-bold outline-none w-24" style={INPUT_ST} />
                                 <input placeholder={RAx.adjReason} value={adj.reason} onChange={(e) => setAdj({ ...adj, reason: e.target.value })} className="flex-1 min-w-[180px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={INPUT_ST} />
                                 <Btn icon={Plus} onClick={() => addAdj(l.repId)}>{RAx.adjAddBtn}</Btn>
                               </div>
@@ -6628,7 +6761,7 @@ function RepAccountingPage({ lang, role, reps, setReps, reports, pricing, setPri
       {tab === "close" && <SettlementClose lang={lang} role={role} reps={reps} setReps={setReps} reports={reports} pricing={pricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
         weekendFine={weekendFine} violationPenalty={violationPenalty} expenses={expenses} repReceipts={repReceipts} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
       {tab !== "close" && <PricingTab lang={lang} role={role} kind={tab} pricing={pricing} setPricing={setPricing} setAuditLog={setAuditLog} actingEmployee={actingEmployee} ext={ext} setExt={setExt} />}
-      {tab === "rep" && <PriceReqPanel lang={lang} role={role} pricing={pricing} setPricing={setPricing} ext={ext} setExt={setExt} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
+      {tab !== "close" && <PriceReqPanel lang={lang} role={role} pricing={pricing} setPricing={setPricing} ext={ext} setExt={setExt} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
     </div>
   );
 }
@@ -7206,7 +7339,8 @@ function RepFilesPage({ lang, role, reps, setReps, pwResets, setPwResets, setAud
   };
   const inp = (k, label, type) => (
     <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{label}</span>
-      <input type={type || "text"} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
+      {type === "number" ? <NumInput value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+        : <input type={type || "text"} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />}</label>
   );
   return (
     <div className="space-y-4">
@@ -7510,6 +7644,11 @@ function RiderLanding({ lang, setLang, reps, pricing, go, ext }) {
           <p className="text-[16px] font-extrabold">{RAx.ldPerMonth}</p>
           <p className="text-[11px] mt-3 opacity-75 max-w-sm mx-auto">{RAx.ldDisc}</p>
         </div>
+        <div className="rounded-3xl px-5 py-6 text-center relative overflow-hidden" style={{ background: "linear-gradient(135deg,#0B5C46,#0FA579)", color: "#fff", boxShadow: "0 12px 34px -12px rgba(11,92,70,.6)" }}>
+          <BadgeCheck size={44} className="mx-auto mb-2" style={{ color: "#FFE9A8" }} />
+          <p className="font-extrabold leading-tight" style={{ fontSize: "clamp(24px,7.2vw,38px)" }}>{RAx.ldOpenAll}</p>
+          <p className="font-bold mt-1.5" style={{ fontSize: "clamp(15px,4.4vw,20px)", color: "#FFE9A8" }}>{RAx.ldOpenAllSub}</p>
+        </div>
         <p className="text-center text-[13px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.ldHeadSub}</p>
 
         <AppAvailCard lang={lang} ext={ext} />
@@ -7787,6 +7926,7 @@ function addManualAdj(setRepSettlements, month, adj) {
 const byName = (role, actingEmployee) => (actingEmployee && actingEmployee.name) || role.id;
 const XINP = { background: "#fff", border: "1px solid var(--line-strong)", color: "#12151D" };
 function XIn({ value, onChange, ph, type = "text", cls = "" }) {
+  if (type === "number") return <NumInput value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} className={`rounded-xl px-3 py-2.5 text-[12.5px] outline-none ${cls}`} style={XINP} />;
   return <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} type={type} className={`rounded-xl px-3 py-2.5 text-[12.5px] outline-none ${cls}`} style={XINP} />;
 }
 function XBar({ v, color = "#3FD8B4" }) {
@@ -7878,7 +8018,7 @@ function CoachPage({ lang, role, activeRep, reps, reports, pricing, repSettlemen
     const tg = +price.ordersTarget;
     if (tg > projMainOrders) { nextT = tg; step = r2(priceCalc(price, tg, 1).total - priceCalc(price, projMainOrders, 1).total); }
   }
-  const perOrder = price ? (price.mode === "unit" ? +price.perOrder : price.mode === "target" ? +price.perOrderDelta : (() => { const ts = tiersN(price); const cur = ts.filter((x) => x.from <= mainOrders).pop(); return cur ? cur.rate : 0; })()) : 0;
+  const perOrder = price ? (price.mode === "unit" ? +price.perOrder : price.mode === "target" ? (hasBelow(price) && mainOrders < +price.ordersTarget * f ? +price.belowRate : +price.perOrderDelta) : (() => { const ts = tiersN(price); const cur = ts.filter((x) => x.from <= mainOrders).pop(); return cur ? cur.rate : 0; })()) : 0;
   const goalOrders = nextT || Math.round(avg * (workedSet.size + workLeft) * 1.1) || 0;
   const needPerDay = workLeft > 0 && goalOrders > mainOrders ? Math.ceil((goalOrders - mainOrders) / workLeft) : 0;
   // سلسلة الأيام المتواصلة
@@ -8559,7 +8699,7 @@ function InboxPage({ lang, role, reps, ext, decisions, expenses, payrollRuns, re
   if (r === "hr") { add(applications.filter((a) => !(E.pipe[a.id] || {}).stage && a.status === "new").length, Lx(lang, "متقدمون جدد لم يُراجَعوا", "New applicants"), "pipeline"); add(reps.filter((x) => x.idExpiry && daysUntil(x.idExpiry) != null && daysUntil(x.idExpiry) <= 30).length, Lx(lang, "إقامات تنتهي خلال 30 يوماً", "Residencies expiring ≤30d"), "iqama", "bad");
     const mand = allCourses(E).filter((c) => c.mandatory); add(reps.filter((x) => x.status === "active" && mand.some((c) => !((E.progress[x.id] || {})[c.id] || {}).passed)).length, Lx(lang, "مناديب لم يكملوا الدورات الإلزامية", "Riders missing mandatory courses"), "trainingAdmin"); }
   if (r === "ops" || r === "opsm") { const expectedToday = reps.filter((x) => x.status === "active").length; add(expectedToday > 0 ? 1 : 0, Lx(lang, "راجع حالة التقارير اليومية لليوم", "Review today's daily reports"), "dayOps", "info"); }
-  if (r === "gm") add(E.priceReq.filter((q) => q.status === "pending").length, Lx(lang, "طلبات تعديل تسعيرة المندوب", "Rider pricing requests"), "repAccounting", "bad");
+  if (r === "gm") add(E.priceReq.filter((q) => q.status === "pending").length, Lx(lang, "طلبات اعتماد التسعيرات", "Pricing approval requests"), "repAccounting", "bad");
   if (r === "hr" || r === "opsm" || r === "gm") { add(E.perfPlans.filter((p) => p.status === "escalated").length, Lx(lang, "خطط أداء مُصعَّدة تنتظر قراراً", "Escalated performance plans"), "perfPlans", "bad"); add(E.offboard.filter((c) => c.status === "open").length, Lx(lang, "حالات مغادرة مفتوحة", "Open offboardings"), "offboard"); }
   if (r === "hr") add(Object.values(E.empDocs || {}).reduce((n, arr) => n + arr.filter((d) => { const x = daysUntil(d.expiry); return x != null && x <= 30; }).length, 0), Lx(lang, "مستندات موظفين تنتهي خلال 30 يوماً", "Staff documents expiring ≤30d"), "empFile");
   return (
@@ -9695,9 +9835,9 @@ function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) 
 /* ═══ اعتماد المدير العام لتسعيرة المندوب ═══ */
 const priceSummary = (p, lang) => {
   if (!p) return Lx(lang, "افتراضي / غير محدد", "Default / unset");
-  if (p.mode === "target") return Lx(lang, `هدف شهري ${p.ordersTarget} طلب · أساس ${p.ordersBase || 0} · فرق ${p.perOrderDelta || 0}/طلب`, `Target ${p.ordersTarget} orders · base ${p.ordersBase || 0} · delta ${p.perOrderDelta || 0}`);
+  if (p.mode === "target") return Lx(lang, `هدف شهري ${p.ordersTarget} طلب · راتب ثابت ${p.ordersBase || 0} · زائد +${p.perOrderDelta || 0}/طلب${hasBelow(p) ? ` · دون الهدف ${p.belowRate}/طلب فقط` : ""}`, `Target ${p.ordersTarget} orders · salary ${p.ordersBase || 0} · above +${p.perOrderDelta || 0}${hasBelow(p) ? ` · below target ${p.belowRate}/order only` : ""}`);
   const tiers = tiersN(p);
-  if (p.mode === "tiers" || tiers.length > 1) return Lx(lang, "شرائح: ", "Tiers: ") + tiers.map((x) => `${x.from}${x.to === Infinity ? "+" : "–" + x.to} → ${x.rate}`).join("، ") + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
+  if (p.mode === "tiers" || tiers.length > 1) return Lx(lang, p.scope === "total" ? "شرائح (على إجمالي التطبيق): " : "شرائح (لكل مندوب): ", p.scope === "total" ? "Tiers (app total): " : "Tiers (per rider): ") + tiers.map((x) => `${x.from}${x.to === Infinity ? "+" : "–" + x.to} → ${x.rate}`).join("، ") + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
   return Lx(lang, `${p.perOrder} لكل طلب`, `${p.perOrder} per order`) + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
 };
 function PriceReqPanel({ lang, role, pricing, setPricing, ext, setExt, setAuditLog, actingEmployee }) {
@@ -9706,16 +9846,16 @@ function PriceReqPanel({ lang, role, pricing, setPricing, ext, setExt, setAuditL
   const nm = (ids) => ids.length === APPS.length ? Lx(lang, "كل التطبيقات", "All apps") : ids.map((i) => (APPS.find((a) => a.id === i) || {})[lang] || i).join("، ");
   const decide = (r, ok) => {
     if (!ok && (why[r.id] || "").trim().length < 4) return;
-    if (ok) setPricing((prev) => { const cur = prev || { app: {}, rep: {} }; const map = { ...(cur.rep || {}) }; r.appIds.forEach((id) => { if (r.price) map[id] = r.price; else delete map[id]; }); return { ...cur, rep: map }; });
+    if (ok) setPricing((prev) => { const cur = prev || { app: {}, rep: {} }; const kd = r.kind || "rep"; const map = { ...(cur[kd] || {}) }; r.appIds.forEach((id) => { if (r.price) map[id] = r.price; else delete map[id]; }); return { ...cur, [kd]: map }; });
     extUpd(setExt, "priceReq", (a) => a.map((z) => (z.id === r.id ? { ...z, status: ok ? "approved" : "rejected", decidedBy: byName(role, actingEmployee), decidedAt: riyadhNow().toISOString(), why: ok ? "" : why[r.id].trim() } : z)));
     logAudit(setAuditLog, role, ok ? "price_approved" : "price_rejected", nm(r.appIds), actingEmployee);
   };
   if (!list.length && !hist.length) return null;
   return (
-    <Panel title={Lx(lang, "طلبات تعديل تسعيرة المندوب", "Rider pricing requests")}>
+    <Panel title={Lx(lang, "طلبات اعتماد التسعيرات (تنتظر المدير العام)", "Pricing approval requests (GM)")}>
       {list.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا طلبات معلّقة.", "No pending requests.")}</p> : <div className="space-y-3">{list.map((r) => (
         <div key={r.id} className="rounded-2xl p-3" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.4)" }}>
-          <p className="text-[13px] font-extrabold">{nm(r.appIds)} <span className="text-[11px] font-normal" style={{ color: "var(--muted)" }}>— {r.by} · {r.at.slice(0, 10)}</span></p>
+          <p className="text-[13px] font-extrabold"><Chip tone={(r.kind || "rep") === "app" ? "ok" : "warn"} sm>{(r.kind || "rep") === "app" ? Lx(lang, "تسعيرة الشركة (من التطبيق)", "Company price (from app)") : Lx(lang, "تسعيرة المندوب", "Rider price")}</Chip> {nm(r.appIds)} <span className="text-[11px] font-normal" style={{ color: "var(--muted)" }}>— {r.by} · {r.at.slice(0, 10)}</span></p>
           <p className="text-[12px] mt-1">{Lx(lang, "الحالية: ", "Current: ")}{priceSummary(r.old, lang)}</p>
           <p className="text-[12px] font-bold">{Lx(lang, "المطلوبة: ", "Requested: ")}{r.price ? priceSummary(r.price, lang) : Lx(lang, "حذف التسعيرة", "Remove pricing")}</p>
           {role.id === "gm" ? <div className="flex gap-2 mt-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => decide(r, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn><XIn value={why[r.id] || ""} onChange={(v) => setWhy({ ...why, [r.id]: v })} ph={Lx(lang, "سبب الرفض", "Reject reason")} cls="flex-1 min-w-[120px]" /><Btn variant="danger" onClick={() => decide(r, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>
@@ -10024,6 +10164,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       const urgentInc = openInc.filter((i) => i.urgent);
       if (openInc.length > 0) notifs.unshift({ text: Lx(lang, `🚨 بلاغات مفتوحة: ${openInc.length}${urgentInc.length ? ` (عاجل: ${urgentInc.length})` : ""} — آخرها: ${openInc[0].name}`, `🚨 Open incidents: ${openInc.length}${urgentInc.length ? ` (urgent: ${urgentInc.length})` : ""} — latest: ${openInc[0].name}`), tone: "bad", page: "incidents", count: openInc.length, snd: "urgent" });
     }
+    if (role.id === "gm") { const prq = (EXn.priceReq || []).filter((r) => r.status === "pending"); if (prq.length > 0) notifs.unshift({ text: Lx(lang, `💰 تسعيرات تنتظر اعتمادك: ${prq.length} — ${prq.some((r) => (r.kind || "rep") === "app") ? "تسعيرة الشركة من التطبيق" : "تسعيرة المندوب"}`, `💰 Pricing awaiting your approval: ${prq.length}`), tone: "warn", page: "repAccounting", count: prq.length, snd: "normal" }); }
     if ((role.id === "ops" || role.id === "opsm") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !((EXn.roll || {})[riyadhToday()] && Object.keys(EXn.roll[riyadhToday()]).length > 0))
       notifs.unshift({ text: Lx(lang, "لم يُسجَّل حضور مناديب اليوم بعد", "Today's rider attendance isn't taken yet"), tone: "warn", page: "pulse", count: 1, snd: "normal" });
     if ((role.id === "opsm" || role.id === "ops") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !reports.some((rp) => rp.date === new Date(riyadhNow().getTime() - 86400000).toISOString().slice(0, 10)))
