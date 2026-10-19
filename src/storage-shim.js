@@ -33,16 +33,29 @@ function getClientId() {
 const scopeOf = (shared) => (shared ? "shared" : getClientId());
 
 async function get(key, shared = false) {
-  const { data, error } = await need().from("kv_store").select("value").eq("store_key", key).eq("scope", scopeOf(shared)).maybeSingle();
+  const { data, error } = await need().from("kv_store").select("value,updated_at").eq("store_key", key).eq("scope", scopeOf(shared)).maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("not found");
-  return { key, value: data.value, shared };
+  return { key, value: data.value, shared, ver: data.updated_at };
 }
-async function set(key, value, shared = false) {
-  const { error } = await need().from("kv_store").upsert(
-    { store_key: key, scope: scopeOf(shared), value, updated_at: new Date().toISOString() },
-    { onConflict: "store_key,scope" });
+// ifVer (اختياري): كتابة مشروطة. إن لم يتغيّر السجل منذ القراءة (نفس updated_at) تنجح، وإلا نرمي "conflict"
+// ifVer === null يعني: السجل يجب ألا يكون موجوداً بعد.
+async function set(key, value, shared = false, ifVer) {
+  const row = { store_key: key, scope: scopeOf(shared), value, updated_at: new Date().toISOString() };
+  if (ifVer === undefined) {
+    const { error } = await need().from("kv_store").upsert(row, { onConflict: "store_key,scope" });
+    if (error) throw error;
+    return { key, value, shared };
+  }
+  if (ifVer === null) {
+    const { error } = await need().from("kv_store").insert(row);
+    if (error) { if (error.code === "23505") throw new Error("conflict"); throw error; }
+    return { key, value, shared };
+  }
+  const { data, error } = await need().from("kv_store").update({ value, updated_at: row.updated_at })
+    .eq("store_key", key).eq("scope", row.scope).eq("updated_at", ifVer).select("store_key");
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error("conflict");
   return { key, value, shared };
 }
 async function del(key, shared = false) {
