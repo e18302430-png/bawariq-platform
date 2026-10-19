@@ -9,7 +9,7 @@ import {
   UserPlus, Upload, CreditCard, Target, Percent, Route, Footprints, ImagePlus, Phone, Camera, Printer,
   CalendarDays, ClipboardList, Trash2, Megaphone, Mic, Square, PlayCircle, Send, Paperclip,
   MessageSquare, CheckCheck, Copy, Hash,
-  HandCoins, ShieldAlert, Sparkles, Award, Rocket, Zap, Radio, ChevronLeft, Trophy, Medal, Plane,
+  HandCoins, ShieldAlert, Sparkles, Award, Rocket, Zap, Radio, ChevronLeft, Trophy, Medal, Plane, Volume2, VolumeX,
 } from "lucide-react";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -60,10 +60,10 @@ const T = {
     nav: { overview: "نظرة عامة", orders: "الطلبات", cars: "السيارات", zones: "الأحياء",
       restaurants: "المطاعم", invoices: "الفواتير", expenses: "المصروفات", payroll: "الرواتب",
       employees: "الموظفون", attendance: "الحضور", contracts: "العقود", cases: "القضايا",
-      compliance: "الالتزام", approvals: "الموافقات", reports: "التقارير", settings: "الإعدادات",
+      compliance: "الالتزام", approvals: "الموافقات", reports: "تقارير المناديب", settings: "الإعدادات",
       hiring: "توظيف المناديب", shifts: "أداء المناديب", tickets: "التذاكر", circulars: "التعاميم", pulse: "نبض المناديب", iqama: "الإقامات", payrollRuns: "مسيرات الرواتب", chat: "المراسلات", messages: "رسائل الإدارة", leaderboard: "لوحة الصدارة", audit: "سجل التتبع", hall: "قاعة المشاهير", charter: "اللائحة الداخلية", checklist: "قائمة التحقق", growth: "نمو الشركة", security: "الأمان", permissions: "خريطة الصلاحيات", mystory: "قصتي مع بوارق", invAnalysis: "تحليل الفواتير", equipCompliance: "الامتثال والمعدات" },
     k: { orders: "طلبات اليوم", avgTime: "متوسط التوصيل", onTime: "التوصيل في الوقت",
-      activeReps: "مناديب في الوردية", partners: "مطاعم شريكة", rating: "تقييم العملاء",
+      activeReps: "مناديب نشطون", partners: "مطاعم شريكة", rating: "تقييم العملاء",
       cod: "تحصيل نقدي", cancel: "نسبة الإلغاء", revenue: "الإيرادات", profit: "صافي الربح",
       expenses: "المصروفات", head: "إجمالي الموظفين", attend: "نسبة الحضور", hires: "تعيينات جديدة",
       contracts: "عقود سارية", cases: "قضايا مفتوحة", expiring: "عقود تنتهي قريباً",
@@ -78,7 +78,7 @@ const T = {
       delivered: "تم التسليم", canceled: "ملغي", late: "متأخر", pending: "قيد المراجعة",
       approved: "معتمد", paid: "مدفوعة", overdue: "متأخرة", active: "ساري", expiring: "ينتهي قريباً",
       open: "مفتوحة", closed: "مغلقة", review: "مراجعة", present: "حاضر", leave: "إجازة",
-      on_shift: "في الوردية", off_shift: "خارج الوردية", maint: "في الصيانة", idle: "متوقفة" },
+      on_shift: "في الخدمة", off_shift: "خارج الخدمة", maint: "في الصيانة", idle: "متوقفة" },
     h: { order: "رقم الطلب", restaurant: "المطعم", zone: "الحي", status: "الحالة", rep: "المندوب",
       time: "الزمن", value: "قيمة الطلب", pay: "الدفع", plate: "اللوحة", car: "السيارة",
       last: "آخر صيانة", invoice: "رقم الفاتورة", amount: "المبلغ", due: "تاريخ الاستحقاق",
@@ -101,14 +101,14 @@ const T = {
     nav: { overview: "Overview", orders: "Orders", cars: "Cars", zones: "Zones",
       restaurants: "Restaurants", invoices: "Invoices", expenses: "Expenses", payroll: "Payroll",
       employees: "People", attendance: "Attendance", contracts: "Contracts", cases: "Cases",
-      compliance: "Compliance", approvals: "Approvals", reports: "Reports", settings: "Settings",
+      compliance: "Compliance", approvals: "Approvals", reports: "Rider Reports", settings: "Settings",
       hiring: "Rep Hiring", shifts: "Rep Performance", tickets: "Tickets", circulars: "Circulars", pulse: "Rep Pulse", iqama: "Residency", payrollRuns: "Payroll Runs", chat: "Messaging", messages: "Messages", leaderboard: "Leaderboard", audit: "Audit Log", hall: "Hall of Fame", charter: "Internal Charter", checklist: "Launch Checklist", growth: "Company Growth", security: "Security", permissions: "Permissions Map", mystory: "My Story", invAnalysis: "Invoice Analysis", equipCompliance: "Equipment Compliance" },
     k: { orders: "Orders today", avgTime: "Avg. delivery", onTime: "On-time delivery",
-      activeReps: "Reps on shift", partners: "Partner restaurants", rating: "Customer rating",
+      activeReps: "Active reps", partners: "Partner restaurants", rating: "Customer rating",
       cod: "Cash collected", cancel: "Cancellation rate", revenue: "Revenue", profit: "Net profit",
       expenses: "Expenses", head: "Headcount", attend: "Attendance rate", hires: "New hires",
       contracts: "Active contracts", cases: "Open cases", expiring: "Expiring soon",
-      cars: "Delivery cars", carsShift: "Cars on shift", carsMaint: "In service",
+      cars: "Delivery cars", carsShift: "Active cars", carsMaint: "In service",
       fuel: "Fuel cost", open: "Open receivables", overdue: "Overdue", cash: "Cash position",
       newOrders: "New orders", lateOrders: "Late orders", zones: "Zones covered",
       prepTime: "Avg. prep time", pending: "Awaiting your approval", cities: "Cities", payrollC: "Payroll cost" },
@@ -119,7 +119,7 @@ const T = {
       delivered: "Delivered", canceled: "Canceled", late: "Late", pending: "Under review",
       approved: "Approved", paid: "Paid", overdue: "Overdue", active: "Active", expiring: "Expiring",
       open: "Open", closed: "Closed", review: "In review", present: "Present", leave: "On leave",
-      on_shift: "On shift", off_shift: "Off shift", maint: "In service", idle: "Idle" },
+      on_shift: "Active", off_shift: "Inactive", maint: "In service", idle: "Idle" },
     h: { order: "Order no.", restaurant: "Restaurant", zone: "Zone", status: "Status", rep: "Rep",
       time: "Time", value: "Order value", pay: "Payment", plate: "Plate", car: "Car",
       last: "Last service", invoice: "Invoice no.", amount: "Amount", due: "Due date",
@@ -142,14 +142,14 @@ const T = {
     nav: { overview: "جائزہ", orders: "آرڈرز", cars: "گاڑیاں", zones: "علاقے",
       restaurants: "ریستوران", invoices: "انوائس", expenses: "اخراجات", payroll: "تنخواہ",
       employees: "ملازمین", attendance: "حاضری", contracts: "معاہدے", cases: "مقدمات",
-      compliance: "ضابطے", approvals: "منظوریاں", reports: "رپورٹس", settings: "سیٹنگز",
+      compliance: "ضابطے", approvals: "منظوریاں", reports: "نمائندہ رپورٹس", settings: "سیٹنگز",
       hiring: "نمائندہ بھرتی", shifts: "نمائندہ کارکردگی", tickets: "ٹکٹس", circulars: "سرکلرز", pulse: "نمائندہ نبض", iqama: "اقامہ", payrollRuns: "تنخواہ مسیر", chat: "پیغام رسانی", messages: "پیغامات", leaderboard: "لیڈر بورڈ", audit: "آڈٹ لاگ", hall: "شہرت کا ہال", charter: "اندرونی ضابطہ", checklist: "لانچ چیک لسٹ", growth: "کمپنی کی ترقی", security: "سیکیورٹی", permissions: "اختیارات کا نقشہ", mystory: "میری کہانی", invAnalysis: "انوائس تجزیہ", equipCompliance: "سازوسامان کی تعمیل" },
     k: { orders: "آج کے آرڈرز", avgTime: "اوسط ڈیلیوری", onTime: "وقت پر ڈیلیوری",
-      activeReps: "شفٹ میں نمائندے", partners: "شراکت دار ریستوران", rating: "کسٹمر ریٹنگ",
+      activeReps: "فعال نمائندے", partners: "شراکت دار ریستوران", rating: "کسٹمر ریٹنگ",
       cod: "وصول شدہ رقم", cancel: "منسوخی کی شرح", revenue: "آمدنی", profit: "خالص منافع",
       expenses: "اخراجات", head: "کل ملازمین", attend: "حاضری کی شرح", hires: "نئی بھرتیاں",
       contracts: "فعال معاہدے", cases: "کھلے مقدمات", expiring: "جلد ختم ہونے والے",
-      cars: "ڈیلیوری گاڑیاں", carsShift: "شفٹ میں گاڑیاں", carsMaint: "مرمت میں",
+      cars: "ڈیلیوری گاڑیاں", carsShift: "فعال گاڑیاں", carsMaint: "مرمت میں",
       fuel: "ایندھن کا خرچ", open: "واجب الادا رقم", overdue: "تاخیر شدہ", cash: "دستیاب رقم",
       newOrders: "نئے آرڈرز", lateOrders: "تاخیر شدہ آرڈرز", zones: "کور شدہ علاقے",
       prepTime: "اوسط تیاری وقت", pending: "آپ کی منظوری کے منتظر", cities: "شہر", payrollC: "تنخواہ لاگت" },
@@ -160,7 +160,7 @@ const T = {
       delivered: "پہنچا دیا", canceled: "منسوخ", late: "تاخیر", pending: "زیرِ جائزہ",
       approved: "منظور", paid: "ادا شدہ", overdue: "تاخیر شدہ", active: "فعال", expiring: "جلد ختم",
       open: "کھلا", closed: "بند", review: "جائزہ", present: "حاضر", leave: "چھٹی",
-      on_shift: "شفٹ میں", off_shift: "شفٹ سے باہر", maint: "مرمت میں", idle: "کھڑی" },
+      on_shift: "فعال", off_shift: "غیر فعال", maint: "مرمت میں", idle: "کھڑی" },
     h: { order: "آرڈر نمبر", restaurant: "ریستوران", zone: "علاقہ", status: "حالت", rep: "نمائندہ",
       time: "وقت", value: "آرڈر قیمت", pay: "ادائیگی", plate: "نمبر پلیٹ", car: "گاڑی",
       last: "آخری سروس", invoice: "انوائس نمبر", amount: "رقم", due: "آخری تاریخ",
@@ -196,9 +196,9 @@ const ROLES = [
     ur: { t: "مالیات", d: "ریستوران کمیشن، نقد وصولی اور تنخواہ" },
     nav: ["overview", "repAccounting", "receiptsAdmin", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings", "inbox", "walletAdmin", "settleFlow", "perfBoard", "crm", "referrals", "closeList", "cashflow", "whatIf", "offboard"] },
   { id: "hr", icon: Users, accent: "#C58BF2", glow: "197,139,242", staff: 8, shape: "shield",
-    ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
-    en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
-    ur: { t: "انسانی وسائل", d: "نمائندے، شفٹیں، بھرتی اور تربیت" },
+    ar: { t: "الموارد البشرية", d: "المناديب والتوظيف والتطوير وملفات الموظفين" },
+    en: { t: "Human Resources", d: "Reps, hiring, development and staff files" },
+    ur: { t: "انسانی وسائل", d: "نمائندے، بھرتی، تربیت اور عملے کی فائلیں" },
     nav: ["overview", "hiring", "repFiles", "employees", "iqama", "attendance", "tickets", "chat", "circulars", "permissions", "settings", "inbox", "pipeline", "trainingAdmin", "leavesAdmin", "retention", "referrals", "teams", "appAvail", "perfPlans", "coverage", "empFile", "offboard"] },
   { id: "legal", icon: Scale, accent: "#E2789E", glow: "226,120,158", staff: 4, shape: "shieldTall",
     ar: { t: "الشؤون القانونية", d: "عقود المطاعم والمخالفات والالتزام" },
@@ -213,9 +213,9 @@ const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216
   nav: ["boardCouncil", "decisions", "repAccounting", "payrollRuns", "invoices", "expenses"] };
 const REP = {
   id: "rep", icon: Car, accent: "#3FD8B4", glow: "63,216,180", staff: 128, shape: "chevron",
-  ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
-  en: { t: "Delivery Rep", d: "Shift orders and proof of delivery" },
-  ur: { t: "ڈیلیوری نمائندہ", d: "شفٹ کے آرڈرز اور ثبوتِ ترسیل" },
+  ar: { t: "مندوب توصيل", d: "طلبات اليوم وإثبات التسليم" },
+  en: { t: "Delivery Rep", d: "Today's orders and proof of delivery" },
+  ur: { t: "ڈیلیوری نمائندہ", d: "آج کے آرڈرز اور ثبوتِ ترسیل" },
   nav: ["riderHome", "coach", "myEarnings", "myScore", "myWallet", "academy", "myLeave", "reportInc", "support", "myRefer", "teams", "riderReceipts", "mystory", "riderWelcome", "messages", "tickets", "circulars", "settings"],
 };
 const ALL_ROLES = [...ROLES, REP, ADVISOR_ROLE];
@@ -292,14 +292,44 @@ const APPS = [
 
 /* ═══════════  محرك التسعير ومحاسبة المناديب (بدون كيلومترات)  ═══════════ */
 // تسعيرتان لكل تطبيق يضعهما المحاسب: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب. لا توجد أرقام افتراضية.
-const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", tiers: [{ from: 0, rate: "" }] };
+const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", tiersV: 2, tiers: [{ from: 1, to: "", rate: "" }] };
 const getAppPrice = (pricing, appId) => (pricing && pricing.app && pricing.app[appId]) || null;
 const getRepPrice = (pricing, appId) => (pricing && pricing.rep && pricing.rep[appId]) || null;
 const r2 = (n) => Math.round((+n || 0) * 100) / 100;
+// شرائح "من طلب رقم X إلى طلب رقم Y بسعر Z" — الحقل to الفارغ = فما فوق. البيانات القديمة (حدود فقط) تُحوَّل تلقائياً.
+function tiersForm(p) {
+  const raw = p && p.tiers && p.tiers.length ? p.tiers : [{ from: 1, to: "", rate: "" }];
+  if (p && p.tiersV === 2) return raw;
+  const s = [...raw].sort((a, b) => (+a.from || 0) - (+b.from || 0));
+  return s.map((x, i) => ({ from: (+x.from || 0) + 1, to: i + 1 < s.length ? (+s[i + 1].from || 0) : "", rate: x.rate }));
+}
+function tiersN(p) {
+  return tiersForm(p).filter((x) => x.rate !== "" && x.rate != null && x.from !== "" && x.from != null)
+    .map((x) => ({ from: Math.max(1, +x.from || 1), to: x.to === "" || x.to == null ? Infinity : +x.to, rate: +x.rate || 0 }))
+    .sort((a, b) => a.from - b.from);
+}
+// أخطاء الشرائح: first = لا تبدأ من 1 · gap = فجوة بين شريحتين · overlap = تداخل · open = شريحة مفتوحة في الوسط · bad = "إلى" أصغر من "من"
+function tierIssues(p) {
+  const rows = tiersForm(p);
+  const out = new Set();
+  if (!rows.length || rows.some((x) => x.rate === "" || x.rate == null || x.from === "" || x.from == null)) out.add("empty");
+  const t = tiersN(p);
+  t.forEach((x, i) => {
+    if (x.to < x.from) out.add("bad");
+    const nx = t[i + 1];
+    if (nx) {
+      if (x.to === Infinity) out.add("open");
+      else if (nx.from > x.to + 1) out.add("gap");
+      else if (nx.from <= x.to) out.add("overlap");
+    }
+  });
+  if (t.length && t[0].from !== 1) out.add("first");
+  return [...out];
+}
 function validPrice(p) {
   if (!p) return false;
   if (p.mode === "target") return +p.ordersBase > 0 && +p.ordersTarget > 0 && p.perOrderDelta !== "";
-  if (p.mode === "tiers") return (p.tiers || []).length > 0 && (p.tiers || []).every((x) => x.rate !== "" && x.from !== "");
+  if (p.mode === "tiers") return tiersN(p).length > 0 && tierIssues(p).length === 0;
   return +p.perOrder > 0;
 }
 function monthFactor(month) {
@@ -317,10 +347,10 @@ function priceCalc(p, orders, f) {
   if (p.mode === "target") {
     o = n(p.ordersBase) * f + (orders - n(p.ordersTarget) * f) * n(p.perOrderDelta);
   } else if (p.mode === "tiers") {
-    const tiers = (p.tiers || []).map((x) => ({ from: n(x.from), rate: n(x.rate) })).sort((a, b) => a.from - b.from);
+    const tiers = tiersN(p);
     tiers.forEach((tr, i) => {
-      const hi = i + 1 < tiers.length ? tiers[i + 1].from : Infinity;
-      o += Math.max(0, Math.min(orders, hi) - tr.from) * tr.rate;
+      const hi = Math.min(tr.to, i + 1 < tiers.length ? tiers[i + 1].from - 1 : Infinity);
+      o += Math.max(0, Math.min(orders, hi) - (tr.from - 1)) * tr.rate;
     });
   } else {
     o = orders * n(p.perOrder);
@@ -329,13 +359,21 @@ function priceCalc(p, orders, f) {
   return { orders: r2(o), fixed, total: Math.max(0, r2(o + fixed)), configured: true };
 }
 // أرباح مندوب من الإدخال اليومي للمشرف (تُجمَّع حسب التطبيق ثم تُسعَّر بتسعيرة المندوب لذلك التطبيق)
-function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty, f) {
+// rep.inherit = عدّاد شريحة التطبيق (الشركة) يكمل من عدد من سبقه — داخلي للشركة فقط. أجر المندوب نفسه يبدأ من أول طلب له ولا يتأثر.
+function payWithBase(price, own, base, f) {
+  if (!price || !own) return priceCalc(price, own, f).total;
+  if (!base || price.mode !== "tiers") return priceCalc(price, own, f).total;
+  const a = priceCalc(price, base + own, 1).orders - priceCalc(price, base, 1).orders;
+  return Math.max(0, r2(a + (+price.fixedMonthly || 0) * (f || 1)));
+}
+function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty, f, month) {
   const byApp = {};
   entries.forEach((e) => {
     const a = e.app || rep.app || "hs";
     const g = byApp[a] || (byApp[a] = { orders: 0, hours: 0 });
     g.orders += e.orders || 0; g.hours += e.hours || 0;
   });
+  if (month && rep && rep.inherit && rep.inherit.month === month && byApp[rep.inherit.app]) byApp[rep.inherit.app].base = +rep.inherit.orders || 0;
   const weekendCount = entries.reduce((s, e) => s + (e.weekendViolations || 0), 0);
   const appCount = entries.reduce((s, e) => s + (e.appViolations || 0), 0);
   const out = { byApp, weekendCount, appCount, weekendAuto: weekendCount * (+weekendFine || 0), appAuto: appCount * (+violationPenalty || 0), f };
@@ -346,7 +384,7 @@ function finishRepCalc(c, rep, pricing) {
   Object.keys(c.byApp).forEach((a) => {
     const g = c.byApp[a], price = getRepPrice(pricing, a);
     if (!price) unpriced = true;
-    g.pay = priceCalc(price, g.orders, c.f).total;
+    g.pay = priceCalc(price, g.orders, c.f).total; // أجر المندوب دائماً من أول طلب له — العدّاد الموروث (g.base) للشركة فقط
     gross += g.pay; orders += g.orders; hours += g.hours || 0;
     if (g.orders > mainO) { mainO = g.orders; main = a; }
   });
@@ -392,13 +430,13 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const rid = String(r.riderId || "").trim();
     const row = st && rid ? st.rows.find((z) => z.id === rid) : null;
     if (!entries.length && r.status !== "active" && !row) return;
-    let c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty, f);
+    let c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty, f, month);
     const recOrders = (c.byApp[r.app] || {}).orders || 0;
     let source = "daily", appAmtAuto = c.appAuto;
     if (row) {
       source = "invoice";
       matched[r.app] = (matched[r.app] || new Set()); matched[r.app].add(row.id);
-      const byApp = { ...c.byApp, [r.app]: { orders: row.orders, hours: (c.byApp[r.app] || {}).hours || 0 } };
+      const byApp = { ...c.byApp, [r.app]: { orders: row.orders, hours: (c.byApp[r.app] || {}).hours || 0, base: (c.byApp[r.app] || {}).base || 0 } };
       c = finishRepCalc({ ...c, byApp, f: 1 }, r, pricing);
       appAmtAuto = row.penalties;
     }
@@ -410,7 +448,7 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
     const totalDed = weekendAmt + appAmt + deds;
     const reimb = r2((receipts || []).filter((q) => q.repId === r.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
-    repLines.push({ repId: r.id, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced,
+    repLines.push({ repId: r.id, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced, baseOrders: (c.byApp[c.main] || {}).base || 0, baseFrom: (r.inherit && r.inherit.month === month) ? r.inherit.fromName : null,
       orders: c.orders, recOrders, invOrders: row ? row.orders : null, invNet: row ? row.net : null, hours: c.hours,
       gross: c.gross, weekendCount: c.weekendCount, appCount: c.appCount, weekendAmt, appAmt, manualAdds: adds, manualDeds: deds, totalDed,
       reimb, net: r2(c.gross + adds + reimb - totalDed) });
@@ -461,7 +499,7 @@ const monthTargetOf = (pricing, appId) => { const p = getRepPrice(pricing, appId
 const WHATS_NEW = {
   ar: [
     { icon: "Trophy", t: "لوحة الصدارة الشهرية", d: "أفضل 3 مناديب كل شهر مع مكافآت تلقائية وفرصة عمرة مجانية." },
-    { icon: "Radio", t: "نبض المناديب المباشر", d: "من حجز شفته ومن فعّل بصمته الآن — لحظة بلحظة." },
+    { icon: "Radio", t: "نبض المناديب المباشر", d: "تحضير يومي من المشرف: كم حضر وكم غاب وسبب الغياب — ويرتبط بدرجة الالتزام." },
     { icon: "ClipboardList", t: "سجل التتبع", d: "كل إجراء حساس (كلمات مرور، رواتب، تذاكر) مسجّل بالوقت والمسؤول." },
     { icon: "Download", t: "تصدير Excel", d: "الرواتب والحضور والتقارير — ملف Excel حقيقي بضغطة واحدة." },
     { icon: "MessageSquare", t: "المراسلات الداخلية", d: "شات بين الإدارات، ورسائل للمناديب بخاصية تم الاطلاع." },
@@ -469,7 +507,7 @@ const WHATS_NEW = {
   ],
   en: [
     { icon: "Trophy", t: "Monthly Leaderboard", d: "Top 3 reps each month with automatic rewards and a free Umrah chance." },
-    { icon: "Radio", t: "Live Rep Pulse", d: "Who booked a shift and who's clocked in right now — moment by moment." },
+    { icon: "Radio", t: "Live Rep Pulse", d: "Daily roll call by the supervisor: who attended, who was absent and why — linked to the commitment score." },
     { icon: "ClipboardList", t: "Audit Log", d: "Every sensitive action (passwords, payroll, tickets) recorded with time and owner." },
     { icon: "Download", t: "Excel export", d: "Payroll, attendance and reports — a real Excel file in one click." },
     { icon: "MessageSquare", t: "Internal messaging", d: "Chat between departments, and one-way messages to reps with a seen receipt." },
@@ -477,7 +515,7 @@ const WHATS_NEW = {
   ],
   ur: [
     { icon: "Trophy", t: "ماہانہ لیڈر بورڈ", d: "ہر ماہ کے سرِفہرست 3 نمائندے، خودکار انعامات اور مفت عمرہ کا موقع۔" },
-    { icon: "Radio", t: "نمائندوں کی براہ راست نبض", d: "کس نے شفٹ بک کی اور ابھی کون حاضر ہے — لمحہ بہ لمحہ۔" },
+    { icon: "Radio", t: "نمائندوں کی براہ راست نبض", d: "سپروائزر کی روزانہ حاضری: کون حاضر، کون غیر حاضر اور وجہ۔" },
     { icon: "ClipboardList", t: "آڈٹ لاگ", d: "ہر حساس کارروائی (پاس ورڈ، تنخواہ، ٹکٹس) وقت اور ذمہ دار کے ساتھ درج۔" },
     { icon: "Download", t: "ایکسل ایکسپورٹ", d: "تنخواہ، حاضری اور رپورٹس — ایک کلک میں حقیقی ایکسل فائل۔" },
     { icon: "MessageSquare", t: "اندرونی پیغام رسانی", d: "شعبوں کے درمیان چیٹ، اور نمائندوں کو یک طرفہ پیغامات۔" },
@@ -1247,15 +1285,13 @@ const EX = {
     errRep: "أدخل رقم هوية صحيح وكلمة المرور.",
     orRep: "أو دخول المناديب", repTitle: "دخول المندوب",
     repSub: "للمناديب والسائقين — الدخول برقم الهوية",
-    nationalId: "رقم الهوية / الإقامة", repHint: "الدخول متاح خلال ساعات الوردية المسجلة",
-    ordersToday: "طلبات الوردية", doneToday: "تم التسليم", inRoute: "قيد التوصيل",
-    distance: "المسافة المقطوعة", cash: "تحصيل نقدي", rating: "تقييمك", myRoute: "طلبات الوردية",
+    nationalId: "رقم الهوية / الإقامة", 
+    ordersToday: "طلبات اليوم", doneToday: "تم التسليم", inRoute: "قيد التوصيل",
+    distance: "المسافة المقطوعة", cash: "تحصيل نقدي", rating: "تقييمك", myRoute: "طلبات اليوم",
     pod: "تأكيد تسليم الطلب", accept: "قبول الطلب", pickup: "الاستلام من المطعم",
     leaveToday: "في إجازة اليوم", openRoles: "وظائف مفتوحة", docsExp: "مستندات تنتهي",
     winRate: "نسبة كسب القضايا", compScore: "مؤشر الالتزام",
-    newOrder: "طلب جديد", addRest: "إضافة مطعم", addEmp: "إضافة موظف", upDoc: "رفع مستند",
-    reportsT: "التقارير المؤسسية", generate: "توليد", monthly: "شهري", quarterly: "ربع سنوي", yearly: "سنوي",
-    repItems: ["أداء التوصيل والأحياء", "القوائم المالية", "تحليل أسطول السيارات", "دوران المناديب", "التزام عقود المطاعم"],
+    newOrder: "طلب جديد", addRest: "إضافة مطعم", addEmp: "إضافة موظف", upDoc: "رفع مستند", 
     compItems: [["تراخيص نشاط التوصيل", "سارية"], ["شهادات نقل الأغذية", "سارية"], ["فحص حافظات الحرارة", "تنتهي قريباً"], ["تأمين السيارات", "سارية"], ["حماية بيانات العملاء", "مراجعة"]],
     capacity: "الحمل", cities: ["الدمام", "الخبر", "الظهران", "الجبيل"],
     payrollNote: "تُصرف أجور المناديب أسبوعياً، ورواتب الإدارات في 25 من الشهر",
@@ -1291,16 +1327,13 @@ const EX = {
     perfAnalytics: "تحليل أداء المناديب", avgAchieve: "متوسط تحقيق الهدف",
     totalActiveReps: "مناديب نشطون", totalViolations: "إجمالي المخالفات", topPerformer: "الأعلى أداءً",
     needsAttention: "بحاجة لمتابعة", noPending: "لا يوجد مناديب بانتظار التفعيل",
-    repReportsT: "تقارير المناديب", corpReportsT: "تقارير المؤسسة",
+    repReportsT: "تقارير المناديب", 
     searchRep: "ابحث باسم المندوب أو رقم الجوال…", noReports: "لا توجد تقارير محفوظة بعد",
     savedBy: "حفظه", repsCount: "عدد المناديب", viewReport: "عرض التفاصيل", hideReport: "إخفاء التفاصيل",
     globalNoMatch: "لا توجد نتائج مطابقة", searchResults: "نتائج البحث",
     repPassword: "كلمة مرور مبدئية للمندوب", errRepPass: "أدخل كلمة مرور مبدئية (4 خانات على الأقل).",
     errRepNotActive: "بيانات الدخول غير صحيحة أو الحساب غير مفعّل بعد.",
-    errRepWrongPass: "كلمة المرور غير صحيحة.",
-    shiftPickTitle: "قبل ما تبدأ، حدد شفتك", shiftPickSub: "اختر وقت بداية ونهاية شفت اليوم — تقدر تسجل شفت جديد أي وقت لاحقاً من القائمة.",
-    shiftStart: "بداية الشفت", shiftEnd: "نهاية الشفت", confirmShift: "بدء الشفت والدخول",
-    logNewShift: "تسجيل شفت جديد", shiftLogged: "تم تسجيل الشفت", myShifts: "شفتاتي المسجلة",
+    errRepWrongPass: "كلمة المرور غير صحيحة.", 
     motivHeadline: "استمر، أنت تصنع الفرق",
     tickets: "التذاكر", newTicket: "تذكرة جديدة", ticketType: "نوع الطلب", ticketMode: "طريقة الإدخال",
     ticketText: "كتابة", ticketVoice: "تسجيل صوتي", ticketBody: "تفاصيل الطلب",
@@ -1334,10 +1367,8 @@ const EX = {
     carPlate: "رقم اللوحة", carModel: "طراز السيارة", empName: "اسم الموظف", empDept: "الإدارة", empPosition: "المسمى الوظيفي",
     contractParty: "الطرف المتعاقد", contractType: "نوع العقد", contractValue: "قيمة العقد",
     caseSubject: "موضوع القضية", caseAuthority: "الجهة المختصة", approvalTitle: "عنوان الطلب", approvalAmount: "المبلغ",
-    save: "حفظ", cancel: "إلغاء",
-    pulseTitle: "نبض المناديب المباشر", pulseSub: "من حجز شفته، ومن فعّل بصمته الآن — لحظة بلحظة",
-    onDutyLive: "متواجد الآن", bookedNotIn: "حجز الشفت ولم يفعّل البصمة بعد", noShiftToday: "لم يحجز شفتاً اليوم",
-    shiftWindow: "الشفت المحجوز", clockStatus: "حالة البصمة", staffMotivHeadline: "فريق واحد، هدف واحد",
+    save: "حفظ", cancel: "إلغاء", 
+    onDutyLive: "متواجد الآن",  clockStatus: "حالة البصمة", staffMotivHeadline: "فريق واحد، هدف واحد",
     fullControlNote: "لك صلاحية كاملة على كل الإدارات والمناديب من هذه المنصة.",
     iqamaT: "تنبيهات انتهاء الإقامات", iqamaSub: "تابع تواريخ انتهاء إقامات المناديب وأرسل الإنذارات في وقتها",
     daysLeft: "الأيام المتبقية", expired: "منتهية", critical: "حرجة", warning: "تحذير", healthy: "سليمة",
@@ -1474,7 +1505,7 @@ const EX = {
     expPendingGmT: "بانتظار اعتماد المدير العام", submittedByLbl: "قدّمه", expLedgerT: "سجل كل مصروف بالتفصيل",
     statusLbl: "الحالة", approvedLbl: "معتمد", rejectedLbl: "مرفوض", pendingLbl: "بانتظار الاعتماد",
     payslipProvisional: "لسه ما اعتُمد راتب هذا الشهر نهائياً — الأرقام مبدئية وممكن تتغيّر.",
-    warnBefore: "متبقي", warnHours: "ساعة قبل الإغلاق التلقائي", lateForShift: "متأخر عن الشفت",
+    warnBefore: "متبقي", warnHours: "ساعة قبل الإغلاق التلقائي", 
     sessionExpiredMsg: "انتهت جلستك تلقائياً بسبب عدم النشاط لحمايتك — سجّل الدخول مرة أخرى.",
     avgResolutionT: "متوسط زمن حل التذاكر لكل إدارة",
     pacingT: "تنبيه استباقي أسبوعي عن المعدل", pacingSub: "مقارنة أداء كل مندوب بالمعدل المتوقع حتى اليوم — نلحق الموقف قبل نهاية الشهر", pacingAllGood: "الكل يسير على المعدل المطلوب 👍",
@@ -1486,15 +1517,13 @@ const EX = {
     errRep: "Enter a valid ID number and password.",
     orRep: "Or rep sign in", repTitle: "Delivery rep sign in",
     repSub: "For reps and drivers — sign in with your ID number",
-    nationalId: "ID / Iqama number", repHint: "Sign in is open during your scheduled shift hours",
-    ordersToday: "Shift orders", doneToday: "Delivered", inRoute: "Out for delivery",
-    distance: "Distance covered", cash: "Cash collected", rating: "Your rating", myRoute: "Shift orders",
+    nationalId: "ID / Iqama number", 
+    ordersToday: "Today's orders", doneToday: "Delivered", inRoute: "Out for delivery",
+    distance: "Distance covered", cash: "Cash collected", rating: "Your rating", myRoute: "Today's orders",
     pod: "Confirm delivery", accept: "Accept order", pickup: "Pick up from restaurant",
     leaveToday: "On leave today", openRoles: "Open roles", docsExp: "Documents expiring",
     winRate: "Case win rate", compScore: "Compliance score",
-    newOrder: "New order", addRest: "Add restaurant", addEmp: "Add employee", upDoc: "Upload document",
-    reportsT: "Corporate reports", generate: "Generate", monthly: "Monthly", quarterly: "Quarterly", yearly: "Yearly",
-    repItems: ["Delivery & zone performance", "Financial statements", "Car fleet analysis", "Rep turnover", "Restaurant contract compliance"],
+    newOrder: "New order", addRest: "Add restaurant", addEmp: "Add employee", upDoc: "Upload document", 
     compItems: [["Delivery activity licences", "Active"], ["Food transport certificates", "Active"], ["Hot bag inspections", "Expiring"], ["Car insurance", "Active"], ["Customer data protection", "In review"]],
     capacity: "Load", cities: ["Dammam", "Khobar", "Dhahran", "Jubail"],
     payrollNote: "Rep wages are paid weekly; office salaries on the 25th",
@@ -1530,16 +1559,13 @@ const EX = {
     perfAnalytics: "Rep performance analytics", avgAchieve: "Avg. target achieved",
     totalActiveReps: "Active reps", totalViolations: "Total violations", topPerformer: "Top performer",
     needsAttention: "Needs attention", noPending: "No reps awaiting activation",
-    repReportsT: "Rep reports", corpReportsT: "Corporate reports",
+    repReportsT: "Rep reports", 
     searchRep: "Search by rep name or phone…", noReports: "No saved reports yet",
     savedBy: "Saved by", repsCount: "Reps count", viewReport: "View details", hideReport: "Hide details",
     globalNoMatch: "No matching results", searchResults: "Search results",
     repPassword: "Initial rep password", errRepPass: "Enter an initial password (4+ characters).",
     errRepNotActive: "Invalid credentials or account not activated yet.",
-    errRepWrongPass: "Incorrect password.",
-    shiftPickTitle: "Before you start, set your shift", shiftPickSub: "Pick today's shift start and end time — you can log a new shift anytime later from the menu.",
-    shiftStart: "Shift start", shiftEnd: "Shift end", confirmShift: "Start shift & continue",
-    logNewShift: "Log a new shift", shiftLogged: "Shift logged", myShifts: "My logged shifts",
+    errRepWrongPass: "Incorrect password.", 
     motivHeadline: "Keep going, you make the difference",
     tickets: "Tickets", newTicket: "New ticket", ticketType: "Request type", ticketMode: "Input method",
     ticketText: "Text", ticketVoice: "Voice recording", ticketBody: "Request details",
@@ -1573,10 +1599,8 @@ const EX = {
     carPlate: "Plate number", carModel: "Car model", empName: "Employee name", empDept: "Department", empPosition: "Job title",
     contractParty: "Contracting party", contractType: "Contract type", contractValue: "Contract value",
     caseSubject: "Case subject", caseAuthority: "Authority", approvalTitle: "Request title", approvalAmount: "Amount",
-    save: "Save", cancel: "Cancel",
-    pulseTitle: "Live Rep Pulse", pulseSub: "Who booked a shift, and who's clocked in right now — moment by moment",
-    onDutyLive: "On duty now", bookedNotIn: "Booked a shift, not clocked in yet", noShiftToday: "No shift booked today",
-    shiftWindow: "Booked shift", clockStatus: "Clock status", staffMotivHeadline: "One team, one goal",
+    save: "Save", cancel: "Cancel", 
+    onDutyLive: "On duty now",  clockStatus: "Clock status", staffMotivHeadline: "One team, one goal",
     fullControlNote: "You have full authority over every department and every rep from this platform.",
     iqamaT: "Residency Expiry Alerts", iqamaSub: "Track rep Iqama expiry dates and send timely warnings",
     daysLeft: "Days remaining", expired: "Expired", critical: "Critical", warning: "Warning", healthy: "Healthy",
@@ -1600,7 +1624,7 @@ const EX = {
     sendToRep: "Send to rep", invoiceAttach: "Attach invoice document",
     lbTitle: "Monthly Leaderboard", lbSub: "Top 3 reps this month — updated live from day one",
     lbFirst: "1st Place", lbSecond: "2nd Place", lbThird: "3rd Place",
-    lbFirstDesc: "Leading in both orders and distance", lbSecondDesc: "Most distance covered", lbThirdDesc: "Most disciplined — conduct, shifts and punctuality",
+    lbFirstDesc: "Leading in both orders and distance", lbSecondDesc: "Most distance covered", lbThirdDesc: "Most disciplined — conduct, attendance and punctuality",
     lbUmrah: "A fully company-paid Umrah trip", lbUmrahHint: "For holding 1st place two months running",
     lbYourRank: "Your current rank", lbNoData: "No performance data yet this month — be the first to top the board",
     lbPickThird: "Pick this month's most disciplined rep", lbSaveThird: "Save selection", lbThirdSaved: "Saved",
@@ -1686,7 +1710,7 @@ const EX = {
     addFineBtn: "Log a transport authority fine", fineRepSelect: "Rep", fineAmountLbl2: "Fine amount",
     fineReasonLbl: "Fine reason", tgaFinesHistoryT: "Authority fines history",
     payslipProvisional: "This month\u2019s payroll isn\u2019t finalized yet — figures are provisional and may change.",
-    warnBefore: "", warnHours: "h left before auto-close", lateForShift: "Late for shift",
+    warnBefore: "", warnHours: "h left before auto-close", 
     sessionExpiredMsg: "Your session ended automatically due to inactivity, to protect you — please sign in again.",
     avgResolutionT: "Average ticket resolution time by department",
     pacingT: "Weekly proactive pacing alert", pacingSub: "Each rep's performance vs. the expected pace so far, to catch it before month-end", pacingAllGood: "Everyone is on pace 👍",
@@ -1698,15 +1722,13 @@ const EX = {
     errRep: "درست شناختی نمبر اور پاس ورڈ درج کریں۔",
     orRep: "یا نمائندہ لاگ اِن", repTitle: "ڈیلیوری نمائندہ لاگ اِن",
     repSub: "نمائندوں اور ڈرائیوروں کے لیے — شناختی نمبر سے داخل ہوں",
-    nationalId: "شناختی / اقامہ نمبر", repHint: "لاگ اِن مقررہ شفٹ اوقات میں دستیاب ہے",
-    ordersToday: "شفٹ کے آرڈرز", doneToday: "پہنچا دیے", inRoute: "راستے میں",
-    distance: "طے شدہ فاصلہ", cash: "وصول شدہ رقم", rating: "آپ کی ریٹنگ", myRoute: "شفٹ کے آرڈرز",
+    nationalId: "شناختی / اقامہ نمبر", 
+    ordersToday: "آج کے آرڈرز", doneToday: "پہنچا دیے", inRoute: "راستے میں",
+    distance: "طے شدہ فاصلہ", cash: "وصول شدہ رقم", rating: "آپ کی ریٹنگ", myRoute: "آج کے آرڈرز",
     pod: "ترسیل کی تصدیق", accept: "آرڈر قبول کریں", pickup: "ریستوران سے وصولی",
     leaveToday: "آج چھٹی پر", openRoles: "خالی عہدے", docsExp: "ختم ہونے والی دستاویزات",
     winRate: "مقدمات جیتنے کی شرح", compScore: "تعمیل اسکور",
-    newOrder: "نیا آرڈر", addRest: "ریستوران شامل کریں", addEmp: "ملازم شامل کریں", upDoc: "دستاویز اپلوڈ",
-    reportsT: "ادارہ جاتی رپورٹس", generate: "بنائیں", monthly: "ماہانہ", quarterly: "سہ ماہی", yearly: "سالانہ",
-    repItems: ["ڈیلیوری اور علاقہ کارکردگی", "مالی گوشوارے", "گاڑیوں کا تجزیہ", "نمائندوں کی تبدیلی", "ریستوران معاہدوں کی پابندی"],
+    newOrder: "نیا آرڈر", addRest: "ریستوران شامل کریں", addEmp: "ملازم شامل کریں", upDoc: "دستاویز اپلوڈ", 
     compItems: [["ڈیلیوری لائسنس", "فعال"], ["فوڈ ٹرانسپورٹ سرٹیفکیٹ", "فعال"], ["ہاٹ بیگ معائنہ", "جلد ختم"], ["گاڑی انشورنس", "فعال"], ["کسٹمر ڈیٹا تحفظ", "جائزہ"]],
     capacity: "بوجھ", cities: ["دمام", "خبر", "ظہران", "جبیل"],
     payrollNote: "نمائندوں کی اجرت ہفتہ وار، دفتری تنخواہ 25 تاریخ کو",
@@ -1742,16 +1764,13 @@ const EX = {
     perfAnalytics: "نمائندہ کارکردگی تجزیہ", avgAchieve: "اوسط ہدف حصول",
     totalActiveReps: "فعال نمائندے", totalViolations: "کل خلاف ورزیاں", topPerformer: "بہترین کارکردگی",
     needsAttention: "توجہ درکار", noPending: "کوئی نمائندہ فعال ہونے کا منتظر نہیں",
-    repReportsT: "نمائندہ رپورٹس", corpReportsT: "ادارہ جاتی رپورٹس",
+    repReportsT: "نمائندہ رپورٹس", 
     searchRep: "نمائندے کے نام یا فون سے تلاش کریں…", noReports: "ابھی کوئی رپورٹ محفوظ نہیں",
     savedBy: "محفوظ کردہ از", repsCount: "نمائندوں کی تعداد", viewReport: "تفصیل دیکھیں", hideReport: "تفصیل چھپائیں",
     globalNoMatch: "کوئی مماثل نتیجہ نہیں", searchResults: "تلاش کے نتائج",
     repPassword: "نمائندے کا ابتدائی پاس ورڈ", errRepPass: "ابتدائی پاس ورڈ درج کریں (کم از کم 4 حروف)۔",
     errRepNotActive: "غلط معلومات یا اکاؤنٹ ابھی فعال نہیں۔",
-    errRepWrongPass: "غلط پاس ورڈ۔",
-    shiftPickTitle: "شروع کرنے سے پہلے، اپنی شفٹ منتخب کریں", shiftPickSub: "آج کی شفٹ کا آغاز اور اختتام منتخب کریں — بعد میں مینو سے نئی شفٹ کسی بھی وقت درج کر سکتے ہیں۔",
-    shiftStart: "شفٹ کا آغاز", shiftEnd: "شفٹ کا اختتام", confirmShift: "شفٹ شروع کریں",
-    logNewShift: "نئی شفٹ درج کریں", shiftLogged: "شفٹ درج ہو گئی", myShifts: "میری درج شفٹیں",
+    errRepWrongPass: "غلط پاس ورڈ۔", 
     motivHeadline: "جاری رکھیں، آپ فرق پیدا کرتے ہیں",
     tickets: "ٹکٹس", newTicket: "نیا ٹکٹ", ticketType: "درخواست کی قسم", ticketMode: "ان پٹ کا طریقہ",
     ticketText: "تحریر", ticketVoice: "صوتی ریکارڈنگ", ticketBody: "درخواست کی تفصیل",
@@ -1785,10 +1804,8 @@ const EX = {
     carPlate: "نمبر پلیٹ", carModel: "گاڑی کا ماڈل", empName: "ملازم کا نام", empDept: "شعبہ", empPosition: "عہدہ",
     contractParty: "معاہدہ فریق", contractType: "معاہدے کی قسم", contractValue: "معاہدے کی مالیت",
     caseSubject: "مقدمے کا موضوع", caseAuthority: "متعلقہ ادارہ", approvalTitle: "درخواست کا عنوان", approvalAmount: "رقم",
-    save: "محفوظ کریں", cancel: "منسوخ کریں",
-    pulseTitle: "نمائندوں کی براہ راست نبض", pulseSub: "کس نے شفٹ بک کی، اور ابھی کون حاضری میں ہے — لمحہ بہ لمحہ",
-    onDutyLive: "ابھی حاضر", bookedNotIn: "شفٹ بک کی، ابھی حاضری درج نہیں کی", noShiftToday: "آج کوئی شفٹ بک نہیں کی",
-    shiftWindow: "بک شدہ شفٹ", clockStatus: "حاضری کی حالت", staffMotivHeadline: "ایک ٹیم، ایک ہدف",
+    save: "محفوظ کریں", cancel: "منسوخ کریں", 
+    onDutyLive: "ابھی حاضر",  clockStatus: "حاضری کی حالت", staffMotivHeadline: "ایک ٹیم، ایک ہدف",
     fullControlNote: "اس پلیٹ فارم سے آپ کو ہر شعبے اور ہر نمائندے پر مکمل اختیار حاصل ہے۔",
     iqamaT: "اقامہ ختم ہونے کی اطلاعات", iqamaSub: "نمائندوں کے اقامہ ختم ہونے کی تاریخیں دیکھیں اور بروقت انتباہ بھیجیں",
     daysLeft: "باقی دن", expired: "ختم شدہ", critical: "نازک", warning: "انتباہ", healthy: "درست",
@@ -1812,7 +1829,7 @@ const EX = {
     sendToRep: "نمائندے کو بھیجیں", invoiceAttach: "انوائس دستاویز منسلک کریں",
     lbTitle: "ماہانہ لیڈر بورڈ", lbSub: "اس ماہ کے سرِفہرست 3 نمائندے — پہلے دن سے براہ راست اپڈیٹ",
     lbFirst: "پہلی پوزیشن", lbSecond: "دوسری پوزیشن", lbThird: "تیسری پوزیشن",
-    lbFirstDesc: "آرڈرز اور فاصلے دونوں میں سرِفہرست", lbSecondDesc: "سب سے زیادہ فاصلہ", lbThirdDesc: "نظم و ضبط، شفٹ اور وقت کی پابندی میں سب سے آگے",
+    lbFirstDesc: "آرڈرز اور فاصلے دونوں میں سرِفہرست", lbSecondDesc: "سب سے زیادہ فاصلہ", lbThirdDesc: "نظم و ضبط، حاضری اور وقت کی پابندی میں سب سے آگے",
     lbUmrah: "کمپنی کے خرچ پر مکمل عمرہ", lbUmrahHint: "مسلسل دو ماہ پہلی پوزیشن حاصل کرنے پر",
     lbYourRank: "آپ کی موجودہ پوزیشن", lbNoData: "اس ماہ ابھی کارکردگی کا ڈیٹا نہیں — سب سے پہلے سرِفہرست آئیں",
     lbPickThird: "اس ماہ کا سب سے نظم و ضبط والا نمائندہ منتخب کریں", lbSaveThird: "منتخب کریں", lbThirdSaved: "محفوظ ہو گیا",
@@ -1898,7 +1915,7 @@ const EX = {
     addFineBtn: "ٹرانسپورٹ اتھارٹی جرمانہ درج کریں", fineRepSelect: "نمائندہ", fineAmountLbl2: "جرمانے کی رقم",
     fineReasonLbl: "جرمانے کی وجہ", tgaFinesHistoryT: "اتھارٹی جرمانوں کی تاریخ",
     payslipProvisional: "اس مہینے کی تنخواہ ابھی حتمی نہیں ہوئی — اعداد و شمار عارضی ہیں اور تبدیل ہو سکتے ہیں۔",
-    warnBefore: "باقی", warnHours: "گھنٹے خودکار بندش سے پہلے", lateForShift: "شفٹ میں تاخیر",
+    warnBefore: "باقی", warnHours: "گھنٹے خودکار بندش سے پہلے", 
     sessionExpiredMsg: "آپ کی نشست غیرفعالیت کی وجہ سے خودکار ختم ہو گئی — براہ کرم دوبارہ لاگ ان کریں۔",
     avgResolutionT: "شعبے کے مطابق ٹکٹ حل کرنے کا اوسط وقت",
     pacingT: "ہفتہ وار پیش بندی الرٹ", pacingSub: "ہر نمائندے کی کارکردگی متوقع رفتار کے مقابلے میں، مہینہ ختم ہونے سے پہلے سنبھالیں", pacingAllGood: "سب مقررہ رفتار پر ہیں 👍",
@@ -1963,38 +1980,6 @@ function LangScreen({ lang, setLang, next }) {
 }
 
 /* ═══════════  بوابة الدخول  ═══════════ */
-/* ═══════════  شاشة اختيار الشفت (إلزامية قبل لوحة المندوب)  ═══════════ */
-function LogShiftModal({ lang, role, onClose, onConfirm }) {
-  const x = EX[lang];
-  const [start, setStart] = useState("20:00");
-  const [end, setEnd] = useState("03:00");
-  return (
-    <div className="fixed inset-0 z-[60] grid place-items-center px-5" style={{ background: "rgba(3,5,10,.72)", backdropFilter: "blur(6px)" }} onClick={onClose}>
-      <div className="glass rounded-3xl p-6 w-full max-w-sm rise" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-[15px] font-extrabold mb-1">{x.logNewShift}</h3>
-        <p className="text-[12px] mb-4" style={{ color: "var(--muted)" }}>{x.shiftPickSub}</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftStart}</span>
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)}
-              className="num w-full rounded-xl px-3 py-3 text-[14px] outline-none" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)", color: "#12151D" }} />
-          </label>
-          <label className="block">
-            <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftEnd}</span>
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)}
-              className="num w-full rounded-xl px-3 py-3 text-[14px] outline-none" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)", color: "#12151D" }} />
-          </label>
-        </div>
-        <div className="flex gap-2 mt-5">
-          <Btn full onClick={onClose}>{T[lang].back}</Btn>
-          <Btn full variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => onConfirm(start, end)}>{x.confirmShift}</Btn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
 function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gateErr, setErr: setGateErr, sessionExpired, deptPasswords, deptSecurity, setDeptSecurity }) {
   const t = T[lang], x = EX[lang];
   const [open, setOpen] = useState(null);
@@ -2191,7 +2176,6 @@ function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gate
                     <GateField label={t.pass} val={rpw} set={setRpw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={goRep} />
                     {shownRerr && <p className="text-[11px] flex items-start gap-1.5" style={{ color: "#E8837A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shownRerr}</p>}
                     <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={goRep}>{busy ? "…" : x.repTitle}</Btn>
-                    <p className="text-[10px] text-center" style={{ color: "rgba(30,38,58,.38)" }}>{x.repHint}</p>
                   </div>
                 </div>
               )}
@@ -2485,7 +2469,7 @@ function RepHeroArt({ accent = "63,216,180" }) {
   );
 }
 
-function Overview({ pricing, role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs, shifts }) {
+function Overview({ pricing, role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs }) {
   const t = T[lang], x = EX[lang], A = role.glow;
   const [customizing, setCustomizing] = useState(false);
   const [hiddenKpis, setHiddenKpis] = usePersonalList(`kpi_hidden_${role.id}`);
@@ -3211,54 +3195,6 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
   );
 }
 
-/* ═══════════  تقويم الشفتات البصري  ═══════════ */
-function ShiftCalendar({ lang, role, shifts, attendance }) {
-  const x = EX[lang];
-  const now = riyadhNow();
-  const y = now.getUTCFullYear(), m = now.getUTCMonth();
-  const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  const firstDow = new Date(Date.UTC(y, m, 1)).getUTCDay();
-  const todayDate = now.getUTCDate();
-  const byDate = {};
-  shifts.forEach((s) => { const d = +s.date.slice(8, 10); byDate[d] = byDate[d] || { shift: null, clock: null }; byDate[d].shift = s; });
-  attendance.forEach((a) => { if (+a.date.slice(5, 7) === m + 1) { const d = +a.date.slice(8, 10); byDate[d] = byDate[d] || { shift: null, clock: null }; byDate[d].clock = a; } });
-  const weekDayLabels = lang === "ar" ? ["أحد", "اثن", "ثلا", "أرب", "خمي", "جمع", "سبت"] : lang === "ur" ? ["اتوار", "پیر", "منگل", "بدھ", "جمعرات", "جمعہ", "ہفتہ"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-  const cells = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  return (
-    <div>
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-        {weekDayLabels.map((w) => <div key={w} className="text-center text-[9.5px] font-bold" style={{ color: "var(--muted)" }}>{w}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-1.5">
-        {cells.map((d, i) => {
-          if (d == null) return <div key={i} />;
-          const info = byDate[d];
-          const isToday = d === todayDate;
-          let bg = "rgba(20,27,45,.03)", border = "var(--line)", dot = null;
-          if (info?.clock && info.clock.out) { bg = "rgba(79,209,165,.14)"; border = "rgba(79,209,165,.35)"; dot = "#4FD1A5"; }
-          else if (info?.clock && !info.clock.out) { bg = "rgba(63,216,180,.16)"; border = "rgba(63,216,180,.4)"; dot = "#3FD8B4"; }
-          else if (info?.shift) { bg = "rgba(228,184,92,.12)"; border = "rgba(228,184,92,.35)"; dot = "#E4B85C"; }
-          return (
-            <div key={i} className="aspect-square rounded-lg flex flex-col items-center justify-center relative"
-              style={{ background: bg, border: `1px solid ${isToday ? role.accent : border}` }}>
-              <span className="num text-[10.5px] font-bold">{d}</span>
-              {dot && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-3 mt-3">
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#E4B85C" }} />{x.shiftWindow}</span>
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#3FD8B4" }} />{x.onDutyLive}</span>
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#4FD1A5" }} />{x.alreadyClockedIn}</span>
-      </div>
-    </div>
-  );
-}
-
 function SelfieCapture({ x, role, onCapture, onCancel }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -3327,7 +3263,7 @@ function SelfieCapture({ x, role, onCapture, onCancel }) {
   );
 }
 
-function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance, shifts, employees, setAuditLog, actingEmployee }) {
+function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance, employees, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const isRep = role.id === "rep";
   const today = riyadhToday();
@@ -3379,7 +3315,7 @@ function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance
           </div>
         </div>
       )}
-      <Panel title={isRep ? x.myShifts : t.nav.attendance}
+      <Panel title={t.nav.attendance}
         extra={myToday && myToday.out ? <Chip tone="ok" sm>{x.clockedOutAt}: {myToday.out}</Chip> : myToday ? <Chip tone="info" sm>{x.clockedInAt}: {myToday.in}</Chip> : <Chip tone="warn" sm>{x.notClockedIn}</Chip>}>
         {!isRep && !myToday && <p className="text-[11px] mb-2.5 flex items-center gap-1.5" style={{ color: "var(--muted)" }}><Camera size={12} />{x.selfieNote}</p>}
         <div className="flex gap-2.5 flex-wrap items-center">
@@ -3410,12 +3346,6 @@ function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance
           )}
         </div>
 
-        {isRep && (
-          <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--line)" }}>
-            <p className="text-[11.5px] font-semibold mb-2.5" style={{ color: "var(--muted)" }}>{x.myShifts}</p>
-            <ShiftCalendar lang={lang} role={role} shifts={shifts.filter((s) => s.repId === user)} attendance={attendance.filter((a) => a.key === user)} />
-          </div>
-        )}
       </Panel>
 
       {role.id === "gm" && (() => {
@@ -3510,7 +3440,7 @@ function prevMonthStr(month) {
 
 
 
-function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shifts, user, weekendFine, violationPenalty, payrollRuns }) {
+function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, user, weekendFine, violationPenalty, payrollRuns }) {
   const t = T[lang], x = EX[lang];
   if (!activeRep) return <div className="space-y-4"><Panel title={x.myStoryT}><EmptyHint lang={lang} /></Panel></div>;
 
@@ -5051,7 +4981,7 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
 
   const activate = (id) => {
     if (!chosenSup) return;
-    setReps((prev) => prev.map((r) => (r.id === id ? { ...r, status: "active", sup: chosenSup } : r)));
+    setReps((prev) => prev.map((r) => (r.id === id ? { ...r, status: "active", sup: chosenSup, startDate: r.startDate || riyadhToday() } : r)));
     logAudit(setAuditLog, role, "rep_activate", id, actingEmployee);
     setPickSup(null); setChosenSup("");
   };
@@ -5243,108 +5173,6 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ═══════════  أداء المناديب — مشرف التشغيل  ═══════════ */
-/* ═══════════  نبض المناديب المباشر  ═══════════ */
-function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
-  const [open, setOpen] = useState(false);
-  const stateLabel = state === "onDuty" ? x.onDutyLive : state === "late" ? x.lateForShift : state === "booked" ? x.bookedNotIn : state === "done" ? t.s.closed : x.noShiftToday;
-  const borderColor = state === "onDuty" ? "rgba(63,216,180,.4)" : state === "late" ? "rgba(232,131,122,.45)" : "var(--line)";
-  return (
-    <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: "var(--surface-1)", border: `1px solid ${borderColor}`, transitionTimingFunction: "var(--ease-out)" }}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3.5 text-start">
-        <span className="relative shrink-0">
-          {r.photo ? <img src={r.photo} alt="" className="w-12 h-12 rounded-2xl object-cover" />
-            : <span className="grid place-items-center w-12 h-12 rounded-2xl" style={{ background: `rgba(${role.glow},.14)` }}>
-                {r.vehicle === "car" ? <Car size={20} style={{ color: role.accent }} /> : <Bike size={20} style={{ color: role.accent }} />}
-              </span>}
-          {state === "onDuty" && <span className="absolute -bottom-0.5 -end-0.5 w-3.5 h-3.5 rounded-full pulse-dot" style={{ background: "#3FD8B4", border: "2px solid var(--surface-1)" }} />}
-        </span>
-        <span className="flex-1 min-w-0">
-          <span className="flex items-center gap-1.5">
-            <span className="text-[13.5px] font-bold truncate">{lang === "en" ? r.en : r.ar}</span>
-          </span>
-          <span className="block text-[11px] mt-0.5" style={{ color: "var(--muted)" }}>
-            {shift ? `${shift.start} → ${shift.end}` : x.noShiftToday}
-          </span>
-        </span>
-        <span className="flex flex-col items-end gap-1 shrink-0">
-          <Chip tone={tone} sm>{stateLabel}</Chip>
-          <ChevronRight size={14} style={{ color: "var(--muted-2)", transform: open ? "rotate(90deg)" : "rotate(0)", transition: "transform .3s var(--ease-spring)" }} />
-        </span>
-      </button>
-      {open && (
-        <div className="px-3.5 pb-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5" style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{x.ordersCol}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.orders || 0}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].riderId}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.riderId || "—"}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].phoneL}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.phone}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PulsePage({ lang, role, reps, shifts, attendance, violationPenalty, weekendFine }) {
-  const t = T[lang], x = EX[lang];
-  const today = riyadhToday();
-  const nowHM = riyadhTimeHM();
-  const active = reps.filter((r) => r.status === "active");
-
-  const rows = active.map((r) => {
-    const shift = shifts.filter((s) => s.repId === r.nid && s.date === today).slice(-1)[0];
-    const clock = attendance.find((a) => a.key === r.nid && a.date === today);
-    let state = "none", tone = "n";
-    if (clock && !clock.out) { state = "onDuty"; tone = "ok"; }
-    else if (clock && clock.out) { state = "done"; tone = "n"; }
-    else if (shift) {
-      const [sh, sm] = shift.start.split(":").map(Number);
-      const [nh, nm] = nowHM.split(":").map(Number);
-      const graceMin = (nh * 60 + nm) - (sh * 60 + sm);
-      if (graceMin > 15) { state = "late"; tone = "bad"; } else { state = "booked"; tone = "warn"; }
-    }
-    return { r, shift, clock, state, tone };
-  });
-  const onDutyCount = rows.filter((r) => r.state === "onDuty").length;
-  const bookedCount = rows.filter((r) => r.state === "booked").length;
-  const lateCount = rows.filter((r) => r.state === "late").length;
-
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Radio size={18} style={{ color: role.accent }} />
-          <h2 className="text-[15px] font-extrabold">{x.pulseTitle}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.pulseSub}</p>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <Kpi label={x.onDutyLive} value={String(onDutyCount)} icon={Fingerprint} accent="63,216,180" />
-        <Kpi label={x.bookedNotIn} value={String(bookedCount)} icon={Clock} accent="228,184,92" />
-        <Kpi label={x.lateForShift} value={String(lateCount)} icon={AlertTriangle} accent="232,131,122" />
-      </div>
-
-      <Panel title={t.k.activeReps}>
-        {rows.length === 0 ? <EmptyHint lang={lang} /> : (
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {rows.map(({ r, shift, clock, state, tone }) => (
-              <DriverCard key={r.id} r={r} role={role} lang={lang} state={state} tone={tone} shift={shift} clock={clock} x={x} t={t} violationPenalty={violationPenalty} weekendFine={weekendFine} />
-            ))}
-          </div>
-        )}
-      </Panel>
     </div>
   );
 }
@@ -6019,136 +5847,6 @@ function CircularsPage({ lang, role, circulars, setCirculars, setAuditLog, actin
   );
 }
 
-function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) {
-  const t = T[lang], x = EX[lang];
-  const [tab, setTab] = useState(reps && reps.length ? 1 : 0);
-  const [p, setP] = useState(0);
-  const [open, setOpen] = useState(null);
-  const q = (query || "").trim().toLowerCase();
-
-  const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? (lang === "en" ? r.en : r.ar) : id; };
-  const supName = (sid) => supervisorsOf(employees).find((s) => s.id === sid)?.[lang] || "—";
-
-  const filteredReports = !q ? reports : reports.filter((rp) =>
-    rp.entries.some((e) => {
-      const rep = reps.find((r) => r.id === e.id);
-      if (!rep) return false;
-      return rep.ar.toLowerCase().includes(q) || rep.en.toLowerCase().includes(q) || rep.phone.includes(q) || (rep.nid || "").includes(q);
-    }));
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        {[x.corpReportsT, x.repReportsT].map((n, i) => (
-          <button key={n} onClick={() => setTab(i)} className="px-3.5 py-2 rounded-xl text-[12.5px] font-bold transition"
-            style={{ background: tab === i ? `rgba(${role.glow},.14)` : "rgba(20,27,45,.04)", border: `1px solid ${tab === i ? `rgba(${role.glow},.4)` : "var(--line)"}`, color: tab === i ? role.accent : "var(--muted)" }}>
-            {n}
-          </button>
-        ))}
-      </div>
-
-      {tab === 0 ? (
-        <Panel title={x.reportsT}>
-          <div className="flex gap-2 mb-4">
-            {[x.monthly, x.quarterly, x.yearly].map((n, i) => (
-              <button key={n} onClick={() => setP(i)} className="px-3 py-2 rounded-xl text-[12px] font-bold transition"
-                style={{ background: p === i ? `rgba(${role.glow},.14)` : "rgba(20,27,45,.04)", border: `1px solid ${p === i ? `rgba(${role.glow},.4)` : "var(--line)"}`, color: p === i ? role.accent : "var(--muted)" }}>{n}</button>
-            ))}
-          </div>
-          <div className="space-y-2.5">
-            {x.repItems.map((n) => (
-              <div key={n} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                <ReceiptText size={16} style={{ color: role.accent }} />
-                <span className="flex-1 text-[13px] font-semibold">{n}</span>
-                <Btn icon={Download}>{x.generate}</Btn>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      ) : (
-        <Panel title={x.repReportsT}
-          extra={
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}>
-                <Search size={14} style={{ color: "var(--muted)" }} />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep}
-                  className="bg-transparent outline-none border-0 text-[12px] w-40" style={{ color: "#12151D" }} />
-              </span>
-              <Btn icon={Download} onClick={() => {
-                const rows = [];
-                filteredReports.forEach((rp) => rp.entries.forEach((e) => {
-                  const rep = reps.find((r) => r.id === e.id) || { ar: e.id, en: e.id, empType: "—" };
-                  rows.push({ [t.h.employee]: lang === "en" ? rep.en : rep.ar, [x.empTypeCol]: EMP_TYPES[rep.empType]?.[lang] || rep.empType, Date: rp.date,
-                    [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 });
-                }));
-                exportToExcel(rows, `rep-reports-${riyadhToday()}`, "Reports");
-              }}>{t.export}</Btn>
-            </div>
-          }>
-          <div className="sm:hidden flex items-center gap-2 rounded-xl px-3 py-2 mb-3.5" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}>
-            <Search size={14} style={{ color: "var(--muted)" }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep}
-              className="bg-transparent outline-none border-0 text-[12px] flex-1" style={{ color: "#12151D" }} />
-          </div>
-
-          {filteredReports.length === 0 ? (
-            <p className="text-[12px]" style={{ color: "var(--muted)" }}>{q ? x.globalNoMatch : x.noReports}</p>
-          ) : (
-            <div className="space-y-2.5">
-              {filteredReports.map((rp) => {
-                const isOpen = open === rp.id;
-                return (
-                  <div key={rp.id} className="rounded-2xl overflow-hidden" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                    <button onClick={() => setOpen(isOpen ? null : rp.id)} className="w-full flex items-center justify-between gap-3 p-3.5 text-start">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="grid place-items-center w-9 h-9 rounded-xl shrink-0" style={{ background: `rgba(${role.glow},.13)` }}>
-                          <ClipboardList size={16} style={{ color: role.accent }} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-[13px] font-bold">{rp.id} · <span className="num">{rp.date}</span></span>
-                          <span className="block text-[11px]" style={{ color: "var(--muted)" }}>{x.teamOf} {supName(rp.sup)} · {x.repsCount}: {rp.entries.length}</span>
-                        </span>
-                      </div>
-                      <ChevronRight size={16} style={{ color: "var(--muted)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .3s" }} />
-                    </button>
-                    {isOpen && (() => {
-                      const withType = rp.entries.map((e) => ({ e, rep: reps.find((r) => r.id === e.id) || { ...e, ar: e.id, en: e.id, empType: "kafala" } }));
-                      const kafalaEntries = withType.filter((w) => w.rep.empType !== "ajeer");
-                      const ajeerEntries = withType.filter((w) => w.rep.empType === "ajeer");
-                      const toRows = (list) => list.map(({ e, rep }) => ({
-                        key: e.id,
-                        cells: [
-                          { v: lang === "en" ? rep.en : rep.ar, strong: 1 }, { v: e.orders, mono: 1 },
-                          { v: e.hours, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 },
-                        ],
-                      }));
-                      return (
-                        <div className="px-3.5 pb-3.5 space-y-3">
-                          <div>
-                            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>
-                            {kafalaEntries.length === 0 ? <EmptyHint lang={lang} /> : (
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol]} rows={toRows(kafalaEntries)} />
-                            )}
-                          </div>
-                          {ajeerEntries.length > 0 && (
-                            <div>
-                              <p className="text-[10.5px] font-bold mb-1.5 pt-2" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p>
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol]} rows={toRows(ajeerEntries)} />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Panel>
-      )}
-    </div>
-  );
-}
 
 function ResetForLaunchPanel({ lang, role, setters, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
@@ -6257,17 +5955,17 @@ function BackupPanel({ lang, role, data, setters, setAuditLog, actingEmployee })
 }
 
 function SettingsPage({ lang, setLang, role, reduce, setReduce, activeRep, reps, setReps, setAuditLog, actingEmployee,
-  reports, setReports, tickets, setTickets, circulars, setCirculars, attendance, setAttendance, shifts, setShifts,
+  reports, setReports, tickets, setTickets, circulars, setCirculars, attendance, setAttendance,
   orders, setOrders, cars, setCars, restaurants, setRestaurants, invoices, setInvoices,
   employees, setEmployees, contracts, setContracts, cases, setCases, approvalReqs, setApprovalReqs,
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog,
   deptPasswords, setDeptPasswords }) {
   const t = T[lang], x = EX[lang];
-  const backupData = { reps, reports, tickets, circulars, attendance, shifts, orders, cars, restaurants, invoices,
+  const backupData = { reps, reports, tickets, circulars, attendance, orders, cars, restaurants, invoices,
     employees, contracts, cases, approvalReqs, expenses, iqamaAlerts, payrollRuns, deptChats, repMessages, leaderboardHistory, auditLog };
   const backupSetters = { reps: setReps, reports: setReports, tickets: setTickets, circulars: setCirculars,
-    attendance: setAttendance, shifts: setShifts, orders: setOrders, cars: setCars, restaurants: setRestaurants,
+    attendance: setAttendance, orders: setOrders, cars: setCars, restaurants: setRestaurants,
     invoices: setInvoices, employees: setEmployees, contracts: setContracts, cases: setCases, approvalReqs: setApprovalReqs,
     expenses: setExpenses, iqamaAlerts: setIqamaAlerts, payrollRuns: setPayrollRuns, deptChats: setDeptChats,
     repMessages: setRepMessages, leaderboardHistory: setLeaderboardHistory, auditLog: setAuditLog };
@@ -6347,7 +6045,9 @@ const RA = {
     perOrder: "سعر الطلب", perKm: "سعر الكيلومتر", freeKm: "كم مجاني (يُخصم من إجمالي الكم)", fixedMonthly: "مبلغ ثابت شهري إضافي",
     ordersBase: "مبلغ الطلبات عند الهدف", ordersTarget: "هدف الطلبات الشهري", perOrderDelta: "سعر الطلب الزائد/الناقص",
     kmBase: "مبلغ الكيلومترات عند الهدف", kmTarget: "هدف الكيلومترات الشهري", perKmDelta: "سعر الكيلو الزائد/الناقص",
-    tierFrom: "من الطلب رقم", tierRate: "سعر الطلب", addTier: "إضافة شريحة", tiersNote: "ابدأ أول شريحة من 0 — كل شريحة تسري حتى بداية التي بعدها.",
+    tierFrom: "من طلب رقم", tierTo: "إلى طلب رقم", tierRate: "سعر الطلب (ريال)", addTier: "إضافة شريحة", tiersNote: "اكتب كل شريحة هكذا: من 1 إلى 249 = 13.50. الشريحة التالية تبدأ من 250. اترك «إلى» فارغاً في آخر شريحة (فما فوق).", andAbove: "فما فوق", tierTo2: "إلى",
+    tierRow: (f, t, r, sar) => (t ? `من الطلب ${f} إلى ${t}: كل طلب ${r} ${sar}` : `من الطلب ${f} فما فوق: كل طلب ${r} ${sar}`),
+    tierErr_empty: "أكمل الأرقام في كل شريحة", tierErr_bad: "رقم «إلى» يجب أن يكون أكبر من «من»", tierErr_gap: "توجد فجوة بين شريحتين — الشريحة التالية يجب أن تبدأ من (إلى + 1)", tierErr_overlap: "شريحتان متداخلتان — راجع الأرقام", tierErr_open: "شريحة «فما فوق» يجب أن تكون الأخيرة", tierErr_first: "أول شريحة يجب أن تبدأ من 1",
     tryIt: "جرّب الحساب", tryOrders: "طلبات", tryKm: "كيلومتر", tryResult: "الناتج",
     save: "حفظ التسعيرة", saved: "تم الحفظ", configured: "مضبوطة", usingDefault: "افتراضية", resetDefault: "رجوع للافتراضي", copyAll: "نسخ لكل التطبيقات",
     unsaved: "تعديلات غير محفوظة",
@@ -6385,7 +6085,9 @@ const RA = {
     perOrder: "Price per order", perKm: "Price per km", freeKm: "Free km (deducted from total)", fixedMonthly: "Extra fixed monthly amount",
     ordersBase: "Orders amount at target", ordersTarget: "Monthly orders target", perOrderDelta: "Price per extra/short order",
     kmBase: "Km amount at target", kmTarget: "Monthly km target", perKmDelta: "Price per extra/short km",
-    tierFrom: "From order #", tierRate: "Price per order", addTier: "Add tier", tiersNote: "Start the first tier at 0 — each tier applies until the next one begins.",
+    tierFrom: "From order #", tierTo: "To order #", tierRate: "Price per order (SAR)", addTier: "Add tier", tiersNote: "Write each tier like: 1 to 249 = 13.50. The next tier starts at 250. Leave \"To\" empty on the last tier (and above).", andAbove: "and above", tierTo2: "to",
+    tierRow: (f, t, r, sar) => (t ? `Orders ${f} to ${t}: ${r} ${sar} each` : `Orders ${f} and above: ${r} ${sar} each`),
+    tierErr_empty: "Fill in every tier", tierErr_bad: "\"To\" must be larger than \"From\"", tierErr_gap: "Gap between two tiers — next tier must start at (To + 1)", tierErr_overlap: "Two tiers overlap", tierErr_open: "The \"and above\" tier must be last", tierErr_first: "First tier must start at 1",
     tryIt: "Try the math", tryOrders: "Orders", tryKm: "Km", tryResult: "Result",
     save: "Save pricing", saved: "Saved", configured: "Configured", usingDefault: "Default", resetDefault: "Reset to default", copyAll: "Copy to all apps",
     unsaved: "Unsaved changes",
@@ -6423,7 +6125,9 @@ const RA = {
     perOrder: "فی آرڈر قیمت", perKm: "فی کلومیٹر قیمت", freeKm: "مفت کلومیٹر", fixedMonthly: "اضافی ماہانہ رقم",
     ordersBase: "ہدف پر آرڈرز کی رقم", ordersTarget: "ماہانہ آرڈر ہدف", perOrderDelta: "زیادہ/کم آرڈر کی قیمت",
     kmBase: "ہدف پر کلومیٹر کی رقم", kmTarget: "ماہانہ کلومیٹر ہدف", perKmDelta: "زیادہ/کم کلومیٹر کی قیمت",
-    tierFrom: "آرڈر نمبر سے", tierRate: "فی آرڈر قیمت", addTier: "سلیب شامل کریں", tiersNote: "پہلا سلیب 0 سے شروع کریں۔",
+    tierFrom: "آرڈر نمبر سے", tierTo: "آرڈر نمبر تک", tierRate: "فی آرڈر قیمت", addTier: "سلیب شامل کریں", tiersNote: "ہر سلیب ایسے لکھیں: 1 سے 249 = 13.50۔ اگلا سلیب 250 سے شروع ہوگا۔", andAbove: "اور اوپر", tierTo2: "تک",
+    tierRow: (f, t, r, sar) => (t ? `آرڈر ${f} سے ${t}: ${r} ${sar} فی آرڈر` : `آرڈر ${f} اور اوپر: ${r} ${sar} فی آرڈر`),
+    tierErr_empty: "ہر سلیب مکمل کریں", tierErr_bad: "\"تک\" کو \"سے\" سے بڑا ہونا چاہیے", tierErr_gap: "دو سلیبوں کے درمیان خلا ہے", tierErr_overlap: "دو سلیب آپس میں ملتے ہیں", tierErr_open: "\"اور اوپر\" سلیب آخری ہونا چاہیے", tierErr_first: "پہلا سلیب 1 سے شروع ہو",
     tryIt: "حساب آزمائیں", tryOrders: "آرڈرز", tryKm: "کلومیٹر", tryResult: "نتیجہ",
     save: "قیمت محفوظ کریں", saved: "محفوظ ہو گیا", configured: "ترتیب شدہ", usingDefault: "ڈیفالٹ", resetDefault: "ڈیفالٹ پر واپس", copyAll: "سب ایپس پر کاپی",
     unsaved: "غیر محفوظ تبدیلیاں",
@@ -6499,7 +6203,7 @@ function describePrice(p, RAx, sar) {
   if (!p) return [];
   const fx = n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : [];
   if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · ${n(p.perOrderDelta)} ${sar} ${RAx.dAbove}`].concat(fx);
-  if (p.mode === "tiers") return (p.tiers || []).map((tr) => `${RAx.dFrom} ${n(tr.from)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
+  if (p.mode === "tiers") return tiersN(p).map((tr) => `${n(tr.from)} ${RAx.tierTo2} ${tr.to === Infinity ? RAx.andAbove : n(tr.to)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
   return [`${n(p.perOrder)} ${sar} ${RAx.dOrder}`].concat(fx);
 }
 
@@ -6513,8 +6217,15 @@ function PriceForm({ value, onChange, RAx, sar }) {
       <input type="number" step="any" value={p[k] ?? ""} onChange={setNum(k)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
     </label>
   );
-  const tiers = p.tiers || [{ from: 0, rate: 0 }];
-  const setTier = (i, k, v) => onChange({ ...p, tiers: tiers.map((tr, j) => (j === i ? { ...tr, [k]: v === "" ? "" : +v } : tr)) });
+  const tiers = tiersForm(p);
+  const setTiers = (arr) => onChange({ ...p, tiersV: 2, tiers: arr });
+  const setTier = (i, k, v) => setTiers(tiers.map((tr, j) => (j === i ? { ...tr, [k]: v === "" ? "" : +v } : tr)));
+  const addTier = () => {
+    const last = tiers[tiers.length - 1];
+    const lastTo = last.to === "" || last.to == null ? (+last.from || 1) + 99 : +last.to;
+    setTiers([...tiers.slice(0, -1), { ...last, to: lastTo }, { from: lastTo + 1, to: "", rate: "" }]);
+  };
+  const issues = p.mode === "tiers" ? tierIssues(p) : [];
   const res = priceCalc(p, +tryO || 0);
   const modes = [["unit", RAx.modeUnit], ["target", RAx.modeTarget], ["tiers", RAx.modeTiers]];
   return (
@@ -6537,18 +6248,32 @@ function PriceForm({ value, onChange, RAx, sar }) {
       )}
       {p.mode === "tiers" && (
         <div className="space-y-2">
+          <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-[10.5px] font-semibold px-0.5" style={{ color: "var(--muted)" }}>
+            <span>{RAx.tierFrom}</span><span>{RAx.tierTo}</span><span>{RAx.tierRate}</span><span className="w-9" />
+          </div>
           {tiers.map((tr, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
-              <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tierFrom}</span>
-                <input type="number" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
-              <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tierRate}</span>
-                <input type="number" step="any" value={tr.rate ?? ""} onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
-              <button disabled={tiers.length <= 1} onClick={() => onChange({ ...p, tiers: tiers.filter((_, j) => j !== i) })} className="p-2.5 rounded-lg disabled:opacity-30" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={14} style={{ color: "#E8837A" }} /></button>
+            <div key={i} className="rounded-xl p-2" style={{ background: "rgba(20,27,45,.03)", border: "1px solid var(--line)" }}>
+              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                <input type="number" min="1" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <input type="number" min="1" value={tr.to ?? ""} placeholder={RAx.andAbove} onChange={(e) => setTier(i, "to", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <input type="number" step="any" value={tr.rate ?? ""} placeholder="13.50" onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <button disabled={tiers.length <= 1} onClick={() => setTiers(tiers.filter((_, j) => j !== i))} className="p-2.5 rounded-lg disabled:opacity-30" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={14} style={{ color: "#E8837A" }} /></button>
+              </div>
+              {tr.rate !== "" && tr.rate != null && tr.from !== "" && (
+                <p className="text-[11px] mt-1.5 px-0.5" style={{ color: "#0B5C46" }}>
+                  {RAx.tierRow(tr.from, tr.to === "" || tr.to == null ? null : tr.to, tr.rate, sar)}
+                </p>
+              )}
             </div>
           ))}
-          <button onClick={() => onChange({ ...p, tiers: [...tiers, { from: (+tiers[tiers.length - 1].from || 0) + 100, rate: 0 }] })}
+          <button onClick={addTier}
             className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(20,27,45,.05)", border: "1px solid var(--line)" }}><Plus size={13} />{RAx.addTier}</button>
           <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{RAx.tiersNote}</p>
+          {issues.length > 0 && (
+            <div className="rounded-lg p-2.5 text-[11.5px] font-semibold space-y-0.5" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.4)", color: "#B3392F" }}>
+              {issues.map((k) => <p key={k}>⚠ {RAx["tierErr_" + k]}</p>)}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2"><Field k="fixedMonthly" /></div>
         </div>
       )}
@@ -6813,7 +6538,8 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                         <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span></td>
                         <td className={cell}>{l.riderId ? <span className="num text-[11.5px] font-bold">{l.riderId}</span> : <Chip tone="warn" sm>{RAx.noRiderId}</Chip>}</td>
                         <td className={cell}>{num(l.orders)} {l.source === "invoice" ? <Chip tone="ok" sm>{RAx.srcInv}</Chip> : <Chip tone="n" sm>{RAx.srcDaily}</Chip>}
-                          {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}</td>
+                          {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}
+                          {l.baseOrders > 0 && <span className="block text-[10px]" style={{ color: "#8A611E" }}>{Lx(lang, `عدّاد التطبيق يكمل عن ${l.baseFrom || "سابقه"}: ${l.baseOrders} + ${l.orders} = ${l.baseOrders + l.orders} (داخلي)`, `App counter continues from ${l.baseFrom || "predecessor"}: ${l.baseOrders} + ${l.orders} = ${l.baseOrders + l.orders} (internal)`)}</span>}</td>
                         <td className={cell}>{l.unpriced ? <Chip tone="warn" sm>{RAx.noPolicy}</Chip> : num(l.gross)}</td>
                         <td className={cell}><span className="inline-flex items-center gap-1.5"><span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{l.weekendCount}×</span>
                           {canEdit ? mini(l.weekendAmt, (v) => setFine(l.repId, "weekend", v), 76) : num(l.weekendAmt, l.weekendAmt ? "#C0443A" : null)}</span></td>
@@ -6919,7 +6645,7 @@ function MyEarningsPage({ lang, role, user, activeRep, reports, pricing, repSett
   const rec = repSettlements.find((s) => s.month === month);
   const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === activeRep.id) : null;
   const entries = monthEntriesFor(reports, activeRep.id, month).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, monthFactor(month));
+  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, monthFactor(month), month);
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const manual = (inputs.manual || []).filter((m) => m.repId === activeRep.id);
   const reimbLive = r2((repReceipts || []).filter((q) => q.repId === activeRep.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
@@ -7199,24 +6925,21 @@ const RIDER_MODE = (() => {
 })();
 Object.assign(RA.ar, {
   rhClockIn: "سجّل حضورك", rhClockOut: "سجّل انصرافك", rhDone: "اكتمل يومك ✓", rhSince: "منذ", rhToday: "اليوم", rhNoEntry: "لم يسجّل المشرف طلباتك بعد",
-  rhGoal: "هدف الشهر", rhRank: "ترتيبك هذا الشهر", rhOf: "من", rhDoc: "إقامتك تنتهي خلال", rhDays: "يوم — راجع الموارد البشرية", rhMsgs: "رسائل جديدة", rhTickets: "طلباتك المفتوحة",
-  rhShift: "ورديتك اليوم", rhNet: "صافي ربحك هذا الشهر", rhShare: "مشاركة كشفي على واتساب",
+  rhGoal: "هدف الشهر", rhRank: "ترتيبك هذا الشهر", rhOf: "من", rhDoc: "إقامتك تنتهي خلال", rhDays: "يوم — راجع الموارد البشرية", rhMsgs: "رسائل جديدة", rhTickets: "طلباتك المفتوحة",  rhNet: "صافي ربحك هذا الشهر", rhShare: "مشاركة كشفي على واتساب",
   riderLinkT: "رابط تطبيق المندوب", riderLinkSub: "أرسله للمناديب — يفتح مباشرة على دخول المندوب ومتصل بنفس قاعدة البيانات.", copy: "نسخ الرابط", copied: "تم النسخ ✓", waShare: "إرسال واتساب",
   riderLoginT: "تطبيق المندوب", riderLoginSub: "سجّل دخولك برقم الهوية للبدء", missingEntryNotif: "لم تُدخل طلبات أمس بعد — أدخلها الآن",
   waMsg: "كشف أرباحي من بوارق الشرق",
 });
 Object.assign(RA.en, {
   rhClockIn: "Clock in", rhClockOut: "Clock out", rhDone: "Day complete ✓", rhSince: "since", rhToday: "Today", rhNoEntry: "Your supervisor hasn't logged your orders yet",
-  rhGoal: "Month goal", rhRank: "Your rank this month", rhOf: "of", rhDoc: "Your residency expires in", rhDays: "days — contact HR", rhMsgs: "New messages", rhTickets: "Your open requests",
-  rhShift: "Today's shift", rhNet: "Your net profit this month", rhShare: "Share my statement on WhatsApp",
+  rhGoal: "Month goal", rhRank: "Your rank this month", rhOf: "of", rhDoc: "Your residency expires in", rhDays: "days — contact HR", rhMsgs: "New messages", rhTickets: "Your open requests",  rhNet: "Your net profit this month", rhShare: "Share my statement on WhatsApp",
   riderLinkT: "Rider app link", riderLinkSub: "Send it to riders — opens straight on rider login and uses the same database.", copy: "Copy link", copied: "Copied ✓", waShare: "Send on WhatsApp",
   riderLoginT: "Rider App", riderLoginSub: "Sign in with your ID number to start", missingEntryNotif: "Yesterday's orders haven't been entered yet — enter them now",
   waMsg: "My earnings statement from Bawariq Al-Sharq",
 });
 Object.assign(RA.ur, {
   rhClockIn: "حاضری لگائیں", rhClockOut: "رخصتی لگائیں", rhDone: "دن مکمل ✓", rhSince: "سے", rhToday: "آج", rhNoEntry: "سپروائزر نے ابھی آرڈرز درج نہیں کیے",
-  rhGoal: "ماہانہ ہدف", rhRank: "اس مہینے آپ کا درجہ", rhOf: "میں سے", rhDoc: "آپ کا اقامہ ختم ہو رہا ہے", rhDays: "دن میں — ایچ آر سے رجوع کریں", rhMsgs: "نئے پیغامات", rhTickets: "آپ کی کھلی درخواستیں",
-  rhShift: "آج کی شفٹ", rhNet: "اس مہینے آپ کا خالص منافع", rhShare: "واٹس ایپ پر شیئر کریں",
+  rhGoal: "ماہانہ ہدف", rhRank: "اس مہینے آپ کا درجہ", rhOf: "میں سے", rhDoc: "آپ کا اقامہ ختم ہو رہا ہے", rhDays: "دن میں — ایچ آر سے رجوع کریں", rhMsgs: "نئے پیغامات", rhTickets: "آپ کی کھلی درخواستیں",  rhNet: "اس مہینے آپ کا خالص منافع", rhShare: "واٹس ایپ پر شیئر کریں",
   riderLinkT: "نمائندہ ایپ کا لنک", riderLinkSub: "نمائندوں کو بھیجیں — براہ راست لاگ ان کھلتا ہے۔", copy: "لنک کاپی", copied: "کاپی ہو گیا ✓", waShare: "واٹس ایپ پر بھیجیں",
   riderLoginT: "نمائندہ ایپ", riderLoginSub: "شروع کرنے کے لیے شناختی نمبر سے لاگ ان کریں", missingEntryNotif: "کل کے آرڈرز ابھی درج نہیں ہوئے",
   waMsg: "بوارق الشرق سے میری کمائی کا گوشوارہ",
@@ -7296,7 +7019,7 @@ function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipt
   const rec = repSettlements.find((s) => s.month === month);
   const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === rep.id) : null;
   const entries = monthEntriesFor(reports, rep.id, month);
-  const c = repMonthCalc(entries, rep, pricing, wf, vp, monthFactor(month));
+  const c = repMonthCalc(entries, rep, pricing, wf, vp, monthFactor(month), month);
   if (closedLine) return { net: closedLine.net, final: true, orders: closedLine.orders };
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const fo = inputs.fineOverride[rep.id] || {};
@@ -8083,9 +7806,11 @@ function perfOf(rep, month, reports, attendance, ext, pricing, wf, vp, teamAvg) 
   const days = new Set(entries.filter((e) => (e.orders || 0) > 0 || (e.hours || 0) > 0).map((e) => e.date));
   (attendance || []).forEach((a) => { if (a.key === rep.nid && (a.date || "").startsWith(month)) days.add(a.date); });
   const elapsed = Math.max(1, Math.round(monthDays(month) * f));
-  const expected = Math.max(1, Math.round(elapsed * 6 / 7));
+  let excusedN = 0;
+  Object.keys(E.roll || {}).forEach((d) => { if (!d.startsWith(month)) return; const rc = (E.roll[d] || {})[rep.id]; if (!rc) return; if (rc.st === "present") days.add(d); else { days.delete(d); if (rc.excused) excusedN++; } });
+  const expected = Math.max(1, Math.round(elapsed * 6 / 7) - excusedN);
   const att = Math.min(1, days.size / expected);
-  const c = repMonthCalc(entries, rep, pricing, wf, vp, f);
+  const c = repMonthCalc(entries, rep, pricing, wf, vp, f, month);
   const tgt = monthTargetOf(pricing, c.main);
   const goal = tgt ? tgt * f : (teamAvg || 0);
   const hasGoal = goal > 0;
@@ -8131,7 +7856,7 @@ function CoachPage({ lang, role, activeRep, reps, reports, pricing, repSettlemen
   const today = riyadhToday(), month = today.slice(0, 7), dayN = +today.slice(8, 10), dim = monthDays(month);
   const f = monthFactor(month);
   const entries = monthEntriesFor(reports, activeRep.id, month);
-  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, f);
+  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, f, month);
   const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
   const workedSet = new Set(entries.filter((e) => (e.orders || 0) > 0).map((e) => e.date));
   const todayDone = workedSet.has(today);
@@ -8147,13 +7872,13 @@ function CoachPage({ lang, role, activeRep, reps, reports, pricing, repSettlemen
   const mainOrders = (c.byApp[c.main] || {}).orders || 0;
   const projMainOrders = mainOrders + Math.round(avg * workLeft);
   if (price && price.mode === "tiers") {
-    const th = (price.tiers || []).map((x) => +x.from).filter((v) => v > projMainOrders).sort((a, b) => a - b)[0];
+    const th = tiersN(price).map((x) => x.from).filter((v) => v > projMainOrders).sort((a, b) => a - b)[0];
     if (th) { nextT = th; step = r2(priceCalc(price, th, 1).total - priceCalc(price, projMainOrders, 1).total); }
   } else if (price && price.mode === "target") {
     const tg = +price.ordersTarget;
     if (tg > projMainOrders) { nextT = tg; step = r2(priceCalc(price, tg, 1).total - priceCalc(price, projMainOrders, 1).total); }
   }
-  const perOrder = price ? (price.mode === "unit" ? +price.perOrder : price.mode === "target" ? +price.perOrderDelta : (() => { const ts = (price.tiers || []).map((x) => ({ from: +x.from, rate: +x.rate })).sort((a, b) => a.from - b.from); const cur = ts.filter((x) => x.from <= mainOrders).pop(); return cur ? cur.rate : 0; })()) : 0;
+  const perOrder = price ? (price.mode === "unit" ? +price.perOrder : price.mode === "target" ? +price.perOrderDelta : (() => { const ts = tiersN(price); const cur = ts.filter((x) => x.from <= mainOrders).pop(); return cur ? cur.rate : 0; })()) : 0;
   const goalOrders = nextT || Math.round(avg * (workedSet.size + workLeft) * 1.1) || 0;
   const needPerDay = workLeft > 0 && goalOrders > mainOrders ? Math.ceil((goalOrders - mainOrders) / workLeft) : 0;
   // سلسلة الأيام المتواصلة
@@ -8162,7 +7887,7 @@ function CoachPage({ lang, role, activeRep, reps, reports, pricing, repSettlemen
   const p = perfOf(activeRep, month, reports, attendance, ext, pricing, weekendFine, violationPenalty, ta);
   const pts = pointsOf(activeRep, reports, ext);
   const tips = [];
-  if (!todayDone) tips.push(Lx(lang, "لم تُسجَّل لك طلبات اليوم بعد — ابدأ وردية اليوم لتحافظ على سلسلتك.", "No orders logged for you today yet — start your shift to keep your streak."));
+  if (!todayDone) tips.push(Lx(lang, "لم تُسجَّل لك طلبات اليوم بعد — ابدأ طلبات اليوم لتحافظ على سلسلتك.", "No orders logged for you today yet — start today to keep your streak."));
   if (step && nextT) tips.push(Lx(lang, `بقي لك ${Math.max(0, nextT - projMainOrders)} طلب فوق توقعك لتصل للحد التالي ويرتفع دخلك ${fmt(step)} ر.س.`, `${Math.max(0, nextT - projMainOrders)} more orders beyond your forecast reach the next level and add ${fmt(step)} SAR.`));
   if (p.viol > 0) tips.push(Lx(lang, `لديك ${p.viol} مخالفة هذا الشهر — كل مخالفة تخصم من دخلك وتخفض درجتك.`, `You have ${p.viol} violation(s) this month — each one cuts income and score.`));
   if (p.att < 0.85) tips.push(Lx(lang, "حضورك أقل من المتوقع — كل يوم حضور يرفع درجتك أكثر من أي عامل آخر.", "Attendance is below expected — each attended day lifts your score the most."));
@@ -8240,6 +7965,7 @@ function MyScorePage({ lang, role, activeRep, reps, reports, pricing, weekendFin
           <p>{Lx(lang, `المخالفات: ${p.viol}`, `Violations: ${p.viol}`)}</p>
         </div>
       </Panel>
+      <MyAttendanceCard lang={lang} activeRep={activeRep} ext={ext} setExt={setExt} />
       <Panel title={Lx(lang, "نقاطي ومستواي", "My points & tier")}>
         <p className="text-[22px] font-extrabold" style={{ color: pts.tier[4] }}>{Lx(lang, pts.tier[2], pts.tier[3])}</p>
         <p className="num text-[13px]">{Lx(lang, "الرصيد", "Balance")}: <b>{pts.balance}</b> · {Lx(lang, "المكتسب", "Earned")}: {pts.earned}</p>
@@ -9119,9 +8845,10 @@ function PerfPlansPage({ lang, role, reps, allReps, reports, allReports, attenda
       {tab === "cands" ? <Panel title={Lx(lang, "مناديب درجتهم أقل من 60", "Riders scoring below 60")}>
         {cands.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا أحد يحتاج خطة حالياً.", "Nobody needs a plan now.")}</p> : <div className="space-y-2">{cands.map(({ r, p }) => (
           <div key={r.id} className="rounded-2xl p-3" style={BOXS}>
-            <div className="flex items-center gap-2"><span className="flex-1 text-[13px] font-extrabold">{r.ar}</span><Chip tone="bad" sm>{Lx(lang, "الدرجة", "Score")} {p.score}</Chip>{canAct && <Btn variant="accent" accent={role.glow} onClick={() => { setSel(sel === r.id ? null : r.id); setErr(""); }}>{sel === r.id ? Lx(lang, "إلغاء", "Cancel") : Lx(lang, "بدء خطة", "Start plan")}</Btn>}</div>
+            <div className="flex items-center gap-2"><span className="flex-1 text-[13px] font-extrabold">{r.ar}</span><Chip tone="bad" sm>{Lx(lang, "الدرجة", "Score")} {p.score}</Chip>{canAct && <Btn variant="accent" accent={role.glow} onClick={() => { if (sel === r.id) { setSel(null); return; } const s14 = rangeStats(RP, r.id, addDays(today, -13), today); const wk = s14.orders / 2; const g = Math.max(Math.ceil(wk * 1.25), Math.ceil(wk + 10)); const dd = Math.min(6, Math.max(4, Math.ceil(s14.days / 2) + 1)); setF({ ordersWk: String(g), daysWk: String(dd), note: Lx(lang, `جلسة متابعة: درجة الأداء ${p.score}. اتفقنا على هدف أسبوعي ${g} طلباً في ${dd} أيام مع متابعة أسبوعية.`, `Follow-up session: score ${p.score}. Agreed weekly goal ${g} orders over ${dd} days.`) }); setSel(r.id); setErr(""); }}>{sel === r.id ? Lx(lang, "إلغاء", "Cancel") : Lx(lang, "خطة مقترحة تلقائياً", "Auto-suggested plan")}</Btn>}</div>
             <p className="num text-[11px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, `حضور ${Math.round(p.att * 100)}% · طلبات ${p.orders} · مخالفات ${p.viol}`, `Attendance ${Math.round(p.att * 100)}% · orders ${p.orders} · violations ${p.viol}`)}</p>
             {sel === r.id && <div className="mt-3 space-y-2">
+              <p className="text-[11.5px] font-bold" style={{ color: "#B07A00" }}>{Lx(lang, "الأرقام التالية مقترحة من نشاطه آخر 14 يوماً — عدّلها إن لزم ثم اعتمد.", "Suggested from the last 14 days — adjust if needed, then confirm.")}</p>
               <div className="grid gap-2 sm:grid-cols-2"><XIn type="number" value={f.ordersWk} onChange={(v) => setF({ ...f, ordersWk: v })} ph={Lx(lang, "هدف الطلبات الأسبوعي", "Weekly orders goal")} /><XIn type="number" value={f.daysWk} onChange={(v) => setF({ ...f, daysWk: v })} ph={Lx(lang, "أيام العمل أسبوعياً", "Days per week")} /></div>
               <XIn value={f.note} onChange={(v) => setF({ ...f, note: v })} ph={Lx(lang, "ملخص الجلسة الأولى (الأسباب والاتفاق)", "First session summary")} cls="w-full" />
               {err && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err}</p>}
@@ -9502,6 +9229,24 @@ function EmpFilePage({ lang, role, reps, allReps, employees, ext, setExt, setAud
 /* ═══ 22) إنهاء الخدمة والمغادرة المنظّمة ═══ */
 const OB_REASONS = [["pay", "الدخل / الأجر", "Pay"], ["orders", "قلة الطلبات", "Few orders"], ["sup", "علاقة بالمشرف", "Supervisor"], ["job", "فرصة أخرى", "Other job"], ["personal", "ظروف شخصية", "Personal"], ["end", "انتهاء العقد", "Contract end"], ["company", "قرار الشركة / انضباط", "Company decision"]];
 const OB_STEPS = [["assets", "تسليم العهدة والمعدات", "Return assets & equipment", ["hr", "opsm", "ops", "gm"]], ["accounts", "إغلاق حسابه على التطبيق وإيقاف الدخول", "Close app account & access", ["hr", "opsm", "gm"]], ["advances", "تسوية السلف والمستحقات", "Settle advances & dues", ["fin", "gm"]], ["docs", "تسليم المستندات وشهادة الخبرة", "Hand over documents & experience letter", ["hr", "gm"]], ["exit", "مقابلة الخروج", "Exit interview", ["hr", "opsm", "gm"]]];
+const EXIT_TYPES = [["resign", "استقالة", "Resignation"], ["suspend", "إيقاف عن العمل", "Suspension"], ["fire", "إنهاء من الشركة", "Termination"]];
+const exitName = (k, lang) => { const z = EXIT_TYPES.find((x) => x[0] === (k || "resign")) || EXIT_TYPES[0]; return lang === "en" ? z[2] : z[1]; };
+const exitBanner = (k, lang) => (k === "suspend" ? Lx(lang, "موقوف عن العمل", "Suspended from work") : k === "fire" ? Lx(lang, "تم إنهاء تعاقدك — موقوف عن العمل", "Contract ended — suspended from work") : Lx(lang, "مستقال وموقوف عن العمل", "Resigned — suspended from work"));
+// كشف المغادرة الدقيق للمندوب: تاريخ البدء والنهاية والطلبات والأرباح والمخالفات شهراً بشهر
+function exitStatement(rep, RP, pricing, repSettlements, wf, vp, receipts, endDate) {
+  const mine = RP.filter((rp) => rp.entries.some((e) => e.id === rep.id));
+  const months = [...new Set(mine.map((rp) => rp.date.slice(0, 7)))].sort();
+  const dates = []; mine.forEach((rp) => { if (rp.entries.some((e) => e.id === rep.id && ((e.orders || 0) > 0 || (e.hours || 0) > 0))) dates.push(rp.date); }); dates.sort();
+  const rows = months.map((m) => {
+    const c = repMonthCalc(monthEntriesFor(RP, rep.id, m), rep, pricing, wf, vp, monthFactor(m), m);
+    const n = repNetFor(rep, m, RP, pricing, repSettlements, wf, vp, receipts);
+    return { month: m, orders: c.orders, base: (c.byApp[c.main] || {}).base || 0, gross: c.gross, weekend: c.weekendCount, app: c.appCount, fines: r2(c.weekendAuto + c.appAuto), net: n.net, final: !!n.final };
+  });
+  const sum = (k) => rows.reduce((a, x) => a + (x[k] || 0), 0);
+  return { startDate: rep.startDate || dates[0] || null, endDate: endDate || rep.leftAt || null, firstOrderDate: dates[0] || null, lastOrderDate: dates[dates.length - 1] || null, workDays: dates.length,
+    orders: sum("orders"), gross: r2(sum("gross")), net: r2(sum("net")), weekend: sum("weekend"), app: sum("app"), violations: sum("weekend") + sum("app"), fines: r2(sum("fines")), months: rows, appId: rep.app };
+}
+const daysBetween = (a, b) => (a && b ? Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000)) : null);
 const reasonName = (k, lang) => { const z = OB_REASONS.find((x) => x[0] === k); return z ? (lang === "en" ? z[2] : z[1]) : k; };
 function LeaveReasonsPanel({ lang, ext }) {
   const E = extOf(ext); const done = E.offboard.filter((c) => c.exit && c.exit.reason); if (!done.length) return null;
@@ -9509,12 +9254,124 @@ function LeaveReasonsPanel({ lang, ext }) {
   const rows = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
   return <Panel title={Lx(lang, "أسباب المغادرة (من مقابلات الخروج)", "Leaving reasons (exit interviews)")}><div className="space-y-1.5">{rows.map((k) => <div key={k} className="flex items-center gap-2 text-[12.5px]"><span className="w-36 font-bold">{reasonName(k, lang)}</span><div className="flex-1"><XBar v={cnt[k] / done.length} color="#E4B85C" /></div><span className="num w-8 text-end">{cnt[k]}</span></div>)}</div></Panel>;
 }
+const liveOrSnap = (c, rr, rp, pricing, rs, wf, vp, receipts) => { if (c.snap) return c.snap; const r = rr.find((x) => x.id === c.pid); return r ? exitStatement(r, rp, pricing, rs, wf, vp, receipts, c.lastDay) : null; };
+function StatBox({ label, value, tone }) { return <div className="rounded-xl px-3 py-2" style={BOXS}><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{label}</p><p className="num text-[14px] font-extrabold" style={tone ? { color: tone } : null}>{value}</p></div>; }
+function ExitMonthsTable({ lang, S, sar, internal }) {
+  return <div className="overflow-x-auto mt-2"><table className="w-full text-[11.5px]"><thead><tr style={{ color: "var(--muted)" }}>{[Lx(lang, "الشهر", "Month"), Lx(lang, "الطلبات", "Orders"), Lx(lang, "الإجمالي", "Gross"), Lx(lang, "مخالفات", "Violations"), Lx(lang, "غرامات", "Fines"), Lx(lang, "الصافي", "Net")].map((h, i) => <th key={i} className="text-start font-semibold py-1 pe-3">{h}</th>)}</tr></thead>
+    <tbody>{S.months.map((m) => <tr key={m.month} style={{ borderTop: "1px solid var(--line)" }}><td className="num py-1.5 pe-3">{m.month}</td><td className="num pe-3">{fmt(m.orders)}{internal && m.base ? <span style={{ color: "#8A611E" }}> ({Lx(lang, "عدّاد الشركة يبدأ من", "company counter from")} {m.base})</span> : null}</td><td className="num pe-3">{fmt(Math.round(m.gross))}</td><td className="num pe-3">{m.weekend + m.app}</td><td className="num pe-3">{fmt(Math.round(m.fines))}</td><td className="num font-bold">{fmt(Math.round(m.net))} {sar}</td></tr>)}
+      {!S.months.length && <tr><td colSpan={6} className="py-2" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد تقارير مسجّلة له.", "No reports on record.")}</td></tr>}</tbody></table></div>;
+}
+function ExitStatementBox({ lang, c, rr, rp, pricing, repSettlements, wf, vp, receipts, sar }) {
+  const S = liveOrSnap(c, rr, rp, pricing, repSettlements, wf, vp, receipts); const [show, setShow] = useState(false); if (!S) return null;
+  const dur = daysBetween(S.startDate, c.lastDay);
+  return <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+    <p className="text-[12.5px] font-extrabold mb-2">{Lx(lang, "كشف المغادرة الدقيق", "Exact exit statement")} {c.snap ? "🔒" : ""}</p>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <StatBox label={Lx(lang, "تاريخ البدء", "Start date")} value={S.startDate || "—"} />
+      <StatBox label={Lx(lang, "تاريخ النهاية", "End date")} value={c.lastDay} />
+      <StatBox label={Lx(lang, "مدة الخدمة (يوم)", "Service (days)")} value={dur == null ? "—" : fmt(dur)} />
+      <StatBox label={Lx(lang, "أيام عمل فعلية", "Worked days")} value={fmt(S.workDays)} />
+      <StatBox label={Lx(lang, "إجمالي الطلبات", "Total orders")} value={fmt(S.orders)} />
+      <StatBox label={Lx(lang, "صافي الأرباح", "Net earnings")} value={`${fmt(Math.round(S.net))} ${sar}`} tone="#0B5C46" />
+      <StatBox label={Lx(lang, "المخالفات", "Violations")} value={`${S.violations} (${Lx(lang, "نهاية أسبوع", "wknd")} ${S.weekend} · ${Lx(lang, "تطبيق", "app")} ${S.app})`} tone={S.violations ? "#C0443A" : null} />
+      <StatBox label={Lx(lang, "قيمة الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${sar}`} tone={S.fines ? "#C0443A" : null} />
+    </div>
+    <button onClick={() => setShow(!show)} className="text-[11.5px] font-bold mt-2 underline">{show ? Lx(lang, "إخفاء التفصيل الشهري", "Hide monthly detail") : Lx(lang, "التفصيل الشهري", "Monthly detail")}</button>
+    {show && <ExitMonthsTable lang={lang} S={S} sar={sar} internal />}
+  </div>;
+}
+function ExitRegistry({ lang, cases, rr, rp, pricing, repSettlements, wf, vp, receipts, sar, today }) {
+  const [q, setQ] = useState(""); const [typ, setTyp] = useState("all"); const [open, setOpen] = useState(null);
+  const rows = cases.filter((c) => c.kind === "rep" && (typ === "all" || (c.exitType || "resign") === typ) && (!q.trim() || c.name.includes(q.trim()))).map((c) => ({ c, S: liveOrSnap(c, rr, rp, pricing, repSettlements, wf, vp, receipts) }));
+  const staff = cases.filter((c) => c.kind !== "rep" && (typ === "all" || (c.exitType || "resign") === typ) && (!q.trim() || c.name.includes(q.trim())));
+  const exportX = () => {
+    const out = rows.map(({ c, S }) => ({ [Lx(lang, "الاسم", "Name")]: c.name, [Lx(lang, "النوع", "Type")]: exitName(c.exitType, lang), [Lx(lang, "السبب", "Reason")]: reasonName(c.reason, lang), [Lx(lang, "تاريخ البدء", "Start")]: S ? S.startDate || "" : "", [Lx(lang, "تاريخ النهاية", "End")]: c.lastDay, [Lx(lang, "أيام العمل", "Worked days")]: S ? S.workDays : "", [Lx(lang, "إجمالي الطلبات", "Orders")]: S ? S.orders : "", [Lx(lang, "صافي الأرباح", "Net")]: S ? S.net : "", [Lx(lang, "المخالفات", "Violations")]: S ? S.violations : "", [Lx(lang, "الغرامات", "Fines")]: S ? S.fines : "", [Lx(lang, "البديل", "Replacement")]: c.replName || "", [Lx(lang, "طلبات موروثة", "Inherited")]: c.inheritOrders || 0, [Lx(lang, "الحالة", "Status")]: c.status === "closed" ? Lx(lang, "مكتملة", "Closed") : Lx(lang, "مفتوحة", "Open") }));
+    if (!out.length) return; const ws = XLSX.utils.json_to_sheet(out); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Exits"); XLSX.writeFile(wb, `exits_${today}.xlsx`);
+  };
+  return <Panel title={Lx(lang, "سجل الاستقالات والإيقاف", "Resignations & suspensions register")} extra={<Btn onClick={exportX}>Excel</Btn>}>
+    <div className="flex gap-2 flex-wrap mb-3"><XIn value={q} onChange={setQ} ph={Lx(lang, "بحث بالاسم", "Search name")} cls="w-44" />
+      <XSel value={typ} onChange={setTyp}><option value="all">{Lx(lang, "كل الأنواع", "All types")}</option>{EXIT_TYPES.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel></div>
+    {rows.length === 0 && staff.length === 0 ? EMPTYT(lang) : <div className="space-y-2">
+      {rows.map(({ c, S }) => <div key={c.id} className="rounded-2xl p-3" style={BOXS}>
+        <div className="flex items-center gap-2 flex-wrap"><b className="text-[13.5px]">{c.name}</b><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><Chip tone={c.status === "closed" ? "ok" : "warn"} sm>{c.status === "closed" ? Lx(lang, "مكتملة", "Closed") : Lx(lang, "مفتوحة", "Open")}</Chip>
+          <span className="num text-[11.5px] ms-auto" style={{ color: "var(--muted)" }}>{S && S.startDate ? S.startDate : "—"} ← {c.lastDay}</span></div>
+        {S && <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+          <StatBox label={Lx(lang, "الطلبات", "Orders")} value={fmt(S.orders)} /><StatBox label={Lx(lang, "صافي الأرباح", "Net")} value={`${fmt(Math.round(S.net))} ${sar}`} tone="#0B5C46" />
+          <StatBox label={Lx(lang, "المخالفات", "Violations")} value={S.violations} tone={S.violations ? "#C0443A" : null} /><StatBox label={Lx(lang, "الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${sar}`} />
+          <StatBox label={Lx(lang, "البديل", "Replacement")} value={c.replName ? `${c.replName} (${c.inheritOrders})` : "—"} /></div>}
+        {S && <button onClick={() => setOpen(open === c.id ? null : c.id)} className="text-[11.5px] font-bold mt-2 underline">{open === c.id ? Lx(lang, "إخفاء التفصيل", "Hide detail") : Lx(lang, "التفصيل الشهري", "Monthly detail")}</button>}
+        {S && open === c.id && <ExitMonthsTable lang={lang} S={S} sar={sar} internal />}
+      </div>)}
+      {staff.map((c) => <div key={c.id} className="rounded-2xl p-3 flex items-center gap-2 flex-wrap" style={BOXS}><b className="text-[13px]">{c.name}</b><Chip tone="n" sm>{Lx(lang, "موظف", "Staff")}</Chip><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><span className="num text-[11.5px] ms-auto" style={{ color: "var(--muted)" }}>{c.lastDay}</span></div>)}
+    </div>}
+  </Panel>;
+}
+/* شاشة المندوب بعد الاستقالة/الإيقاف: كشف دقيق بتاريخ البدء والنهاية والطلبات والأرباح والمخالفات */
+function RepExitScreen({ lang, setLang, rep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, ext, onLogout }) {
+  const E = extOf(ext); const t = T[lang];
+  const cs = (E.offboard || []).filter((c) => c.pid === rep.id).sort((a, b) => (b.at || "").localeCompare(a.at || ""))[0] || null;
+  const typ = (cs && cs.exitType) || rep.exitType || (rep.status === "suspended" ? "suspend" : "resign");
+  const end = (cs && cs.lastDay) || rep.leftAt || null;
+  const S = (cs && cs.snap) || exitStatement(rep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, end);
+  const dur = daysBetween(S.startDate, end); const settled = cs && cs.settle && cs.settle.status === "approved";
+  return (
+    <div className="min-h-screen px-4 py-6" dir={lang === "en" ? "ltr" : "rtl"} style={{ background: "#F4F1EA", color: "#12151D" }}>
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg,#3A1513,#7A2A24)", color: "#fff" }}>
+          <p className="text-[12px] opacity-70 mb-1">{lang === "en" ? rep.en : rep.ar}</p>
+          <p className="text-[22px] font-extrabold">{exitBanner(typ, lang)}</p>
+          <p className="num text-[13px] mt-2 opacity-90">{Lx(lang, "تاريخ الإيقاف", "Effective")}: {end || "—"}</p>
+          <p className="text-[11.5px] mt-1 opacity-70">{Lx(lang, "حسابك لم يعد يستقبل الطلبات. هذا كشف بحسابك حتى تاريخ الإيقاف.", "Your account no longer takes orders. This is your statement up to the effective date.")}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatBox label={Lx(lang, "تاريخ البدء", "Start date")} value={S.startDate || "—"} />
+          <StatBox label={Lx(lang, "تاريخ النهاية", "End date")} value={end || "—"} />
+          <StatBox label={Lx(lang, "مدة الخدمة (يوم)", "Service (days)")} value={dur == null ? "—" : fmt(dur)} />
+          <StatBox label={Lx(lang, "أيام العمل الفعلية", "Worked days")} value={fmt(S.workDays)} />
+          <StatBox label={Lx(lang, "إجمالي الطلبات", "Total orders")} value={fmt(S.orders)} />
+          <StatBox label={Lx(lang, "صافي أرباحك", "Net earnings")} value={`${fmt(Math.round(S.net))} ${t.sar}`} tone="#0B5C46" />
+          <StatBox label={Lx(lang, "عدد المخالفات", "Violations")} value={`${S.violations}`} tone={S.violations ? "#C0443A" : null} />
+          <StatBox label={Lx(lang, "قيمة الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${t.sar}`} tone={S.fines ? "#C0443A" : null} />
+        </div>
+        {S.violations > 0 && <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, `المخالفات: نهاية أسبوع ${S.weekend} · مخالفات التطبيق ${S.app}`, `Weekend ${S.weekend} · app ${S.app}`)}</p>}
+        <div className="rounded-2xl p-4 bg-white" style={{ border: "1px solid var(--line)" }}>
+          <p className="text-[13px] font-extrabold">{Lx(lang, "التفصيل الشهري", "Monthly detail")}</p>
+          <ExitMonthsTable lang={lang} S={S} sar={t.sar} />
+        </div>
+        {cs && <div className="rounded-2xl p-4 bg-white text-[12.5px]" style={{ border: "1px solid var(--line)" }}>
+          <p className="font-extrabold mb-1">{Lx(lang, "التسوية النهائية", "Final settlement")}</p>
+          {settled ? <p className="num">{Lx(lang, "معتمدة — الصافي المستحق", "Approved — net due")}: <b>{fmt(Math.round(cs.settle.amount || 0))} {t.sar}</b></p> : <p style={{ color: "var(--muted)" }}>{Lx(lang, "قيد الاعتماد لدى المالية.", "Pending with Finance.")}</p>}
+        </div>}
+        <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-2xl p-3.5 text-[13px] font-bold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }}><LogOut size={16} />{t.logout}</button>
+      </div>
+    </div>
+  );
+}
 function OffboardPage({ lang, role, reps, allReps, allReports, reports, employees, setReps, setEmployees, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, ext, setExt, setRepSettlements, setAuditLog, actingEmployee }) {
   const t = T[lang]; const E = extOf(ext); const RR = allReps || reps, RP = allReports || reports; const today = riyadhToday(); const me = byName(role, actingEmployee);
   const canStart = role.id === "hr" || role.id === "opsm" || role.id === "gm";
   const [tab, setTab] = useState("open");
-  const [f, setF] = useState({ kind: "rep", pid: "", lastDay: today, reason: "personal", text: "" }); const [err, setErr] = useState(""); const [ded, setDed] = useState({}); const [ex, setEx] = useState({});
+  const [f, setF] = useState({ kind: "rep", pid: "", lastDay: today, reason: "personal", text: "", exitType: "resign", repl: "" }); const [open, setOpen] = useState({}); const [err, setErr] = useState(""); const [ded, setDed] = useState({}); const [ex, setEx] = useState({});
   const upd = (id, fn) => extUpd(setExt, "offboard", (a) => a.map((z) => (z.id === id ? fn(z) : z)));
+  const baseFor = (r, lastDay) => {
+    const mo = lastDay.slice(0, 7); const by = {};
+    monthEntriesFor(RP, r.id, mo).filter((e) => e.date <= lastDay).forEach((e) => { const a = e.app || r.app || "hs"; by[a] = (by[a] || 0) + (e.orders || 0); });
+    const apps = Object.keys(by).sort((x, y) => by[y] - by[x]); const a = apps[0] || r.app;
+    return { app: a, orders: by[a] || 0, month: mo };
+  };
+  const pushInherit = (c, rid, info) => setReps((p) => p.map((r) => {
+    if (r.inherit && r.inherit.caseId === c.id && r.id !== rid) { const { inherit: _x, ...rest } = r; return rest; }
+    if (r.id === rid) return { ...r, inherit: { ...info, fromId: c.pid, fromName: c.name, date: c.lastDay, caseId: c.id } };
+    return r;
+  }));
+  const assignRepl = (c, rid) => {
+    const old = RR.find((r) => r.id === c.pid); if (!old) return;
+    if (!rid) { setReps((p) => p.map((r) => { if (r.inherit && r.inherit.caseId === c.id) { const { inherit: _x, ...rest } = r; return rest; } return r; })); upd(c.id, (z) => ({ ...z, replacementId: "", replName: "", inheritOrders: 0 })); return; }
+    const nr = RR.find((r) => r.id === rid); const info = baseFor(old, c.lastDay);
+    pushInherit(c, rid, info);
+    upd(c.id, (z) => ({ ...z, replacementId: rid, replName: nr ? nr.ar : rid, inheritOrders: info.orders, inheritApp: info.app, inheritMonth: info.month, replAt: today, replBy: me }));
+    logAudit(setAuditLog, role, "offboard_replacement", `${c.name} → ${nr ? nr.ar : rid} (${info.orders})`, actingEmployee);
+  };
   const pool = f.kind === "rep" ? RR.filter((r) => r.status === "active").map((r) => ({ id: r.id, name: r.ar })) : (employees || []).filter((e) => e.status !== "suspended").map((e) => ({ id: e.id, name: e.name }));
   const openIds = new Set(E.offboard.filter((c) => c.status === "open").map((c) => c.pid));
   const start = () => {
@@ -9524,8 +9381,10 @@ function OffboardPage({ lang, role, reps, allReps, allReports, reports, employee
     const isSup = f.kind === "emp" && (employees || []).some((e) => e.id === p.id && e.isSupervisor);
     const teamN = isSup ? RR.filter((r) => r.sup === p.id && r.status === "active").length : 0;
     const steps = Object.fromEntries(OB_STEPS.map(([k]) => [k, null]));
-    extUpd(setExt, "offboard", (a) => [{ id: uidX("OB"), kind: f.kind, pid: p.id, name: p.name, lastDay: f.lastDay, reason: f.reason, text: f.text.trim(), steps, teamN, teamMoved: teamN === 0 ? { by: "—", at: today } : null, deds: [], settle: { status: "draft" }, exit: null, status: "open", by: me, at: riyadhNow().toISOString() }, ...a]);
-    logAudit(setAuditLog, role, "offboard_start", `${p.name}: ${f.reason}`, actingEmployee); setF({ ...f, pid: "", text: "" }); setTab("open");
+    const oid = uidX("OB"); const oldRep = f.kind === "rep" ? RR.find((r) => r.id === p.id) : null; const nr = f.repl ? RR.find((r) => r.id === f.repl) : null; const info = oldRep && nr ? baseFor(oldRep, f.lastDay) : null;
+    if (info) pushInherit({ id: oid, pid: p.id, name: p.name, lastDay: f.lastDay }, f.repl, info);
+    extUpd(setExt, "offboard", (a) => [{ id: oid, exitType: f.exitType, replacementId: info ? f.repl : "", replName: info ? nr.ar : "", inheritOrders: info ? info.orders : 0, inheritApp: info ? info.app : "", inheritMonth: info ? info.month : "", kind: f.kind, pid: p.id, name: p.name, lastDay: f.lastDay, reason: f.reason, text: f.text.trim(), steps, teamN, teamMoved: teamN === 0 ? { by: "—", at: today } : null, deds: [], settle: { status: "draft" }, exit: null, status: "open", by: me, at: riyadhNow().toISOString() }, ...a]);
+    logAudit(setAuditLog, role, "offboard_start", `${p.name}: ${f.reason}`, actingEmployee); setF({ ...f, pid: "", text: "", repl: "" }); setTab("open");
   };
   const calc = (c) => {
     if (c.kind !== "rep") return { net: 0, savings: 0, dedTotal: (c.deds || []).reduce((s, x) => s + (+x.amount || 0), 0), final: 0 - (c.deds || []).reduce((s, x) => s + (+x.amount || 0), 0), isRep: false };
@@ -9550,27 +9409,40 @@ function OffboardPage({ lang, role, reps, allReps, allReports, reports, employee
     logAudit(setAuditLog, role, "offboard_settle_sign", `${c.name}: ${k.final}`, actingEmployee);
   };
   const closeCase = (c) => {
-    if (c.kind === "rep") setReps((p) => p.map((r) => (r.id === c.pid ? { ...r, status: "left", leftAt: c.lastDay } : r)));
+    const old = c.kind === "rep" ? RR.find((r) => r.id === c.pid) : null;
+    const snap = old ? { ...exitStatement(old, RP, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, c.lastDay), at: today } : null;
+    if (c.kind === "rep") setReps((p) => p.map((r) => (r.id === c.pid ? { ...r, status: c.exitType === "suspend" ? "suspended" : "left", leftAt: c.lastDay, exitType: c.exitType || "resign", exitCaseId: c.id } : r)));
     else setEmployees((p) => p.map((e) => (e.id === c.pid ? { ...e, status: "suspended", leftAt: c.lastDay } : e)));
-    upd(c.id, (z) => ({ ...z, status: "closed", closedAt: today, closedBy: me })); logAudit(setAuditLog, role, "offboard_close", c.name, actingEmployee);
+    if (old && c.replacementId) assignRepl(c, c.replacementId);
+    upd(c.id, (z) => ({ ...z, status: "closed", closedAt: today, closedBy: me, snap })); logAudit(setAuditLog, role, "offboard_close", c.name, actingEmployee);
   };
-  const shown = E.offboard.filter((c) => c.status === tab);
+  const shown = tab === "registry" ? [] : E.offboard.filter((c) => c.status === tab);
   const rv = (c) => ({ rating: 0, reason: c.reason, comment: "", back: "yes", ...(ex[c.id] || {}) });
   return (
     <div className="space-y-4">
-      <XTabs tab={tab} setTab={setTab} tabs={[["open", Lx(lang, "حالات مفتوحة", "Open"), E.offboard.filter((c) => c.status === "open").length], ["closed", Lx(lang, "مكتملة", "Closed"), E.offboard.filter((c) => c.status === "closed").length]]} />
+      <XTabs tab={tab} setTab={setTab} tabs={[["open", Lx(lang, "حالات مفتوحة", "Open"), E.offboard.filter((c) => c.status === "open").length], ["closed", Lx(lang, "مكتملة", "Closed"), E.offboard.filter((c) => c.status === "closed").length], ["registry", Lx(lang, "سجل الاستقالات والإيقاف", "Exit register"), E.offboard.length]]} />
+      {tab === "registry" && <ExitRegistry lang={lang} cases={E.offboard} rr={RR} rp={RP} pricing={pricing} repSettlements={repSettlements} wf={weekendFine} vp={violationPenalty} receipts={repReceipts} sar={t.sar} today={today} />}
       {canStart && tab === "open" && <Panel title={Lx(lang, "بدء إجراء مغادرة", "Start an offboarding")}>
         <div className="grid gap-2 sm:grid-cols-2">
           <XSel value={f.kind} onChange={(v) => setF({ ...f, kind: v, pid: "" })}><option value="rep">{Lx(lang, "مندوب", "Rider")}</option><option value="emp">{Lx(lang, "موظف مكتب/مشرف", "Staff / supervisor")}</option></XSel>
           <XSel value={f.pid} onChange={(v) => setF({ ...f, pid: v })}><option value="">{Lx(lang, "— اختر —", "— pick —")}</option>{pool.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</XSel>
           <XIn type="date" value={f.lastDay} onChange={(v) => setF({ ...f, lastDay: v })} />
-          <XSel value={f.reason} onChange={(v) => setF({ ...f, reason: v })}>{OB_REASONS.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel></div>
+          <XSel value={f.reason} onChange={(v) => setF({ ...f, reason: v })}>{OB_REASONS.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel>
+          <XSel value={f.exitType} onChange={(v) => setF({ ...f, exitType: v })}>{EXIT_TYPES.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel>
+          {f.kind === "rep" && <XSel value={f.repl} onChange={(v) => setF({ ...f, repl: v })}><option value="">{Lx(lang, "— البديل (اختياري، يمكن تحديده لاحقاً) —", "— Replacement (optional) —")}</option>{RR.filter((r) => (r.status === "active" || r.status === "pending") && r.id !== f.pid).map((r) => <option key={r.id} value={r.id}>{r.ar}{r.status === "pending" ? Lx(lang, " (قيد الاعتماد)", " (pending)") : ""}</option>)}</XSel>}</div>
+        {f.kind === "rep" && f.repl && f.pid && (() => { const o = RR.find((r) => r.id === f.pid); if (!o) return null; const b = baseFor(o, f.lastDay); const nr = RR.find((r) => r.id === f.repl); return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#8A611E" }}>{Lx(lang, `عدّاد الشركة للبديل (${nr ? nr.ar : ""}) يكمل من ${b.orders} طلب لشهر ${b.month}. أجر المندوب يبدأ من الطلب 1 ولا يعرف بذلك.`, `Company counter continues from ${b.orders} orders (${b.month}); rider pay starts at 1 and he is not told.`)}{nr && nr.app !== b.app ? Lx(lang, " ⚠ تطبيقه مختلف عن تطبيق المستقيل فلن يعمل العدّاد.", " ⚠ different app — no tier effect.") : ""}</p>; })()}
         <XIn value={f.text} onChange={(v) => setF({ ...f, text: v })} ph={Lx(lang, "تفاصيل السبب", "Reason details")} cls="w-full mt-2" />
         {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-2"><Btn variant="accent" accent={role.glow} onClick={start}>{Lx(lang, "بدء الإجراء", "Start")}</Btn></div>
       </Panel>}
-      {shown.length === 0 ? <Panel title={Lx(lang, "الحالات", "Cases")}>{EMPTYT(lang)}</Panel> : shown.map((c) => { const k = calc(c); const stepsDone = OB_STEPS.every(([s]) => c.steps[s]) && !!c.exit && !!c.teamMoved; const settled = c.settle.status === "approved"; const V = rv(c); const need = walletFinal({ amount: Math.abs(k.final), approvals: [] }, +E.cfg.dualLimit); const signed = (c.settle.approvals || []).map((a) => a.role); return (
-        <Panel key={c.id} title={`${c.name} · ${c.kind === "rep" ? Lx(lang, "مندوب", "Rider") : Lx(lang, "موظف", "Staff")}`} extra={<Chip tone={c.status === "closed" ? "ok" : "warn"} sm>{reasonName(c.reason, lang)}</Chip>}>
+      {tab === "registry" ? null : shown.length === 0 ? <Panel title={Lx(lang, "الحالات", "Cases")}>{EMPTYT(lang)}</Panel> : shown.map((c) => { const k = calc(c); const stepsDone = OB_STEPS.every(([s]) => c.steps[s]) && !!c.exit && !!c.teamMoved; const settled = c.settle.status === "approved"; const V = rv(c); const need = walletFinal({ amount: Math.abs(k.final), approvals: [] }, +E.cfg.dualLimit); const signed = (c.settle.approvals || []).map((a) => a.role); return (
+        <Panel key={c.id} title={`${c.name} · ${c.kind === "rep" ? Lx(lang, "مندوب", "Rider") : Lx(lang, "موظف", "Staff")}`} extra={<div className="flex gap-1.5"><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><Chip tone={c.status === "closed" ? "ok" : "warn"} sm>{reasonName(c.reason, lang)}</Chip></div>}>
           <p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "آخر يوم", "Last day")}: {c.lastDay} · {c.text}</p>
+          {c.kind === "rep" && <ExitStatementBox lang={lang} c={c} rr={RR} rp={RP} pricing={pricing} repSettlements={repSettlements} wf={weekendFine} vp={violationPenalty} receipts={repReceipts} sar={t.sar} />}
+          {c.kind === "rep" && <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+            <p className="text-[12.5px] font-extrabold mb-1.5">{Lx(lang, "البديل — عدّاد شريحة التطبيق يكمل (داخلي، لا يراه المندوب)", "Replacement — company tier counter continues (internal, hidden from rider)")}</p>
+            {canStart ? <XSel value={c.replacementId || ""} onChange={(v) => assignRepl(c, v)}><option value="">{Lx(lang, "— لم يُحدَّد بعد —", "— not set —")}</option>{RR.filter((r) => (r.status === "active" || r.status === "pending") && r.id !== c.pid).map((r) => <option key={r.id} value={r.id}>{r.ar}{r.status === "pending" ? Lx(lang, " (قيد الاعتماد)", " (pending)") : ""}</option>)}</XSel> : null}
+            {c.replacementId ? <p className="num text-[12px] mt-1.5">{c.replName} · {Lx(lang, `عدّاد الشركة يكمل من ${c.inheritOrders} طلب (${c.inheritMonth}) — أما أجر المندوب فيبدأ من الطلب 1 بشكل عادي`, `Company counter continues from ${c.inheritOrders} orders (${c.inheritMonth}); rider pay starts at order 1`)}</p> : <p className="text-[11.5px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, "لا يوجد بديل محدد.", "No replacement set.")}</p>}
+          </div>}
           <div className="mt-3 space-y-1.5">
             {OB_STEPS.filter(([s]) => s !== "exit").map(([s, ar, en, who]) => { const dn = c.steps[s]; const ok = who.includes(role.id); return <div key={s} className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><button disabled={!ok || c.status === "closed" || (s === "advances" && !settled && !dn)} onClick={() => toggle(c, s)} className="text-[16px]" aria-label="toggle">{dn ? "✅" : "⬜"}</button><span className="flex-1 text-[12.5px] font-bold">{lang === "en" ? en : ar}</span>{dn && <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{dn.by}</span>}</div>; })}
             {c.teamN > 0 && <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><button disabled={!canStart || c.status === "closed"} onClick={() => upd(c.id, (z) => ({ ...z, teamMoved: z.teamMoved && z.teamMoved.by !== "—" ? null : { by: me, at: today } }))} className="text-[16px]" aria-label="toggle">{c.teamMoved && c.teamMoved.by !== "—" ? "✅" : "⬜"}</button><span className="flex-1 text-[12.5px] font-bold">{Lx(lang, `نقل مناديب فريقه (${c.teamN}) لمشرف آخر`, `Reassign his ${c.teamN} riders`)}</span></div>}
@@ -9599,15 +9471,233 @@ function OffboardPage({ lang, role, reps, allReps, allReports, reports, employee
   );
 }
 
-Object.assign(T.ar.nav, {perfPlans: "خطط تحسين الأداء", coverage: "التغطية والبدائل", cockpit: "غرفة القيادة", whatIf: "ماذا لو؟", closeList: "الإقفال والذمم", cashflow: "التدفق النقدي", empFile: "ملفات الموظفين", offboard: "إنهاء الخدمة"});
-Object.assign(T.en.nav, {perfPlans: "Improvement Plans", coverage: "Coverage & Bench", cockpit: "Command Room", whatIf: "What If?", closeList: "Close & Receivables", cashflow: "Cash Flow", empFile: "Staff Files", offboard: "Offboarding"});
+Object.assign(T.ar.nav, {perfPlans: "خطط تحسين الأداء", coverage: "التغطية والبدائل", cockpit: "غرفة القيادة", whatIf: "ماذا لو؟", closeList: "الإقفال والذمم", cashflow: "التدفق النقدي", empFile: "ملفات الموظفين", offboard: "الاستقالات والإيقاف"});
+Object.assign(T.en.nav, {perfPlans: "Improvement Plans", coverage: "Coverage & Bench", cockpit: "Command Room", whatIf: "What If?", closeList: "Close & Receivables", cashflow: "Cash Flow", empFile: "Staff Files", offboard: "Resignations & Suspensions"});
 Object.assign(T.ur.nav, {perfPlans: "Improvement Plans", coverage: "Coverage & Bench", cockpit: "Command Room", whatIf: "What If?", closeList: "Close & Receivables", cashflow: "Cash Flow", empFile: "Staff Files", offboard: "Offboarding"});
+/* ═══════════  حضور المناديب اليومي (نبض المناديب) + إشعارات بصوت + تقارير المناديب  ═══════════ */
+EXT0.roll = {};
+
+/* ─── صوت التنبيه والإشعار ─── */
+const SND_KEY = "bq_sound";
+function playAlert(urgent) {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    const ctx = window.__bqAudio || (window.__bqAudio = new AC()); if (ctx.state === "suspended") ctx.resume();
+    const seq = urgent ? [880, 660, 880, 660, 880] : [740, 988]; let t0 = ctx.currentTime;
+    seq.forEach((f) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = urgent ? "square" : "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(urgent ? 0.22 : 0.14, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22); o.connect(g); g.connect(ctx.destination); o.start(t0); o.stop(t0 + 0.24); t0 += 0.27; });
+  } catch (e) {}
+}
+function AlertSoundToggle({ lang, score, urgent, body }) {
+  const [on, setOn] = useState(() => { try { return localStorage.getItem(SND_KEY) !== "off"; } catch (e) { return true; } });
+  const prev = useRef(null); const base = useRef(null);
+  useEffect(() => {
+    const unlock = () => { try { const AC = window.AudioContext || window.webkitAudioContext; if (!window.__bqAudio && AC) window.__bqAudio = new AC(); if (window.__bqAudio && window.__bqAudio.state === "suspended") window.__bqAudio.resume(); } catch (e) {} };
+    document.addEventListener("click", unlock); document.addEventListener("touchstart", unlock);
+    return () => { document.removeEventListener("click", unlock); document.removeEventListener("touchstart", unlock); };
+  }, []);
+  useEffect(() => {
+    if (prev.current !== null && score > prev.current && on) {
+      playAlert(urgent);
+      try { if (window.Notification && Notification.permission === "granted" && document.hidden) new Notification("بوارق الشرق", { body: body || "" }); } catch (e) {}
+    }
+    prev.current = score;
+    try { if (base.current == null) base.current = document.title.replace(/^\(\d+\)\s*/, ""); document.title = (score > 0 ? `(${score}) ` : "") + base.current; } catch (e) {}
+  }, [score]); // eslint-disable-line
+  useEffect(() => { // تذكير هادئ كل دقيقتين ما دام هناك بلاغ عاجل لم يُعالَج
+    if (!on || !urgent) return;
+    const iv = setInterval(() => playAlert(true), 120000);
+    return () => clearInterval(iv);
+  }, [on, urgent]);
+  const toggle = () => { const n = !on; setOn(n); try { localStorage.setItem(SND_KEY, n ? "on" : "off"); } catch (e) {} if (n) { playAlert(false); try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch (e) {} } };
+  return (
+    <button onClick={toggle} className="relative p-2 rounded-xl" style={{ background: on ? "rgba(63,216,180,.14)" : "rgba(20,27,45,.045)", border: "1px solid var(--line)" }} aria-label={Lx(lang, "صوت التنبيه", "Alert sound")} title={on ? Lx(lang, "صوت التنبيه يعمل — اضغط للإيقاف", "Sound on") : Lx(lang, "صوت التنبيه متوقف — اضغط للتشغيل", "Sound off")}>
+      {on ? <Volume2 size={16} style={{ color: "#0B5C46" }} /> : <VolumeX size={16} style={{ color: "var(--muted)" }} />}
+    </button>
+  );
+}
+
+/* ─── نبض المناديب: تحضير يومي يقوم به المشرف ─── */
+function PulsePage({ lang, role, reps, allReps, attendance, ext, setExt, employees, setRepMessages, setAuditLog, actingEmployee, scopeSup, pricing, reports, allReports, weekendFine, violationPenalty }) {
+  const E = extOf(ext); const today = riyadhToday(), month = today.slice(0, 7);
+  const RR = scopeSup ? reps : (allReps || reps); const RP = scopeSup ? reports : (allReports || reports);
+  const act = RR.filter((r) => r.status === "active");
+  const [date, setDate] = useState(today); const [tab, setTab] = useState("roll"); const [dr, setDr] = useState({}); const [rej, setRej] = useState({}); const [err, setErr] = useState({});
+  const canMark = role.id === "ops" || role.id === "opsm" || role.id === "hr" || role.id === "gm";
+  const me = byName(role, actingEmployee);
+  const dayRoll = (E.roll || {})[date] || {};
+  const onLeave = (r) => E.leaves.some((l) => l.repId === r.id && l.status === "approved" && l.from <= date && l.to >= date);
+  const clockOf = (r) => (attendance || []).find((a) => a.key === r.nid && a.date === date);
+  const setRoll = (r, rec, d = date) => extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...(m[d] || {}), [r.id]: rec } }));
+  const tell = (r, text) => setRepMessages && setRepMessages((prev) => [{ id: "RM-" + Date.now() + "-" + r.id, from: role.id, repId: r.id, text, at: riyadhNow().toISOString(), seen: false, seenAt: null }, ...prev]);
+  const present = (r) => { setRoll(r, { st: "present", by: me, at: riyadhNow().toISOString() }); logAudit(setAuditLog, role, "roll_present", `${r.ar} ${date}`, actingEmployee); };
+  const presentAll = () => act.filter((r) => !dayRoll[r.id] && !onLeave(r)).forEach((r) => setRoll(r, { st: "present", by: me, at: riyadhNow().toISOString() }));
+  const leaveAbs = (r) => { setRoll(r, { st: "absent", contact: "leave", reason: Lx(lang, "إجازة معتمدة", "Approved leave"), excused: true, by: me, at: riyadhNow().toISOString() }); };
+  const absent = (r) => {
+    const d = dr[r.id] || {};
+    if (!d.contact) return setErr({ ...err, [r.id]: Lx(lang, "حدّد: هل تواصلت مع المندوب؟", "Did you reach the rider?") });
+    const reason = d.contact === "noanswer" ? (Lx(lang, "لم يجب على الاتصال", "Did not answer") + ((d.reason || "").trim() ? ` — ${d.reason.trim()}` : "")) : (d.reason || "").trim();
+    if (d.contact === "reached" && reason.length < 4) return setErr({ ...err, [r.id]: Lx(lang, "اكتب سبب الغياب كما ذكره المندوب.", "Write the reason given.") });
+    const excused = d.contact === "reached" && !!d.excused;
+    setErr({ ...err, [r.id]: "" });
+    setRoll(r, { st: "absent", contact: d.contact, reason, excused, by: me, at: riyadhNow().toISOString() });
+    tell(r, excused
+      ? Lx(lang, `سُجّل غيابك بتاريخ ${date} بعذر مقبول (${reason}). نذكّرك بأن أي غياب يلزمه سبب واضح وطارئ وتقديمه بشكل رسمي.`, `Your absence on ${date} was recorded as excused (${reason}).`)
+      : Lx(lang, `⚠ سُجّل غيابك بتاريخ ${date} بدون عذر مقبول. السبب المسجَّل: ${reason}. تنبيه رسمي: لا غياب بدون سبب واضح وطارئ يُقدَّم بشكل رسمي. قدّم عذرك من صفحة «أدائي ونقاطي» خلال 48 ساعة وإلا يُحتسب بلا عذر ويخفض درجة الحضور.`, `⚠ Your absence on ${date} was recorded without an accepted excuse. Reason noted: ${reason}. Official notice: every absence needs a clear, urgent reason submitted formally. Submit your excuse within 48 hours or it counts as unexcused and lowers your attendance score.`));
+    logAudit(setAuditLog, role, "roll_absent", `${r.ar} ${date}: ${reason.slice(0, 40)}`, actingEmployee);
+    setDr({ ...dr, [r.id]: {} });
+  };
+  const undo = (r) => extUpd(setExt, "roll", (m) => { const day = { ...(m[date] || {}) }; delete day[r.id]; return { ...m, [date]: day }; });
+  const decideExcuse = (d, r, ok) => {
+    const note = (rej[r.id] || "").trim(); if (!ok && note.length < 4) return;
+    extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...(m[d] || {}), [r.id]: { ...m[d][r.id], excused: ok, excuse: { ...m[d][r.id].excuse, status: ok ? "accepted" : "rejected", by: me, note: ok ? "" : note } } } }));
+    tell(r, ok ? Lx(lang, `قُبل عذرك عن غياب ${d}.`, `Your excuse for ${d} was accepted.`) : Lx(lang, `لم يُقبل عذرك عن غياب ${d}: ${note}`, `Your excuse for ${d} was not accepted: ${note}`));
+    logAudit(setAuditLog, role, ok ? "excuse_accept" : "excuse_reject", `${r.ar} ${d}`, actingEmployee);
+  };
+  const nPresent = act.filter((r) => (dayRoll[r.id] || {}).st === "present").length;
+  const nAbsent = act.filter((r) => (dayRoll[r.id] || {}).st === "absent").length;
+  const nPend = act.length - nPresent - nAbsent;
+  const pending = []; Object.keys(E.roll || {}).sort().reverse().slice(0, 14).forEach((d) => act.forEach((r) => { const rc = E.roll[d][r.id]; if (rc && rc.st === "absent" && rc.excuse && rc.excuse.status === "pending") pending.push({ d, r, rc }); }));
+  const tAvg = teamAvgOrders(RR, month, RP);
+  const mrows = act.map((r) => { const p = perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg); let pr = 0, ex = 0, un = 0; Object.keys(E.roll || {}).filter((d) => d.startsWith(month)).forEach((d) => { const rc = E.roll[d][r.id]; if (!rc) return; if (rc.st === "present") pr++; else if (rc.excused) ex++; else un++; }); return { r, pr, ex, un, att: p.att, pts: Math.round(40 * p.att) }; }).sort((a, b) => a.att - b.att);
+  const bad = { background: "rgba(232,131,122,.14)", border: "1px solid rgba(232,131,122,.45)" };
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
+        <div className="flex items-center gap-2.5 mb-1"><Radio size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{Lx(lang, "حضور المناديب اليومي", "Daily rider attendance")}</h2></div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "يحضّر المشرف مناديب فريقه كل يوم. الحضور هو أساس درجة الالتزام (40 من 100). الغياب بلا عذر واضح وطارئ يُقدَّم رسمياً يخفض الدرجة.", "The supervisor takes daily attendance. It drives the commitment score (40/100); unexcused absence lowers it.")}</p>
+      </div>
+      <XTabs tab={tab} setTab={setTab} tabs={[["roll", Lx(lang, "تحضير اليوم", "Roll call")], ["excuse", Lx(lang, "أعذار مقدّمة", "Excuses"), pending.length], ["month", Lx(lang, "التزام الشهر", "Month")]]} />
+      {tab === "roll" && <>
+        <div className="grid grid-cols-3 gap-3">{[[Lx(lang, "حضروا", "Present"), nPresent, "#0B5C46", "rgba(63,216,180,.16)"], [Lx(lang, "غائبون", "Absent"), nAbsent, "#C0443A", "rgba(232,131,122,.15)"], [Lx(lang, "لم يُحضَّروا", "Not marked"), nPend, "#B07A00", "rgba(228,184,92,.16)"]].map(([k, n, c, bg]) => <div key={k} className="rounded-2xl p-3 text-center" style={{ background: bg }}><p className="num text-[26px] font-extrabold" style={{ color: c }}>{n}</p><p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+        <Panel title={Lx(lang, `مناديب فريقك (${act.length})`, `Your riders (${act.length})`)} extra={<div className="flex gap-2 items-center"><XIn type="date" value={date} onChange={(v) => v && v <= today && v >= addDays(today, -7) && setDate(v)} cls="w-36" />{canMark && nPend > 0 && <Btn variant="accent" accent={role.glow} onClick={presentAll}>{Lx(lang, "الباقون حاضرون", "Rest present")}</Btn>}</div>}>
+          {act.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{act.map((r) => { const rc = dayRoll[r.id]; const ck = clockOf(r); const lv = onLeave(r); const d = dr[r.id] || {}; return (
+            <div key={r.id} className="rounded-2xl p-3" style={rc && rc.st === "absent" && !rc.excused ? bad : BOXS}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="flex-1 min-w-[120px]"><span className="text-[13.5px] font-extrabold">{r.ar}</span>{ck && <span className="num text-[10.5px] mx-2" style={{ color: "var(--muted)" }}>{Lx(lang, "بصم", "clock")} {ck.in}</span>}</span>
+                {lv && !rc && <Chip tone="info" sm>{Lx(lang, "إجازة معتمدة", "On approved leave")}</Chip>}
+                {rc ? <Chip tone={rc.st === "present" ? "ok" : rc.excused ? "warn" : "bad"} sm>{rc.st === "present" ? Lx(lang, "حاضر", "Present") : rc.excused ? Lx(lang, "غائب بعذر", "Excused") : Lx(lang, "غائب بلا عذر", "Unexcused")}</Chip> : null}
+                {canMark && !rc && (lv ? <Btn onClick={() => leaveAbs(r)}>{Lx(lang, "تسجيل: إجازة", "Mark leave")}</Btn> : <><Btn variant="accent" accent={role.glow} onClick={() => present(r)}>{Lx(lang, "حاضر", "Present")}</Btn><Btn variant="danger" onClick={() => setDr({ ...dr, [r.id]: { open: !d.open } })}>{Lx(lang, "غائب", "Absent")}</Btn></>)}
+                {canMark && rc && <button onClick={() => undo(r)} className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "تراجع", "Undo")}</button>}
+              </div>
+              {rc && rc.st === "absent" && <p className="text-[11.5px] mt-1.5">{rc.contact === "noanswer" ? "📵 " : rc.contact === "leave" ? "🏖 " : "📞 "}{rc.reason}{rc.excuse ? ` · ${Lx(lang, "العذر الرسمي", "Formal excuse")}: ${rc.excuse.status === "accepted" ? Lx(lang, "مقبول", "accepted") : rc.excuse.status === "rejected" ? Lx(lang, "مرفوض", "rejected") : Lx(lang, "قيد المراجعة", "pending")}` : ""}</p>}
+              {canMark && !rc && d.open && <div className="mt-3 space-y-2 rounded-xl p-3" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+                <p className="text-[12px] font-bold">{Lx(lang, "تواصل مع المندوب أولاً ثم سجّل النتيجة:", "Contact the rider first, then record:")}</p>
+                <div className="flex gap-2 flex-wrap">{[["reached", Lx(lang, "📞 تواصلت معه", "Reached him")], ["noanswer", Lx(lang, "📵 لم يجب على الاتصال", "No answer")]].map(([k, l]) => <button key={k} onClick={() => setDr({ ...dr, [r.id]: { ...d, contact: k } })} className="px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: d.contact === k ? "#12151D" : "rgba(20,27,45,.06)", color: d.contact === k ? "#fff" : "inherit" }}>{l}</button>)}</div>
+                {d.contact && <XIn value={d.reason || ""} onChange={(v) => setDr({ ...dr, [r.id]: { ...d, reason: v } })} ph={d.contact === "reached" ? Lx(lang, "سبب الغياب كما ذكره (إلزامي)", "Reason he gave (required)") : Lx(lang, "ملاحظة (اختياري)", "Note (optional)")} cls="w-full" />}
+                {d.contact === "reached" && <label className="flex items-start gap-2 text-[11.5px] cursor-pointer"><input type="checkbox" checked={!!d.excused} onChange={(e) => setDr({ ...dr, [r.id]: { ...d, excused: e.target.checked } })} className="mt-0.5" />{Lx(lang, "السبب واضح وطارئ ومقبول (وإلا يُسجَّل بلا عذر وينبَّه المندوب)", "Reason is clear, urgent and accepted")}</label>}
+                {err[r.id] && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err[r.id]}</p>}
+                <Btn variant="danger" onClick={() => absent(r)}>{Lx(lang, "تسجيل الغياب وإخطار المندوب", "Record absence & notify rider")}</Btn></div>}
+            </div>); })}</div>}
+          <p className="text-[10.5px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "عند تسجيل الغياب بلا عذر يصل المندوب إخطار رسمي بصوت تنبيه، ويمكنه تقديم عذره رسمياً خلال 48 ساعة من صفحة «أدائي ونقاطي».", "An unexcused absence sends the rider an official notice; he can submit a formal excuse within 48 hours.")}</p>
+        </Panel></>}
+      {tab === "excuse" && <Panel title={Lx(lang, "أعذار مقدّمة بانتظار قرارك", "Excuses awaiting your decision")}>
+        {pending.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{pending.map(({ d, r, rc }) => (
+          <div key={d + r.id} className="rounded-2xl p-3" style={BOXS}>
+            <p className="text-[13px] font-extrabold">{r.ar} · <span className="num">{d}</span></p>
+            <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "سجّل المشرف: ", "Logged: ")}{rc.reason}</p>
+            <p className="text-[12.5px] mt-1">{Lx(lang, "عذر المندوب: ", "Rider's excuse: ")}{rc.excuse.text}</p>
+            {canMark && <div className="flex gap-2 mt-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => decideExcuse(d, r, true)}>{Lx(lang, "قبول العذر", "Accept")}</Btn><XIn value={rej[r.id] || ""} onChange={(v) => setRej({ ...rej, [r.id]: v })} ph={Lx(lang, "سبب الرفض", "Reject reason")} cls="flex-1 min-w-[120px]" /><Btn variant="danger" onClick={() => decideExcuse(d, r, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>}
+          </div>))}</div>}
+      </Panel>}
+      {tab === "month" && <Panel title={Lx(lang, "التزام الحضور هذا الشهر", "Attendance commitment this month")}>
+        {mrows.length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">
+          <div className="grid grid-cols-5 gap-1 text-[10.5px] px-3" style={{ color: "var(--muted)" }}><span className="col-span-2">{Lx(lang, "المندوب", "Rider")}</span><span className="text-center">{Lx(lang, "حضر", "Pres.")}</span><span className="text-center">{Lx(lang, "بلا عذر", "Unexc.")}</span><span className="text-center">{Lx(lang, "درجة الحضور", "Score")}</span></div>
+          {mrows.map((m) => <div key={m.r.id} className="grid grid-cols-5 gap-1 items-center rounded-xl px-3 py-2 text-[12.5px]" style={BOXS}><span className="col-span-2 font-bold">{m.r.ar}</span><span className="num text-center">{m.pr}</span><span className="num text-center" style={{ color: m.un ? "#C0443A" : "inherit", fontWeight: m.un ? 800 : 400 }}>{m.un}</span><span className="num text-center font-extrabold">{m.pts} / 40</span></div>)}</div>}
+      </Panel>}
+    </div>
+  );
+}
+
+/* ─── المندوب: حضوري وتقديم العذر الرسمي ─── */
+function MyAttendanceCard({ lang, activeRep, ext, setExt }) {
+  const E = extOf(ext); const month = riyadhToday().slice(0, 7); const today = riyadhToday();
+  const [txt, setTxt] = useState({}); const [err, setErr] = useState("");
+  if (!activeRep) return null;
+  const mine = Object.keys(E.roll || {}).filter((d) => d.startsWith(month)).sort().reverse().map((d) => ({ d, rc: E.roll[d][activeRep.id] })).filter((x) => x.rc);
+  if (!mine.length) return null;
+  const pr = mine.filter((x) => x.rc.st === "present").length, un = mine.filter((x) => x.rc.st === "absent" && !x.rc.excused).length, ex = mine.filter((x) => x.rc.st === "absent" && x.rc.excused).length;
+  const send = (d) => { const t = (txt[d] || "").trim(); if (t.length < 10) return setErr(Lx(lang, "اشرح عذرك بوضوح (10 أحرف على الأقل).", "Explain clearly (10+ chars).")); setErr(""); extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...m[d], [activeRep.id]: { ...m[d][activeRep.id], excuse: { text: t, at: riyadhNow().toISOString(), status: "pending" } } } })); };
+  return (
+    <Panel title={Lx(lang, "حضوري هذا الشهر", "My attendance this month")}>
+      <div className="grid grid-cols-3 gap-2 mb-3">{[[Lx(lang, "حضرت", "Present"), pr, "#0B5C46"], [Lx(lang, "غياب بعذر", "Excused"), ex, "#B07A00"], [Lx(lang, "غياب بلا عذر", "Unexcused"), un, "#C0443A"]].map(([k, n, c]) => <div key={k} className="rounded-xl p-2 text-center" style={{ background: "rgba(20,27,45,.04)" }}><p className="num text-[20px] font-extrabold" style={{ color: c }}>{n}</p><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+      <div className="space-y-2">{mine.filter((x) => x.rc.st === "absent").map(({ d, rc }) => { const canSend = !rc.excused && !rc.excuse && (new Date(today) - new Date(d)) / 86400000 <= 2; return (
+        <div key={d} className="rounded-xl p-3" style={{ background: rc.excused ? "rgba(228,184,92,.12)" : "rgba(232,131,122,.12)", border: "1px solid var(--line)" }}>
+          <p className="text-[12.5px] font-bold"><span className="num">{d}</span> — {rc.excused ? Lx(lang, "غياب بعذر مقبول", "Excused") : Lx(lang, "غياب بلا عذر", "Unexcused")}</p>
+          <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{rc.reason}</p>
+          {rc.excuse && <p className="text-[11.5px] mt-1">{Lx(lang, "عذرك المقدَّم: ", "Your excuse: ")}{rc.excuse.text} — <b>{rc.excuse.status === "accepted" ? Lx(lang, "مقبول", "accepted") : rc.excuse.status === "rejected" ? Lx(lang, "مرفوض", "rejected") : Lx(lang, "قيد المراجعة", "under review")}</b></p>}
+          {canSend && <div className="mt-2 space-y-2"><XIn value={txt[d] || ""} onChange={(v) => setTxt({ ...txt, [d]: v })} ph={Lx(lang, "عذرك الرسمي: سبب واضح وطارئ", "Your formal excuse: a clear, urgent reason")} cls="w-full" />{err && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err}</p>}<Btn variant="accent" accent="228,184,92" onClick={() => send(d)}>{Lx(lang, "تقديم العذر رسمياً", "Submit formally")}</Btn></div>}
+        </div>); })}</div>
+      <p className="text-[10.5px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "لا غياب بدون سبب واضح وطارئ يُقدَّم بشكل رسمي خلال 48 ساعة، وإلا يخفض درجة الحضور.", "Every absence needs a clear, urgent reason submitted formally within 48 hours, or it lowers your attendance score.")}</p>
+    </Panel>
+  );
+}
+
+/* ─── تقارير المناديب (مع إجمالي الطلبات) ─── */
+function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) {
+  const t = T[lang], x = EX[lang];
+  const [open, setOpen] = useState(null);
+  const q = (query || "").trim().toLowerCase();
+  const supName = (sid) => supervisorsOf(employees).find((s) => s.id === sid)?.[lang] || "—";
+  const filtered = !q ? reports : reports.filter((rp) => rp.entries.some((e) => { const rep = reps.find((r) => r.id === e.id); return rep && (rep.ar.toLowerCase().includes(q) || (rep.en || "").toLowerCase().includes(q) || (rep.phone || "").includes(q) || (rep.nid || "").includes(q)); }));
+  const totOf = (rp) => rp.entries.reduce((s, e) => s + (e.orders || 0), 0);
+  const grand = filtered.reduce((s, rp) => s + totOf(rp), 0);
+  const TotalBar = ({ label, n, strong }) => <div className="flex items-center justify-between rounded-xl px-3.5 py-2.5" style={{ background: strong ? "#12151D" : "rgba(63,216,180,.14)", color: strong ? "#fff" : "inherit", border: strong ? "none" : "1px solid rgba(63,216,180,.4)" }}><span className="text-[12.5px] font-extrabold">{label}</span><span className="num text-[16px] font-extrabold">{fmt(n)}</span></div>;
+  return (
+    <div className="space-y-4">
+      <Panel title={x.repReportsT}
+        extra={<div className="hidden sm:flex items-center gap-2">
+          <span className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}><Search size={14} style={{ color: "var(--muted)" }} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep} className="bg-transparent outline-none border-0 text-[12px] w-40" style={{ color: "#12151D" }} /></span>
+          <Btn icon={Download} onClick={() => {
+            const rows = [];
+            filtered.forEach((rp) => { rp.entries.forEach((e) => { const rep = reps.find((r) => r.id === e.id) || { ar: e.id, en: e.id, empType: "—" }; rows.push({ [t.h.employee]: lang === "en" ? rep.en : rep.ar, [x.empTypeCol]: EMP_TYPES[rep.empType]?.[lang] || rep.empType, Date: rp.date, [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 }); }); });
+            rows.push({ [t.h.employee]: Lx(lang, "إجمالي الطلبات", "Total orders"), [x.ordersCol]: grand });
+            exportToExcel(rows, `rep-reports-${riyadhToday()}`, "Reports");
+          }}>{t.export}</Btn></div>}>
+        <div className="sm:hidden flex items-center gap-2 rounded-xl px-3 py-2 mb-3.5" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}><Search size={14} style={{ color: "var(--muted)" }} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep} className="bg-transparent outline-none border-0 text-[12px] flex-1" style={{ color: "#12151D" }} /></div>
+        {filtered.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{q ? x.globalNoMatch : x.noReports}</p> : (
+          <div className="space-y-2.5">
+            {filtered.map((rp) => {
+              const isOpen = open === rp.id;
+              return (
+                <div key={rp.id} className="rounded-2xl overflow-hidden" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+                  <button onClick={() => setOpen(isOpen ? null : rp.id)} className="w-full flex items-center justify-between gap-3 p-3.5 text-start">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="grid place-items-center w-9 h-9 rounded-xl shrink-0" style={{ background: `rgba(${role.glow},.13)` }}><ClipboardList size={16} style={{ color: role.accent }} /></span>
+                      <span className="min-w-0"><span className="block text-[13px] font-bold">{rp.id} · <span className="num">{rp.date}</span></span><span className="block text-[11px]" style={{ color: "var(--muted)" }}>{x.teamOf} {supName(rp.sup)} · {x.repsCount}: {rp.entries.length}</span></span>
+                    </div>
+                    <span className="flex items-center gap-2 shrink-0"><Chip tone="ok" sm>{Lx(lang, "الطلبات", "Orders")} {fmt(totOf(rp))}</Chip><ChevronRight size={16} style={{ color: "var(--muted)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .3s" }} /></span>
+                  </button>
+                  {isOpen && (() => {
+                    const withType = rp.entries.map((e) => ({ e, rep: reps.find((r) => r.id === e.id) || { ...e, ar: e.id, en: e.id, empType: "kafala" } }));
+                    const kafala = withType.filter((w) => w.rep.empType !== "ajeer"), ajeer = withType.filter((w) => w.rep.empType === "ajeer");
+                    const toRows = (list) => list.map(({ e, rep }) => ({ key: e.id, cells: [{ v: lang === "en" ? rep.en : rep.ar, strong: 1 }, { v: e.orders, mono: 1 }, { v: e.hours, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 }] }));
+                    const heads = [t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol];
+                    const sumO = (l) => l.reduce((s, w) => s + (w.e.orders || 0), 0);
+                    return (
+                      <div className="px-3.5 pb-3.5 space-y-3">
+                        <div><p className="text-[10.5px] font-bold mb-1.5" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>{kafala.length === 0 ? <EmptyHint lang={lang} /> : <><DataTable headers={heads} rows={toRows(kafala)} /><div className="mt-2"><TotalBar label={Lx(lang, "إجمالي طلبات الكفالة", "Sponsored total")} n={sumO(kafala)} /></div></>}</div>
+                        {ajeer.length > 0 && <div><p className="text-[10.5px] font-bold mb-1.5 pt-2" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p><DataTable headers={heads} rows={toRows(ajeer)} /><div className="mt-2"><TotalBar label={Lx(lang, "إجمالي طلبات الأجير", "Contracted total")} n={sumO(ajeer)} /></div></div>}
+                        <TotalBar strong label={Lx(lang, "إجمالي الطلبات في التقرير", "Report total orders")} n={totOf(rp)} />
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })}
+            <TotalBar strong label={Lx(lang, `إجمالي الطلبات (${filtered.length} تقرير)`, `Total orders (${filtered.length} reports)`)} n={grand} />
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
 /* ═══ اعتماد المدير العام لتسعيرة المندوب ═══ */
 const priceSummary = (p, lang) => {
   if (!p) return Lx(lang, "افتراضي / غير محدد", "Default / unset");
   if (p.mode === "target") return Lx(lang, `هدف شهري ${p.ordersTarget} طلب · أساس ${p.ordersBase || 0} · فرق ${p.perOrderDelta || 0}/طلب`, `Target ${p.ordersTarget} orders · base ${p.ordersBase || 0} · delta ${p.perOrderDelta || 0}`);
-  const tiers = (p.tiers || []).filter((x) => x.rate !== "" && x.rate != null);
-  if (p.mode === "tiers" || tiers.length > 1) return Lx(lang, "شرائح: ", "Tiers: ") + tiers.map((x) => `${x.from}+ → ${x.rate}`).join("، ") + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
+  const tiers = tiersN(p);
+  if (p.mode === "tiers" || tiers.length > 1) return Lx(lang, "شرائح: ", "Tiers: ") + tiers.map((x) => `${x.from}${x.to === Infinity ? "+" : "–" + x.to} → ${x.rate}`).join("، ") + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
   return Lx(lang, `${p.perOrder} لكل طلب`, `${p.perOrder} per order`) + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
 };
 function PriceReqPanel({ lang, role, pricing, setPricing, ext, setExt, setAuditLog, actingEmployee }) {
@@ -9684,7 +9774,7 @@ const TOUR_STEPS = {
   ar: {
     rep: [
       { t: "أهلاً بك في بوارق الشرق", d: "هذه لوحتك الشخصية — تعرض إنجازك الشهري وحالة حضورك في نظرة واحدة." },
-      { t: "بصمة وشفت جديد", d: "الزرّان العائمان بالأسفل يفتحان لك تسجيل الحضور وحجز شفت جديد من أي صفحة." },
+      { t: "بصمة الحضور", d: "الزر العائم بالأسفل يسجّل بصمتك من أي صفحة، والمشرف يحضّرك يومياً وتظهر درجة حضورك في «أدائي ونقاطي»." },
       { t: "التذاكر والرسائل", d: "أي طلب أو استفسار يمر عبر التذاكر، ورسائل الإدارة تصلك للاطلاع فقط." },
     ],
     office: [
@@ -9696,7 +9786,7 @@ const TOUR_STEPS = {
   en: {
     rep: [
       { t: "Welcome to Bawariq Al-Sharq", d: "This is your personal dashboard — your monthly progress and attendance status at a glance." },
-      { t: "Clock in & new shift", d: "The floating buttons at the bottom open attendance clock-in and shift booking from any page." },
+      { t: "Clock in", d: "The floating button clocks you in from any page; your supervisor takes daily attendance and your score shows in My Score." },
       { t: "Tickets & messages", d: "Any request goes through Tickets, and department messages arrive for you to acknowledge only." },
     ],
     office: [
@@ -9708,7 +9798,7 @@ const TOUR_STEPS = {
   ur: {
     rep: [
       { t: "بوارق الشرق میں خوش آمدید", d: "یہ آپ کا ذاتی ڈیش بورڈ ہے — آپ کی ماہانہ کارکردگی اور حاضری ایک نظر میں۔" },
-      { t: "حاضری اور نئی شفٹ", d: "نیچے موجود بٹن کسی بھی صفحے سے حاضری اور نئی شفٹ بکنگ کھولتے ہیں۔" },
+      { t: "حاضری", d: "نیچے موجود بٹن کسی بھی صفحے سے حاضری لگاتا ہے، اور سپروائزر روزانہ حاضری لیتا ہے۔" },
       { t: "ٹکٹس اور پیغامات", d: "کوئی بھی درخواست ٹکٹس کے ذریعے جاتی ہے، اور شعبے کے پیغامات صرف دیکھنے کے لیے آتے ہیں۔" },
     ],
     office: [
@@ -9840,7 +9930,7 @@ Object.assign(RA.en, { opsPickSup: "Choose your name", supLabel: "Supervisor", o
 Object.assign(RA.ur, { opsPickSup: "اپنا نام منتخب کریں", supLabel: "سپروائزر", opsNoSup: "ابھی کوئی عملہ نہیں — HR شامل کرے گا۔", opsViaDept: "شعبہ کے پاس ورڈ سے داخل ہوں (مینیجر)", supPass: "آپ کا ذاتی پاس ورڈ", supScopeNote: "آپ صرف اپنی ٹیم دیکھتے ہیں" });
 
 function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduce, setReduce, reps, setReps, reports, setReports,
-  tickets, setTickets, circulars, setCirculars, attendance, setAttendance, shifts, setShifts,
+  tickets, setTickets, circulars, setCirculars, attendance, setAttendance,
   orders, setOrders, cars, setCars, restaurants, setRestaurants, invoices, setInvoices,
   employees, setEmployees, contracts, setContracts, cases, setCases, approvalReqs, setApprovalReqs,
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
@@ -9885,7 +9975,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   }, []);
   const [drawer, setDrawer] = useState(false);
   const [bell, setBell] = useState(false);
-  const [logShift, setLogShift] = useState(false);
   const [fabToast, setFabToast] = useState(null);
   const [tourSeen, setTourSeen] = useState(false);
   const markTourSeen = () => setTourSeen(true);
@@ -9915,13 +10004,14 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   };
 
   const notifs = [];
+  const EXn = extOf(ext);
   if (isRep) {
     {
       const pm = prevMonthStr(riyadhNow().toISOString().slice(0, 7));
       if (repSettlements.some((z) => (z.month === pm || z.month === riyadhNow().toISOString().slice(0, 7)) && z.closed)) notifs.push({ text: RA[lang].repClosedNotif, tone: "ok", page: "myEarnings" });
     }
     repMessages.filter((m) => m.repId === user && !m.seen).forEach((m) =>
-      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: "info", page: "messages" }));
+      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: m.text.indexOf("⚠") === 0 ? "bad" : "info", page: "messages", snd: m.text.indexOf("⚠") === 0 ? "urgent" : "normal" }));
     tickets.filter((tk) => tk.repId === user && (tk.status === "resolved" || tk.status === "rejected" || tk.status === "auto_closed"))
       .slice(0, 3).forEach((tk) => notifs.push({ text: `${ticketTypeOf(tk.type)[lang]} — ${tk.status === "resolved" ? x.stageResolved : tk.status === "auto_closed" ? x.stageAutoClosed : x.stageRejected}`, tone: tk.status === "resolved" ? "ok" : "n", page: "tickets" }));
     tickets.filter((tk) => tk.repId === user).forEach((tk) => {
@@ -9929,6 +10019,13 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       if (mins != null && mins >= 0 && mins <= 60) notifs.unshift({ text: `${x.apptSoonT}: ${tk.apptAt.slice(11, 16)} (${x.apptSoonNote})`, tone: "warn", page: "tickets" });
     });
   } else {
+    if (role.id === "ops" || role.id === "opsm" || role.id === "legal" || role.id === "gm") {
+      const openInc = EXn.incidents.filter((i) => i.status !== "closed" && (!scopeSup || i.sup === scopeSup));
+      const urgentInc = openInc.filter((i) => i.urgent);
+      if (openInc.length > 0) notifs.unshift({ text: Lx(lang, `🚨 بلاغات مفتوحة: ${openInc.length}${urgentInc.length ? ` (عاجل: ${urgentInc.length})` : ""} — آخرها: ${openInc[0].name}`, `🚨 Open incidents: ${openInc.length}${urgentInc.length ? ` (urgent: ${urgentInc.length})` : ""} — latest: ${openInc[0].name}`), tone: "bad", page: "incidents", count: openInc.length, snd: "urgent" });
+    }
+    if ((role.id === "ops" || role.id === "opsm") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !((EXn.roll || {})[riyadhToday()] && Object.keys(EXn.roll[riyadhToday()]).length > 0))
+      notifs.unshift({ text: Lx(lang, "لم يُسجَّل حضور مناديب اليوم بعد", "Today's rider attendance isn't taken yet"), tone: "warn", page: "pulse", count: 1, snd: "normal" });
     if ((role.id === "opsm" || role.id === "ops") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !reports.some((rp) => rp.date === new Date(riyadhNow().getTime() - 86400000).toISOString().slice(0, 10)))
       notifs.unshift({ text: RA[lang].missingEntryNotif, tone: "warn", page: "shifts", count: 1 });
     if (role.id === "hr" || role.id === "opsm") {
@@ -9944,11 +10041,11 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       const hasPrev = reports.some((rp) => rp.date.startsWith(pm));
       if (hasPrev && !repSettlements.some((z) => z.month === pm && z.closed)) notifs.unshift({ text: `${RA[lang].finCloseNotif} (${pm})`, tone: "warn", page: "repAccounting", count: 1 });
     }
-    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets });
+    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets, snd: "normal" });
 
     // ===== تنبيه رسائل الإدارات غير المقروءة (كل الأقسام) =====
     const unseenDeptMsgs = deptChats.filter((m) => m.to === role.id && !m.seen).length;
-    if (unseenDeptMsgs > 0) notifs.unshift({ text: `${x.deptMsgsNotif}: ${unseenDeptMsgs}`, tone: "info", page: "chat", count: unseenDeptMsgs });
+    if (unseenDeptMsgs > 0) notifs.unshift({ text: `${x.deptMsgsNotif}: ${unseenDeptMsgs}`, tone: "info", page: "chat", count: unseenDeptMsgs, snd: "normal" });
     tickets.forEach((tk) => {
       const mins = minutesUntilAppt(tk);
       if (mins != null && mins >= 0 && mins <= 60 && ticketVisibleToRole(tk, role.id) && (ticketCurrentOwner(tk) === role.id)) {
@@ -10010,7 +10107,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
     // ===== تنبيهات القانونية (بلاغات محالة + قضايا مفتوحة) =====
     if (role.id === "legal") {
       const forwarded = tickets.filter((tk) => tk.forwardedToLegal && tk.status !== "resolved").length;
-      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad", page: "tickets", count: forwarded });
+      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad", page: "tickets", count: forwarded, snd: "normal" });
       const openCasesCount = cases.filter((c) => c.st === "open").length;
       if (openCasesCount > 0) notifs.push({ text: `${x.legalOpenCasesNotif}: ${openCasesCount}`, tone: "warn", page: "cases", count: openCasesCount });
     }
@@ -10107,7 +10204,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         )}
       </div>
       <div className="p-3 space-y-1.5" style={{ borderTop: "1px solid rgba(255,255,255,.08)" }}>
-        {isRep && <Btn full variant="accent" accent={role.glow} icon={Route} onClick={() => setLogShift(true)}>{x.logNewShift}</Btn>}
         {[[KeyRound, x.secTitle, () => setPage("settings")], ...(RIDER_MODE ? [] : [[ShoppingBag, t.switchDept, onSwitch]]), [LogOut, t.logout, onLogout]].map(([Ic, label, fn], i) => (
           <button key={i} onClick={fn} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold hover:brightness-125 transition" style={fn === onLogout ? { ...sideBtn, color: "#F4A8A0" } : sideBtn}><Ic size={14} />{label}</button>
         ))}
@@ -10122,13 +10218,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         <IdentityPicker lang={lang} role={role} staff={deptStaff} onPick={setActingEmployee} />
       )}
       {(!needsIdentity || actingEmployee) && !tourSeen && <OnboardingTour lang={lang} role={role} onDone={markTourSeen} />}
-      {logShift && (
-        <LogShiftModal lang={lang} role={role} onClose={() => setLogShift(false)}
-          onConfirm={(start, end) => {
-            setShifts((prev) => [...prev, { repId: user, date: riyadhToday(), start, end, loggedAt: riyadhNow().toISOString() }]);
-            setLogShift(false);
-          }} />
-      )}
       <aside className="hidden lg:block fixed z-30 rounded-[26px] overflow-hidden" style={{ insetInlineStart: 14, top: 14, bottom: 14, width: 258, background: "#0E1424", border: "1px solid rgba(255,255,255,.06)", boxShadow: "0 30px 70px -30px rgba(10,16,32,.6)" }}>
         <SideInner />
       </aside>
@@ -10190,10 +10279,11 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               )}
             </div>
             <div className="flex-1 sm:hidden" />
+            <AlertSoundToggle lang={lang} score={notifs.reduce((a, n) => a + (n.snd ? (n.count || 1) : 0), 0)} urgent={notifs.some((n) => n.snd === "urgent")} body={(notifs.find((n) => n.snd === "urgent") || notifs.find((n) => n.snd) || {}).text} />
             <div className="relative">
               <button onClick={() => setBell(!bell)} className="relative p-2 rounded-xl" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }} aria-label={t.alerts}>
                 <Bell size={16} />
-                {notifs.length > 0 && <span className="absolute top-1.5 w-2 h-2 rounded-full pulse-dot" style={{ insetInlineEnd: 6, background: "#E8837A" }} />}
+                {notifs.length > 0 && <span className="absolute -top-1 min-w-[16px] h-4 px-1 grid place-items-center rounded-full text-[9.5px] font-extrabold pulse-dot" style={{ insetInlineEnd: -3, background: "#E8837A", color: "#fff" }}>{Math.min(99, notifs.reduce((a, n) => a + (n.count || 1), 0))}</span>}
               </button>
               {bell && (
                 <div className="absolute mt-2 w-[280px] rise glass rounded-2xl p-3 z-50" style={{ insetInlineEnd: 0 }}>
@@ -10240,7 +10330,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
             <Page lang={lang} role={role} user={user} activeRep={activeRep} onLogout={onLogout} setLang={setLang} reduce={reduce} setReduce={setReduce}
               reps={vReps} setReps={setReps} reports={vReports} setReports={setReports} scopeSup={scopeSup}
               tickets={vTickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
-              attendance={attendance} setAttendance={setAttendance} shifts={shifts} setShifts={setShifts}
+              attendance={attendance} setAttendance={setAttendance}
               orders={orders} setOrders={setOrders} cars={cars} setCars={setCars}
               restaurants={restaurants} setRestaurants={setRestaurants} invoices={invoices} setInvoices={setInvoices}
               employees={employees} setEmployees={setEmployees} contracts={contracts} setContracts={setContracts}
@@ -10285,10 +10375,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
                   </span>
                 </div>
               )}
-              <button onClick={() => setLogShift(true)} className="grid place-items-center w-12 h-12 rounded-2xl shadow-lg active:scale-95 transition"
-                style={{ background: "rgba(20,26,38,.92)", border: `1px solid rgba(${role.glow},.4)`, boxShadow: `0 8px 24px -8px rgba(${role.glow},.5)` }} aria-label={x.logNewShift}>
-                <Route size={19} style={{ color: role.accent }} />
-              </button>
               <button onClick={doClock} className="grid place-items-center w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition"
                 style={{ background: myToday && !myToday.out ? "linear-gradient(140deg,#3FD8B4,#2BAE8E)" : `linear-gradient(140deg,rgba(${role.glow},.95),rgba(${role.glow},.6))`, boxShadow: "0 10px 28px -8px rgba(63,216,180,.55)" }}
                 aria-label={x.clockIn}>
@@ -10339,7 +10425,6 @@ export default function App() {
   const [tickets, setTickets] = usePersisted("bq_tickets", []);
   const [circulars, setCirculars] = usePersisted("bq_circulars", []);
   const [attendance, setAttendance] = usePersisted("bq_attendance", []);
-  const [shifts, setShifts] = usePersisted("bq_shifts", []);
   const [orders, setOrders] = usePersisted("bq_orders", []);
   const [cars, setCars] = usePersisted("bq_cars", []);
   const [restaurants, setRestaurants] = usePersisted("bq_restaurants", []);
@@ -10452,7 +10537,7 @@ export default function App() {
           onForgot={(nid, phone) => setPwResets((prev) => (prev.some((q) => q.nid === nid && q.status === "open") ? prev : [{ id: "PWR-" + Date.now(), nid, phone, at: riyadhNow().toISOString(), status: "open" }, ...prev]))}
           onRep={(nid, pass) => {
             const rec = reps.find((r) => r.nid === nid.trim());
-            if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
+            if (!rec || !["active", "left", "suspended"].includes(rec.status)) { setLoginErr(EX[lang].errRepNotActive); return; }
             if (rec.password && rec.password !== pass) { setLoginErr(EX[lang].errRepWrongPass); return; }
             setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
           }} />
@@ -10463,16 +10548,20 @@ export default function App() {
           onEmployee={(id, emp) => { setStartEmp(emp || null); setRoleId(id); setUser("BQ-" + id.toUpperCase()); setStep("app"); setSessionExpired(false); }}
           onRep={(nid, pass) => {
             const rec = reps.find((r) => r.nid === nid.trim());
-            if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
+            if (!rec || !["active", "left", "suspended"].includes(rec.status)) { setLoginErr(EX[lang].errRepNotActive); return; }
             if (rec.password && rec.password !== pass) { setLoginErr(EX[lang].errRepWrongPass); return; }
             setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
           }} />
       )}
-      {step === "app" && role && (
+      {step === "app" && role && role.id === "rep" && activeRep && activeRep.status !== "active" && (
+        <RepExitScreen lang={lang} setLang={setLang} rep={activeRep} reports={reports} pricing={pricing} repSettlements={repSettlements} weekendFine={weekendFine} violationPenalty={violationPenalty} repReceipts={repReceipts} ext={ext}
+          onLogout={() => { setRoleId(null); setStartEmp(null); setStep("gate"); }} />
+      )}
+      {step === "app" && role && !(role.id === "rep" && activeRep && activeRep.status !== "active") && (
         <Shell startEmployee={startEmp} lang={lang} setLang={setLang} role={role} user={user} activeRep={activeRep} reduce={reduce} setReduce={setReduce}
           reps={reps} setReps={setReps} reports={reports} setReports={setReports}
           tickets={tickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
-          attendance={attendance} setAttendance={setAttendance} shifts={shifts} setShifts={setShifts}
+          attendance={attendance} setAttendance={setAttendance}
           orders={orders} setOrders={setOrders} cars={cars} setCars={setCars}
           restaurants={restaurants} setRestaurants={setRestaurants} invoices={invoices} setInvoices={setInvoices}
           employees={employees} setEmployees={setEmployees} contracts={contracts} setContracts={setContracts}
