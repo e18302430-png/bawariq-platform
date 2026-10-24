@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Crown, Car, UtensilsCrossed, Wallet, Users, Scale, ShieldCheck, Navigation,
   LayoutDashboard, ShoppingBag, MapPin, Store, ReceiptText, FileSignature, Gavel,
@@ -9,7 +9,7 @@ import {
   UserPlus, Upload, CreditCard, Target, Percent, Route, Footprints, ImagePlus, Phone, Camera, Printer,
   CalendarDays, ClipboardList, Trash2, Megaphone, Mic, Square, PlayCircle, Send, Paperclip,
   MessageSquare, CheckCheck, Copy, Hash,
-  HandCoins, ShieldAlert, Sparkles, Award, Rocket, Zap, Radio, ChevronLeft, Trophy, Medal, Plane,
+  HandCoins, ShieldAlert, Sparkles, Award, Rocket, Zap, Radio, ChevronLeft, Trophy, Medal, Plane, Volume2, VolumeX,
 } from "lucide-react";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -60,10 +60,10 @@ const T = {
     nav: { overview: "نظرة عامة", orders: "الطلبات", cars: "السيارات", zones: "الأحياء",
       restaurants: "المطاعم", invoices: "الفواتير", expenses: "المصروفات", payroll: "الرواتب",
       employees: "الموظفون", attendance: "الحضور", contracts: "العقود", cases: "القضايا",
-      compliance: "الالتزام", approvals: "الموافقات", reports: "التقارير", settings: "الإعدادات",
+      compliance: "الالتزام", approvals: "الموافقات", reports: "تقارير المناديب", settings: "الإعدادات",
       hiring: "توظيف المناديب", shifts: "أداء المناديب", tickets: "التذاكر", circulars: "التعاميم", pulse: "نبض المناديب", iqama: "الإقامات", payrollRuns: "مسيرات الرواتب", chat: "المراسلات", messages: "رسائل الإدارة", leaderboard: "لوحة الصدارة", audit: "سجل التتبع", hall: "قاعة المشاهير", charter: "اللائحة الداخلية", checklist: "قائمة التحقق", growth: "نمو الشركة", security: "الأمان", permissions: "خريطة الصلاحيات", mystory: "قصتي مع بوارق", invAnalysis: "تحليل الفواتير", equipCompliance: "الامتثال والمعدات" },
     k: { orders: "طلبات اليوم", avgTime: "متوسط التوصيل", onTime: "التوصيل في الوقت",
-      activeReps: "مناديب في الوردية", partners: "مطاعم شريكة", rating: "تقييم العملاء",
+      activeReps: "مناديب نشطون", partners: "مطاعم شريكة", rating: "تقييم العملاء",
       cod: "تحصيل نقدي", cancel: "نسبة الإلغاء", revenue: "الإيرادات", profit: "صافي الربح",
       expenses: "المصروفات", head: "إجمالي الموظفين", attend: "نسبة الحضور", hires: "تعيينات جديدة",
       contracts: "عقود سارية", cases: "قضايا مفتوحة", expiring: "عقود تنتهي قريباً",
@@ -78,7 +78,7 @@ const T = {
       delivered: "تم التسليم", canceled: "ملغي", late: "متأخر", pending: "قيد المراجعة",
       approved: "معتمد", paid: "مدفوعة", overdue: "متأخرة", active: "ساري", expiring: "ينتهي قريباً",
       open: "مفتوحة", closed: "مغلقة", review: "مراجعة", present: "حاضر", leave: "إجازة",
-      on_shift: "في الوردية", off_shift: "خارج الوردية", maint: "في الصيانة", idle: "متوقفة" },
+      on_shift: "في الخدمة", off_shift: "خارج الخدمة", maint: "في الصيانة", idle: "متوقفة" },
     h: { order: "رقم الطلب", restaurant: "المطعم", zone: "الحي", status: "الحالة", rep: "المندوب",
       time: "الزمن", value: "قيمة الطلب", pay: "الدفع", plate: "اللوحة", car: "السيارة",
       last: "آخر صيانة", invoice: "رقم الفاتورة", amount: "المبلغ", due: "تاريخ الاستحقاق",
@@ -101,14 +101,14 @@ const T = {
     nav: { overview: "Overview", orders: "Orders", cars: "Cars", zones: "Zones",
       restaurants: "Restaurants", invoices: "Invoices", expenses: "Expenses", payroll: "Payroll",
       employees: "People", attendance: "Attendance", contracts: "Contracts", cases: "Cases",
-      compliance: "Compliance", approvals: "Approvals", reports: "Reports", settings: "Settings",
+      compliance: "Compliance", approvals: "Approvals", reports: "Rider Reports", settings: "Settings",
       hiring: "Rep Hiring", shifts: "Rep Performance", tickets: "Tickets", circulars: "Circulars", pulse: "Rep Pulse", iqama: "Residency", payrollRuns: "Payroll Runs", chat: "Messaging", messages: "Messages", leaderboard: "Leaderboard", audit: "Audit Log", hall: "Hall of Fame", charter: "Internal Charter", checklist: "Launch Checklist", growth: "Company Growth", security: "Security", permissions: "Permissions Map", mystory: "My Story", invAnalysis: "Invoice Analysis", equipCompliance: "Equipment Compliance" },
     k: { orders: "Orders today", avgTime: "Avg. delivery", onTime: "On-time delivery",
-      activeReps: "Reps on shift", partners: "Partner restaurants", rating: "Customer rating",
+      activeReps: "Active reps", partners: "Partner restaurants", rating: "Customer rating",
       cod: "Cash collected", cancel: "Cancellation rate", revenue: "Revenue", profit: "Net profit",
       expenses: "Expenses", head: "Headcount", attend: "Attendance rate", hires: "New hires",
       contracts: "Active contracts", cases: "Open cases", expiring: "Expiring soon",
-      cars: "Delivery cars", carsShift: "Cars on shift", carsMaint: "In service",
+      cars: "Delivery cars", carsShift: "Active cars", carsMaint: "In service",
       fuel: "Fuel cost", open: "Open receivables", overdue: "Overdue", cash: "Cash position",
       newOrders: "New orders", lateOrders: "Late orders", zones: "Zones covered",
       prepTime: "Avg. prep time", pending: "Awaiting your approval", cities: "Cities", payrollC: "Payroll cost" },
@@ -119,7 +119,7 @@ const T = {
       delivered: "Delivered", canceled: "Canceled", late: "Late", pending: "Under review",
       approved: "Approved", paid: "Paid", overdue: "Overdue", active: "Active", expiring: "Expiring",
       open: "Open", closed: "Closed", review: "In review", present: "Present", leave: "On leave",
-      on_shift: "On shift", off_shift: "Off shift", maint: "In service", idle: "Idle" },
+      on_shift: "Active", off_shift: "Inactive", maint: "In service", idle: "Idle" },
     h: { order: "Order no.", restaurant: "Restaurant", zone: "Zone", status: "Status", rep: "Rep",
       time: "Time", value: "Order value", pay: "Payment", plate: "Plate", car: "Car",
       last: "Last service", invoice: "Invoice no.", amount: "Amount", due: "Due date",
@@ -142,14 +142,14 @@ const T = {
     nav: { overview: "جائزہ", orders: "آرڈرز", cars: "گاڑیاں", zones: "علاقے",
       restaurants: "ریستوران", invoices: "انوائس", expenses: "اخراجات", payroll: "تنخواہ",
       employees: "ملازمین", attendance: "حاضری", contracts: "معاہدے", cases: "مقدمات",
-      compliance: "ضابطے", approvals: "منظوریاں", reports: "رپورٹس", settings: "سیٹنگز",
+      compliance: "ضابطے", approvals: "منظوریاں", reports: "نمائندہ رپورٹس", settings: "سیٹنگز",
       hiring: "نمائندہ بھرتی", shifts: "نمائندہ کارکردگی", tickets: "ٹکٹس", circulars: "سرکلرز", pulse: "نمائندہ نبض", iqama: "اقامہ", payrollRuns: "تنخواہ مسیر", chat: "پیغام رسانی", messages: "پیغامات", leaderboard: "لیڈر بورڈ", audit: "آڈٹ لاگ", hall: "شہرت کا ہال", charter: "اندرونی ضابطہ", checklist: "لانچ چیک لسٹ", growth: "کمپنی کی ترقی", security: "سیکیورٹی", permissions: "اختیارات کا نقشہ", mystory: "میری کہانی", invAnalysis: "انوائس تجزیہ", equipCompliance: "سازوسامان کی تعمیل" },
     k: { orders: "آج کے آرڈرز", avgTime: "اوسط ڈیلیوری", onTime: "وقت پر ڈیلیوری",
-      activeReps: "شفٹ میں نمائندے", partners: "شراکت دار ریستوران", rating: "کسٹمر ریٹنگ",
+      activeReps: "فعال نمائندے", partners: "شراکت دار ریستوران", rating: "کسٹمر ریٹنگ",
       cod: "وصول شدہ رقم", cancel: "منسوخی کی شرح", revenue: "آمدنی", profit: "خالص منافع",
       expenses: "اخراجات", head: "کل ملازمین", attend: "حاضری کی شرح", hires: "نئی بھرتیاں",
       contracts: "فعال معاہدے", cases: "کھلے مقدمات", expiring: "جلد ختم ہونے والے",
-      cars: "ڈیلیوری گاڑیاں", carsShift: "شفٹ میں گاڑیاں", carsMaint: "مرمت میں",
+      cars: "ڈیلیوری گاڑیاں", carsShift: "فعال گاڑیاں", carsMaint: "مرمت میں",
       fuel: "ایندھن کا خرچ", open: "واجب الادا رقم", overdue: "تاخیر شدہ", cash: "دستیاب رقم",
       newOrders: "نئے آرڈرز", lateOrders: "تاخیر شدہ آرڈرز", zones: "کور شدہ علاقے",
       prepTime: "اوسط تیاری وقت", pending: "آپ کی منظوری کے منتظر", cities: "شہر", payrollC: "تنخواہ لاگت" },
@@ -160,7 +160,7 @@ const T = {
       delivered: "پہنچا دیا", canceled: "منسوخ", late: "تاخیر", pending: "زیرِ جائزہ",
       approved: "منظور", paid: "ادا شدہ", overdue: "تاخیر شدہ", active: "فعال", expiring: "جلد ختم",
       open: "کھلا", closed: "بند", review: "جائزہ", present: "حاضر", leave: "چھٹی",
-      on_shift: "شفٹ میں", off_shift: "شفٹ سے باہر", maint: "مرمت میں", idle: "کھڑی" },
+      on_shift: "فعال", off_shift: "غیر فعال", maint: "مرمت میں", idle: "کھڑی" },
     h: { order: "آرڈر نمبر", restaurant: "ریستوران", zone: "علاقہ", status: "حالت", rep: "نمائندہ",
       time: "وقت", value: "آرڈر قیمت", pay: "ادائیگی", plate: "نمبر پلیٹ", car: "گاڑی",
       last: "آخری سروس", invoice: "انوائس نمبر", amount: "رقم", due: "آخری تاریخ",
@@ -179,32 +179,32 @@ const ROLES = [
     ar: { t: "المدير العام", d: "الصورة الكاملة للعمليات والقرارات النهائية" },
     en: { t: "General Manager", d: "Whole-network view and final decisions" },
     ur: { t: "جنرل منیجر", d: "پورے نیٹ ورک کا منظر اور حتمی فیصلے" },
-    nav: ["overview", "decisions", "invoices", "expenses", "repAccounting", "receiptsAdmin", "payrollRuns", "equipCompliance", "growth", "checklist", "leaderboard", "hall", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "decisions", "invoices", "expenses", "repAccounting", "dailyLedger", "receiptsAdmin", "payrollRuns", "equipCompliance", "growth", "checklist", "pulse", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings", "inbox", "copilot", "perfBoard", "walletAdmin", "incidents", "leavesAdmin", "settleFlow", "crm", "snapshots", "retention", "referrals", "teams", "appAvail", "cockpit", "whatIf", "closeList", "cashflow", "perfPlans", "coverage", "empFile", "offboard"] },
   { id: "opsm", icon: Navigation, accent: "#5BC8E8", glow: "91,200,232", staff: 12, shape: "hex",
     ar: { t: "مدير التشغيل", d: "توزيع الأحياء وأداء المناديب والسيارات" },
     en: { t: "Operations Manager", d: "Zone coverage, rep and car performance" },
     ur: { t: "آپریشنز منیجر", d: "علاقے، نمائندے اور گاڑیوں کی کارکردگی" },
-    nav: ["overview", "leaderboard", "hall", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings"] },
+    nav: ["overview", "pulse", "shifts", "cars", "hiring", "security", "audit", "permissions", "tickets", "chat", "circulars", "attendance", "settings", "inbox", "copilot", "dayOps", "perfBoard", "incidents", "leavesAdmin", "trainingAdmin", "pipeline", "settleFlow", "retention", "referrals", "teams", "appAvail", "perfPlans", "coverage", "offboard"] },
   { id: "ops", icon: UtensilsCrossed, accent: "#FF9153", glow: "255,145,83", staff: 34, shape: "diamond",
     ar: { t: "إدارة التشغيل", d: "غرفة الطلبات: الإسناد والمتابعة اللحظية" },
     en: { t: "Operations", d: "Order room: dispatching and live tracking" },
     ur: { t: "آپریشنز شعبہ", d: "آرڈر روم: تقسیم اور لائیو ٹریکنگ" },
-    nav: ["overview", "pulse", "shifts", "cars", "tickets", "chat", "permissions", "attendance", "settings"] },
+    nav: ["overview", "pulse", "shifts", "cars", "tickets", "chat", "permissions", "attendance", "settings", "inbox", "dayOps", "perfBoard", "incidents", "leavesAdmin", "retention", "teams", "perfPlans", "coverage"] },
   { id: "fin", icon: Wallet, accent: "#8B9BF7", glow: "139,155,247", staff: 9, shape: "circle",
     ar: { t: "الإدارة المالية", d: "عمولات المطاعم والتحصيل النقدي والرواتب" },
     en: { t: "Finance", d: "Restaurant commissions, cash collection, payroll" },
     ur: { t: "مالیات", d: "ریستوران کمیشن، نقد وصولی اور تنخواہ" },
-    nav: ["overview", "repAccounting", "receiptsAdmin", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings"] },
+    nav: ["overview", "repAccounting", "dailyLedger", "receiptsAdmin", "expenses", "payrollRuns", "tickets", "chat", "permissions", "attendance", "settings", "inbox", "walletAdmin", "settleFlow", "perfBoard", "crm", "referrals", "closeList", "cashflow", "whatIf", "offboard"] },
   { id: "hr", icon: Users, accent: "#C58BF2", glow: "197,139,242", staff: 8, shape: "shield",
-    ar: { t: "الموارد البشرية", d: "المناديب والورديات والتوظيف والتطوير" },
-    en: { t: "Human Resources", d: "Reps, shifts, hiring and development" },
-    ur: { t: "انسانی وسائل", d: "نمائندے، شفٹیں، بھرتی اور تربیت" },
-    nav: ["overview", "leaderboard", "hall", "hiring", "employees", "iqama", "attendance", "tickets", "chat", "circulars", "permissions", "settings"] },
+    ar: { t: "الموارد البشرية", d: "المناديب والتوظيف والتطوير وملفات الموظفين" },
+    en: { t: "Human Resources", d: "Reps, hiring, development and staff files" },
+    ur: { t: "انسانی وسائل", d: "نمائندے، بھرتی، تربیت اور عملے کی فائلیں" },
+    nav: ["overview", "hiring", "repFiles", "employees", "iqama", "attendance", "tickets", "chat", "circulars", "permissions", "settings", "inbox", "pipeline", "trainingAdmin", "leavesAdmin", "retention", "referrals", "teams", "appAvail", "perfPlans", "coverage", "empFile", "offboard"] },
   { id: "legal", icon: Scale, accent: "#E2789E", glow: "226,120,158", staff: 4, shape: "shieldTall",
     ar: { t: "الشؤون القانونية", d: "عقود المطاعم والمخالفات والالتزام" },
     en: { t: "Legal Affairs", d: "Restaurant contracts, violations, compliance" },
     ur: { t: "قانونی امور", d: "ریستوران معاہدے، خلاف ورزیاں اور ضابطے" },
-    nav: ["overview", "charter", "contracts", "cases", "tickets", "compliance", "chat", "circulars", "permissions", "attendance", "settings"] },
+    nav: ["overview", "charter", "contracts", "cases", "tickets", "compliance", "chat", "circulars", "permissions", "attendance", "settings", "inbox", "incidents", "crm"] },
 ];
 const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216,180,254", staff: 2, shape: "shieldTall",
   ar: { t: "هيئة المستشارين", d: "الحلقة الوصل الحصرية مع المدير العام — اعتماد القرارات الاستراتيجية" },
@@ -213,10 +213,10 @@ const ADVISOR_ROLE = { id: "advisor", icon: Scale, accent: "#D8B4FE", glow: "216
   nav: ["boardCouncil", "decisions", "repAccounting", "payrollRuns", "invoices", "expenses"] };
 const REP = {
   id: "rep", icon: Car, accent: "#3FD8B4", glow: "63,216,180", staff: 128, shape: "chevron",
-  ar: { t: "مندوب توصيل", d: "طلبات الوردية وإثبات التسليم" },
-  en: { t: "Delivery Rep", d: "Shift orders and proof of delivery" },
-  ur: { t: "ڈیلیوری نمائندہ", d: "شفٹ کے آرڈرز اور ثبوتِ ترسیل" },
-  nav: ["riderHome", "myEarnings", "riderReceipts", "mystory", "leaderboard", "hall", "messages", "tickets", "circulars", "attendance", "settings"],
+  ar: { t: "مندوب توصيل", d: "طلبات اليوم وإثبات التسليم" },
+  en: { t: "Delivery Rep", d: "Today's orders and proof of delivery" },
+  ur: { t: "ڈیلیوری نمائندہ", d: "آج کے آرڈرز اور ثبوتِ ترسیل" },
+  nav: ["riderHome", "coach", "myEarnings", "myScore", "myWallet", "myDaily", "academy", "myLeave", "reportInc", "support", "myRefer", "teams", "riderReceipts", "mystory", "riderWelcome", "messages", "tickets", "circulars", "settings"],
 };
 const ALL_ROLES = [...ROLES, REP, ADVISOR_ROLE];
 
@@ -289,18 +289,47 @@ const APPS = [
   { id: "lokit", ar: "لوكيت", en: "Lokit", ur: "لوکیٹ" },
   { id: "noonsm", ar: "نون سوبر مول", en: "Noon Super Mall", ur: "نون سپر مال" },
 ];
-const DAILY_TARGET = { orders: 16, km: 113 };
 
 /* ═══════════  محرك التسعير ومحاسبة المناديب (بدون كيلومترات)  ═══════════ */
 // تسعيرتان لكل تطبيق يضعهما المحاسب: (1) ما يدفعه التطبيق للشركة  (2) ما تدفعه الشركة للمندوب. لا توجد أرقام افتراضية.
-const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", tiers: [{ from: 0, rate: "" }] };
+const BLANK_PRICE = { mode: "unit", perOrder: "", fixedMonthly: 0, ordersBase: "", ordersTarget: "", perOrderDelta: "", perOrderShort: "", belowRate: "", tierCalc: "all", scope: "rider", tiersV: 2, tiers: [{ from: 1, to: "", rate: "" }] };
 const getAppPrice = (pricing, appId) => (pricing && pricing.app && pricing.app[appId]) || null;
 const getRepPrice = (pricing, appId) => (pricing && pricing.rep && pricing.rep[appId]) || null;
 const r2 = (n) => Math.round((+n || 0) * 100) / 100;
+// شرائح "من طلب رقم X إلى طلب رقم Y بسعر Z" — الحقل to الفارغ = فما فوق. البيانات القديمة (حدود فقط) تُحوَّل تلقائياً.
+function tiersForm(p) {
+  const raw = p && p.tiers && p.tiers.length ? p.tiers : [{ from: 1, to: "", rate: "" }];
+  if (p && p.tiersV === 2) return raw;
+  const s = [...raw].sort((a, b) => (+a.from || 0) - (+b.from || 0));
+  return s.map((x, i) => ({ from: (+x.from || 0) + 1, to: i + 1 < s.length ? (+s[i + 1].from || 0) : "", rate: x.rate }));
+}
+function tiersN(p) {
+  return tiersForm(p).filter((x) => x.rate !== "" && x.rate != null && x.from !== "" && x.from != null)
+    .map((x) => ({ from: Math.max(1, +x.from || 1), to: x.to === "" || x.to == null ? Infinity : +x.to, rate: +x.rate || 0 }))
+    .sort((a, b) => a.from - b.from);
+}
+// أخطاء الشرائح: first = لا تبدأ من 1 · gap = فجوة بين شريحتين · overlap = تداخل · open = شريحة مفتوحة في الوسط · bad = "إلى" أصغر من "من"
+function tierIssues(p) {
+  const rows = tiersForm(p);
+  const out = new Set();
+  if (!rows.length || rows.some((x) => x.rate === "" || x.rate == null || x.from === "" || x.from == null)) out.add("empty");
+  const t = tiersN(p);
+  t.forEach((x, i) => {
+    if (x.to < x.from) out.add("bad");
+    const nx = t[i + 1];
+    if (nx) {
+      if (x.to === Infinity) out.add("open");
+      else if (nx.from > x.to + 1) out.add("gap");
+      else if (nx.from <= x.to) out.add("overlap");
+    }
+  });
+  if (t.length && t[0].from !== 1) out.add("first");
+  return [...out];
+}
 function validPrice(p) {
   if (!p) return false;
   if (p.mode === "target") return +p.ordersBase > 0 && +p.ordersTarget > 0 && p.perOrderDelta !== "";
-  if (p.mode === "tiers") return (p.tiers || []).length > 0 && (p.tiers || []).every((x) => x.rate !== "" && x.from !== "");
+  if (p.mode === "tiers") return tiersN(p).length > 0 && tierIssues(p).length === 0;
   return +p.perOrder > 0;
 }
 function monthFactor(month) {
@@ -316,12 +345,19 @@ function priceCalc(p, orders, f) {
   if (!p || !orders) return { orders: 0, fixed: 0, total: 0, configured: !!p };
   let o = 0;
   if (p.mode === "target") {
-    o = n(p.ordersBase) * f + (orders - n(p.ordersTarget) * f) * n(p.perOrderDelta);
+    const diff = orders - n(p.ordersTarget) * f;
+    // اتفاق المندوب: دون الهدف يُحسب كل طلب بسعر ثابت (belowRate) ولا راتب ثابت — وعند بلوغ الهدف: الراتب + الزائد
+    if (hasBelow(p) && diff < 0) o = orders * n(p.belowRate);
+    else o = n(p.ordersBase) * f + diff * (diff >= 0 || p.perOrderShort === "" || p.perOrderShort == null ? n(p.perOrderDelta) : n(p.perOrderShort));
   } else if (p.mode === "tiers") {
-    const tiers = (p.tiers || []).map((x) => ({ from: n(x.from), rate: n(x.rate) })).sort((a, b) => a.from - b.from);
-    tiers.forEach((tr, i) => {
-      const hi = i + 1 < tiers.length ? tiers[i + 1].from : Infinity;
-      o += Math.max(0, Math.min(orders, hi) - tr.from) * tr.rate;
+    const tiers = tiersN(p);
+    if (p.tierCalc === "all") {
+      // كل الطلبات بسعر الشريحة التي وصل إليها إجمالي الطلبات (مثل لوكيت: 500 طلب × 16.50). فوق آخر شريحة: سعر آخر شريحة
+      const t = tiers.find((x) => orders >= x.from && orders <= x.to) || (tiers.length && orders > tiers[tiers.length - 1].to ? tiers[tiers.length - 1] : tiers[0]);
+      o = t ? orders * t.rate : 0;
+    } else tiers.forEach((tr, i) => {
+      const hi = Math.min(tr.to, i + 1 < tiers.length ? tiers[i + 1].from - 1 : Infinity);
+      o += Math.max(0, Math.min(orders, hi) - (tr.from - 1)) * tr.rate;
     });
   } else {
     o = orders * n(p.perOrder);
@@ -329,14 +365,50 @@ function priceCalc(p, orders, f) {
   const fixed = n(p.fixedMonthly) * f;
   return { orders: r2(o), fixed, total: Math.max(0, r2(o + fixed)), configured: true };
 }
+const hasBelow = (p) => p && p.belowRate !== "" && p.belowRate != null && +p.belowRate > 0;
+// تفصيل الحساب سطراً سطراً (للمحاسب): يطابق priceCalc تماماً. base = عدّاد موروث لحساب التطبيق (شرائح فقط)
+function priceBreakdown(p, own, f, base) {
+  const n = (v) => +v || 0; f = f || 1; base = base || 0; const lines = [];
+  if (!p) return { lines, total: 0, known: false };
+  if (!own) return { lines, total: 0, known: true };
+  if (p.mode === "target") {
+    const T = n(p.ordersTarget) * f, diff = own - T;
+    const rate = diff >= 0 || p.perOrderShort === "" || p.perOrderShort == null ? n(p.perOrderDelta) : n(p.perOrderShort);
+    if (hasBelow(p) && diff < 0) lines.push({ k: "below", qty: own, rate: n(p.belowRate), amt: r2(own * n(p.belowRate)), target: r2(T), f });
+    else lines.push({ k: "base", amt: r2(n(p.ordersBase) * f), f, target: r2(T) });
+    if (!(hasBelow(p) && diff < 0) && diff !== 0) lines.push({ k: diff > 0 ? "extra" : "short", qty: Math.abs(r2(diff)), rate, amt: r2(diff * rate) });
+  } else if (p.mode === "tiers" && p.tierCalc === "all") {
+    const tot = priceCalc(p, base + own, 1).orders, t0 = base ? priceCalc(p, base, 1).orders : 0;
+    const rate = (base + own) > 0 ? r2(tot / (base + own)) : 0;
+    lines.push({ k: "tierAll", qty: base + own, rate, amt: r2(tot) });
+    if (base) lines.push({ k: "adj", amt: -r2(t0), base });
+  } else if (p.mode === "tiers") {
+    const ts = tiersN(p);
+    ts.forEach((tr, i) => {
+      const hi = Math.min(tr.to, i + 1 < ts.length ? ts[i + 1].from - 1 : Infinity);
+      const q = Math.max(0, Math.min(hi, base + own) - Math.max(tr.from - 1, base));
+      if (q > 0) lines.push({ k: "tier", from: tr.from, to: tr.to, qty: q, rate: tr.rate, amt: r2(q * tr.rate) });
+    });
+  } else lines.push({ k: "unit", qty: own, rate: n(p.perOrder), amt: r2(own * n(p.perOrder)) });
+  if (n(p.fixedMonthly) && !base) lines.push({ k: "fixed", amt: r2(n(p.fixedMonthly) * f), f });
+  return { lines, total: Math.max(0, r2(lines.reduce((a, x) => a + x.amt, 0))), known: true };
+}
 // أرباح مندوب من الإدخال اليومي للمشرف (تُجمَّع حسب التطبيق ثم تُسعَّر بتسعيرة المندوب لذلك التطبيق)
-function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty, f) {
+// rep.inherit = عدّاد شريحة التطبيق (الشركة) يكمل من عدد من سبقه — داخلي للشركة فقط. أجر المندوب نفسه يبدأ من أول طلب له ولا يتأثر.
+function payWithBase(price, own, base, f) {
+  if (!price || !own) return priceCalc(price, own, f).total;
+  if (!base || price.mode !== "tiers") return priceCalc(price, own, f).total;
+  const a = priceCalc(price, base + own, 1).orders - priceCalc(price, base, 1).orders;
+  return Math.max(0, r2(a + (+price.fixedMonthly || 0) * (f || 1)));
+}
+function repMonthCalc(entries, rep, pricing, weekendFine, violationPenalty, f, month) {
   const byApp = {};
   entries.forEach((e) => {
     const a = e.app || rep.app || "hs";
     const g = byApp[a] || (byApp[a] = { orders: 0, hours: 0 });
     g.orders += e.orders || 0; g.hours += e.hours || 0;
   });
+  if (month && rep && rep.inherit && rep.inherit.month === month && byApp[rep.inherit.app]) byApp[rep.inherit.app].base = +rep.inherit.orders || 0;
   const weekendCount = entries.reduce((s, e) => s + (e.weekendViolations || 0), 0);
   const appCount = entries.reduce((s, e) => s + (e.appViolations || 0), 0);
   const out = { byApp, weekendCount, appCount, weekendAuto: weekendCount * (+weekendFine || 0), appAuto: appCount * (+violationPenalty || 0), f };
@@ -347,7 +419,7 @@ function finishRepCalc(c, rep, pricing) {
   Object.keys(c.byApp).forEach((a) => {
     const g = c.byApp[a], price = getRepPrice(pricing, a);
     if (!price) unpriced = true;
-    g.pay = priceCalc(price, g.orders, c.f).total;
+    g.pay = priceCalc(price, g.orders, c.f).total; // أجر المندوب دائماً من أول طلب له — العدّاد الموروث (g.base) للشركة فقط
     gross += g.pay; orders += g.orders; hours += g.hours || 0;
     if (g.orders > mainO) { mainO = g.orders; main = a; }
   });
@@ -381,7 +453,8 @@ async function parseStatement(file) {
   return null;
 }
 const EMPTY_SETTLE_INPUTS = { appActual: {}, appFines: {}, fineOverride: {}, manual: [], appStatement: {} };
-function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine, violationPenalty, expenses, receipts) {
+let DAILY_CTX = [];
+function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine, violationPenalty, expenses, receipts, daily) {
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...(rawInputs || {}) };
   const f = monthFactor(month);
   const stm = inputs.appStatement || {};
@@ -393,13 +466,13 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const rid = String(r.riderId || "").trim();
     const row = st && rid ? st.rows.find((z) => z.id === rid) : null;
     if (!entries.length && r.status !== "active" && !row) return;
-    let c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty, f);
+    let c = repMonthCalc(entries, r, pricing, weekendFine, violationPenalty, f, month);
     const recOrders = (c.byApp[r.app] || {}).orders || 0;
     let source = "daily", appAmtAuto = c.appAuto;
     if (row) {
       source = "invoice";
       matched[r.app] = (matched[r.app] || new Set()); matched[r.app].add(row.id);
-      const byApp = { ...c.byApp, [r.app]: { orders: row.orders, hours: (c.byApp[r.app] || {}).hours || 0 } };
+      const byApp = { ...c.byApp, [r.app]: { orders: row.orders, hours: (c.byApp[r.app] || {}).hours || 0, base: (c.byApp[r.app] || {}).base || 0 } };
       c = finishRepCalc({ ...c, byApp, f: 1 }, r, pricing);
       appAmtAuto = row.penalties;
     }
@@ -410,11 +483,12 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + (+m.amount || 0), 0);
     const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
     const totalDed = weekendAmt + appAmt + deds;
+    const dl = dailyTotals(daily, r.id, month);
     const reimb = r2((receipts || []).filter((q) => q.repId === r.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
-    repLines.push({ repId: r.id, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced,
+    repLines.push({ repId: r.id, repApp: r.app, srcF: row ? 1 : f, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced, baseOrders: (c.byApp[c.main] || {}).base || 0, baseFrom: (r.inherit && r.inherit.month === month) ? r.inherit.fromName : null,
       orders: c.orders, recOrders, invOrders: row ? row.orders : null, invNet: row ? row.net : null, hours: c.hours,
       gross: c.gross, weekendCount: c.weekendCount, appCount: c.appCount, weekendAmt, appAmt, manualAdds: adds, manualDeds: deds, totalDed,
-      reimb, net: r2(c.gross + adds + reimb - totalDed) });
+      reimb, net: r2(c.gross + adds + reimb - totalDed), dailyAdv: dl.advBal, dailyCash: dl.gap, dailyDed: r2(dl.advBal + dl.gap), payable: r2(c.gross + adds + reimb - totalDed - dl.advBal - dl.gap) });
   });
   const agg = {};
   reports.forEach((rp) => {
@@ -427,11 +501,28 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     });
   });
   Object.keys(stm).forEach((a) => { if (!agg[a]) agg[a] = { orders: 0, reps: new Set() }; });
+  // إيراد الشركة عن كل مندوب: شرائح لوكيت تُحسب على طلبات حسابه هو (إن كان النطاق "لكل مندوب")، أو من فاتورة التطبيق، أو بحصته من الإيراد
+  const perRiderTiers = (a) => { const pp = getAppPrice(pricing, a); return !!pp && pp.mode === "tiers" && pp.scope !== "total"; };
+  repLines.forEach((l) => {
+    l.detail = Object.keys(l.byApp).map((a) => {
+      const g = l.byApp[a], ap = getAppPrice(pricing, a), rp = getRepPrice(pricing, a); const fa = a === l.repApp ? l.srcF : f;
+      const cost = priceBreakdown(rp, g.orders, fa, 0);
+      let rev, est = 0;
+      const sharedAgg = agg[a] ? (stm[a] ? stm[a].orders : agg[a].orders) : 0;
+      if (perRiderTiers(a)) { rev = priceBreakdown(ap, g.orders, fa, g.base || 0); est = rev.total; }
+      else if (ap && sharedAgg > 0) { const tot = priceCalc(ap, sharedAgg, stm[a] ? 1 : f).total; est = r2(tot * (g.orders / sharedAgg)); rev = { lines: [{ k: "share", qty: g.orders, of: sharedAgg, amt: est }], total: est, known: true }; }
+      else rev = { lines: [], total: 0, known: false };
+      if (l.source === "invoice" && a === l.repApp) rev = { lines: [{ k: "invoice", amt: l.invNet }], total: l.invNet, known: true };
+      return { app: a, orders: g.orders, base: g.base || 0, f: fa, cost, rev, est, scope: perRiderTiers(a) ? "rider" : "total" };
+    });
+    l.rev = r2(l.detail.reduce((x, d) => x + d.rev.total, 0)); l.revKnown = l.detail.length > 0 && l.detail.every((d) => d.rev.known);
+    l.profit = r2(l.rev - l.net);
+  });
   const appLines = Object.keys(agg).map((a) => {
     const g = agg[a], st = stm[a];
     const orders = st ? st.orders : g.orders;
     const appPrice = getAppPrice(pricing, a);
-    const calc = priceCalc(appPrice, orders, st ? 1 : f).total;
+    const calc = perRiderTiers(a) ? r2(repLines.reduce((x, l) => x + (((l.detail || []).find((d) => d.app === a) || {}).est || 0), 0)) : priceCalc(appPrice, orders, st ? 1 : f).total;
     const hasActual = inputs.appActual[a] != null && inputs.appActual[a] !== "";
     const base = hasActual ? +inputs.appActual[a] : st ? st.net : calc;
     const fines = +inputs.appFines[a] || 0;
@@ -450,18 +541,21 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     additions: r2(repLines.reduce((s, l) => s + l.manualAdds, 0)),
     reimb: r2(repLines.reduce((s, l) => s + (l.reimb || 0), 0)),
     repNet: r2(repLines.reduce((s, l) => s + l.net, 0)),
+    dailyDed: r2(repLines.reduce((s, l) => s + (l.dailyDed || 0), 0)),
+    payable: r2(repLines.reduce((s, l) => s + (l.payable != null ? l.payable : l.net), 0)),
   };
   totals.companyNet = r2(totals.revenue - totals.repNet);
   totals.expenses = r2((expenses || []).filter((e) => e.status === "approved" && (e.date || "").startsWith(month)).reduce((s, e) => s + (+e.v || 0), 0));
   totals.afterExpenses = r2(totals.companyNet - totals.expenses);
   return { repLines, appLines, totals };
 }
-const MONTH_TARGET = { orders: 480, km: 3400 };
+// الهدف الشهري يأتي فقط من تسعيرة المندوب التي يضعها المحاسب (نمط الهدف) — لا يوجد رقم افتراضي
+const monthTargetOf = (pricing, appId) => { const p = getRepPrice(pricing, appId); return p && p.mode === "target" && +p.ordersTarget > 0 ? +p.ordersTarget : null; };
 
 const WHATS_NEW = {
   ar: [
     { icon: "Trophy", t: "لوحة الصدارة الشهرية", d: "أفضل 3 مناديب كل شهر مع مكافآت تلقائية وفرصة عمرة مجانية." },
-    { icon: "Radio", t: "نبض المناديب المباشر", d: "من حجز شفته ومن فعّل بصمته الآن — لحظة بلحظة." },
+    { icon: "Radio", t: "نبض المناديب المباشر", d: "تحضير يومي من المشرف: كم حضر وكم غاب وسبب الغياب — ويرتبط بدرجة الالتزام." },
     { icon: "ClipboardList", t: "سجل التتبع", d: "كل إجراء حساس (كلمات مرور، رواتب، تذاكر) مسجّل بالوقت والمسؤول." },
     { icon: "Download", t: "تصدير Excel", d: "الرواتب والحضور والتقارير — ملف Excel حقيقي بضغطة واحدة." },
     { icon: "MessageSquare", t: "المراسلات الداخلية", d: "شات بين الإدارات، ورسائل للمناديب بخاصية تم الاطلاع." },
@@ -469,7 +563,7 @@ const WHATS_NEW = {
   ],
   en: [
     { icon: "Trophy", t: "Monthly Leaderboard", d: "Top 3 reps each month with automatic rewards and a free Umrah chance." },
-    { icon: "Radio", t: "Live Rep Pulse", d: "Who booked a shift and who's clocked in right now — moment by moment." },
+    { icon: "Radio", t: "Live Rep Pulse", d: "Daily roll call by the supervisor: who attended, who was absent and why — linked to the commitment score." },
     { icon: "ClipboardList", t: "Audit Log", d: "Every sensitive action (passwords, payroll, tickets) recorded with time and owner." },
     { icon: "Download", t: "Excel export", d: "Payroll, attendance and reports — a real Excel file in one click." },
     { icon: "MessageSquare", t: "Internal messaging", d: "Chat between departments, and one-way messages to reps with a seen receipt." },
@@ -477,7 +571,7 @@ const WHATS_NEW = {
   ],
   ur: [
     { icon: "Trophy", t: "ماہانہ لیڈر بورڈ", d: "ہر ماہ کے سرِفہرست 3 نمائندے، خودکار انعامات اور مفت عمرہ کا موقع۔" },
-    { icon: "Radio", t: "نمائندوں کی براہ راست نبض", d: "کس نے شفٹ بک کی اور ابھی کون حاضر ہے — لمحہ بہ لمحہ۔" },
+    { icon: "Radio", t: "نمائندوں کی براہ راست نبض", d: "سپروائزر کی روزانہ حاضری: کون حاضر، کون غیر حاضر اور وجہ۔" },
     { icon: "ClipboardList", t: "آڈٹ لاگ", d: "ہر حساس کارروائی (پاس ورڈ، تنخواہ، ٹکٹس) وقت اور ذمہ دار کے ساتھ درج۔" },
     { icon: "Download", t: "ایکسل ایکسپورٹ", d: "تنخواہ، حاضری اور رپورٹس — ایک کلک میں حقیقی ایکسل فائل۔" },
     { icon: "MessageSquare", t: "اندرونی پیغام رسانی", d: "شعبوں کے درمیان چیٹ، اور نمائندوں کو یک طرفہ پیغامات۔" },
@@ -622,6 +716,8 @@ function usePersisted(key, initial) {
   const [state, setState] = useState(initial);
   const [syncStatus, setSyncStatus] = useState("loading"); // loading | ready | error | saveError
   const ready = useRef(false);
+  const stateRef = useRef(initial);
+  const lastRawRef = useRef(null);
   useEffect(() => {
     let alive = true;
     let attempt = 0;
@@ -630,7 +726,9 @@ function usePersisted(key, initial) {
       try {
         const r = await window.storage.get(key, true);
         if (!alive) return;
-        setState(r && r.value ? JSON.parse(r.value) : initial);
+        const v0 = r && r.value ? JSON.parse(r.value) : initial;
+        stateRef.current = v0; lastRawRef.current = r && r.value ? r.value : null;
+        setState(v0);
         setSyncStatus("ready");
         ready.current = true;
       } catch (e) {
@@ -649,28 +747,85 @@ function usePersisted(key, initial) {
     return () => { alive = false; };
     // eslint-disable-next-line
   }, []);
-  const saveWithRetry = (k, payload, attempt = 1) => {
-    window.storage.set(k, payload, true)
-      .then(() => { if (syncStatusRef.current === "saveError") setSyncStatus("ready"); })
-      .catch((err) => {
-        console.error(`bq: فشل حفظ "${k}" — محاولة ${attempt}`, err);
-        if (attempt < 3) { setTimeout(() => saveWithRetry(k, payload, attempt + 1), attempt * 1000); }
-        else { setSyncStatus("saveError"); }
-      });
-  };
+  // طابور حفظ مرتّب: كل حفظ ينتظر اللي قبله، وإعادة المحاولة لا تكتب نسخة قديمة فوق أحدث
+  const seqRef = useRef(0);
+  const chainRef = useRef(Promise.resolve());
+  const pendingRef = useRef(0);
   const syncStatusRef = useRef(syncStatus);
   useEffect(() => { syncStatusRef.current = syncStatus; }, [syncStatus]);
+  // كل تعديل دالّي يُطبَّق داخل الطابور على «آخر نسخة من القاعدة» (قراءة ← تعديل ← كتابة)
+  // فلا يمسح تعديل مستخدم آخر كتب في نفس المفتاح في الأثناء.
   const update = (updater) => {
     if (!ready.current) {
       console.warn(`bq: تجاهلت محاولة حفظ "${key}" قبل اكتمال أول تحميل ناجح — حماية من الكتابة فوق بيانات حقيقية.`);
       return;
     }
-    setState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveWithRetry(key, JSON.stringify(next));
-      return next;
+    const isFn = typeof updater === "function";
+    const next = isFn ? updater(stateRef.current) : updater;
+    stateRef.current = next;
+    setState(next);
+    const mySeq = ++seqRef.current;
+    pendingRef.current++;
+    chainRef.current = chainRef.current.then(async () => {
+      try {
+        let out = next;
+        const writeOnce = async (raw, ver) => {
+          // ver !== undefined → كتابة مشروطة (Compare-and-Swap): تفشل بخطأ "conflict" إن كتب غيرك بعد قراءتنا
+          if (ver !== undefined) return window.storage.set(key, raw, true, ver);
+          return window.storage.set(key, raw, true);
+        };
+        for (let attempt = 1; attempt <= 6; attempt++) {
+          let ver;
+          if (isFn) {
+            try {
+              const r = await window.storage.get(key, true);
+              if (r && r.value) { out = updater(JSON.parse(r.value)); ver = r.ver; }
+              else out = next;
+            } catch (e) {
+              if (String(e && e.message || e).includes("not found")) { out = updater(initial); ver = null; }
+              else out = next;
+            }
+          }
+          const raw = JSON.stringify(out);
+          try {
+            await writeOnce(raw, isFn ? ver : undefined);
+            lastRawRef.current = raw;
+            if (syncStatusRef.current === "saveError") setSyncStatus("ready");
+            if (mySeq === seqRef.current && out !== next) { stateRef.current = out; setState(out); }
+            return;
+          } catch (err) {
+            if (String(err && err.message || err).includes("conflict") && attempt < 6) { await new Promise((r) => setTimeout(r, 40 * attempt + Math.random() * 120)); continue; }
+            console.error(`bq: فشل حفظ "${key}" — محاولة ${attempt}`, err);
+            if (attempt < 6) await new Promise((r) => setTimeout(r, Math.min(attempt, 3) * 800));
+            else setSyncStatus("saveError");
+          }
+        }
+      } finally { pendingRef.current--; }
     });
   };
+  useEffect(() => { stateRef.current = state; }, [state]);
+  // مزامنة: نسحب آخر نسخة من القاعدة كل 15 ثانية وعند العودة للتبويب، بشرط ما يكون عندنا حفظ معلّق
+  useEffect(() => {
+    if (syncStatus !== "ready") return;
+    let alive = true;
+    const pull = async () => {
+      if (!alive || pendingRef.current > 0) return;
+      try {
+        const r = await window.storage.get(key, true);
+        if (!alive || pendingRef.current > 0 || !r || !r.value) return;
+        if (r.value !== lastRawRef.current) {
+          lastRawRef.current = r.value;
+          const v = JSON.parse(r.value);
+          stateRef.current = v;
+          setState(v);
+        }
+      } catch { /* تجاهل، المحاولة القادمة تعوّض */ }
+    };
+    const iv = setInterval(pull, 15000);
+    const onVis = () => { if (document.visibilityState === "visible") pull(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { alive = false; clearInterval(iv); document.removeEventListener("visibilitychange", onVis); };
+  }, [syncStatus]);
   return [state, update, syncStatus];
 }
 function usePersonalFlag(key) {
@@ -718,13 +873,6 @@ function usePersonalList(key) {
   return [list, update];
 }
 
-function tierOf(rep) {
-  const pct = ((rep.orders / DAILY_TARGET.orders) + (rep.km / DAILY_TARGET.km)) / 2 * 100;
-  if (pct >= 100) return { key: "excellent", tone: "ok", pct };
-  if (pct >= 80) return { key: "good", tone: "info", pct };
-  if (pct >= 60) return { key: "improve", tone: "warn", pct };
-  return { key: "weak", tone: "bad", pct };
-}
 
 const REP_SEED = [];
 const REPORTS_SEED = [];
@@ -1193,15 +1341,13 @@ const EX = {
     errRep: "أدخل رقم هوية صحيح وكلمة المرور.",
     orRep: "أو دخول المناديب", repTitle: "دخول المندوب",
     repSub: "للمناديب والسائقين — الدخول برقم الهوية",
-    nationalId: "رقم الهوية / الإقامة", repHint: "الدخول متاح خلال ساعات الوردية المسجلة",
-    ordersToday: "طلبات الوردية", doneToday: "تم التسليم", inRoute: "قيد التوصيل",
-    distance: "المسافة المقطوعة", cash: "تحصيل نقدي", rating: "تقييمك", myRoute: "طلبات الوردية",
+    nationalId: "رقم الهوية / الإقامة", 
+    ordersToday: "طلبات اليوم", doneToday: "تم التسليم", inRoute: "قيد التوصيل",
+    distance: "المسافة المقطوعة", cash: "تحصيل نقدي", rating: "تقييمك", myRoute: "طلبات اليوم",
     pod: "تأكيد تسليم الطلب", accept: "قبول الطلب", pickup: "الاستلام من المطعم",
     leaveToday: "في إجازة اليوم", openRoles: "وظائف مفتوحة", docsExp: "مستندات تنتهي",
     winRate: "نسبة كسب القضايا", compScore: "مؤشر الالتزام",
-    newOrder: "طلب جديد", addRest: "إضافة مطعم", addEmp: "إضافة موظف", upDoc: "رفع مستند",
-    reportsT: "التقارير المؤسسية", generate: "توليد", monthly: "شهري", quarterly: "ربع سنوي", yearly: "سنوي",
-    repItems: ["أداء التوصيل والأحياء", "القوائم المالية", "تحليل أسطول السيارات", "دوران المناديب", "التزام عقود المطاعم"],
+    newOrder: "طلب جديد", addRest: "إضافة مطعم", addEmp: "إضافة موظف", upDoc: "رفع مستند", 
     compItems: [["تراخيص نشاط التوصيل", "سارية"], ["شهادات نقل الأغذية", "سارية"], ["فحص حافظات الحرارة", "تنتهي قريباً"], ["تأمين السيارات", "سارية"], ["حماية بيانات العملاء", "مراجعة"]],
     capacity: "الحمل", cities: ["الدمام", "الخبر", "الظهران", "الجبيل"],
     payrollNote: "تُصرف أجور المناديب أسبوعياً، ورواتب الإدارات في 25 من الشهر",
@@ -1237,16 +1383,13 @@ const EX = {
     perfAnalytics: "تحليل أداء المناديب", avgAchieve: "متوسط تحقيق الهدف",
     totalActiveReps: "مناديب نشطون", totalViolations: "إجمالي المخالفات", topPerformer: "الأعلى أداءً",
     needsAttention: "بحاجة لمتابعة", noPending: "لا يوجد مناديب بانتظار التفعيل",
-    repReportsT: "تقارير المناديب", corpReportsT: "تقارير المؤسسة",
+    repReportsT: "تقارير المناديب", 
     searchRep: "ابحث باسم المندوب أو رقم الجوال…", noReports: "لا توجد تقارير محفوظة بعد",
     savedBy: "حفظه", repsCount: "عدد المناديب", viewReport: "عرض التفاصيل", hideReport: "إخفاء التفاصيل",
     globalNoMatch: "لا توجد نتائج مطابقة", searchResults: "نتائج البحث",
     repPassword: "كلمة مرور مبدئية للمندوب", errRepPass: "أدخل كلمة مرور مبدئية (4 خانات على الأقل).",
     errRepNotActive: "بيانات الدخول غير صحيحة أو الحساب غير مفعّل بعد.",
-    errRepWrongPass: "كلمة المرور غير صحيحة.",
-    shiftPickTitle: "قبل ما تبدأ، حدد شفتك", shiftPickSub: "اختر وقت بداية ونهاية شفت اليوم — تقدر تسجل شفت جديد أي وقت لاحقاً من القائمة.",
-    shiftStart: "بداية الشفت", shiftEnd: "نهاية الشفت", confirmShift: "بدء الشفت والدخول",
-    logNewShift: "تسجيل شفت جديد", shiftLogged: "تم تسجيل الشفت", myShifts: "شفتاتي المسجلة",
+    errRepWrongPass: "كلمة المرور غير صحيحة.", 
     motivHeadline: "استمر، أنت تصنع الفرق",
     tickets: "التذاكر", newTicket: "تذكرة جديدة", ticketType: "نوع الطلب", ticketMode: "طريقة الإدخال",
     ticketText: "كتابة", ticketVoice: "تسجيل صوتي", ticketBody: "تفاصيل الطلب",
@@ -1280,10 +1423,8 @@ const EX = {
     carPlate: "رقم اللوحة", carModel: "طراز السيارة", empName: "اسم الموظف", empDept: "الإدارة", empPosition: "المسمى الوظيفي",
     contractParty: "الطرف المتعاقد", contractType: "نوع العقد", contractValue: "قيمة العقد",
     caseSubject: "موضوع القضية", caseAuthority: "الجهة المختصة", approvalTitle: "عنوان الطلب", approvalAmount: "المبلغ",
-    save: "حفظ", cancel: "إلغاء",
-    pulseTitle: "نبض المناديب المباشر", pulseSub: "من حجز شفته، ومن فعّل بصمته الآن — لحظة بلحظة",
-    onDutyLive: "متواجد الآن", bookedNotIn: "حجز الشفت ولم يفعّل البصمة بعد", noShiftToday: "لم يحجز شفتاً اليوم",
-    shiftWindow: "الشفت المحجوز", clockStatus: "حالة البصمة", staffMotivHeadline: "فريق واحد، هدف واحد",
+    save: "حفظ", cancel: "إلغاء", 
+    onDutyLive: "متواجد الآن",  clockStatus: "حالة البصمة", staffMotivHeadline: "فريق واحد، هدف واحد",
     fullControlNote: "لك صلاحية كاملة على كل الإدارات والمناديب من هذه المنصة.",
     iqamaT: "تنبيهات انتهاء الإقامات", iqamaSub: "تابع تواريخ انتهاء إقامات المناديب وأرسل الإنذارات في وقتها",
     daysLeft: "الأيام المتبقية", expired: "منتهية", critical: "حرجة", warning: "تحذير", healthy: "سليمة",
@@ -1420,7 +1561,7 @@ const EX = {
     expPendingGmT: "بانتظار اعتماد المدير العام", submittedByLbl: "قدّمه", expLedgerT: "سجل كل مصروف بالتفصيل",
     statusLbl: "الحالة", approvedLbl: "معتمد", rejectedLbl: "مرفوض", pendingLbl: "بانتظار الاعتماد",
     payslipProvisional: "لسه ما اعتُمد راتب هذا الشهر نهائياً — الأرقام مبدئية وممكن تتغيّر.",
-    warnBefore: "متبقي", warnHours: "ساعة قبل الإغلاق التلقائي", lateForShift: "متأخر عن الشفت",
+    warnBefore: "متبقي", warnHours: "ساعة قبل الإغلاق التلقائي", 
     sessionExpiredMsg: "انتهت جلستك تلقائياً بسبب عدم النشاط لحمايتك — سجّل الدخول مرة أخرى.",
     avgResolutionT: "متوسط زمن حل التذاكر لكل إدارة",
     pacingT: "تنبيه استباقي أسبوعي عن المعدل", pacingSub: "مقارنة أداء كل مندوب بالمعدل المتوقع حتى اليوم — نلحق الموقف قبل نهاية الشهر", pacingAllGood: "الكل يسير على المعدل المطلوب 👍",
@@ -1432,15 +1573,13 @@ const EX = {
     errRep: "Enter a valid ID number and password.",
     orRep: "Or rep sign in", repTitle: "Delivery rep sign in",
     repSub: "For reps and drivers — sign in with your ID number",
-    nationalId: "ID / Iqama number", repHint: "Sign in is open during your scheduled shift hours",
-    ordersToday: "Shift orders", doneToday: "Delivered", inRoute: "Out for delivery",
-    distance: "Distance covered", cash: "Cash collected", rating: "Your rating", myRoute: "Shift orders",
+    nationalId: "ID / Iqama number", 
+    ordersToday: "Today's orders", doneToday: "Delivered", inRoute: "Out for delivery",
+    distance: "Distance covered", cash: "Cash collected", rating: "Your rating", myRoute: "Today's orders",
     pod: "Confirm delivery", accept: "Accept order", pickup: "Pick up from restaurant",
     leaveToday: "On leave today", openRoles: "Open roles", docsExp: "Documents expiring",
     winRate: "Case win rate", compScore: "Compliance score",
-    newOrder: "New order", addRest: "Add restaurant", addEmp: "Add employee", upDoc: "Upload document",
-    reportsT: "Corporate reports", generate: "Generate", monthly: "Monthly", quarterly: "Quarterly", yearly: "Yearly",
-    repItems: ["Delivery & zone performance", "Financial statements", "Car fleet analysis", "Rep turnover", "Restaurant contract compliance"],
+    newOrder: "New order", addRest: "Add restaurant", addEmp: "Add employee", upDoc: "Upload document", 
     compItems: [["Delivery activity licences", "Active"], ["Food transport certificates", "Active"], ["Hot bag inspections", "Expiring"], ["Car insurance", "Active"], ["Customer data protection", "In review"]],
     capacity: "Load", cities: ["Dammam", "Khobar", "Dhahran", "Jubail"],
     payrollNote: "Rep wages are paid weekly; office salaries on the 25th",
@@ -1476,16 +1615,13 @@ const EX = {
     perfAnalytics: "Rep performance analytics", avgAchieve: "Avg. target achieved",
     totalActiveReps: "Active reps", totalViolations: "Total violations", topPerformer: "Top performer",
     needsAttention: "Needs attention", noPending: "No reps awaiting activation",
-    repReportsT: "Rep reports", corpReportsT: "Corporate reports",
+    repReportsT: "Rep reports", 
     searchRep: "Search by rep name or phone…", noReports: "No saved reports yet",
     savedBy: "Saved by", repsCount: "Reps count", viewReport: "View details", hideReport: "Hide details",
     globalNoMatch: "No matching results", searchResults: "Search results",
     repPassword: "Initial rep password", errRepPass: "Enter an initial password (4+ characters).",
     errRepNotActive: "Invalid credentials or account not activated yet.",
-    errRepWrongPass: "Incorrect password.",
-    shiftPickTitle: "Before you start, set your shift", shiftPickSub: "Pick today's shift start and end time — you can log a new shift anytime later from the menu.",
-    shiftStart: "Shift start", shiftEnd: "Shift end", confirmShift: "Start shift & continue",
-    logNewShift: "Log a new shift", shiftLogged: "Shift logged", myShifts: "My logged shifts",
+    errRepWrongPass: "Incorrect password.", 
     motivHeadline: "Keep going, you make the difference",
     tickets: "Tickets", newTicket: "New ticket", ticketType: "Request type", ticketMode: "Input method",
     ticketText: "Text", ticketVoice: "Voice recording", ticketBody: "Request details",
@@ -1519,10 +1655,8 @@ const EX = {
     carPlate: "Plate number", carModel: "Car model", empName: "Employee name", empDept: "Department", empPosition: "Job title",
     contractParty: "Contracting party", contractType: "Contract type", contractValue: "Contract value",
     caseSubject: "Case subject", caseAuthority: "Authority", approvalTitle: "Request title", approvalAmount: "Amount",
-    save: "Save", cancel: "Cancel",
-    pulseTitle: "Live Rep Pulse", pulseSub: "Who booked a shift, and who's clocked in right now — moment by moment",
-    onDutyLive: "On duty now", bookedNotIn: "Booked a shift, not clocked in yet", noShiftToday: "No shift booked today",
-    shiftWindow: "Booked shift", clockStatus: "Clock status", staffMotivHeadline: "One team, one goal",
+    save: "Save", cancel: "Cancel", 
+    onDutyLive: "On duty now",  clockStatus: "Clock status", staffMotivHeadline: "One team, one goal",
     fullControlNote: "You have full authority over every department and every rep from this platform.",
     iqamaT: "Residency Expiry Alerts", iqamaSub: "Track rep Iqama expiry dates and send timely warnings",
     daysLeft: "Days remaining", expired: "Expired", critical: "Critical", warning: "Warning", healthy: "Healthy",
@@ -1546,7 +1680,7 @@ const EX = {
     sendToRep: "Send to rep", invoiceAttach: "Attach invoice document",
     lbTitle: "Monthly Leaderboard", lbSub: "Top 3 reps this month — updated live from day one",
     lbFirst: "1st Place", lbSecond: "2nd Place", lbThird: "3rd Place",
-    lbFirstDesc: "Leading in both orders and distance", lbSecondDesc: "Most distance covered", lbThirdDesc: "Most disciplined — conduct, shifts and punctuality",
+    lbFirstDesc: "Leading in both orders and distance", lbSecondDesc: "Most distance covered", lbThirdDesc: "Most disciplined — conduct, attendance and punctuality",
     lbUmrah: "A fully company-paid Umrah trip", lbUmrahHint: "For holding 1st place two months running",
     lbYourRank: "Your current rank", lbNoData: "No performance data yet this month — be the first to top the board",
     lbPickThird: "Pick this month's most disciplined rep", lbSaveThird: "Save selection", lbThirdSaved: "Saved",
@@ -1632,7 +1766,7 @@ const EX = {
     addFineBtn: "Log a transport authority fine", fineRepSelect: "Rep", fineAmountLbl2: "Fine amount",
     fineReasonLbl: "Fine reason", tgaFinesHistoryT: "Authority fines history",
     payslipProvisional: "This month\u2019s payroll isn\u2019t finalized yet — figures are provisional and may change.",
-    warnBefore: "", warnHours: "h left before auto-close", lateForShift: "Late for shift",
+    warnBefore: "", warnHours: "h left before auto-close", 
     sessionExpiredMsg: "Your session ended automatically due to inactivity, to protect you — please sign in again.",
     avgResolutionT: "Average ticket resolution time by department",
     pacingT: "Weekly proactive pacing alert", pacingSub: "Each rep's performance vs. the expected pace so far, to catch it before month-end", pacingAllGood: "Everyone is on pace 👍",
@@ -1644,15 +1778,13 @@ const EX = {
     errRep: "درست شناختی نمبر اور پاس ورڈ درج کریں۔",
     orRep: "یا نمائندہ لاگ اِن", repTitle: "ڈیلیوری نمائندہ لاگ اِن",
     repSub: "نمائندوں اور ڈرائیوروں کے لیے — شناختی نمبر سے داخل ہوں",
-    nationalId: "شناختی / اقامہ نمبر", repHint: "لاگ اِن مقررہ شفٹ اوقات میں دستیاب ہے",
-    ordersToday: "شفٹ کے آرڈرز", doneToday: "پہنچا دیے", inRoute: "راستے میں",
-    distance: "طے شدہ فاصلہ", cash: "وصول شدہ رقم", rating: "آپ کی ریٹنگ", myRoute: "شفٹ کے آرڈرز",
+    nationalId: "شناختی / اقامہ نمبر", 
+    ordersToday: "آج کے آرڈرز", doneToday: "پہنچا دیے", inRoute: "راستے میں",
+    distance: "طے شدہ فاصلہ", cash: "وصول شدہ رقم", rating: "آپ کی ریٹنگ", myRoute: "آج کے آرڈرز",
     pod: "ترسیل کی تصدیق", accept: "آرڈر قبول کریں", pickup: "ریستوران سے وصولی",
     leaveToday: "آج چھٹی پر", openRoles: "خالی عہدے", docsExp: "ختم ہونے والی دستاویزات",
     winRate: "مقدمات جیتنے کی شرح", compScore: "تعمیل اسکور",
-    newOrder: "نیا آرڈر", addRest: "ریستوران شامل کریں", addEmp: "ملازم شامل کریں", upDoc: "دستاویز اپلوڈ",
-    reportsT: "ادارہ جاتی رپورٹس", generate: "بنائیں", monthly: "ماہانہ", quarterly: "سہ ماہی", yearly: "سالانہ",
-    repItems: ["ڈیلیوری اور علاقہ کارکردگی", "مالی گوشوارے", "گاڑیوں کا تجزیہ", "نمائندوں کی تبدیلی", "ریستوران معاہدوں کی پابندی"],
+    newOrder: "نیا آرڈر", addRest: "ریستوران شامل کریں", addEmp: "ملازم شامل کریں", upDoc: "دستاویز اپلوڈ", 
     compItems: [["ڈیلیوری لائسنس", "فعال"], ["فوڈ ٹرانسپورٹ سرٹیفکیٹ", "فعال"], ["ہاٹ بیگ معائنہ", "جلد ختم"], ["گاڑی انشورنس", "فعال"], ["کسٹمر ڈیٹا تحفظ", "جائزہ"]],
     capacity: "بوجھ", cities: ["دمام", "خبر", "ظہران", "جبیل"],
     payrollNote: "نمائندوں کی اجرت ہفتہ وار، دفتری تنخواہ 25 تاریخ کو",
@@ -1688,16 +1820,13 @@ const EX = {
     perfAnalytics: "نمائندہ کارکردگی تجزیہ", avgAchieve: "اوسط ہدف حصول",
     totalActiveReps: "فعال نمائندے", totalViolations: "کل خلاف ورزیاں", topPerformer: "بہترین کارکردگی",
     needsAttention: "توجہ درکار", noPending: "کوئی نمائندہ فعال ہونے کا منتظر نہیں",
-    repReportsT: "نمائندہ رپورٹس", corpReportsT: "ادارہ جاتی رپورٹس",
+    repReportsT: "نمائندہ رپورٹس", 
     searchRep: "نمائندے کے نام یا فون سے تلاش کریں…", noReports: "ابھی کوئی رپورٹ محفوظ نہیں",
     savedBy: "محفوظ کردہ از", repsCount: "نمائندوں کی تعداد", viewReport: "تفصیل دیکھیں", hideReport: "تفصیل چھپائیں",
     globalNoMatch: "کوئی مماثل نتیجہ نہیں", searchResults: "تلاش کے نتائج",
     repPassword: "نمائندے کا ابتدائی پاس ورڈ", errRepPass: "ابتدائی پاس ورڈ درج کریں (کم از کم 4 حروف)۔",
     errRepNotActive: "غلط معلومات یا اکاؤنٹ ابھی فعال نہیں۔",
-    errRepWrongPass: "غلط پاس ورڈ۔",
-    shiftPickTitle: "شروع کرنے سے پہلے، اپنی شفٹ منتخب کریں", shiftPickSub: "آج کی شفٹ کا آغاز اور اختتام منتخب کریں — بعد میں مینو سے نئی شفٹ کسی بھی وقت درج کر سکتے ہیں۔",
-    shiftStart: "شفٹ کا آغاز", shiftEnd: "شفٹ کا اختتام", confirmShift: "شفٹ شروع کریں",
-    logNewShift: "نئی شفٹ درج کریں", shiftLogged: "شفٹ درج ہو گئی", myShifts: "میری درج شفٹیں",
+    errRepWrongPass: "غلط پاس ورڈ۔", 
     motivHeadline: "جاری رکھیں، آپ فرق پیدا کرتے ہیں",
     tickets: "ٹکٹس", newTicket: "نیا ٹکٹ", ticketType: "درخواست کی قسم", ticketMode: "ان پٹ کا طریقہ",
     ticketText: "تحریر", ticketVoice: "صوتی ریکارڈنگ", ticketBody: "درخواست کی تفصیل",
@@ -1731,10 +1860,8 @@ const EX = {
     carPlate: "نمبر پلیٹ", carModel: "گاڑی کا ماڈل", empName: "ملازم کا نام", empDept: "شعبہ", empPosition: "عہدہ",
     contractParty: "معاہدہ فریق", contractType: "معاہدے کی قسم", contractValue: "معاہدے کی مالیت",
     caseSubject: "مقدمے کا موضوع", caseAuthority: "متعلقہ ادارہ", approvalTitle: "درخواست کا عنوان", approvalAmount: "رقم",
-    save: "محفوظ کریں", cancel: "منسوخ کریں",
-    pulseTitle: "نمائندوں کی براہ راست نبض", pulseSub: "کس نے شفٹ بک کی، اور ابھی کون حاضری میں ہے — لمحہ بہ لمحہ",
-    onDutyLive: "ابھی حاضر", bookedNotIn: "شفٹ بک کی، ابھی حاضری درج نہیں کی", noShiftToday: "آج کوئی شفٹ بک نہیں کی",
-    shiftWindow: "بک شدہ شفٹ", clockStatus: "حاضری کی حالت", staffMotivHeadline: "ایک ٹیم، ایک ہدف",
+    save: "محفوظ کریں", cancel: "منسوخ کریں", 
+    onDutyLive: "ابھی حاضر",  clockStatus: "حاضری کی حالت", staffMotivHeadline: "ایک ٹیم، ایک ہدف",
     fullControlNote: "اس پلیٹ فارم سے آپ کو ہر شعبے اور ہر نمائندے پر مکمل اختیار حاصل ہے۔",
     iqamaT: "اقامہ ختم ہونے کی اطلاعات", iqamaSub: "نمائندوں کے اقامہ ختم ہونے کی تاریخیں دیکھیں اور بروقت انتباہ بھیجیں",
     daysLeft: "باقی دن", expired: "ختم شدہ", critical: "نازک", warning: "انتباہ", healthy: "درست",
@@ -1758,7 +1885,7 @@ const EX = {
     sendToRep: "نمائندے کو بھیجیں", invoiceAttach: "انوائس دستاویز منسلک کریں",
     lbTitle: "ماہانہ لیڈر بورڈ", lbSub: "اس ماہ کے سرِفہرست 3 نمائندے — پہلے دن سے براہ راست اپڈیٹ",
     lbFirst: "پہلی پوزیشن", lbSecond: "دوسری پوزیشن", lbThird: "تیسری پوزیشن",
-    lbFirstDesc: "آرڈرز اور فاصلے دونوں میں سرِفہرست", lbSecondDesc: "سب سے زیادہ فاصلہ", lbThirdDesc: "نظم و ضبط، شفٹ اور وقت کی پابندی میں سب سے آگے",
+    lbFirstDesc: "آرڈرز اور فاصلے دونوں میں سرِفہرست", lbSecondDesc: "سب سے زیادہ فاصلہ", lbThirdDesc: "نظم و ضبط، حاضری اور وقت کی پابندی میں سب سے آگے",
     lbUmrah: "کمپنی کے خرچ پر مکمل عمرہ", lbUmrahHint: "مسلسل دو ماہ پہلی پوزیشن حاصل کرنے پر",
     lbYourRank: "آپ کی موجودہ پوزیشن", lbNoData: "اس ماہ ابھی کارکردگی کا ڈیٹا نہیں — سب سے پہلے سرِفہرست آئیں",
     lbPickThird: "اس ماہ کا سب سے نظم و ضبط والا نمائندہ منتخب کریں", lbSaveThird: "منتخب کریں", lbThirdSaved: "محفوظ ہو گیا",
@@ -1844,12 +1971,32 @@ const EX = {
     addFineBtn: "ٹرانسپورٹ اتھارٹی جرمانہ درج کریں", fineRepSelect: "نمائندہ", fineAmountLbl2: "جرمانے کی رقم",
     fineReasonLbl: "جرمانے کی وجہ", tgaFinesHistoryT: "اتھارٹی جرمانوں کی تاریخ",
     payslipProvisional: "اس مہینے کی تنخواہ ابھی حتمی نہیں ہوئی — اعداد و شمار عارضی ہیں اور تبدیل ہو سکتے ہیں۔",
-    warnBefore: "باقی", warnHours: "گھنٹے خودکار بندش سے پہلے", lateForShift: "شفٹ میں تاخیر",
+    warnBefore: "باقی", warnHours: "گھنٹے خودکار بندش سے پہلے", 
     sessionExpiredMsg: "آپ کی نشست غیرفعالیت کی وجہ سے خودکار ختم ہو گئی — براہ کرم دوبارہ لاگ ان کریں۔",
     avgResolutionT: "شعبے کے مطابق ٹکٹ حل کرنے کا اوسط وقت",
     pacingT: "ہفتہ وار پیش بندی الرٹ", pacingSub: "ہر نمائندے کی کارکردگی متوقع رفتار کے مقابلے میں، مہینہ ختم ہونے سے پہلے سنبھالیں", pacingAllGood: "سب مقررہ رفتار پر ہیں 👍",
   },
 };
+
+/* ═══════════  حقل رقمي موحّد: يقبل الأرقام العربية (٠-٩) والفاصلة العشرية والآلاف، ولا يفقد المؤشر أثناء الكتابة  ═══════════ */
+const NUM_DIG = { "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4", "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9", "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4", "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9" };
+function cleanNum(v, neg) {
+  let s = String(v == null ? "" : v).replace(/[٠-٩۰-۹]/g, (d) => NUM_DIG[d]).replace(/٫/g, ".").replace(/[,،٬\s]/g, "").replace(/[^0-9.\-]/g, "");
+  const m = neg && s[0] === "-" ? "-" : "";
+  s = s.replace(/-/g, "");
+  const i = s.indexOf("."); if (i >= 0) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, "");
+  return m + s;
+}
+function NumInput({ value, onChange, min, max, step, ...rest }) {
+  const neg = min === undefined || +min < 0;
+  const [txt, setTxt] = useState(value == null ? "" : String(value));
+  useEffect(() => { if ((Number(value) || 0) !== (Number(txt) || 0)) setTxt(value == null ? "" : String(value)); }, [value]); // eslint-disable-line
+  return <input {...rest} type="text" inputMode="decimal" autoComplete="off" value={txt} onChange={(e) => {
+    let c = cleanNum(e.target.value, neg); if (max !== undefined && max !== "" && c !== "" && +c > +max) c = String(max);
+    setTxt(c); const out = c === "-" || c === "." || c === "-." ? "" : c;
+    if (onChange) onChange({ target: { value: out }, currentTarget: { value: out } });
+  }} />;
+}
 
 /* ═══════════  حقل إدخال  ═══════════ */
 function GateField({ label, val, set, ph, Icon, type, accent, onEnter, af, tail }) {
@@ -1860,9 +2007,12 @@ function GateField({ label, val, set, ph, Icon, type, accent, onEnter, af, tail 
       </span>
       <span className="flex items-center gap-2.5 rounded-xl px-3.5 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
         <Icon size={16} style={{ color: accent }} />
-        <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} type={type} autoFocus={af}
-          onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
-          className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />
+        {type === "number"
+          ? <NumInput value={val} onChange={(e) => set(e.target.value)} placeholder={ph} autoFocus={af} onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
+              className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />
+          : <input value={val} onChange={(e) => set(e.target.value)} placeholder={ph} type={type} autoFocus={af}
+              onKeyDown={(e) => { if (e.key === "Enter" && onEnter) onEnter(); }}
+              className="num flex-1 bg-transparent border-0 outline-none text-[15px] min-w-0" style={{ color: "#12151D" }} />}
       </span>
     </label>
   );
@@ -1909,80 +2059,6 @@ function LangScreen({ lang, setLang, next }) {
 }
 
 /* ═══════════  بوابة الدخول  ═══════════ */
-/* ═══════════  شاشة اختيار الشفت (إلزامية قبل لوحة المندوب)  ═══════════ */
-function LogShiftModal({ lang, role, onClose, onConfirm }) {
-  const x = EX[lang];
-  const [start, setStart] = useState("20:00");
-  const [end, setEnd] = useState("03:00");
-  return (
-    <div className="fixed inset-0 z-[60] grid place-items-center px-5" style={{ background: "rgba(3,5,10,.72)", backdropFilter: "blur(6px)" }} onClick={onClose}>
-      <div className="glass rounded-3xl p-6 w-full max-w-sm rise" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-[15px] font-extrabold mb-1">{x.logNewShift}</h3>
-        <p className="text-[12px] mb-4" style={{ color: "var(--muted)" }}>{x.shiftPickSub}</p>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftStart}</span>
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)}
-              className="num w-full rounded-xl px-3 py-3 text-[14px] outline-none" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)", color: "#12151D" }} />
-          </label>
-          <label className="block">
-            <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftEnd}</span>
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)}
-              className="num w-full rounded-xl px-3 py-3 text-[14px] outline-none" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)", color: "#12151D" }} />
-          </label>
-        </div>
-        <div className="flex gap-2 mt-5">
-          <Btn full onClick={onClose}>{T[lang].back}</Btn>
-          <Btn full variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => onConfirm(start, end)}>{x.confirmShift}</Btn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ShiftPickScreen({ lang, rep, onConfirm }) {
-  const t = T[lang], x = EX[lang];
-  const [start, setStart] = useState("13:00");
-  const [end, setEnd] = useState("16:00");
-  const quotes = MOTIVATION[lang];
-  const [quote] = useState(() => quotes[Math.floor(Math.random() * quotes.length)]);
-
-  return (
-    <div className="min-h-full relative grid place-items-center px-5 py-10 overflow-hidden">
-      <div className="mesh" />
-      <div className="relative w-full max-w-md rise">
-        <div className="flex justify-center mb-6"><Wordmark t={t} s={48} /></div>
-        <div className="glass rounded-3xl p-6 sm:p-7">
-          <div className="rounded-2xl p-3.5 mb-5 flex items-start gap-2.5" style={{ background: "rgba(63,216,180,.1)", border: "1px solid rgba(63,216,180,.28)" }}>
-            <Rocket size={17} style={{ color: "#3FD8B4" }} className="mt-0.5 shrink-0" />
-            <p className="text-[12.5px] leading-relaxed font-semibold">{quote}</p>
-          </div>
-          <h1 className="text-[17px] font-extrabold">{x.shiftPickTitle}</h1>
-          {rep && <p className="text-[12.5px] mt-1" style={{ color: "#3FD8B4" }}>{lang === "en" ? rep.en : rep.ar}</p>}
-          <p className="text-[12px] mt-1.5 mb-5" style={{ color: "var(--muted)" }}>{x.shiftPickSub}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftStart}</span>
-              <span className="flex items-center gap-2 rounded-xl px-3 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
-                <Clock size={15} style={{ color: "#3FD8B4" }} />
-                <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
-              </span>
-            </label>
-            <label className="block">
-              <span className="block text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{x.shiftEnd}</span>
-              <span className="flex items-center gap-2 rounded-xl px-3 py-3" style={{ background: "rgba(0,0,0,.28)", border: "1px solid var(--line)" }}>
-                <Clock size={15} style={{ color: "#3FD8B4" }} />
-                <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
-              </span>
-            </label>
-          </div>
-          <div className="mt-5"><Btn variant="accent" accent="63,216,180" full icon={CheckCircle2} onClick={() => onConfirm(start, end)}>{x.confirmShift}</Btn></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gateErr, setErr: setGateErr, sessionExpired, deptPasswords, deptSecurity, setDeptSecurity }) {
   const t = T[lang], x = EX[lang];
   const [open, setOpen] = useState(null);
@@ -1990,8 +2066,24 @@ function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gate
   const [rep, setRep] = useState(false);
   const [nid, setNid] = useState(""); const [rpw, setRpw] = useState(""); const [rerr, setRerr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [supPick, setSupPick] = useState(null); // المشرف المختار في بوابة التشغيل
+  const [viaDept, setViaDept] = useState(false);
 
-  const pick = (id) => { setOpen(open === id ? null : id); setPw(""); setErr(""); setRep(false); };
+  const pick = (id) => { setOpen(open === id ? null : id); setPw(""); setErr(""); setRep(false); setSupPick(null); setViaDept(false); };
+  const goSup = () => {
+    if (!supPick) return;
+    const key = "emp:" + supPick.id;
+    const sec = deptSecurity[key] || { fails: 0, locked: false };
+    if (sec.locked) { setErr(x.deptLockedErr); return; }
+    if (!supPick.password || pw !== supPick.password) {
+      const fails = (sec.fails || 0) + 1, locked = fails >= 5;
+      setDeptSecurity((prev) => ({ ...prev, [key]: { fails, locked } }));
+      setErr(locked ? x.deptLockedErr : x.errPass);
+      return;
+    }
+    setDeptSecurity((prev) => ({ ...prev, [key]: { fails: 0, locked: false } }));
+    setErr(""); setBusy(true); setTimeout(() => onEmployee("ops", supPick), 400);
+  };
   const goEmp = (id) => {
     const sec = deptSecurity[id] || { fails: 0, locked: false };
     if (sec.locked) { setErr(x.deptLockedErr); return; }
@@ -2080,7 +2172,44 @@ function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gate
                       </span>
                     </div>
                   </button>
-                  {on && (
+                  {on && role.id === "ops" && !viaDept && (
+                    <div className="drop px-5 pb-5">
+                      <div className="pt-4" style={{ borderTop: `1px solid rgba(${role.glow},.25)` }}>
+                        {!supPick ? (
+                          <>
+                            <p className="text-[11.5px] font-bold mb-2.5" style={{ color: role.accent }}>{RA[lang].opsPickSup}</p>
+                            <div className="space-y-2">
+                              {employees.filter((e) => e.dept === "ops" && e.status !== "suspended").map((e) => (
+                                <button key={e.id} onClick={() => { setSupPick(e); setPw(""); setErr(""); }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-start transition"
+                                  style={{ background: "rgba(20,27,45,.04)", border: "1px solid var(--line)" }}>
+                                  {e.photo ? <img src={e.photo} alt="" className="w-8 h-8 rounded-lg object-cover" /> : <span className="grid place-items-center w-8 h-8 rounded-lg" style={{ background: `rgba(${role.glow},.15)` }}><User size={15} style={{ color: role.accent }} /></span>}
+                                  <span className="flex-1 text-[13px] font-bold">{e.name}</span>
+                                  {e.isSupervisor && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `rgba(${role.glow},.14)`, color: role.accent }}>{RA[lang].supLabel}</span>}
+                                  <ChevronRight size={14} style={{ color: role.accent }} />
+                                </button>
+                              ))}
+                              {employees.filter((e) => e.dept === "ops" && e.status !== "suspended").length === 0 && (
+                                <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{RA[lang].opsNoSup}</p>
+                              )}
+                            </div>
+                            <button onClick={() => { setViaDept(true); setPw(""); setErr(""); }} className="mt-3 text-[10.5px] font-semibold" style={{ color: "var(--muted)" }}>{RA[lang].opsViaDept}</button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 mb-3">
+                              <button onClick={() => { setSupPick(null); setPw(""); setErr(""); }} className="text-[11px] font-semibold" style={{ color: role.accent }}>‹ {t.back}</button>
+                              <span className="text-[13px] font-bold">{supPick.name}</span>
+                            </div>
+                            <GateField label={RA[lang].supPass} val={pw} set={setPw} ph="••••••••" Icon={Lock} af type="password" accent={role.accent} onEnter={goSup} />
+                            {err && <p className="mt-2.5 text-[11px] flex items-start gap-1.5" style={{ color: "#E8837A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{err}</p>}
+                            <div className="mt-3.5"><Btn variant="accent" accent={role.glow} full icon={Fingerprint} onClick={goSup}>{busy ? "…" : t.enter}</Btn></div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {on && (role.id !== "ops" || viaDept) && (
                     <div className="drop px-5 pb-5">
                       <div className="pt-4" style={{ borderTop: `1px solid rgba(${role.glow},.25)` }}>
                         <GateField label={x.deptPass} val={pw} set={setPw} ph="••••••••" Icon={Lock} af type="password" accent={role.accent} onEnter={() => goEmp(role.id)} />
@@ -2126,7 +2255,6 @@ function DeptGate({ lang, setLang, onEmployee, onRep, reps, employees, err: gate
                     <GateField label={t.pass} val={rpw} set={setRpw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={goRep} />
                     {shownRerr && <p className="text-[11px] flex items-start gap-1.5" style={{ color: "#E8837A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shownRerr}</p>}
                     <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={goRep}>{busy ? "…" : x.repTitle}</Btn>
-                    <p className="text-[10px] text-center" style={{ color: "rgba(30,38,58,.38)" }}>{x.repHint}</p>
                   </div>
                 </div>
               )}
@@ -2221,7 +2349,7 @@ function DataTable({ headers, rows, onBulkDelete }) {
                 </td>
               )}
               {r.cells.map((c, i) => (
-                <td key={i} className={`py-3 px-3 whitespace-nowrap group-hover:brightness-95 ${!bulkMode && i === 0 ? "rounded-s-2xl" : ""} ${!hasActions && i === r.cells.length - 1 ? "rounded-e-2xl" : ""}`} style={{ background: "var(--surface-1)" }}><Cell c={c} /></td>
+                <td key={i} className={`py-3 px-3 whitespace-nowrap group-hover:brightness-95 ${!bulkMode && i === 0 ? "rounded-s-2xl" : ""} ${!hasActions && i === r.cells.length - 1 ? "rounded-e-2xl" : ""}`} style={{ background: "var(--surface-1)" }}>{Cell({ c })}</td>
               ))}
               {hasActions && (
                 <td className="py-3 px-3 whitespace-nowrap text-end rounded-e-2xl group-hover:brightness-95" style={{ background: "var(--surface-1)" }}>
@@ -2264,10 +2392,10 @@ function DataTable({ headers, rows, onBulkDelete }) {
             <div className="flex items-center justify-between gap-2 mb-2.5">
               <span className="flex items-center gap-2 min-w-0">
                 {bulkMode && <input type="checkbox" checked={!!selected[r.key]} onChange={() => toggleOne(r.key)} className="w-4 h-4 shrink-0" />}
-                <Cell c={{ ...r.cells[0], strong: true }} />
+                {Cell({ c: { ...r.cells[0], strong: true } })}
               </span>
               <div className="flex items-center gap-2">
-                {r.cells.find((c) => c.chip) && <Cell c={r.cells.find((c) => c.chip)} />}
+                {r.cells.find((c) => c.chip) && Cell({ c: r.cells.find((c) => c.chip) })}
                 {r.onDelete && (
                   <button onClick={r.onDelete} className="p-1.5 rounded-lg" style={{ color: "#E8837A" }} aria-label="delete">
                     <Trash2 size={14} />
@@ -2279,7 +2407,7 @@ function DataTable({ headers, rows, onBulkDelete }) {
               {r.cells.map((c, i) => (i === 0 || c.chip) ? null : (
                 <div key={i} className="min-w-0">
                   <div className="text-[10px] mb-0.5" style={{ color: "rgba(30,38,58,.42)" }}>{headers[i]}</div>
-                  <div className="truncate text-[12.5px]"><Cell c={c} /></div>
+                  <div className="truncate text-[12.5px]">{Cell({ c })}</div>
                 </div>
               ))}
             </div>
@@ -2420,96 +2548,11 @@ function RepHeroArt({ accent = "63,216,180" }) {
   );
 }
 
-function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs, shifts }) {
+function Overview({ pricing, role, lang, reps, reports, orders, cars, invoices, contracts, cases, employees, expenses, restaurants, tickets, attendance, activeRep, approvalReqs }) {
   const t = T[lang], x = EX[lang], A = role.glow;
   const [customizing, setCustomizing] = useState(false);
   const [hiddenKpis, setHiddenKpis] = usePersonalList(`kpi_hidden_${role.id}`);
 
-  if (role.id === "rep") {
-    const quotes = MOTIVATION[lang];
-    const quote = quotes[riyadhNow().getUTCDate() % quotes.length];
-    const month = riyadhNow().toISOString().slice(0, 7);
-    const mine = activeRep ? monthEntriesFor(reports, activeRep.id, month) : [];
-    const mOrders = mine.reduce((a, e) => a + (e.orders || 0), 0);
-    const mKm = mine.reduce((a, e) => a + (e.km || 0), 0);
-    const mHours = mine.reduce((a, e) => a + (e.hours || 0), 0);
-    const mWeekendViol = mine.reduce((a, e) => a + (e.weekendViolations || 0), 0);
-    const mAppViol = mine.reduce((a, e) => a + (e.appViolations || 0), 0);
-    const mViol = mWeekendViol + mAppViol;
-    const pct = Math.round(((mOrders / MONTH_TARGET.orders) + (mKm / MONTH_TARGET.km)) / 2 * 100);
-    const today = riyadhToday();
-    const myClock = attendance.find((a) => a.key === activeRep?.nid && a.date === today);
-    const myShift = (shifts || []).filter((s) => s.repId === activeRep?.nid && s.date === today).slice(-1)[0];
-    const lb = computeLeaderboard(reps, reports, month);
-    const myRank = activeRep ? lb.stats.findIndex((s) => s.rep.id === activeRep.id) + 1 : 0;
-    return (
-      <div className="space-y-4">
-        <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: `linear-gradient(125deg,rgba(${A},.16),rgba(${A},.02) 60%)`, border: `1px solid rgba(${A},.32)` }}>
-          <div className="absolute pointer-events-none rounded-full" style={{ width: 220, height: 220, insetInlineEnd: -80, top: -80, background: `radial-gradient(circle,rgba(${A},.22),transparent 70%)` }} />
-          <RepHeroArt accent={A} />
-          <div className="relative flex items-center gap-5 flex-wrap sm:flex-nowrap">
-            <ProgressRing pct={pct} accent={A} label={x.monthTarget} />
-            <div className="flex-1 min-w-[160px]">
-              <p className="text-[10.5px] font-bold uppercase tracking-wide" style={{ color: role.accent }}>{x.motivHeadline}</p>
-              <p className="text-[14.5px] font-semibold leading-snug mt-1">{quote}</p>
-              <div className="flex flex-wrap gap-4 mt-3">
-                <span><span className="num text-[17px] font-extrabold">{mOrders}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{x.ordersPart}</span></span>
-                <span><span className="num text-[17px] font-extrabold">{mKm}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{x.kmPart}</span></span>
-                <span><span className="num text-[17px] font-extrabold">{mHours.toFixed(1)}</span><span className="text-[10.5px] block" style={{ color: "var(--muted)" }}>{t.h.time}</span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl overflow-hidden" style={{ border: `1px solid ${myClock && !myClock.out ? "rgba(63,216,180,.4)" : "var(--line)"}` }}>
-          <div className="p-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--line)" }}>
-            <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: myClock && !myClock.out ? "rgba(63,216,180,.16)" : "rgba(20,27,45,.06)" }}>
-              <Fingerprint size={20} style={{ color: myClock && !myClock.out ? "#3FD8B4" : "var(--muted)" }} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12.5px] font-bold">
-                {myClock && !myClock.out ? x.alreadyClockedIn : myClock && myClock.out ? t.s.closed : x.notClockedIn}
-              </p>
-              <p className="text-[11px]" style={{ color: "var(--muted)" }}>
-                {myShift ? `${x.shiftWindow}: ${myShift.start} → ${myShift.end}` : x.noShiftToday} · {x.dammamTime}
-              </p>
-            </div>
-            {myClock && !myClock.out && <span className="w-2 h-2 rounded-full pulse-dot shrink-0" style={{ background: "#3FD8B4" }} />}
-          </div>
-          <div className="p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.06)", borderBottom: activeRep?.idExpiry ? "1px solid var(--line)" : "none" }}>
-            <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: "rgba(228,184,92,.18)" }}>
-              <Trophy size={20} style={{ color: "#E4B85C" }} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold">{x.lbTitle}</p>
-              <p className="text-[11px]" style={{ color: "var(--muted)" }}>{x.lbYourRank}: <span className="num font-bold" style={{ color: "#F7E3B0" }}>#{myRank || "—"}</span> · {x.lbMotivate}</p>
-            </div>
-          </div>
-          {activeRep?.idExpiry && (() => {
-            const days = daysUntil(activeRep.idExpiry);
-            const tier = iqamaTier(days);
-            if (tier.key === "healthy") return null;
-            return (
-              <div className="p-4 flex items-center gap-3">
-                <span className="grid place-items-center w-11 h-11 rounded-2xl shrink-0" style={{ background: "rgba(232,131,122,.14)" }}>
-                  <ShieldAlert size={20} style={{ color: "#E8837A" }} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold">{x.iqamaT}</p>
-                  <p className="text-[11px]" style={{ color: "var(--muted)" }}>{days} {x.daysLeft} · <Chip tone={tier.tone} sm>{x[tier.key]}</Chip></p>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Kpi label={x.violCol} value={String(mViol)} icon={AlertTriangle} accent={A} />
-          <Kpi label={x.monthTarget} value={`${MONTH_TARGET.orders}/${MONTH_TARGET.km}`} icon={Target} accent={A} />
-        </div>
-      </div>
-    );
-  }
 
   const activeReps = reps.filter((r) => r.status === "active");
   const month = riyadhNow().toISOString().slice(0, 7);
@@ -2620,34 +2663,6 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
         {K.map((k, i) => !hiddenKpis.includes(i) && <Kpi key={i} label={k.l} value={k.v} unit={k.u} icon={k.i} accent={A} />)}
       </div>
 
-      {role.id === "hr" && (() => {
-        const now = riyadhNow();
-        const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
-        const daysLeft = daysInMonth - now.getUTCDate();
-        if (daysLeft > 5) return null;
-        const active = reps.filter((r) => r.status === "active");
-        const atRisk = active.map((r) => {
-          const entries = monthEntriesFor(reports, r.id, month);
-          const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-          const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-          return { r, orders, km, ordersGap: MONTH_TARGET.orders - orders, kmGap: MONTH_TARGET.km - km };
-        }).filter((s) => s.ordersGap > 0 || s.kmGap > 0);
-        if (atRisk.length === 0) return null;
-        return (
-          <Panel title={x.atRiskT} extra={<Chip tone="bad" sm><AlertTriangle size={11} />{daysLeft} {x.daysLeft}</Chip>}>
-            <div className="space-y-2">
-              {atRisk.slice(0, 6).map(({ r, ordersGap, kmGap }) => (
-                <div key={r.id} className="flex items-center justify-between rounded-xl p-2.5 text-[12px]" style={{ background: "rgba(232,131,122,.08)", border: "1px solid rgba(232,131,122,.22)" }}>
-                  <span className="font-bold">{lang === "en" ? r.en : r.ar}</span>
-                  <span className="num" style={{ color: "#E8837A" }}>
-                    {ordersGap > 0 && `${ordersGap} ${x.lbOrders}`}{ordersGap > 0 && kmGap > 0 && " · "}{kmGap > 0 && `${kmGap} ${x.lbKm}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        );
-      })()}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-2" title={t.c.rev}
@@ -2766,34 +2781,6 @@ function Overview({ role, lang, reps, reports, orders, cars, invoices, contracts
         )}
       </div>
 
-      {role.id === "hr" && (() => {
-        const dayOfMonth = riyadhNow().getUTCDate();
-        const daysInMonth = new Date(Date.UTC(riyadhNow().getUTCFullYear(), riyadhNow().getUTCMonth() + 1, 0)).getUTCDate();
-        const expectedPct = (dayOfMonth / daysInMonth) * 100;
-        const behind = activeReps.map((r) => {
-          const entries = monthEntriesFor(reports, r.id, month);
-          const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-          const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-          const actualPct = ((orders / MONTH_TARGET.orders) + (km / MONTH_TARGET.km)) / 2 * 100;
-          return { r, actualPct, gap: expectedPct - actualPct };
-        }).filter((s) => s.gap > 10).sort((a, b) => b.gap - a.gap);
-        return (
-          <Panel title={x.pacingT} extra={<Chip tone="warn" sm>{behind.length}</Chip>}>
-            <p className="text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{x.pacingSub}</p>
-            {behind.length === 0 ? <p className="text-[12px]" style={{ color: "#4FD1A5" }}>{x.pacingAllGood}</p> : (
-              <div className="space-y-2">
-                {behind.map(({ r, actualPct, gap }) => (
-                  <div key={r.id} className="flex items-center gap-3 rounded-xl p-2.5" style={{ background: "rgba(232,131,122,.06)", border: "1px solid rgba(232,131,122,.22)" }}>
-                    <span className="text-[12.5px] font-bold flex-1 truncate">{lang === "en" ? r.en : r.ar}</span>
-                    <span className="num text-[11px]" style={{ color: "var(--muted)" }}>{Math.round(actualPct)}% / {Math.round(expectedPct)}%</span>
-                    <Chip tone="bad" sm>-{Math.round(gap)}%</Chip>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-        );
-      })()}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-2" title={t.alerts}>
@@ -3287,54 +3274,6 @@ function ExpensesPage({ lang, role, expenses, setExpenses, setAuditLog, actingEm
   );
 }
 
-/* ═══════════  تقويم الشفتات البصري  ═══════════ */
-function ShiftCalendar({ lang, role, shifts, attendance }) {
-  const x = EX[lang];
-  const now = riyadhNow();
-  const y = now.getUTCFullYear(), m = now.getUTCMonth();
-  const daysInMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  const firstDow = new Date(Date.UTC(y, m, 1)).getUTCDay();
-  const todayDate = now.getUTCDate();
-  const byDate = {};
-  shifts.forEach((s) => { const d = +s.date.slice(8, 10); byDate[d] = byDate[d] || { shift: null, clock: null }; byDate[d].shift = s; });
-  attendance.forEach((a) => { if (+a.date.slice(5, 7) === m + 1) { const d = +a.date.slice(8, 10); byDate[d] = byDate[d] || { shift: null, clock: null }; byDate[d].clock = a; } });
-  const weekDayLabels = lang === "ar" ? ["أحد", "اثن", "ثلا", "أرب", "خمي", "جمع", "سبت"] : lang === "ur" ? ["اتوار", "پیر", "منگل", "بدھ", "جمعرات", "جمعہ", "ہفتہ"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-  const cells = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  return (
-    <div>
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-        {weekDayLabels.map((w) => <div key={w} className="text-center text-[9.5px] font-bold" style={{ color: "var(--muted)" }}>{w}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-1.5">
-        {cells.map((d, i) => {
-          if (d == null) return <div key={i} />;
-          const info = byDate[d];
-          const isToday = d === todayDate;
-          let bg = "rgba(20,27,45,.03)", border = "var(--line)", dot = null;
-          if (info?.clock && info.clock.out) { bg = "rgba(79,209,165,.14)"; border = "rgba(79,209,165,.35)"; dot = "#4FD1A5"; }
-          else if (info?.clock && !info.clock.out) { bg = "rgba(63,216,180,.16)"; border = "rgba(63,216,180,.4)"; dot = "#3FD8B4"; }
-          else if (info?.shift) { bg = "rgba(228,184,92,.12)"; border = "rgba(228,184,92,.35)"; dot = "#E4B85C"; }
-          return (
-            <div key={i} className="aspect-square rounded-lg flex flex-col items-center justify-center relative"
-              style={{ background: bg, border: `1px solid ${isToday ? role.accent : border}` }}>
-              <span className="num text-[10.5px] font-bold">{d}</span>
-              {dot && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap gap-3 mt-3">
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#E4B85C" }} />{x.shiftWindow}</span>
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#3FD8B4" }} />{x.onDutyLive}</span>
-        <span className="flex items-center gap-1.5 text-[10.5px]" style={{ color: "var(--muted)" }}><i className="w-2 h-2 rounded-full" style={{ background: "#4FD1A5" }} />{x.alreadyClockedIn}</span>
-      </div>
-    </div>
-  );
-}
-
 function SelfieCapture({ x, role, onCapture, onCancel }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -3403,7 +3342,7 @@ function SelfieCapture({ x, role, onCapture, onCancel }) {
   );
 }
 
-function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance, shifts, employees, setAuditLog, actingEmployee }) {
+function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance, employees, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
   const isRep = role.id === "rep";
   const today = riyadhToday();
@@ -3455,7 +3394,7 @@ function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance
           </div>
         </div>
       )}
-      <Panel title={isRep ? x.myShifts : t.nav.attendance}
+      <Panel title={t.nav.attendance}
         extra={myToday && myToday.out ? <Chip tone="ok" sm>{x.clockedOutAt}: {myToday.out}</Chip> : myToday ? <Chip tone="info" sm>{x.clockedInAt}: {myToday.in}</Chip> : <Chip tone="warn" sm>{x.notClockedIn}</Chip>}>
         {!isRep && !myToday && <p className="text-[11px] mb-2.5 flex items-center gap-1.5" style={{ color: "var(--muted)" }}><Camera size={12} />{x.selfieNote}</p>}
         <div className="flex gap-2.5 flex-wrap items-center">
@@ -3486,12 +3425,6 @@ function AttendancePage({ lang, role, user, activeRep, attendance, setAttendance
           )}
         </div>
 
-        {isRep && (
-          <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--line)" }}>
-            <p className="text-[11.5px] font-semibold mb-2.5" style={{ color: "var(--muted)" }}>{x.myShifts}</p>
-            <ShiftCalendar lang={lang} role={role} shifts={shifts.filter((s) => s.repId === user)} attendance={attendance.filter((a) => a.key === user)} />
-          </div>
-        )}
       </Panel>
 
       {role.id === "gm" && (() => {
@@ -3560,25 +3493,6 @@ function monthEntriesFor(reports, repId, monthPrefix) {
 }
 
 /* ═══════════  لوحة الصدارة الشهرية  ═══════════ */
-const LB_REWARDS = { first: 300, second: 200, third: 150 };
-function computeLeaderboard(reps, reports, month) {
-  const active = reps.filter((r) => r.status === "active");
-  const stats = active.map((r) => {
-    const entries = monthEntriesFor(reports, r.id, month);
-    const orders = entries.reduce((a, e) => a + (e.orders || 0), 0);
-    const km = entries.reduce((a, e) => a + (e.km || 0), 0);
-    return { rep: r, orders, km };
-  });
-  const byOrders = [...stats].sort((a, b) => b.orders - a.orders);
-  const byKm = [...stats].sort((a, b) => b.km - a.km);
-  const rankOf = (list, id) => list.findIndex((s) => s.rep.id === id);
-  const combined = stats
-    .map((s) => ({ ...s, score: rankOf(byOrders, s.rep.id) + rankOf(byKm, s.rep.id) }))
-    .sort((a, b) => a.score - b.score || b.orders - a.orders);
-  const first = combined[0] || null;
-  const second = byKm.find((s) => !first || s.rep.id !== first.rep.id) || null;
-  return { first, second, stats };
-}
 
 
 /* ═══════════  تنبيهات انتهاء الإقامات (الموارد البشرية)  ═══════════ */
@@ -3603,70 +3517,23 @@ function prevMonthStr(month) {
   return d.toISOString().slice(0, 7);
 }
 
-function PodiumCard({ lang, role, rank, entry, rewardAmt, desc, icon: Icon, tone, umrah }) {
-  const x = EX[lang];
-  if (!entry) {
-    return (
-      <div className="glass rounded-2xl p-4 flex items-center justify-center" style={{ minHeight: 150, border: `1px dashed ${tone}` }}>
-        <p className="text-[11.5px] text-center" style={{ color: "var(--muted)" }}>{x.lbNoData}</p>
-      </div>
-    );
-  }
-  const rep = entry.rep;
-  return (
-    <div className="glass rounded-2xl p-4 relative overflow-hidden" style={{ border: `1px solid ${tone}66`, background: `linear-gradient(160deg,${tone}22,transparent 70%)` }}>
-      <div className="absolute pointer-events-none rounded-full" style={{ width: 130, height: 130, insetInlineEnd: -40, top: -40, background: `radial-gradient(circle,${tone}33,transparent 70%)` }} />
-      <div className="flex items-center justify-between mb-3 relative">
-        <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: tone }}><Icon size={15} />{rank}</span>
-        <span className="num text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${tone}22`, color: tone }}>+{rewardAmt} {T[lang].sar}</span>
-      </div>
-      <div className="flex items-center gap-3 relative">
-        {rep.photo ? <img src={rep.photo} alt="" className="w-14 h-14 rounded-2xl object-cover" style={{ border: `2px solid ${tone}` }} />
-          : <span className="grid place-items-center w-14 h-14 rounded-2xl" style={{ background: `${tone}22`, border: `2px solid ${tone}` }}>
-              {rep.vehicle === "car" ? <Car size={22} style={{ color: tone }} /> : <Bike size={22} style={{ color: tone }} />}
-            </span>}
-        <div className="min-w-0">
-          <p className="text-[14px] font-extrabold truncate">{lang === "en" ? rep.en : rep.ar}</p>
-          <p className="text-[10.5px] mt-0.5" style={{ color: "var(--muted)" }}>{desc}</p>
-        </div>
-      </div>
-      <div className="flex gap-3 mt-3 pt-3 relative" style={{ borderTop: `1px solid ${tone}33` }}>
-        <span className="text-[11px]"><b className="num">{entry.orders}</b> {x.lbOrders}</span>
-        <span className="text-[11px]"><b className="num">{entry.km}</b> {x.lbKm}</span>
-      </div>
-      {umrah && (
-        <div className="mt-3 rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: "rgba(228,184,92,.15)", border: "1px solid rgba(228,184,92,.4)" }}>
-          <Plane size={15} style={{ color: "#E4B85C" }} />
-          <span className="text-[11px] font-bold" style={{ color: "#F7E3B0" }}>{x.lbUmrah}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 
-function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shifts, user, weekendFine, violationPenalty, payrollRuns }) {
+function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, user, weekendFine, violationPenalty, payrollRuns }) {
   const t = T[lang], x = EX[lang];
   if (!activeRep) return <div className="space-y-4"><Panel title={x.myStoryT}><EmptyHint lang={lang} /></Panel></div>;
 
   const allEntries = [];
   reports.forEach((rp) => rp.entries.forEach((e) => { if (e.id === activeRep.id) allEntries.push({ ...e, date: rp.date }); }));
   const totalOrders = allEntries.reduce((a, e) => a + (e.orders || 0), 0);
-  const totalKm = allEntries.reduce((a, e) => a + (e.km || 0), 0);
   const totalHours = allEntries.reduce((a, e) => a + (e.hours || 0), 0);
   const monthsActive = new Set(allEntries.map((e) => e.date.slice(0, 7))).size;
-  const wins = leaderboardHistory.filter((h) => h.first === activeRep.id).length;
-  const thirdWins = leaderboardHistory.filter((h) => h.third === activeRep.id).length;
-  const shiftsCount = (shifts || []).filter((s) => s.repId === user).length;
   const joinDate = allEntries.length ? allEntries.map((e) => e.date).sort()[0] : null;
 
   const stats = [
     { icon: ShoppingBag, label: x.storyOrders, value: fmt(totalOrders) },
-    { icon: Route, label: x.storyKm, value: fmt(totalKm) },
     { icon: Timer, label: x.storyHours, value: totalHours.toFixed(0) },
     { icon: CalendarClock, label: x.storyMonths, value: String(monthsActive) },
-    { icon: Trophy, label: x.storyWins, value: String(wins) },
-    { icon: Award, label: x.storyThird, value: String(thirdWins) },
   ];
 
   return (
@@ -3696,143 +3563,11 @@ function MyStoryPage({ lang, role, activeRep, reports, leaderboardHistory, shift
         ))}
       </div>
 
-      {wins > 0 && (
-        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.35)" }}>
-          <Crown size={20} style={{ color: "#E4B85C" }} />
-          <p className="text-[13px] font-semibold">{x.storyProud} {wins} {x.storyProudEnd}</p>
-        </div>
-      )}
     </div>
   );
 }
 
-function HallOfFamePage({ lang, role, reps, leaderboardHistory }) {
-  const t = T[lang], x = EX[lang];
-  const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? { name: lang === "en" ? r.en : r.ar, photo: r.photo, vehicle: r.vehicle } : { name: id, photo: null, vehicle: "car" }; };
-  const sorted = [...leaderboardHistory].filter((h) => h.first).sort((a, b) => b.month.localeCompare(a.month));
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(228,184,92,.16),rgba(228,184,92,.02) 60%)", border: "1px solid rgba(228,184,92,.32)" }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Trophy size={19} style={{ color: "#E4B85C" }} />
-          <h2 className="text-[16px] font-extrabold">{x.hallOfFameT}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.hallOfFameSub}</p>
-      </div>
-      {sorted.length === 0 ? <EmptyHint lang={lang} /> : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((h) => {
-            const first = repName(h.first);
-            const third = h.third ? repName(h.third) : null;
-            return (
-              <div key={h.month} className="glass rounded-2xl p-4 relative overflow-hidden" style={{ border: "1px solid rgba(228,184,92,.3)" }}>
-                <p className="num text-[11px] font-bold mb-3" style={{ color: "#E4B85C" }}>{h.month}</p>
-                <div className="flex items-center gap-3">
-                  {first.photo ? <img src={first.photo} alt="" className="w-12 h-12 rounded-2xl object-cover" style={{ border: "2px solid #E4B85C" }} />
-                    : <span className="grid place-items-center w-12 h-12 rounded-2xl" style={{ background: "rgba(228,184,92,.16)", border: "2px solid #E4B85C" }}>
-                        <Crown size={18} style={{ color: "#E4B85C" }} />
-                      </span>}
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-extrabold truncate">{first.name}</p>
-                    <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{x.lbFirst}</p>
-                  </div>
-                </div>
-                {third && (
-                  <div className="flex items-center gap-2.5 mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
-                    <Award size={14} style={{ color: "#C58BF2" }} />
-                    <p className="text-[11.5px] truncate">{third.name} · {x.lbThird}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
-function LeaderboardPage({ lang, role, reps, reports, activeRep, leaderboardHistory, setLeaderboardHistory }) {
-  const t = T[lang], x = EX[lang];
-  const month = riyadhNow().toISOString().slice(0, 7);
-  const { first, second, stats } = computeLeaderboard(reps, reports, month);
-  const prevMonth = prevMonthStr(month);
-  const prevRecord = leaderboardHistory.find((h) => h.month === prevMonth);
-  const umrahEligible = !!(first && prevRecord && prevRecord.first === first.rep.id);
-
-  const thisRecord = leaderboardHistory.find((h) => h.month === month);
-  const thirdId = thisRecord?.third || null;
-  const thirdEntry = thirdId ? stats.find((s) => s.rep.id === thirdId) : null;
-
-  useEffect(() => {
-    if (!first) return;
-    setLeaderboardHistory((prev) => {
-      const exists = prev.find((h) => h.month === month);
-      if (exists && exists.first === first.rep.id) return prev;
-      const rest = prev.filter((h) => h.month !== month);
-      return [...rest, { month, first: first.rep.id, third: exists?.third || null }];
-    });
-    // eslint-disable-next-line
-  }, [first?.rep.id, month]);
-
-  const [pickThird, setPickThird] = useState(thirdId || "");
-  const saveThird = () => {
-    if (!pickThird) return;
-    setLeaderboardHistory((prev) => {
-      const exists = prev.find((h) => h.month === month);
-      const rest = prev.filter((h) => h.month !== month);
-      return [...rest, { month, first: exists?.first || (first ? first.rep.id : null), third: pickThird }];
-    });
-  };
-
-  const myRank = activeRep ? stats.findIndex((s) => s.rep.id === activeRep.id) + 1 : 0;
-  const canPickThird = role.id === "hr" || role.id === "opsm" || role.id === "gm";
-
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(125deg,rgba(228,184,92,.16),rgba(228,184,92,.02) 60%)", border: "1px solid rgba(228,184,92,.32)" }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Trophy size={19} style={{ color: "#E4B85C" }} />
-          <h2 className="text-[16px] font-extrabold">{x.lbTitle}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.lbSub}</p>
-        {role.id === "rep" && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <Chip tone="info" sm>{x.lbYourRank}: #{myRank || "—"}</Chip>
-            <span className="text-[11.5px] font-semibold" style={{ color: "#F7E3B0" }}>{x.lbMotivate}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <PodiumCard lang={lang} role={role} rank={x.lbFirst} entry={first} rewardAmt={LB_REWARDS.first} desc={x.lbFirstDesc} icon={Crown} tone="#E4B85C" umrah={umrahEligible} />
-        <PodiumCard lang={lang} role={role} rank={x.lbSecond} entry={second} rewardAmt={LB_REWARDS.second} desc={x.lbSecondDesc} icon={Medal} tone="#9BB3C9" />
-        <PodiumCard lang={lang} role={role} rank={x.lbThird} entry={thirdEntry} rewardAmt={LB_REWARDS.third} desc={x.lbThirdDesc} icon={Award} tone="#C58BF2" />
-      </div>
-
-      {umrahEligible && (
-        <div className="glass rounded-2xl p-4 flex items-center gap-3" style={{ background: "rgba(228,184,92,.1)", border: "1px solid rgba(228,184,92,.35)" }}>
-          <Plane size={20} style={{ color: "#E4B85C" }} />
-          <p className="text-[12.5px] font-semibold">{x.lbUmrah} — {x.lbUmrahHint}</p>
-        </div>
-      )}
-
-      {canPickThird && (
-        <Panel title={x.lbPickThird}>
-          <div className="flex items-center gap-2 flex-wrap">
-            <select value={pickThird} onChange={(e) => setPickThird(e.target.value)} className="rounded-xl px-3 py-2.5 text-[12.5px] font-semibold outline-none"
-              style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#12151D" }}>
-              <option value="" style={{ background: "#FFFFFF" }}>—</option>
-              {reps.filter((r) => r.status === "active").map((r) => <option key={r.id} value={r.id} style={{ background: "#FFFFFF" }}>{lang === "en" ? r.en : r.ar}</option>)}
-            </select>
-            <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveThird}>{x.lbSaveThird}</Btn>
-          </div>
-          <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{x.lbHistoryNote}</p>
-        </Panel>
-      )}
-    </div>
-  );
-}
 
 /* ═══════════  سجل التتبع (Audit Log) — للمدير العام فقط  ═══════════ */
 const AUDIT_LABELS = {
@@ -4597,8 +4332,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const month = riyadhNow().toISOString().slice(0, 7);
   const activeReps = reps.filter((r) => r.status === "active");
   const alreadyClosed = payrollRuns.some((r) => r.month === month);
-  const lb = computeLeaderboard(reps, reports, month);
-  const rewardFor = (repId) => (lb.first && lb.first.rep.id === repId ? LB_REWARDS.first : lb.second && lb.second.rep.id === repId ? LB_REWARDS.second : 0);
+  const rewardFor = () => 0;
   const [ajeerAmounts, setAjeerAmounts] = useState({});
   const [deductAmounts, setDeductAmounts] = useState({}); // القيمة الفعلية بالريال اللي تقرّرها المالية لكل مندوب: { [repId]: { weekend, app } }
 
@@ -4656,14 +4390,14 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
   const exportRun = (run) => {
     const rows = run.entries.map((e) => ({
       [t.h.employee]: e.name, [x.empTypeCol]: EMP_TYPES[e.empType]?.[lang] || e.empType,
-      [x.ordersCol]: e.orders, [x.kmCol]: e.km, [x.hoursCol]: (e.hours || 0).toFixed(1),
+      [x.ordersCol]: e.orders, [x.hoursCol]: (e.hours || 0).toFixed(1),
       [`${x.weekendViolCol} (${x.supReportedLbl})`]: e.weekendCount || 0, [`${x.appViolCol} (${x.supReportedLbl})`]: e.appCount || 0,
       [`${x.weekendViolCol} (${t.sar})`]: e.weekendDeductAmt || 0, [`${x.appViolCol} (${t.sar})`]: e.appDeductAmt || 0,
       [x.totalSalary]: e.salary, [x.lbReward]: e.reward || 0, [t.sar]: e.total,
     }));
     const officeRows = (run.officeEntries || []).map((e) => ({
       [t.h.employee]: e.name, [x.empTypeCol]: x.officeStaffSectionT,
-      [x.ordersCol]: "—", [x.kmCol]: "—", [x.hoursCol]: "—",
+      [x.ordersCol]: "—", [x.hoursCol]: "—",
       [`${x.weekendViolCol} (${x.supReportedLbl})`]: "—", [`${x.appViolCol} (${x.supReportedLbl})`]: "—",
       [`${x.weekendViolCol} (${t.sar})`]: "—", [`${x.appViolCol} (${t.sar})`]: "—",
       [x.totalSalary]: e.salary, [x.lbReward]: 0, [t.sar]: e.salary,
@@ -4726,11 +4460,11 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                   <span className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold">{r.name}</span>
                     {r.reward > 0 && <Chip tone="warn" sm><Trophy size={11} />+{r.reward}</Chip>}
-                    <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.km} {lang === "ar" ? "كم" : "km"} · {r.hours.toFixed(1)} {x.hoursCol}
+                    <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.orders} {x.lbOrders} · {r.hours.toFixed(1)} {x.hoursCol}
                       {r.weekendCount > 0 && ` · ${x.weekendViolCol}: ${r.weekendCount}`}{r.appCount > 0 && ` · ${x.appViolCol}: ${r.appCount}`}</span>
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
-                    <input type="number" value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                    <NumInput value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
                       className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                     <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                   </span>
@@ -4746,7 +4480,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                         <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.hours.toFixed(1)} {x.hoursCol}</span>
                       </span>
                       <span className="flex items-center gap-2">
-                        <input type="number" value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
+                        <NumInput value={r.salary} onChange={(e) => setAjeerAmounts((prev) => ({ ...prev, [r.repId]: +e.target.value }))}
                           className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                         <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                       </span>
@@ -4764,7 +4498,7 @@ function PayrollRunsPage({ lang, role, reps, reports, employees, payrollRuns, se
                         <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{e.position || "—"}</span>
                       </span>
                       <span className="flex items-center gap-2">
-                        <input type="number" value={officeAmounts[e.empId] ?? (e.salary || 0)} onChange={(ev) => setOfficeAmounts((prev) => ({ ...prev, [e.empId]: +ev.target.value }))}
+                        <NumInput value={officeAmounts[e.empId] ?? (e.salary || 0)} onChange={(ev) => setOfficeAmounts((prev) => ({ ...prev, [e.empId]: +ev.target.value }))}
                           className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none text-end" style={{ background: "#fff", border: "1px solid var(--line)", color: "#12151D" }} />
                         <span className="text-[11px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
                       </span>
@@ -5000,7 +4734,7 @@ function PeoplePage({ lang, role, employees, setEmployees, setAuditLog, actingEm
                 )}
                 {salaryEditId === p.id && (
                   <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
-                    <input value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} placeholder="0" type="number"
+                    <NumInput value={salaryInput} onChange={(e) => setSalaryInput(e.target.value)} placeholder="0"
                       className="num flex-1 rounded-lg px-3 py-2 text-[12.5px] outline-none" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)", color: "#12151D" }} />
                     <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => {
                       setEmployees((prev) => prev.map((e2) => (e2.id === p.id ? { ...e2, salary: +salaryInput || 0 } : e2)));
@@ -5127,7 +4861,7 @@ function CharterPage({ lang, role, weekendFine, setWeekendFine, charterClauses, 
           <div className="flex items-center gap-2.5">
             <span className="flex-1 flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ background: "rgba(0,0,0,.24)", border: "1px solid var(--line)" }}>
               <CircleDollarSign size={15} style={{ color: role.accent }} />
-              <input type="number" value={fineInput} onChange={(e) => setFineInput(+e.target.value)}
+              <NumInput value={fineInput} onChange={(e) => setFineInput(+e.target.value)}
                 className="num flex-1 bg-transparent border-0 outline-none text-[14px]" style={{ color: "#12151D" }} />
               <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{t.sar}</span>
             </span>
@@ -5266,27 +5000,17 @@ function ApprovalsPage({ lang, role, approvalReqs, setApprovalReqs }) {
 function RepPerformanceAnalytics({ lang, role, reps }) {
   const t = T[lang], x = EX[lang];
   const active = reps.filter((r) => r.status === "active");
-  const tiers = active.map((r) => ({ r, tier: tierOf(r) }));
-  const avgPct = tiers.length ? Math.round(tiers.reduce((a, b) => a + b.tier.pct, 0) / tiers.length) : 0;
   const totalViol = active.reduce((a, r) => a + (r.weekendViolations || 0) + (r.appViolations || 0), 0);
-  const top = tiers.slice().sort((a, b) => b.tier.pct - a.tier.pct)[0];
-  const weakCount = tiers.filter((o) => o.tier.key === "weak" || o.tier.key === "improve").length;
+  const top = active.slice().sort((a, b) => (b.orders || 0) - (a.orders || 0))[0];
   const name = (r) => (lang === "en" ? r.en : r.ar);
 
   return (
     <Panel title={x.perfAnalytics} extra={<Chip tone="ok" sm><span className="w-1.5 h-1.5 rounded-full bg-current" />{t.live}</Chip>}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label={x.totalActiveReps} value={String(active.length)} icon={Bike} accent={role.glow} />
-        <Kpi label={x.avgAchieve} value={String(avgPct)} unit="%" icon={Target} accent={role.glow} />
         <Kpi label={x.totalViolations} value={String(totalViol)} icon={AlertTriangle} accent={role.glow} />
-        <Kpi label={x.topPerformer} value={top ? name(top.r) : "—"} icon={Star} accent={role.glow} />
+        <Kpi label={x.topPerformer} value={top ? name(top) : "—"} icon={Star} accent={role.glow} />
       </div>
-      {weakCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-xl p-3 mt-3.5" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.22)" }}>
-          <AlertTriangle size={15} style={{ color: "var(--gold)" }} />
-          <span className="text-[12px]" style={{ color: "var(--muted)" }}>{x.needsAttention}: <span className="num font-bold" style={{ color: "#12151D" }}>{weakCount}</span></span>
-        </div>
-      )}
     </Panel>
   );
 }
@@ -5294,7 +5018,7 @@ function RepPerformanceAnalytics({ lang, role, reps }) {
 /* ═══════════  توظيف المناديب — الموارد البشرية  ═══════════ */
 function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingEmployee, applications, setApplications }) {
   const t = T[lang], x = EX[lang];
-  const canManage = role.id === "opsm" || role.id === "gm";
+  const canManage = role.id === "opsm" || role.id === "gm" || role.id === "hr";
   const SUP_LIST = supervisorsOf(employees);
   const [form, setForm] = useState({ name: "", phone: "", nid: "", riderId: "", idExpiry: "", vehicle: "car", app: "hs", empType: "kafala", idPhoto: null, licPhoto: null, photo: null, password: "" });
   const [err, setErr] = useState("");
@@ -5336,7 +5060,7 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
 
   const activate = (id) => {
     if (!chosenSup) return;
-    setReps(reps.map((r) => (r.id === id ? { ...r, status: "active", sup: chosenSup } : r)));
+    setReps((prev) => prev.map((r) => (r.id === id ? { ...r, status: "active", sup: chosenSup, startDate: r.startDate || riyadhToday() } : r)));
     logAudit(setAuditLog, role, "rep_activate", id, actingEmployee);
     setPickSup(null); setChosenSup("");
   };
@@ -5532,119 +5256,11 @@ function HiringPage({ lang, role, reps, setReps, employees, setAuditLog, actingE
   );
 }
 
-/* ═══════════  أداء المناديب — مشرف التشغيل  ═══════════ */
-/* ═══════════  نبض المناديب المباشر  ═══════════ */
-function DriverCard({ r, role, lang, state, tone, shift, clock, x, t }) {
-  const [open, setOpen] = useState(false);
-  const tier = tierOf(r);
-  const tierLabel = { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key];
-  const stateLabel = state === "onDuty" ? x.onDutyLive : state === "late" ? x.lateForShift : state === "booked" ? x.bookedNotIn : state === "done" ? t.s.closed : x.noShiftToday;
-  const borderColor = state === "onDuty" ? "rgba(63,216,180,.4)" : state === "late" ? "rgba(232,131,122,.45)" : "var(--line)";
-  return (
-    <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: "var(--surface-1)", border: `1px solid ${borderColor}`, transitionTimingFunction: "var(--ease-out)" }}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3.5 text-start">
-        <span className="relative shrink-0">
-          {r.photo ? <img src={r.photo} alt="" className="w-12 h-12 rounded-2xl object-cover" />
-            : <span className="grid place-items-center w-12 h-12 rounded-2xl" style={{ background: `rgba(${role.glow},.14)` }}>
-                {r.vehicle === "car" ? <Car size={20} style={{ color: role.accent }} /> : <Bike size={20} style={{ color: role.accent }} />}
-              </span>}
-          {state === "onDuty" && <span className="absolute -bottom-0.5 -end-0.5 w-3.5 h-3.5 rounded-full pulse-dot" style={{ background: "#3FD8B4", border: "2px solid var(--surface-1)" }} />}
-        </span>
-        <span className="flex-1 min-w-0">
-          <span className="flex items-center gap-1.5">
-            <span className="text-[13.5px] font-bold truncate">{lang === "en" ? r.en : r.ar}</span>
-            <Chip tone={tier.tone} sm>{Math.round(tier.pct)}%</Chip>
-          </span>
-          <span className="block text-[11px] mt-0.5" style={{ color: "var(--muted)" }}>
-            {shift ? `${shift.start} → ${shift.end}` : x.noShiftToday}
-          </span>
-        </span>
-        <span className="flex flex-col items-end gap-1 shrink-0">
-          <Chip tone={tone} sm>{stateLabel}</Chip>
-          <ChevronRight size={14} style={{ color: "var(--muted-2)", transform: open ? "rotate(90deg)" : "rotate(0)", transition: "transform .3s var(--ease-spring)" }} />
-        </span>
-      </button>
-      {open && (
-        <div className="px-3.5 pb-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5" style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{x.ordersCol}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.orders || 0}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{x.kmCol}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.km || 0}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{RA[lang].riderId}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.riderId || "—"}</p>
-          </div>
-          <div className="rounded-xl p-2.5" style={{ background: "var(--surface-2)" }}>
-            <p className="text-[9.5px]" style={{ color: "var(--muted-2)" }}>{tierLabel}</p>
-            <p className="num text-[15px] font-bold mt-0.5">{r.phone}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PulsePage({ lang, role, reps, shifts, attendance, violationPenalty, weekendFine }) {
+function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, employees, scopeSup }) {
   const t = T[lang], x = EX[lang];
-  const today = riyadhToday();
-  const nowHM = riyadhTimeHM();
-  const active = reps.filter((r) => r.status === "active");
-
-  const rows = active.map((r) => {
-    const shift = shifts.filter((s) => s.repId === r.nid && s.date === today).slice(-1)[0];
-    const clock = attendance.find((a) => a.key === r.nid && a.date === today);
-    let state = "none", tone = "n";
-    if (clock && !clock.out) { state = "onDuty"; tone = "ok"; }
-    else if (clock && clock.out) { state = "done"; tone = "n"; }
-    else if (shift) {
-      const [sh, sm] = shift.start.split(":").map(Number);
-      const [nh, nm] = nowHM.split(":").map(Number);
-      const graceMin = (nh * 60 + nm) - (sh * 60 + sm);
-      if (graceMin > 15) { state = "late"; tone = "bad"; } else { state = "booked"; tone = "warn"; }
-    }
-    return { r, shift, clock, state, tone };
-  });
-  const onDutyCount = rows.filter((r) => r.state === "onDuty").length;
-  const bookedCount = rows.filter((r) => r.state === "booked").length;
-  const lateCount = rows.filter((r) => r.state === "late").length;
-
-  return (
-    <div className="space-y-4">
-      <div className="glass rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
-        <div className="flex items-center gap-2.5 mb-1">
-          <Radio size={18} style={{ color: role.accent }} />
-          <h2 className="text-[15px] font-extrabold">{x.pulseTitle}</h2>
-        </div>
-        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{x.pulseSub}</p>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <Kpi label={x.onDutyLive} value={String(onDutyCount)} icon={Fingerprint} accent="63,216,180" />
-        <Kpi label={x.bookedNotIn} value={String(bookedCount)} icon={Clock} accent="228,184,92" />
-        <Kpi label={x.lateForShift} value={String(lateCount)} icon={AlertTriangle} accent="232,131,122" />
-      </div>
-
-      <Panel title={t.k.activeReps}>
-        {rows.length === 0 ? <EmptyHint lang={lang} /> : (
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {rows.map(({ r, shift, clock, state, tone }) => (
-              <DriverCard key={r.id} r={r} role={role} lang={lang} state={state} tone={tone} shift={shift} clock={clock} x={x} t={t} violationPenalty={violationPenalty} weekendFine={weekendFine} />
-            ))}
-          </div>
-        )}
-      </Panel>
-    </div>
-  );
-}
-
-function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, employees }) {
-  const t = T[lang], x = EX[lang];
-  const SUP_LIST = supervisorsOf(employees);
-  const [sup, setSup] = useState(SUP_LIST[0].id);
+  const ALL_SUP = supervisorsOf(employees);
+  const SUP_LIST = scopeSup ? ALL_SUP.filter((s) => s.id === scopeSup) : ALL_SUP;
+  const [sup, setSup] = useState((SUP_LIST[0] || ALL_SUP[0]).id);
   const [date, setDate] = useState(riyadhToday());
   const [saved, setSaved] = useState(false);
   const [dayApp, setDayApp] = useState({});
@@ -5652,7 +5268,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
   const mineAll = reps.filter((r) => r.status === "active" && r.sup === sup);
   const mine = mineAll.filter((r) => r.empType !== "ajeer");
   const mineAjeer = mineAll.filter((r) => r.empType === "ajeer");
-  const update = (id, field, val) => setReps(reps.map((r) => (r.id === id ? { ...r, [field]: val === "" ? 0 : +val } : r)));
+  const update = (id, field, val) => setReps((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: val === "" ? 0 : +val } : r)));
   const Avatar = ({ p, size = 36 }) => p.photo
     ? <img src={p.photo} alt="" className="rounded-xl object-cover shrink-0" style={{ width: size, height: size }} />
     : <span className="grid place-items-center rounded-xl shrink-0" style={{ width: size, height: size, background: `rgba(${role.glow},.13)` }}>
@@ -5675,8 +5291,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
   };
 
   const RepRow = ({ r }) => {
-    const tier = tierOf(r);
-    const tierLabel = { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key];
     const avg = historicalAvg(r.id);
     const declined = avg != null && r.orders < avg * 0.5;
     return (
@@ -5694,7 +5308,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
               className="rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" style={{ background: "#fff", border: "1px solid var(--line-strong)", color: "#12151D" }}>
               {APPS.map((a) => <option key={a.id} value={a.id}>{a[lang]}</option>)}
             </select>
-            <Chip tone={tier.tone}>{tierLabel} · {Math.round(tier.pct)}%</Chip>
           </span>
         </div>
         {declined && (
@@ -5702,17 +5315,16 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
             <AlertTriangle size={12} />{x.declineAlert} ({avg.toFixed(0)} {x.lbOrders})
           </p>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {[
             { k: "orders", l: x.ordersCol, icon: ShoppingBag },
             { k: "hours", l: x.hoursCol, icon: Timer },
-            { k: "km", l: x.kmCol, icon: Route },
             { k: "weekendViolations", l: x.weekendViolCol, icon: CalendarDays },
             { k: "appViolations", l: x.appViolCol, icon: AlertTriangle },
           ].map((f) => (
             <label key={f.k} className="block">
               <span className="flex items-center gap-1 text-[10px] mb-1" style={{ color: "var(--muted)" }}><f.icon size={11} />{f.l}</span>
-              <input type="number" value={r[f.k] || 0} onChange={(e) => update(r.id, f.k, e.target.value)}
+              <NumInput value={r[f.k] ? r[f.k] : ""} placeholder="0" onChange={(e) => update(r.id, f.k, e.target.value)}
                 className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none"
                 style={{ background: "rgba(0,0,0,.04)", border: "1px solid var(--line)", color: "#12151D" }} />
             </label>
@@ -5744,7 +5356,6 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
               {s[lang]}
             </button>
           ))}
-          <span className="ms-auto num text-[11px]" style={{ color: "var(--muted)" }}>{x.dailyTargetLbl}: {DAILY_TARGET.orders} {x.ordersTarget} · {DAILY_TARGET.km} {x.kmTarget}</span>
         </div>
 
         <div className="mb-2.5 flex items-center gap-2">
@@ -5753,7 +5364,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
           <Chip tone="info" sm>{mine.length}</Chip>
         </div>
         <div className="space-y-2.5 mb-5">
-          {mine.length === 0 ? <EmptyHint lang={lang} /> : mine.map((r) => <RepRow key={r.id} r={r} />)}
+          {mine.length === 0 ? <EmptyHint lang={lang} /> : mine.map((r) => <React.Fragment key={r.id}>{RepRow({ r })}</React.Fragment>)}
         </div>
 
         <div className="mb-2.5 flex items-center gap-2 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
@@ -5762,7 +5373,7 @@ function ShiftsPage({ lang, role, reps, setReps, reports, setReports, goPage, em
           <Chip tone="warn" sm>{mineAjeer.length}</Chip>
         </div>
         <div className="space-y-2.5">
-          {mineAjeer.length === 0 ? <EmptyHint lang={lang} /> : mineAjeer.map((r) => <RepRow key={r.id} r={r} />)}
+          {mineAjeer.length === 0 ? <EmptyHint lang={lang} /> : mineAjeer.map((r) => <React.Fragment key={r.id}>{RepRow({ r })}</React.Fragment>)}
         </div>
 
         <div className="flex items-center gap-3 mt-4">
@@ -6315,138 +5926,6 @@ function CircularsPage({ lang, role, circulars, setCirculars, setAuditLog, actin
   );
 }
 
-function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) {
-  const t = T[lang], x = EX[lang];
-  const [tab, setTab] = useState(reps && reps.length ? 1 : 0);
-  const [p, setP] = useState(0);
-  const [open, setOpen] = useState(null);
-  const q = (query || "").trim().toLowerCase();
-
-  const repName = (id) => { const r = reps.find((rr) => rr.id === id); return r ? (lang === "en" ? r.en : r.ar) : id; };
-  const supName = (sid) => supervisorsOf(employees).find((s) => s.id === sid)?.[lang] || "—";
-  const tierLabel = (rep) => { const tier = tierOf(rep); return { excellent: x.tierExcellent, good: x.tierGood, improve: x.tierImprove, weak: x.tierWeak }[tier.key]; };
-
-  const filteredReports = !q ? reports : reports.filter((rp) =>
-    rp.entries.some((e) => {
-      const rep = reps.find((r) => r.id === e.id);
-      if (!rep) return false;
-      return rep.ar.toLowerCase().includes(q) || rep.en.toLowerCase().includes(q) || rep.phone.includes(q) || (rep.nid || "").includes(q);
-    }));
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        {[x.corpReportsT, x.repReportsT].map((n, i) => (
-          <button key={n} onClick={() => setTab(i)} className="px-3.5 py-2 rounded-xl text-[12.5px] font-bold transition"
-            style={{ background: tab === i ? `rgba(${role.glow},.14)` : "rgba(20,27,45,.04)", border: `1px solid ${tab === i ? `rgba(${role.glow},.4)` : "var(--line)"}`, color: tab === i ? role.accent : "var(--muted)" }}>
-            {n}
-          </button>
-        ))}
-      </div>
-
-      {tab === 0 ? (
-        <Panel title={x.reportsT}>
-          <div className="flex gap-2 mb-4">
-            {[x.monthly, x.quarterly, x.yearly].map((n, i) => (
-              <button key={n} onClick={() => setP(i)} className="px-3 py-2 rounded-xl text-[12px] font-bold transition"
-                style={{ background: p === i ? `rgba(${role.glow},.14)` : "rgba(20,27,45,.04)", border: `1px solid ${p === i ? `rgba(${role.glow},.4)` : "var(--line)"}`, color: p === i ? role.accent : "var(--muted)" }}>{n}</button>
-            ))}
-          </div>
-          <div className="space-y-2.5">
-            {x.repItems.map((n) => (
-              <div key={n} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                <ReceiptText size={16} style={{ color: role.accent }} />
-                <span className="flex-1 text-[13px] font-semibold">{n}</span>
-                <Btn icon={Download}>{x.generate}</Btn>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      ) : (
-        <Panel title={x.repReportsT}
-          extra={
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}>
-                <Search size={14} style={{ color: "var(--muted)" }} />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep}
-                  className="bg-transparent outline-none border-0 text-[12px] w-40" style={{ color: "#12151D" }} />
-              </span>
-              <Btn icon={Download} onClick={() => {
-                const rows = [];
-                filteredReports.forEach((rp) => rp.entries.forEach((e) => {
-                  const rep = reps.find((r) => r.id === e.id) || { ar: e.id, en: e.id, empType: "—" };
-                  rows.push({ [t.h.employee]: lang === "en" ? rep.en : rep.ar, [x.empTypeCol]: EMP_TYPES[rep.empType]?.[lang] || rep.empType, Date: rp.date,
-                    [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.kmCol]: e.km, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 });
-                }));
-                exportToExcel(rows, `rep-reports-${riyadhToday()}`, "Reports");
-              }}>{t.export}</Btn>
-            </div>
-          }>
-          <div className="sm:hidden flex items-center gap-2 rounded-xl px-3 py-2 mb-3.5" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}>
-            <Search size={14} style={{ color: "var(--muted)" }} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep}
-              className="bg-transparent outline-none border-0 text-[12px] flex-1" style={{ color: "#12151D" }} />
-          </div>
-
-          {filteredReports.length === 0 ? (
-            <p className="text-[12px]" style={{ color: "var(--muted)" }}>{q ? x.globalNoMatch : x.noReports}</p>
-          ) : (
-            <div className="space-y-2.5">
-              {filteredReports.map((rp) => {
-                const isOpen = open === rp.id;
-                return (
-                  <div key={rp.id} className="rounded-2xl overflow-hidden" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
-                    <button onClick={() => setOpen(isOpen ? null : rp.id)} className="w-full flex items-center justify-between gap-3 p-3.5 text-start">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="grid place-items-center w-9 h-9 rounded-xl shrink-0" style={{ background: `rgba(${role.glow},.13)` }}>
-                          <ClipboardList size={16} style={{ color: role.accent }} />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-[13px] font-bold">{rp.id} · <span className="num">{rp.date}</span></span>
-                          <span className="block text-[11px]" style={{ color: "var(--muted)" }}>{x.teamOf} {supName(rp.sup)} · {x.repsCount}: {rp.entries.length}</span>
-                        </span>
-                      </div>
-                      <ChevronRight size={16} style={{ color: "var(--muted)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .3s" }} />
-                    </button>
-                    {isOpen && (() => {
-                      const withType = rp.entries.map((e) => ({ e, rep: reps.find((r) => r.id === e.id) || { ...e, ar: e.id, en: e.id, empType: "kafala" } }));
-                      const kafalaEntries = withType.filter((w) => w.rep.empType !== "ajeer");
-                      const ajeerEntries = withType.filter((w) => w.rep.empType === "ajeer");
-                      const toRows = (list) => list.map(({ e, rep }) => ({
-                        key: e.id,
-                        cells: [
-                          { v: lang === "en" ? rep.en : rep.ar, strong: 1 }, { v: e.orders, mono: 1 },
-                          { v: e.hours, mono: 1 }, { v: e.km, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 },
-                          { chip: { tone: tierOf(e).tone, label: tierLabel(e) } },
-                        ],
-                      }));
-                      return (
-                        <div className="px-3.5 pb-3.5 space-y-3">
-                          <div>
-                            <p className="text-[10.5px] font-bold mb-1.5" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>
-                            {kafalaEntries.length === 0 ? <EmptyHint lang={lang} /> : (
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.kmCol, x.weekendViolCol, x.appViolCol, x.tierCol]} rows={toRows(kafalaEntries)} />
-                            )}
-                          </div>
-                          {ajeerEntries.length > 0 && (
-                            <div>
-                              <p className="text-[10.5px] font-bold mb-1.5 pt-2" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p>
-                              <DataTable headers={[t.h.employee, x.ordersCol, x.hoursCol, x.kmCol, x.weekendViolCol, x.appViolCol, x.tierCol]} rows={toRows(ajeerEntries)} />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Panel>
-      )}
-    </div>
-  );
-}
 
 function ResetForLaunchPanel({ lang, role, setters, setAuditLog, actingEmployee }) {
   const t = T[lang], x = EX[lang];
@@ -6555,17 +6034,17 @@ function BackupPanel({ lang, role, data, setters, setAuditLog, actingEmployee })
 }
 
 function SettingsPage({ lang, setLang, role, reduce, setReduce, activeRep, reps, setReps, setAuditLog, actingEmployee,
-  reports, setReports, tickets, setTickets, circulars, setCirculars, attendance, setAttendance, shifts, setShifts,
+  reports, setReports, tickets, setTickets, circulars, setCirculars, attendance, setAttendance,
   orders, setOrders, cars, setCars, restaurants, setRestaurants, invoices, setInvoices,
   employees, setEmployees, contracts, setContracts, cases, setCases, approvalReqs, setApprovalReqs,
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog,
   deptPasswords, setDeptPasswords }) {
   const t = T[lang], x = EX[lang];
-  const backupData = { reps, reports, tickets, circulars, attendance, shifts, orders, cars, restaurants, invoices,
+  const backupData = { reps, reports, tickets, circulars, attendance, orders, cars, restaurants, invoices,
     employees, contracts, cases, approvalReqs, expenses, iqamaAlerts, payrollRuns, deptChats, repMessages, leaderboardHistory, auditLog };
   const backupSetters = { reps: setReps, reports: setReports, tickets: setTickets, circulars: setCirculars,
-    attendance: setAttendance, shifts: setShifts, orders: setOrders, cars: setCars, restaurants: setRestaurants,
+    attendance: setAttendance, orders: setOrders, cars: setCars, restaurants: setRestaurants,
     invoices: setInvoices, employees: setEmployees, contracts: setContracts, cases: setCases, approvalReqs: setApprovalReqs,
     expenses: setExpenses, iqamaAlerts: setIqamaAlerts, payrollRuns: setPayrollRuns, deptChats: setDeptChats,
     repMessages: setRepMessages, leaderboardHistory: setLeaderboardHistory, auditLog: setAuditLog };
@@ -6645,7 +6124,9 @@ const RA = {
     perOrder: "سعر الطلب", perKm: "سعر الكيلومتر", freeKm: "كم مجاني (يُخصم من إجمالي الكم)", fixedMonthly: "مبلغ ثابت شهري إضافي",
     ordersBase: "مبلغ الطلبات عند الهدف", ordersTarget: "هدف الطلبات الشهري", perOrderDelta: "سعر الطلب الزائد/الناقص",
     kmBase: "مبلغ الكيلومترات عند الهدف", kmTarget: "هدف الكيلومترات الشهري", perKmDelta: "سعر الكيلو الزائد/الناقص",
-    tierFrom: "من الطلب رقم", tierRate: "سعر الطلب", addTier: "إضافة شريحة", tiersNote: "ابدأ أول شريحة من 0 — كل شريحة تسري حتى بداية التي بعدها.",
+    tierFrom: "من طلب رقم", tierTo: "إلى طلب رقم", tierRate: "سعر الطلب (ريال)", addTier: "إضافة شريحة", tiersNote: "اكتب كل شريحة هكذا: من 1 إلى 249 = 13.50. الشريحة التالية تبدأ من 250. اترك «إلى» فارغاً في آخر شريحة (فما فوق).", andAbove: "فما فوق", tierTo2: "إلى",
+    tierRow: (f, t, r, sar) => (t ? `من الطلب ${f} إلى ${t}: كل طلب ${r} ${sar}` : `من الطلب ${f} فما فوق: كل طلب ${r} ${sar}`),
+    tierErr_empty: "أكمل الأرقام في كل شريحة", tierErr_bad: "رقم «إلى» يجب أن يكون أكبر من «من»", tierErr_gap: "توجد فجوة بين شريحتين — الشريحة التالية يجب أن تبدأ من (إلى + 1)", tierErr_overlap: "شريحتان متداخلتان — راجع الأرقام", tierErr_open: "شريحة «فما فوق» يجب أن تكون الأخيرة", tierErr_first: "أول شريحة يجب أن تبدأ من 1",
     tryIt: "جرّب الحساب", tryOrders: "طلبات", tryKm: "كيلومتر", tryResult: "الناتج",
     save: "حفظ التسعيرة", saved: "تم الحفظ", configured: "مضبوطة", usingDefault: "افتراضية", resetDefault: "رجوع للافتراضي", copyAll: "نسخ لكل التطبيقات",
     unsaved: "تعديلات غير محفوظة",
@@ -6683,7 +6164,9 @@ const RA = {
     perOrder: "Price per order", perKm: "Price per km", freeKm: "Free km (deducted from total)", fixedMonthly: "Extra fixed monthly amount",
     ordersBase: "Orders amount at target", ordersTarget: "Monthly orders target", perOrderDelta: "Price per extra/short order",
     kmBase: "Km amount at target", kmTarget: "Monthly km target", perKmDelta: "Price per extra/short km",
-    tierFrom: "From order #", tierRate: "Price per order", addTier: "Add tier", tiersNote: "Start the first tier at 0 — each tier applies until the next one begins.",
+    tierFrom: "From order #", tierTo: "To order #", tierRate: "Price per order (SAR)", addTier: "Add tier", tiersNote: "Write each tier like: 1 to 249 = 13.50. The next tier starts at 250. Leave \"To\" empty on the last tier (and above).", andAbove: "and above", tierTo2: "to",
+    tierRow: (f, t, r, sar) => (t ? `Orders ${f} to ${t}: ${r} ${sar} each` : `Orders ${f} and above: ${r} ${sar} each`),
+    tierErr_empty: "Fill in every tier", tierErr_bad: "\"To\" must be larger than \"From\"", tierErr_gap: "Gap between two tiers — next tier must start at (To + 1)", tierErr_overlap: "Two tiers overlap", tierErr_open: "The \"and above\" tier must be last", tierErr_first: "First tier must start at 1",
     tryIt: "Try the math", tryOrders: "Orders", tryKm: "Km", tryResult: "Result",
     save: "Save pricing", saved: "Saved", configured: "Configured", usingDefault: "Default", resetDefault: "Reset to default", copyAll: "Copy to all apps",
     unsaved: "Unsaved changes",
@@ -6721,7 +6204,9 @@ const RA = {
     perOrder: "فی آرڈر قیمت", perKm: "فی کلومیٹر قیمت", freeKm: "مفت کلومیٹر", fixedMonthly: "اضافی ماہانہ رقم",
     ordersBase: "ہدف پر آرڈرز کی رقم", ordersTarget: "ماہانہ آرڈر ہدف", perOrderDelta: "زیادہ/کم آرڈر کی قیمت",
     kmBase: "ہدف پر کلومیٹر کی رقم", kmTarget: "ماہانہ کلومیٹر ہدف", perKmDelta: "زیادہ/کم کلومیٹر کی قیمت",
-    tierFrom: "آرڈر نمبر سے", tierRate: "فی آرڈر قیمت", addTier: "سلیب شامل کریں", tiersNote: "پہلا سلیب 0 سے شروع کریں۔",
+    tierFrom: "آرڈر نمبر سے", tierTo: "آرڈر نمبر تک", tierRate: "فی آرڈر قیمت", addTier: "سلیب شامل کریں", tiersNote: "ہر سلیب ایسے لکھیں: 1 سے 249 = 13.50۔ اگلا سلیب 250 سے شروع ہوگا۔", andAbove: "اور اوپر", tierTo2: "تک",
+    tierRow: (f, t, r, sar) => (t ? `آرڈر ${f} سے ${t}: ${r} ${sar} فی آرڈر` : `آرڈر ${f} اور اوپر: ${r} ${sar} فی آرڈر`),
+    tierErr_empty: "ہر سلیب مکمل کریں", tierErr_bad: "\"تک\" کو \"سے\" سے بڑا ہونا چاہیے", tierErr_gap: "دو سلیبوں کے درمیان خلا ہے", tierErr_overlap: "دو سلیب آپس میں ملتے ہیں", tierErr_open: "\"اور اوپر\" سلیب آخری ہونا چاہیے", tierErr_first: "پہلا سلیب 1 سے شروع ہو",
     tryIt: "حساب آزمائیں", tryOrders: "آرڈرز", tryKm: "کلومیٹر", tryResult: "نتیجہ",
     save: "قیمت محفوظ کریں", saved: "محفوظ ہو گیا", configured: "ترتیب شدہ", usingDefault: "ڈیفالٹ", resetDefault: "ڈیفالٹ پر واپس", copyAll: "سب ایپس پر کاپی",
     unsaved: "غیر محفوظ تبدیلیاں",
@@ -6761,7 +6246,7 @@ Object.assign(RA.ar, {
   unmatchedT: "معرّفات في الفاتورة بدون مندوب", linkTo: "اربطه بمندوب…",
   wT: "ملاحظات قبل الإقفال", wRepPrice: "لا توجد تسعيرة مندوب — أرباح المناديب 0", wAppPrice: "لا توجد تسعيرة تطبيق ولا فاتورة — الإيراد 0", wNoId: "مندوب بدون معرّف تطبيق (لن يُطابَق مع الفاتورة)",
   noRateYet: "لم يحدّد المحاسب تسعيرتك بعد — سيظهر ربحك فور اعتمادها", rhMonthOrders: "طلبات الشهر",
-  usingDefault: "غير مضبوطة", resetDefault: "حذف التسعيرة",
+  phoneL: "الجوال", usingDefault: "غير مضبوطة", resetDefault: "حذف التسعيرة",
 });
 Object.assign(RA.en, {
   riderId: "Rider ID in the app", riderIdPh: "e.g. 4821937", errRiderDup: "This ID is already used by another rider on the same app",
@@ -6772,7 +6257,7 @@ Object.assign(RA.en, {
   unmatchedT: "Invoice IDs with no rider", linkTo: "Link to a rider…",
   wT: "Before closing", wRepPrice: "No rider pricing set — rider earnings are 0", wAppPrice: "No app pricing and no invoice — revenue is 0", wNoId: "rider(s) without an app ID (won't match the invoice)",
   noRateYet: "The accountant hasn't set your pricing yet — your earnings appear once approved", rhMonthOrders: "Orders this month",
-  usingDefault: "Not set", resetDefault: "Remove pricing",
+  phoneL: "Phone", usingDefault: "Not set", resetDefault: "Remove pricing",
 });
 Object.assign(RA.ur, {
   riderId: "ایپ میں رائیڈر آئی ڈی", riderIdPh: "مثال: 4821937", errRiderDup: "یہ آئی ڈی اسی ایپ پر دوسرے رائیڈر کے پاس ہے",
@@ -6783,8 +6268,18 @@ Object.assign(RA.ur, {
   unmatchedT: "انوائس میں بغیر رائیڈر آئی ڈیز", linkTo: "رائیڈر سے جوڑیں…",
   wT: "بند کرنے سے پہلے", wRepPrice: "رائیڈر کی قیمت مقرر نہیں — کمائی 0", wAppPrice: "ایپ کی قیمت نہ انوائس — آمدنی 0", wNoId: "رائیڈرز بغیر ایپ آئی ڈی",
   noRateYet: "اکاؤنٹنٹ نے ابھی آپ کی قیمت مقرر نہیں کی", rhMonthOrders: "اس ماہ آرڈرز",
-  usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
+  phoneL: "فون", usingDefault: "مقرر نہیں", resetDefault: "قیمت ہٹائیں",
 });
+Object.assign(RA.ar, { calcT: "طريقة احتساب الشرائح", calcAll: "كل الطلبات بسعر الشريحة التي وصل لها (مثال: 500 طلب × 16.50)", calcMarg: "كل شريحة على طلباتها فقط", calcNote: "أسلوب لوكيت: متى بلغ المندوب شريحة تُحسب كل طلباته بسعرها، لا الطلبات الزائدة فقط.", ordersBase: "الراتب الثابت عند تحقيق الهدف (ريال)", ordersTarget: "هدف الطلبات الشهري", perOrderDelta: "سعر الطلب الزائد عن الهدف (ريال)", perOrderShort: "خصم الطلب الناقص (قديم)", belowRate: "سعر الطلب إذا لم يبلغ الهدف (ريال) — يُحسب كل طلب بهذا السعر بدل الراتب الثابت",
+  scopeT: "تُحسب الشرائح على", scopeRider: "كل مندوب على حدة (حسب طلبات حسابه في التطبيق)", scopeTotal: "إجمالي طلبات التطبيق كلها", scopeNote: "لوكيت وأغلب التطبيقات تحسب الشريحة على طلبات كل حساب مندوب وحده — اختر «كل مندوب على حدة».",
+  colRev: "إيراد الشركة عنه", colProfit: "ربح الشركة منه", explain: "كيف حُسب؟" });
+const RA_NEW_EN = { calcT: "How tiers are applied", calcAll: "All orders at the tier reached (e.g. 500 orders × 16.50)", calcMarg: "Each tier only on its own orders", calcNote: "Lockit-style: once the rider reaches a tier, ALL his orders are paid at that tier rate.", ordersBase: "Fixed salary when target is met (SAR)", ordersTarget: "Monthly orders target", perOrderDelta: "Price per order above target (SAR)", perOrderShort: "Deduction per short order (legacy)", belowRate: "Price per order if target is NOT reached (SAR) — replaces the fixed salary",
+  scopeT: "Tiers are counted on", scopeRider: "Each rider separately (his own account orders)", scopeTotal: "Total orders of the whole app", scopeNote: "Most apps tier each rider account on its own — choose \"each rider\".",
+  colRev: "Company revenue from him", colProfit: "Company profit from him", explain: "How is it computed?" };
+Object.assign(RA.en, RA_NEW_EN); Object.assign(RA.ur, RA_NEW_EN);
+Object.assign(RA.ar, { ldOpenAll: "التوظيف متاح لجميع الجنسيات", ldOpenAllSub: "داخل المملكة العربية السعودية" });
+Object.assign(RA.en, { ldOpenAll: "Hiring is open to all nationalities", ldOpenAllSub: "inside the Kingdom of Saudi Arabia" });
+Object.assign(RA.ur, { ldOpenAll: "بھرتی تمام قومیتوں کے لیے کھلی ہے", ldOpenAllSub: "سعودی عرب کے اندر" });
 Object.assign(T.ar.nav, { repAccounting: "محاسبة المناديب", myEarnings: "أرباحي" });
 Object.assign(T.en.nav, { repAccounting: "Rep Accounting", myEarnings: "My Earnings" });
 Object.assign(T.ur.nav, { repAccounting: "نمائندہ اکاؤنٹنگ", myEarnings: "میری کمائی" });
@@ -6796,23 +6291,47 @@ function describePrice(p, RAx, sar) {
   const n = (v) => +v || 0;
   if (!p) return [];
   const fx = n(p.fixedMonthly) ? [`${n(p.fixedMonthly)} ${sar} ${RAx.dFixed}`] : [];
-  if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · ${n(p.perOrderDelta)} ${sar} ${RAx.dAbove}`].concat(fx);
-  if (p.mode === "tiers") return (p.tiers || []).map((tr) => `${RAx.dFrom} ${n(tr.from)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
+  if (p.mode === "target") return [`${n(p.ordersBase)} ${sar} ${RAx.dTarget} ${n(p.ordersTarget)} · +${n(p.perOrderDelta)} ${sar} ▲ ${RAx.dOrder}${hasBelow(p) ? ` · ▼ ${n(p.belowRate)} ${sar} ${RAx.dOrder}` : ""}`].concat(fx);
+  if (p.mode === "tiers") return tiersN(p).map((tr) => `${n(tr.from)} ${RAx.tierTo2} ${tr.to === Infinity ? RAx.andAbove : n(tr.to)}: ${n(tr.rate)} ${sar} ${RAx.dOrder}`).concat(fx);
   return [`${n(p.perOrder)} ${sar} ${RAx.dOrder}`].concat(fx);
 }
 
-function PriceForm({ value, onChange, RAx, sar }) {
+function BreakLines({ lines, lang, sar, tone }) {
+  const t = (x) => {
+    if (x.k === "base") return Lx(lang, `الراتب الثابت${x.f < 1 ? ` (بنسبة ${Math.round(x.f * 100)}% من الشهر، والهدف المحتسب ${x.target} طلب)` : ""}`, `Fixed salary${x.f < 1 ? ` (${Math.round(x.f * 100)}% of month, target ${x.target})` : ""}`);
+    if (x.k === "tierAll") return Lx(lang, `كل الطلبات بسعر الشريحة التي وصل لها: ${x.qty} × ${x.rate}`, `All orders at the tier reached: ${x.qty} × ${x.rate}`);
+    if (x.k === "adj") return Lx(lang, `يُخصم ما حُسب على حساب المندوب السابق (${x.base} طلب)`, `Less what was counted for the previous rider (${x.base})`);
+    if (x.k === "below") return Lx(lang, `لم يبلغ الهدف (${x.target} طلب) فكل طلب بسعر ثابت: ${x.qty} × ${x.rate}`, `Target (${x.target}) not reached, flat rate: ${x.qty} × ${x.rate}`);
+    if (x.k === "extra") return Lx(lang, `طلبات زائدة عن الهدف: ${x.qty} × ${x.rate}`, `Above target: ${x.qty} × ${x.rate}`);
+    if (x.k === "short") return Lx(lang, `طلبات ناقصة عن الهدف: ${x.qty} × ${x.rate} (خصم)`, `Below target: ${x.qty} × ${x.rate} (deduction)`);
+    if (x.k === "tier") return Lx(lang, `الطلبات ${x.from}–${x.to === Infinity ? "فأكثر" : x.to}: ${x.qty} × ${x.rate}`, `Orders ${x.from}–${x.to === Infinity ? "+" : x.to}: ${x.qty} × ${x.rate}`);
+    if (x.k === "unit") return Lx(lang, `${x.qty} طلب × ${x.rate}`, `${x.qty} orders × ${x.rate}`);
+    if (x.k === "fixed") return Lx(lang, "ثابت شهري", "Fixed monthly");
+    if (x.k === "share") return Lx(lang, `حصته من إيراد التطبيق (${x.qty} من ${x.of} طلب)`, `Share of app revenue (${x.qty} of ${x.of})`);
+    if (x.k === "invoice") return Lx(lang, "من فاتورة التطبيق (صافي الدفعات)", "From app invoice (net payments)");
+    return x.k;
+  };
+  return <div className="space-y-0.5">{lines.map((x, i) => <p key={i} className="num text-[11.5px] flex justify-between gap-3"><span>{t(x)}</span><b style={{ color: x.amt < 0 ? "#C0443A" : tone || "#12151D" }}>{x.amt < 0 ? "−" : ""}{fmt(Math.abs(x.amt))} {sar}</b></p>)}</div>;
+}
+function PriceForm({ value, onChange, RAx, sar, kind, lang }) {
   const p = value;
-  const [tryO, setTryO] = useState(480);
+  const [tryO, setTryO] = useState(100);
   const setNum = (k) => (e) => onChange({ ...p, [k]: e.target.value === "" ? "" : +e.target.value });
   const Field = ({ k }) => (
     <label className="block">
       <span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx[k]}</span>
-      <input type="number" step="any" value={p[k] ?? ""} onChange={setNum(k)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+      <NumInput step="any" value={p[k] ?? ""} onChange={setNum(k)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
     </label>
   );
-  const tiers = p.tiers || [{ from: 0, rate: 0 }];
-  const setTier = (i, k, v) => onChange({ ...p, tiers: tiers.map((tr, j) => (j === i ? { ...tr, [k]: v === "" ? "" : +v } : tr)) });
+  const tiers = tiersForm(p);
+  const setTiers = (arr) => onChange({ ...p, tiersV: 2, tiers: arr });
+  const setTier = (i, k, v) => setTiers(tiers.map((tr, j) => (j === i ? { ...tr, [k]: v === "" ? "" : +v } : tr)));
+  const addTier = () => {
+    const last = tiers[tiers.length - 1];
+    const lastTo = last.to === "" || last.to == null ? (+last.from || 1) + 99 : +last.to;
+    setTiers([...tiers.slice(0, -1), { ...last, to: lastTo }, { from: lastTo + 1, to: "", rate: "" }]);
+  };
+  const issues = p.mode === "tiers" ? tierIssues(p) : [];
   const res = priceCalc(p, +tryO || 0);
   const modes = [["unit", RAx.modeUnit], ["target", RAx.modeTarget], ["tiers", RAx.modeTiers]];
   return (
@@ -6829,61 +6348,96 @@ function PriceForm({ value, onChange, RAx, sar }) {
       </div>
       {p.mode === "target" && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Field k="ordersBase" /><Field k="ordersTarget" /><Field k="perOrderDelta" />
-          <Field k="fixedMonthly" />
+          {Field({ k: "ordersBase" })}{Field({ k: "ordersTarget" })}{Field({ k: "perOrderDelta" })}{Field({ k: "belowRate" })}
+          {Field({ k: "fixedMonthly" })}
+        </div>
+      )}
+      {p.mode === "target" && hasBelow(p) && +p.ordersBase > 0 && +p.ordersTarget > 0 && +p.ordersBase < +p.ordersTarget * +p.belowRate && (
+        <div className="rounded-lg p-2.5 text-[11.5px] font-semibold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.4)", color: "#B3392F" }}>
+          ⚠ {Lx(lang || "ar", `الراتب الثابت (${p.ordersBase}) أقل من ${p.ordersTarget} × ${p.belowRate} = ${fmt(+p.ordersTarget * +p.belowRate)}: المندوب الذي يصل ${(+p.ordersTarget) - 1} طلباً سيستلم أكثر ممن بلغ الهدف تماماً.`, `Fixed salary (${p.ordersBase}) is below ${p.ordersTarget} × ${p.belowRate} = ${fmt(+p.ordersTarget * +p.belowRate)}: a rider at ${(+p.ordersTarget) - 1} orders would earn more than one who hits the target.`)}
         </div>
       )}
       {p.mode === "tiers" && (
         <div className="space-y-2">
+          <div className="rounded-xl p-3" style={{ background: "rgba(15,165,121,.07)", border: "1px solid rgba(15,165,121,.28)" }}>
+            <p className="text-[11px] font-bold mb-2">{RAx.calcT}</p>
+            <div className="flex gap-2 flex-wrap">{[["all", RAx.calcAll], ["marginal", RAx.calcMarg]].map(([id, label]) => <button key={id} type="button" onClick={() => onChange({ ...p, tierCalc: id })} className="px-3 py-2 rounded-xl text-[11.5px] font-bold" style={{ background: (p.tierCalc || "marginal") === id ? "rgba(15,165,121,.2)" : "rgba(20,27,45,.04)", border: `1px solid ${(p.tierCalc || "marginal") === id ? "rgba(15,165,121,.6)" : "var(--line)"}`, color: (p.tierCalc || "marginal") === id ? "#0B5C46" : "var(--muted)" }}>{label}</button>)}</div>
+            <p className="text-[10.5px] mt-1.5" style={{ color: "var(--muted)" }}>{RAx.calcNote}</p>
+          </div>
+          {kind === "app" && (
+            <div className="rounded-xl p-3" style={{ background: "rgba(184,134,46,.08)", border: "1px solid rgba(184,134,46,.3)" }}>
+              <p className="text-[11px] font-bold mb-2">{RAx.scopeT}</p>
+              <div className="flex gap-2 flex-wrap">{[["rider", RAx.scopeRider], ["total", RAx.scopeTotal]].map(([id, label]) => <button key={id} type="button" onClick={() => onChange({ ...p, scope: id })} className="px-3 py-2 rounded-xl text-[11.5px] font-bold" style={{ background: (p.scope || "rider") === id ? "rgba(184,134,46,.2)" : "rgba(20,27,45,.04)", border: `1px solid ${(p.scope || "rider") === id ? "rgba(184,134,46,.6)" : "var(--line)"}`, color: (p.scope || "rider") === id ? "#6B4A12" : "var(--muted)" }}>{label}</button>)}</div>
+              <p className="text-[10.5px] mt-1.5" style={{ color: "var(--muted)" }}>{RAx.scopeNote}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-[10.5px] font-semibold px-0.5" style={{ color: "var(--muted)" }}>
+            <span>{RAx.tierFrom}</span><span>{RAx.tierTo}</span><span>{RAx.tierRate}</span><span className="w-9" />
+          </div>
           {tiers.map((tr, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
-              <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tierFrom}</span>
-                <input type="number" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
-              <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tierRate}</span>
-                <input type="number" step="any" value={tr.rate ?? ""} onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} /></label>
-              <button disabled={tiers.length <= 1} onClick={() => onChange({ ...p, tiers: tiers.filter((_, j) => j !== i) })} className="p-2.5 rounded-lg disabled:opacity-30" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={14} style={{ color: "#E8837A" }} /></button>
+            <div key={i} className="rounded-xl p-2" style={{ background: "rgba(20,27,45,.03)", border: "1px solid var(--line)" }}>
+              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                <NumInput min="1" value={tr.from ?? ""} onChange={(e) => setTier(i, "from", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <NumInput min="1" value={tr.to ?? ""} placeholder={RAx.andAbove} onChange={(e) => setTier(i, "to", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <NumInput step="any" value={tr.rate ?? ""} placeholder="13.50" onChange={(e) => setTier(i, "rate", e.target.value)} className="num w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+                <button disabled={tiers.length <= 1} onClick={() => setTiers(tiers.filter((_, j) => j !== i))} className="p-2.5 rounded-lg disabled:opacity-30" style={{ background: "rgba(232,131,122,.1)" }}><Trash2 size={14} style={{ color: "#E8837A" }} /></button>
+              </div>
+              {tr.rate !== "" && tr.rate != null && tr.from !== "" && (
+                <p className="text-[11px] mt-1.5 px-0.5" style={{ color: "#0B5C46" }}>
+                  {RAx.tierRow(tr.from, tr.to === "" || tr.to == null ? null : tr.to, tr.rate, sar)}
+                </p>
+              )}
             </div>
           ))}
-          <button onClick={() => onChange({ ...p, tiers: [...tiers, { from: (+tiers[tiers.length - 1].from || 0) + 100, rate: 0 }] })}
+          <button onClick={addTier}
             className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(20,27,45,.05)", border: "1px solid var(--line)" }}><Plus size={13} />{RAx.addTier}</button>
           <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{RAx.tiersNote}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2"><Field k="fixedMonthly" /></div>
+          {issues.length > 0 && (
+            <div className="rounded-lg p-2.5 text-[11.5px] font-semibold space-y-0.5" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.4)", color: "#B3392F" }}>
+              {issues.map((k) => <p key={k}>⚠ {RAx["tierErr_" + k]}</p>)}
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">{Field({ k: "fixedMonthly" })}</div>
         </div>
       )}
       {(p.mode === "unit" || !p.mode) && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Field k="perOrder" /><Field k="fixedMonthly" /></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{Field({ k: "perOrder" })}{Field({ k: "fixedMonthly" })}</div>
       )}
       <div className="rounded-xl p-3" style={{ background: "rgba(15,165,121,.06)", border: "1px solid rgba(15,165,121,.22)" }}>
         <p className="text-[11px] font-bold mb-2" style={{ color: "#0B5C46" }}>{RAx.tryIt}</p>
         <div className="flex items-end gap-3 flex-wrap">
           <label className="block"><span className="block text-[10px] mb-1" style={{ color: "var(--muted)" }}>{RAx.tryOrders}</span>
-            <input type="number" value={tryO} onChange={(e) => setTryO(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
+            <NumInput value={tryO} onChange={(e) => setTryO(e.target.value)} className="num w-24 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold outline-none" style={INPUT_ST} /></label>
           <div className="ms-auto text-end"><span className="block text-[10px]" style={{ color: "var(--muted)" }}>{RAx.tryResult}</span>
             <span className="num text-[20px] font-extrabold" style={{ color: "#0B5C46" }}>{fmt(res.total)} <span className="text-[11px]">{sar}</span></span></div>
         </div>
+        {validPrice(p) && +tryO > 0 && <div className="mt-2 pt-2" style={{ borderTop: "1px dashed rgba(15,165,121,.3)" }}><BreakLines lines={priceBreakdown(p, +tryO, 1, 0).lines} lang={lang || "ar"} sar={sar} tone="#0B5C46" /></div>}
       </div>
     </div>
   );
 }
 
-function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, actingEmployee }) {
+function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, actingEmployee, ext, setExt }) {
   const RAx = RA[lang], t = T[lang];
   const canEdit = role.id === "fin" || role.id === "gm";
   const [appId, setAppId] = useState(APPS[0].id);
   const stored = pricing && pricing[kind] && pricing[kind][appId];
   const base = stored || BLANK_PRICE;
-  const [draft, setDraft] = useState({ ...BLANK_PRICE, ...base });
+  const draftOf = (b) => ({ ...BLANK_PRICE, ...b, ...(stored && stored.mode === "tiers" && stored.tierCalc === undefined ? { tierCalc: "marginal" } : {}) });
+  const [draft, setDraft] = useState(draftOf(base));
   const [done, setDone] = useState(false);
-  useEffect(() => { setDraft({ ...BLANK_PRICE, ...base }); setDone(false); }, [appId, kind]); // eslint-disable-line
-  const dirty = JSON.stringify(draft) !== JSON.stringify({ ...BLANK_PRICE, ...base });
+  useEffect(() => { setDraft(draftOf(base)); setDone(false); }, [appId, kind]); // eslint-disable-line
+  const dirty = JSON.stringify(draft) !== JSON.stringify(draftOf(base));
   const writeFor = (ids, val) => setPricing((prev) => {
     const cur = prev || { app: {}, rep: {} };
     const map = { ...(cur[kind] || {}) };
     ids.forEach((id) => { if (val) map[id] = val; else delete map[id]; });
     return { ...cur, [kind]: map };
   });
-  const save = () => { if (!validPrice(draft)) return; writeFor([appId], draft); logAudit(setAuditLog, role, "pricing_" + kind, `${APPS.find((a) => a.id === appId)[lang]}`, actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
-  const copyAll = () => { writeFor(APPS.map((a) => a.id), draft); logAudit(setAuditLog, role, "pricing_" + kind + "_all", "all apps", actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
+  const needGm = role.id === "fin" && !!setExt; // أي تسعيرة (للشركة من التطبيق أو للمندوب) يضعها المحاسب تنتظر اعتماد المدير العام
+  const submitReq = (ids, val) => { extUpd(setExt, "priceReq", (a) => [{ id: uidX("PR"), kind, appIds: ids, price: val, old: (pricing && pricing[kind] && pricing[kind][ids[0]]) || null, by: byName(role, actingEmployee), at: riyadhNow().toISOString(), status: "pending" }, ...a]); logAudit(setAuditLog, role, "price_request", ids.map((i) => (APPS.find((a) => a.id === i) || {}).ar || i).join("، "), actingEmployee); };
+  const save = () => { if (!validPrice(draft)) return; if (needGm) { submitReq([appId], draft); setDone(true); setTimeout(() => setDone(false), 1800); return; } writeFor([appId], draft); logAudit(setAuditLog, role, "pricing_" + kind, `${APPS.find((a) => a.id === appId)[lang]}`, actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
+  const copyAll = () => { if (needGm) { submitReq(APPS.map((a) => a.id), draft); setDone(true); setTimeout(() => setDone(false), 1800); return; } writeFor(APPS.map((a) => a.id), draft); logAudit(setAuditLog, role, "pricing_" + kind + "_all", "all apps", actingEmployee); setDone(true); setTimeout(() => setDone(false), 1800); };
   return (
     <div className="space-y-4">
       <Panel title={kind === "app" ? RAx.appPriceT : RAx.repPriceT}>
@@ -6901,13 +6455,14 @@ function PricingTab({ lang, role, kind, pricing, setPricing, setAuditLog, acting
           })}
         </div>
         <fieldset disabled={!canEdit} style={{ border: 0, padding: 0, margin: 0, opacity: canEdit ? 1 : .85 }}>
-          <PriceForm value={draft} onChange={setDraft} RAx={RAx} sar={t.sar} />
+          <PriceForm value={draft} onChange={setDraft} RAx={RAx} sar={t.sar} kind={kind} lang={lang} />
         </fieldset>
         {canEdit ? (
           <div className="flex items-center gap-2.5 mt-5 flex-wrap">
             <Btn variant="accent" accent={role.glow} icon={done ? CheckCircle2 : BadgeCheck} onClick={save} disabled={!validPrice(draft)}>{done ? RAx.saved : RAx.save}</Btn>
             <Btn icon={Copy} onClick={copyAll}>{RAx.copyAll}</Btn>
-            {stored && <Btn icon={X} onClick={() => { writeFor([appId], null); }}>{RAx.resetDefault}</Btn>}
+            {stored && <Btn icon={X} onClick={() => { if (needGm) submitReq([appId], null); else writeFor([appId], null); }}>{RAx.resetDefault}</Btn>}
+            {needGm && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{kind === "app" ? Lx(lang, "تسعيرة الشركة (من التطبيق) تُرسل للمدير العام للاعتماد قبل أن تسري.", "Company (app) pricing goes to the GM for approval before it applies.") : Lx(lang, "تسعيرة المندوب تُرسل للمدير العام للاعتماد قبل أن تسري.", "Rider pricing goes to the GM for approval before it applies.")}</span>}
             {dirty && <span className="text-[11px] font-semibold" style={{ color: "#B8862E" }}>{RAx.unsaved}</span>}
           </div>
         ) : <p className="text-[11px] mt-4" style={{ color: "var(--muted)" }}>{RAx.viewOnly}</p>}
@@ -6920,6 +6475,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const RAx = RA[lang], t = T[lang], x = EX[lang];
   const [month, setMonth] = useState(riyadhNow().toISOString().slice(0, 7));
   const [openRep, setOpenRep] = useState(null);
+  const [calcRep, setCalcRep] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [adj, setAdj] = useState({ type: "deduct", amount: "", reason: "" });
   const [err, setErr] = useState("");
@@ -6965,7 +6521,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const exportReps = () => exportToExcel(res.repLines.map((l) => ({
     [RAx.colRep]: l.name, [RAx.riderId]: l.riderId, [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colGross]: l.gross,
     [`${RAx.colWeekend} (${RAx.count})`]: l.weekendCount, [RAx.colWeekend]: l.weekendAmt, [`${RAx.colAppViol} (${RAx.count})`]: l.appCount, [RAx.colAppViol]: l.appAmt,
-    [RAx.adjAdd]: l.manualAdds, [RAx.adjDeduct]: l.manualDeds, [RAx.colNet]: l.net })), `rep-accounting-${month}`, month);
+    [RAx.adjAdd]: l.manualAdds, [RAx.adjDeduct]: l.manualDeds, [RAx.colNet]: l.net, [Lx(lang, "الصافي بعد اليومية", "Net after daily ledger")]: l.payable != null ? l.payable : l.net, [RAx.colRev]: l.revKnown ? l.rev : "", [RAx.colProfit]: l.revKnown ? l.profit : "" })), `rep-accounting-${month}`, month);
   const exportApps = () => exportToExcel(res.appLines.map((l) => ({
     [RAx.colApp]: appName(l.app), [RAx.colOrders]: l.orders, [RAx.colCalc]: l.calc, [RAx.colInvNet]: l.invNet ?? "", [RAx.colActual]: l.actual ?? "",
     [RAx.colAppFines]: l.fines, [RAx.colRevenue]: l.revenue, [RAx.colRepCost]: l.repGross, [RAx.colMargin]: l.margin })), `app-accounting-${month}`, month);
@@ -6973,7 +6529,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   const cell = "py-2.5 px-2.5 text-[12px] whitespace-nowrap";
   const head = "py-2 px-2.5 text-[10.5px] font-bold text-start whitespace-nowrap";
   const mini = (val, onCh, w) => (
-    <input type="number" step="any" disabled={!canEdit} value={val} onChange={(e) => onCh(e.target.value)} className="num rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none text-end" style={{ ...INPUT_ST, width: w || 84, opacity: canEdit ? 1 : .7 }} />
+    <NumInput step="any" disabled={!canEdit} value={val} onChange={(e) => onCh(e.target.value)} className="num rounded-lg px-2 py-1.5 text-[12px] font-bold outline-none text-end" style={{ ...INPUT_ST, width: w || 84, opacity: canEdit ? 1 : .7 }} />
   );
   const T_ = res.totals;
   return (
@@ -7096,7 +6652,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full" style={{ minWidth: 900, borderCollapse: "collapse" }}>
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
-                {[RAx.colRep, RAx.riderId, RAx.colOrders, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colReimb, RAx.colNet].map((h) => <th key={h} className={head}>{h}</th>)}
+                {[RAx.colRep, RAx.riderId, RAx.colOrders, RAx.colGross, RAx.colWeekend, RAx.colAppViol, RAx.colAdj, RAx.colReimb, RAx.colNet, Lx(lang, "الصافي بعد اليومية", "Net after daily ledger"), RAx.colRev, RAx.colProfit].map((h) => <th key={h} className={head}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {res.repLines.map((l) => {
@@ -7105,10 +6661,12 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                   return (
                     <React.Fragment key={l.repId}>
                       <tr style={{ borderBottom: open ? "none" : "1px solid var(--line)" }}>
-                        <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span></td>
+                        <td className={cell}><b>{lang === "en" ? l.en : l.name}</b> <span className="text-[10px]" style={{ color: "var(--muted)" }}>{appName(l.app)}</span>
+                          <button onClick={() => setCalcRep(calcRep === l.repId ? null : l.repId)} className="block text-[10.5px] font-bold underline" style={{ color: "#8A611E" }}>{RAx.explain}</button></td>
                         <td className={cell}>{l.riderId ? <span className="num text-[11.5px] font-bold">{l.riderId}</span> : <Chip tone="warn" sm>{RAx.noRiderId}</Chip>}</td>
                         <td className={cell}>{num(l.orders)} {l.source === "invoice" ? <Chip tone="ok" sm>{RAx.srcInv}</Chip> : <Chip tone="n" sm>{RAx.srcDaily}</Chip>}
-                          {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}</td>
+                          {l.invOrders != null && l.recOrders !== l.invOrders && <span className="num text-[10px] ms-1" style={{ color: "#C0443A" }}>({RAx.colRecorded}: {l.recOrders})</span>}
+                          {l.baseOrders > 0 && <span className="block text-[10px]" style={{ color: "#8A611E" }}>{Lx(lang, `عدّاد التطبيق يكمل عن ${l.baseFrom || "سابقه"}: ${l.baseOrders} + ${l.orders} = ${l.baseOrders + l.orders} (داخلي)`, `App counter continues from ${l.baseFrom || "predecessor"}: ${l.baseOrders} + ${l.orders} = ${l.baseOrders + l.orders} (internal)`)}</span>}</td>
                         <td className={cell}>{l.unpriced ? <Chip tone="warn" sm>{RAx.noPolicy}</Chip> : num(l.gross)}</td>
                         <td className={cell}><span className="inline-flex items-center gap-1.5"><span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{l.weekendCount}×</span>
                           {canEdit ? mini(l.weekendAmt, (v) => setFine(l.repId, "weekend", v), 76) : num(l.weekendAmt, l.weekendAmt ? "#C0443A" : null)}</span></td>
@@ -7121,9 +6679,38 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                         </td>
                         <td className={cell}>{num(l.reimb || 0)}</td>
                         <td className={cell}>{num(l.net, l.net >= 0 ? "#0B5C46" : "#C0443A")}</td>
+                        <td className={cell}>{num(l.payable != null ? l.payable : l.net, (l.payable != null ? l.payable : l.net) >= 0 ? "#0B5C46" : "#C0443A")}
+                          {(l.dailyDed || 0) !== 0 && <span className="block text-[10px]" style={{ color: "var(--muted)" }}>{Lx(lang, `اليومية: ${l.dailyDed > 0 ? "−" : "+"}${fmt(Math.abs(l.dailyDed))} (سلف ${fmt(l.dailyAdv)} · كاش ${fmt(l.dailyCash)})`, `Ledger: ${l.dailyDed > 0 ? "−" : "+"}${fmt(Math.abs(l.dailyDed))}`)}</span>}</td>
+                        <td className={cell}>{l.revKnown ? num(l.rev) : <Chip tone="warn" sm>{RAx.noPolicy}</Chip>}</td>
+                        <td className={cell}>{l.revKnown ? num(l.profit, l.profit >= 0 ? "#0B5C46" : "#C0443A") : "—"}</td>
                       </tr>
+                      {calcRep === l.repId && (
+                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={12} className="px-2.5 pb-3">
+                          <div className="rounded-xl p-3 grid gap-4 md:grid-cols-2" style={{ background: "rgba(184,134,46,.06)", border: "1px solid rgba(184,134,46,.3)" }}>
+                            {l.detail.map((d) => (
+                              <React.Fragment key={d.app}>
+                                <div>
+                                  <p className="text-[12px] font-extrabold mb-1.5">{Lx(lang, `إيراد الشركة من ${appName(d.app)}`, `Company revenue from ${appName(d.app)}`)}</p>
+                                  <p className="text-[10.5px] mb-1.5" style={{ color: "var(--muted)" }}>{d.rev.lines[0] && d.rev.lines[0].k === "invoice" ? Lx(lang, "حسب فاتورة التطبيق المرفوعة.", "From the uploaded app invoice.") : d.scope === "rider" ? Lx(lang, `الشرائح تُحسب على طلبات هذا المندوب وحده (${d.orders} طلب)${d.base ? ` — العدّاد يكمل من ${d.base}` : ""}.`, `Tiers counted on this rider's own orders (${d.orders})${d.base ? ` — counter continues from ${d.base}` : ""}.`) : Lx(lang, "حصته من إيراد إجمالي التطبيق.", "His share of the app's total revenue.")}</p>
+                                  {d.rev.known ? <BreakLines lines={d.rev.lines} lang={lang} sar={t.sar} tone="#0B5C46" /> : <p className="text-[11.5px]" style={{ color: "#8A611E" }}>{RAx.wAppPrice}</p>}
+                                  <p className="num text-[13px] font-extrabold mt-1.5 flex justify-between"><span>{Lx(lang, "الإيراد", "Revenue")}</span><span style={{ color: "#0B5C46" }}>{fmt(Math.round(d.rev.total))} {t.sar}</span></p>
+                                </div>
+                                <div>
+                                  <p className="text-[12px] font-extrabold mb-1.5">{Lx(lang, "ما يستحقه المندوب", "What the rider earns")}</p>
+                                  {d.cost.known ? <BreakLines lines={d.cost.lines} lang={lang} sar={t.sar} /> : <p className="text-[11.5px]" style={{ color: "#8A611E" }}>{RAx.wRepPrice}</p>}
+                                  <p className="num text-[13px] font-extrabold mt-1.5 flex justify-between"><span>{Lx(lang, "إجمالي أجره", "Gross pay")}</span><span>{fmt(Math.round(d.cost.total))} {t.sar}</span></p>
+                                </div>
+                              </React.Fragment>
+                            ))}
+                            <div className="md:col-span-2 rounded-lg p-2.5 num text-[12.5px]" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+                              {Lx(lang, "ربح الشركة منه", "Company profit from him")} = {fmt(Math.round(l.rev))} {Lx(lang, "(إيراد)", "(revenue)")} − {fmt(Math.round(l.net))} {Lx(lang, "(صافي ما يستلمه بعد الغرامات والتسويات)", "(his net after fines & adjustments)")} = <b style={{ color: l.profit >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(Math.round(l.profit))} {t.sar}</b>
+                              {l.detail.some((d) => d.f < 1) && <span className="block text-[10.5px] mt-1" style={{ color: "#8A611E" }}>{Lx(lang, `الشهر لم ينتهِ بعد: الراتب الثابت والهدف يُحسبان بنسبة ما مضى من الشهر (${Math.round(Math.min(...l.detail.map((d) => d.f)) * 100)}%). سيكتمل الحساب في آخر الشهر.`, "Month still open: fixed salary and target are prorated to date.")}</span>}
+                            </div>
+                          </div>
+                        </td></tr>
+                      )}
                       {open && (
-                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={9} className="px-2.5 pb-3">
+                        <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={11} className="px-2.5 pb-3">
                           <div className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
                             <p className="text-[11.5px] font-bold mb-2">{RAx.adjT}</p>
                             {mine.map((m) => (
@@ -7137,7 +6724,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
                               <div className="flex items-end gap-2 flex-wrap mt-2">
                                 <select value={adj.type} onChange={(e) => setAdj({ ...adj, type: e.target.value })} className="rounded-lg px-2 py-2 text-[12px] font-bold outline-none" style={INPUT_ST}>
                                   <option value="deduct">{RAx.adjDeduct}</option><option value="add">{RAx.adjAdd}</option></select>
-                                <input type="number" placeholder={RAx.adjAmount} value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} className="num rounded-lg px-2.5 py-2 text-[12px] font-bold outline-none w-24" style={INPUT_ST} />
+                                <NumInput placeholder={RAx.adjAmount} value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} className="num rounded-lg px-2.5 py-2 text-[12px] font-bold outline-none w-24" style={INPUT_ST} />
                                 <input placeholder={RAx.adjReason} value={adj.reason} onChange={(e) => setAdj({ ...adj, reason: e.target.value })} className="flex-1 min-w-[180px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={INPUT_ST} />
                                 <Btn icon={Plus} onClick={() => addAdj(l.repId)}>{RAx.adjAddBtn}</Btn>
                               </div>
@@ -7178,7 +6765,7 @@ function SettlementClose({ lang, role, reps, setReps, reports, pricing, repSettl
   );
 }
 
-function RepAccountingPage({ lang, role, reps, setReps, reports, pricing, setPricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, repReceipts, setAuditLog, actingEmployee }) {
+function RepAccountingPage({ lang, role, reps, setReps, reports, pricing, setPricing, repSettlements, setRepSettlements, weekendFine, violationPenalty, expenses, repReceipts, setAuditLog, actingEmployee, ext, setExt }) {
   const RAx = RA[lang];
   const [tab, setTab] = useState("close");
   const tabs = [["close", RAx.tabClose, CheckCircle2], ["app", RAx.tabApp, Building2], ["rep", RAx.tabRep, Users]];
@@ -7196,7 +6783,8 @@ function RepAccountingPage({ lang, role, reps, setReps, reports, pricing, setPri
       </div>
       {tab === "close" && <SettlementClose lang={lang} role={role} reps={reps} setReps={setReps} reports={reports} pricing={pricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
         weekendFine={weekendFine} violationPenalty={violationPenalty} expenses={expenses} repReceipts={repReceipts} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
-      {tab !== "close" && <PricingTab lang={lang} role={role} kind={tab} pricing={pricing} setPricing={setPricing} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
+      {tab !== "close" && <PricingTab lang={lang} role={role} kind={tab} pricing={pricing} setPricing={setPricing} setAuditLog={setAuditLog} actingEmployee={actingEmployee} ext={ext} setExt={setExt} />}
+      {tab !== "close" && <PriceReqPanel lang={lang} role={role} pricing={pricing} setPricing={setPricing} ext={ext} setExt={setExt} setAuditLog={setAuditLog} actingEmployee={actingEmployee} />}
     </div>
   );
 }
@@ -7213,7 +6801,7 @@ function MyEarningsPage({ lang, role, user, activeRep, reports, pricing, repSett
   const rec = repSettlements.find((s) => s.month === month);
   const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === activeRep.id) : null;
   const entries = monthEntriesFor(reports, activeRep.id, month).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, monthFactor(month));
+  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, monthFactor(month), month);
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const manual = (inputs.manual || []).filter((m) => m.repId === activeRep.id);
   const reimbLive = r2((repReceipts || []).filter((q) => q.repId === activeRep.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
@@ -7332,28 +6920,31 @@ Object.assign(T.ar.nav, { today: "اليوم", financeHub: "المالية", rep
 Object.assign(T.en.nav, { today: "Today", financeHub: "Finance", repsHub: "Riders", commsHub: "Communication", hrHub: "HR", legalHub: "Legal & Contracts" });
 Object.assign(T.ur.nav, { today: "آج", financeHub: "مالیات", repsHub: "نمائندے", commsHub: "رابطہ", hrHub: "انسانی وسائل", legalHub: "قانونی اور معاہدے" });
 
+Object.assign(T.ar.nav, { dailyLedger: "يومية المناديب", myDaily: "يوميتي" });
+Object.assign(T.en.nav, { dailyLedger: "Riders' Daily Ledger", myDaily: "My Daily" });
+Object.assign(T.ur.nav, { dailyLedger: "Riders' Daily Ledger", myDaily: "My Daily" });
 const HUBS = {
-  financeHub: ["repAccounting", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
-  repsHub: ["pulse", "leaderboard", "hall"],
-  commsHub: ["tickets", "chat", "circulars"],
-  hrHub: ["hiring", "employees", "iqama"],
-  legalHub: ["charter", "contracts", "cases", "compliance"],
+  financeHub: ["repAccounting", "dailyLedger", "settleFlow", "closeList", "cashflow", "whatIf", "walletAdmin", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
+  repsHub: ["pulse", "retention", "perfPlans", "coverage", "teams", "dayOps", "perfBoard", "incidents", "leavesAdmin", "trainingAdmin"],
+  commsHub: ["tickets", "chat", "circulars", "messages"],
+  hrHub: ["appAvail", "referrals", "pipeline", "hiring", "repFiles", "employees", "empFile", "offboard", "iqama"],
+  legalHub: ["charter", "contracts", "cases", "compliance", "crm"],
 };
 const HUB_OF = {};
 Object.keys(HUBS).forEach((h) => HUBS[h].forEach((m) => { HUB_OF[m] = h; }));
 const PRIMARY_NAV = {
-  gm: ["today", "decisions", "financeHub", "repsHub", "commsHub"],
+  gm: ["today", "cockpit", "decisions", "financeHub", "repsHub", "commsHub"],
   opsm: ["today", "shifts", "repsHub", "cars", "commsHub"],
   ops: ["today", "shifts", "pulse", "cars", "commsHub"],
   fin: ["today", "financeHub", "commsHub"],
   hr: ["today", "hrHub", "repsHub", "commsHub", "attendance"],
   legal: ["today", "legalHub", "commsHub", "attendance"],
   advisor: ["today", "boardCouncil", "decisions", "financeHub"],
-  rep: ["riderHome", "myEarnings", "attendance", "commsHub"],
+  rep: ["riderHome", "coach", "myEarnings", "myScore", "myWallet", "myDaily", "academy", "myLeave", "reportInc", "support", "myRefer", "teams", "riderReceipts", "commsHub", "mystory", "riderWelcome"],
 };
 const TODAY_QUICK = {
-  gm: ["decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
-  fin: ["repAccounting", "payrollRuns", "expenses"], hr: ["hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
+  gm: ["inbox", "decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
+  fin: ["repAccounting", "payrollRuns", "expenses"], hr: ["repFiles", "hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
   advisor: ["decisions", "payrollRuns", "boardCouncil"],
 };
 
@@ -7493,37 +7084,101 @@ const RIDER_MODE = (() => {
 })();
 Object.assign(RA.ar, {
   rhClockIn: "سجّل حضورك", rhClockOut: "سجّل انصرافك", rhDone: "اكتمل يومك ✓", rhSince: "منذ", rhToday: "اليوم", rhNoEntry: "لم يسجّل المشرف طلباتك بعد",
-  rhGoal: "هدف الشهر", rhRank: "ترتيبك هذا الشهر", rhOf: "من", rhDoc: "إقامتك تنتهي خلال", rhDays: "يوم — راجع الموارد البشرية", rhMsgs: "رسائل جديدة", rhTickets: "طلباتك المفتوحة",
-  rhShift: "ورديتك اليوم", rhNet: "صافي ربحك هذا الشهر", rhShare: "مشاركة كشفي على واتساب",
+  rhGoal: "هدف الشهر", rhRank: "ترتيبك هذا الشهر", rhOf: "من", rhDoc: "إقامتك تنتهي خلال", rhDays: "يوم — راجع الموارد البشرية", rhMsgs: "رسائل جديدة", rhTickets: "طلباتك المفتوحة",  rhNet: "صافي ربحك هذا الشهر", rhShare: "مشاركة كشفي على واتساب",
   riderLinkT: "رابط تطبيق المندوب", riderLinkSub: "أرسله للمناديب — يفتح مباشرة على دخول المندوب ومتصل بنفس قاعدة البيانات.", copy: "نسخ الرابط", copied: "تم النسخ ✓", waShare: "إرسال واتساب",
   riderLoginT: "تطبيق المندوب", riderLoginSub: "سجّل دخولك برقم الهوية للبدء", missingEntryNotif: "لم تُدخل طلبات أمس بعد — أدخلها الآن",
   waMsg: "كشف أرباحي من بوارق الشرق",
 });
 Object.assign(RA.en, {
   rhClockIn: "Clock in", rhClockOut: "Clock out", rhDone: "Day complete ✓", rhSince: "since", rhToday: "Today", rhNoEntry: "Your supervisor hasn't logged your orders yet",
-  rhGoal: "Month goal", rhRank: "Your rank this month", rhOf: "of", rhDoc: "Your residency expires in", rhDays: "days — contact HR", rhMsgs: "New messages", rhTickets: "Your open requests",
-  rhShift: "Today's shift", rhNet: "Your net profit this month", rhShare: "Share my statement on WhatsApp",
+  rhGoal: "Month goal", rhRank: "Your rank this month", rhOf: "of", rhDoc: "Your residency expires in", rhDays: "days — contact HR", rhMsgs: "New messages", rhTickets: "Your open requests",  rhNet: "Your net profit this month", rhShare: "Share my statement on WhatsApp",
   riderLinkT: "Rider app link", riderLinkSub: "Send it to riders — opens straight on rider login and uses the same database.", copy: "Copy link", copied: "Copied ✓", waShare: "Send on WhatsApp",
   riderLoginT: "Rider App", riderLoginSub: "Sign in with your ID number to start", missingEntryNotif: "Yesterday's orders haven't been entered yet — enter them now",
   waMsg: "My earnings statement from Bawariq Al-Sharq",
 });
 Object.assign(RA.ur, {
   rhClockIn: "حاضری لگائیں", rhClockOut: "رخصتی لگائیں", rhDone: "دن مکمل ✓", rhSince: "سے", rhToday: "آج", rhNoEntry: "سپروائزر نے ابھی آرڈرز درج نہیں کیے",
-  rhGoal: "ماہانہ ہدف", rhRank: "اس مہینے آپ کا درجہ", rhOf: "میں سے", rhDoc: "آپ کا اقامہ ختم ہو رہا ہے", rhDays: "دن میں — ایچ آر سے رجوع کریں", rhMsgs: "نئے پیغامات", rhTickets: "آپ کی کھلی درخواستیں",
-  rhShift: "آج کی شفٹ", rhNet: "اس مہینے آپ کا خالص منافع", rhShare: "واٹس ایپ پر شیئر کریں",
+  rhGoal: "ماہانہ ہدف", rhRank: "اس مہینے آپ کا درجہ", rhOf: "میں سے", rhDoc: "آپ کا اقامہ ختم ہو رہا ہے", rhDays: "دن میں — ایچ آر سے رجوع کریں", rhMsgs: "نئے پیغامات", rhTickets: "آپ کی کھلی درخواستیں",  rhNet: "اس مہینے آپ کا خالص منافع", rhShare: "واٹس ایپ پر شیئر کریں",
   riderLinkT: "نمائندہ ایپ کا لنک", riderLinkSub: "نمائندوں کو بھیجیں — براہ راست لاگ ان کھلتا ہے۔", copy: "لنک کاپی", copied: "کاپی ہو گیا ✓", waShare: "واٹس ایپ پر بھیجیں",
   riderLoginT: "نمائندہ ایپ", riderLoginSub: "شروع کرنے کے لیے شناختی نمبر سے لاگ ان کریں", missingEntryNotif: "کل کے آرڈرز ابھی درج نہیں ہوئے",
   waMsg: "بوارق الشرق سے میری کمائی کا گوشوارہ",
 });
-Object.assign(T.ar.nav, { riderHome: "الرئيسية" });
-Object.assign(T.en.nav, { riderHome: "Home" });
-Object.assign(T.ur.nav, { riderHome: "ہوم" });
+/* ═══════════  ترحيب المندوب + ملفات المناديب + استعادة الحساب  ═══════════ */
+Object.assign(RA.ar, {
+  wlHi: "أهلاً وسهلاً", wlJoin: "انضممتَ إلى عائلة بوارق الشرق",
+  wlJoinD: "أنت الآن جزء من شركة كبيرة تعمل في أكثر من تطبيق توصيل، وتضع مندوبيها في المقدمة. وجودك معنا مصدر فخر لنا، وهذا التطبيق وُلد ليخدمك.",
+  wlPrivT: "تطبيق خاص بينك وبين بوارق الشرق فقط",
+  wlPrivD: "هذا التطبيق مخصّص لك ولشركتك فقط. بياناتك وأرباحك ومحادثاتك لا يراها أحد خارج بوارق الشرق، ولا تُشارك مع أي جهة أخرى.",
+  wlWhyT: "لماذا أنشأنا هذا التطبيق؟",
+  wlWhyD: "لنطوّر نظام التوصيل معاً، ونسهّل التواصل بيننا وبينك، ونفتح قنوات مباشرة وواضحة تصل بها إلى الشركة في أي وقت دون واسطة ولا تعقيد.",
+  wlP1T: "أرباحك أمامك", wlP1D: "تعرف أرباحك وطلباتك ومخالفاتك بوضوح، وتتحدث أولاً بأول بعد اعتماد المحاسب.",
+  wlP2T: "تواصل مباشر مع مشرفك", wlP2D: "اتصال أو واتساب لمشرفك بضغطة، وتصلك تعليمات الشركة مباشرة.",
+  wlP3T: "رسائل وتعاميم", wlP3D: "كل قرار أو تنبيه يخصك يصلك في التطبيق ويظهر لنا أنك اطّلعت عليه.",
+  wlP4T: "إيصالات وطلبات", wlP4D: "ارفع إيصال البنزين، وقدّم اعتراضاً على أي يوم، وافتح تذكرة لأي مشكلة.",
+  wlP5T: "نكبر معك", wlP5D: "نطوّر التطبيق بناءً على ملاحظاتك، وكل اقتراح منك يصل مباشرة للإدارة.",
+  wlP6T: "حقك محفوظ", wlP6D: "كل رقم يُحتسب بتسعيرة يعتمدها المحاسب فقط، ونوضّح لك كيف حُسب.",
+  wlPledgeT: "عهدنا لك", wlPledgeD: "شفافية في الحساب، وسرعة في الرد، واحترام لوقتك وجهدك. أنت شريك في نجاح بوارق الشرق.",
+  wlStart: "ابدأ الآن", wlAboutBtn: "عن التطبيق ورسالتنا لك", rhMySup: "مشرفك", rhCall: "اتصال",
+  forgot: "نسيت كلمة السر؟", forgotT: "استعادة الحساب", forgotSub: "أدخل رقم هويتك ورقم جوالك، وسيصل الطلب للموارد البشرية لتزويدك بكلمة سر جديدة.",
+  forgotSend: "إرسال الطلب", forgotDone: "تم إرسال طلبك للموارد البشرية. سيتواصلون معك بكلمة سر جديدة.", forgotErr: "أدخل رقم هوية صحيح (10 أرقام) ورقم جوال.", forgotBack: "رجوع لتسجيل الدخول",
+  rfTitle: "ملفات المناديب", rfSub: "قسم خاص بالموارد البشرية فقط: بيانات كل مندوب ودخوله للتطبيق. عدّل أي بيان أو استعد الحساب.", rfOnlyHr: "هذا القسم للموارد البشرية فقط.",
+  rfResets: "طلبات استعادة الحساب", rfUnknown: "هوية غير مسجّلة", rfNewPw: "كلمة سر جديدة", rfGen: "توليد", rfRestore: "استعادة الحساب", rfReject: "رفض", rfNoMatch: "لا يوجد مندوب بهذه الهوية.",
+  rfAll: "كل المناديب", rfSearch: "بحث بالاسم أو الجوال أو الهوية", rfName: "الاسم", rfPhone: "رقم الجوال", rfNid: "رقم الهوية", rfPw: "كلمة سر التطبيق", rfStatus: "الحالة",
+  rfActive: "نشط", rfPending: "قيد الاعتماد", rfSuspended: "موقوف", rfEdit: "تعديل", rfDupNid: "رقم الهوية مسجّل لمندوب آخر",
+});
+Object.assign(RA.en, {
+  wlHi: "Welcome", wlJoin: "You've joined the Bawariq Al-Sharq family",
+  wlJoinD: "You're now part of a large company working across multiple delivery apps and putting its riders first. Having you with us is a source of pride, and this app was built to serve you.",
+  wlPrivT: "A private app between you and Bawariq Al-Sharq only",
+  wlPrivD: "This app is exclusively for you and your company. Your data, earnings and conversations are not visible outside Bawariq Al-Sharq and are never shared with anyone else.",
+  wlWhyT: "Why did we build this app?",
+  wlWhyD: "To improve the delivery system together, make communication between us easy, and open direct, clear channels to reach the company at any time — no middlemen, no hassle.",
+  wlP1T: "Your earnings, clearly", wlP1D: "See your earnings, orders and violations, updated as soon as the accountant approves.",
+  wlP2T: "Direct line to your supervisor", wlP2D: "Call or WhatsApp your supervisor in one tap; company instructions reach you directly.",
+  wlP3T: "Messages & circulars", wlP3D: "Every decision or alert for you arrives in the app, and we can see you've read it.",
+  wlP4T: "Receipts & requests", wlP4D: "Upload fuel receipts, dispute any day, and open a ticket for any issue.",
+  wlP5T: "We grow with you", wlP5D: "We improve the app from your feedback; every suggestion reaches management.",
+  wlP6T: "Your rights, protected", wlP6D: "Every number uses pricing approved by the accountant only, and we show how it was calculated.",
+  wlPledgeT: "Our promise", wlPledgeD: "Transparent accounting, fast replies, and respect for your time and effort. You're a partner in Bawariq Al-Sharq's success.",
+  wlStart: "Get started", wlAboutBtn: "About the app & our message", rhMySup: "Your supervisor", rhCall: "Call",
+  forgot: "Forgot password?", forgotT: "Recover account", forgotSub: "Enter your ID and phone number; the request goes to HR who will give you a new password.",
+  forgotSend: "Send request", forgotDone: "Your request was sent to HR. They'll contact you with a new password.", forgotErr: "Enter a valid 10-digit ID and a phone number.", forgotBack: "Back to login",
+  rfTitle: "Rider Files", rfSub: "HR-only section: each rider's details and app login. Edit any detail or restore an account.", rfOnlyHr: "This section is for HR only.",
+  rfResets: "Account recovery requests", rfUnknown: "Unregistered ID", rfNewPw: "New password", rfGen: "Generate", rfRestore: "Restore account", rfReject: "Reject", rfNoMatch: "No rider with this ID.",
+  rfAll: "All riders", rfSearch: "Search by name, phone or ID", rfName: "Name", rfPhone: "Phone", rfNid: "ID number", rfPw: "App password", rfStatus: "Status",
+  rfActive: "Active", rfPending: "Pending", rfSuspended: "Suspended", rfEdit: "Edit", rfDupNid: "ID number is registered to another rider",
+});
+Object.assign(RA.ur, {
+  wlHi: "خوش آمدید", wlJoin: "آپ بواریق الشرق کے خاندان میں شامل ہو گئے",
+  wlJoinD: "آپ اب ایک بڑی کمپنی کا حصہ ہیں جو کئی ڈیلیوری ایپس پر کام کرتی ہے اور اپنے رائیڈرز کو اولیت دیتی ہے۔ یہ ایپ آپ کی خدمت کے لیے بنی ہے۔",
+  wlPrivT: "یہ ایپ صرف آپ اور بواریق الشرق کے درمیان ہے",
+  wlPrivD: "آپ کا ڈیٹا، کمائی اور گفتگو بواریق الشرق کے باہر کوئی نہیں دیکھ سکتا۔",
+  wlWhyT: "ہم نے یہ ایپ کیوں بنائی؟",
+  wlWhyD: "ڈیلیوری نظام کو بہتر بنانے، رابطہ آسان کرنے اور کمپنی تک براہِ راست رسائی کے لیے۔",
+  wlP1T: "آپ کی کمائی واضح", wlP1D: "اکاؤنٹنٹ کی منظوری کے بعد کمائی، آرڈرز اور خلاف ورزیاں دیکھیں۔",
+  wlP2T: "سپروائزر سے براہِ راست رابطہ", wlP2D: "ایک ٹیپ میں کال یا واٹس ایپ۔",
+  wlP3T: "پیغامات اور سرکلر", wlP3D: "ہر فیصلہ یا الرٹ ایپ میں آپ تک پہنچتا ہے۔",
+  wlP4T: "رسیدیں اور درخواستیں", wlP4D: "ایندھن کی رسید اپ لوڈ کریں، کسی دن پر اعتراض کریں، ٹکٹ کھولیں۔",
+  wlP5T: "ہم آپ کے ساتھ بڑھتے ہیں", wlP5D: "آپ کی رائے سے ایپ بہتر ہوتی ہے۔",
+  wlP6T: "آپ کا حق محفوظ", wlP6D: "ہر رقم صرف اکاؤنٹنٹ کی منظور شدہ قیمت سے بنتی ہے۔",
+  wlPledgeT: "ہمارا وعدہ", wlPledgeD: "شفاف حساب، فوری جواب، اور آپ کے وقت کا احترام۔",
+  wlStart: "شروع کریں", wlAboutBtn: "ایپ کے بارے میں", rhMySup: "آپ کا سپروائزر", rhCall: "کال",
+  forgot: "پاس ورڈ بھول گئے؟", forgotT: "اکاؤنٹ بحالی", forgotSub: "شناختی نمبر اور فون درج کریں؛ درخواست ایچ آر کو جائے گی۔",
+  forgotSend: "درخواست بھیجیں", forgotDone: "آپ کی درخواست ایچ آر کو بھیج دی گئی۔", forgotErr: "درست 10 ہندسوں کا شناختی نمبر اور فون درج کریں۔", forgotBack: "لاگ اِن پر واپس",
+  rfTitle: "رائیڈر فائلیں", rfSub: "صرف ایچ آر کے لیے: ہر رائیڈر کی معلومات اور ایپ لاگ اِن۔", rfOnlyHr: "یہ سیکشن صرف ایچ آر کے لیے ہے۔",
+  rfResets: "اکاؤنٹ بحالی کی درخواستیں", rfUnknown: "غیر رجسٹرڈ شناخت", rfNewPw: "نیا پاس ورڈ", rfGen: "بنائیں", rfRestore: "اکاؤنٹ بحال کریں", rfReject: "مسترد", rfNoMatch: "اس شناخت کا کوئی رائیڈر نہیں۔",
+  rfAll: "تمام رائیڈرز", rfSearch: "نام، فون یا شناخت سے تلاش", rfName: "نام", rfPhone: "فون", rfNid: "شناختی نمبر", rfPw: "ایپ پاس ورڈ", rfStatus: "حالت",
+  rfActive: "فعال", rfPending: "زیرِ التوا", rfSuspended: "معطل", rfEdit: "ترمیم", rfDupNid: "یہ شناختی نمبر دوسرے رائیڈر کا ہے",
+});
+Object.assign(T.ar.nav, { riderHome: "الرئيسية", repFiles: "ملفات المناديب", riderWelcome: "عن التطبيق" });
+Object.assign(T.en.nav, { riderHome: "Home", repFiles: "Rider Files", riderWelcome: "About the app" });
+Object.assign(T.ur.nav, { riderHome: "ہوم", repFiles: "رائیڈر فائلیں", riderWelcome: "ایپ کے بارے میں" });
 
 function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipts) {
   const rec = repSettlements.find((s) => s.month === month);
   const closedLine = rec && rec.closed && rec.snapshot ? rec.snapshot.repLines.find((l) => l.repId === rep.id) : null;
   const entries = monthEntriesFor(reports, rep.id, month);
-  const c = repMonthCalc(entries, rep, pricing, wf, vp, monthFactor(month));
+  const c = repMonthCalc(entries, rep, pricing, wf, vp, monthFactor(month), month);
   if (closedLine) return { net: closedLine.net, final: true, orders: closedLine.orders };
   const inputs = { ...EMPTY_SETTLE_INPUTS, ...((rec && rec.inputs) || {}) };
   const fo = inputs.fineOverride[rep.id] || {};
@@ -7533,30 +7188,76 @@ function repNetFor(rep, month, reports, pricing, repSettlements, wf, vp, receipt
   return { net: r2(c.gross + adds + reimb - deds - (fo.weekend != null ? +fo.weekend : c.weekendAuto) - (fo.app != null ? +fo.app : c.appAuto)), final: false, orders: c.orders, unpriced: c.unpriced };
 }
 
-function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, setAttendance, shifts, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
-  const RAx = RA[lang], t = T[lang], x = EX[lang];
-  const [toast, setToast] = useState("");
+/* ═══════════  ترحيب المندوب — يظهر عند أول دخول ومتاح دائماً من «عن التطبيق»  ═══════════ */
+function RiderWelcome({ lang, rep, onDone, asPage }) {
+  const RAx = RA[lang], t = T[lang];
+  const pillars = [[Wallet, "wlP1T", "wlP1D"], [MessageSquare, "wlP2T", "wlP2D"], [Users, "wlP3T", "wlP3D"], [Camera, "wlP4T", "wlP4D"], [Rocket, "wlP5T", "wlP5D"], [ShieldCheck, "wlP6T", "wlP6D"]];
+  const body = (
+    <div className="relative max-w-xl mx-auto px-4 py-6 space-y-5">
+      <div className="relative overflow-hidden rounded-[28px] px-5 py-8 text-center" style={{ background: "radial-gradient(120% 140% at 50% 0%,#1B2A4A 0%,#0E1424 55%,#080C18 100%)", border: "1px solid rgba(228,184,92,.35)" }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(45% 55% at 50% 0%,rgba(228,184,92,.22),transparent 70%)" }} />
+        <div className="relative flex flex-col items-center">
+          <BigLogo size={96} />
+          <p className="text-[12px] font-bold mt-4" style={{ color: "rgba(255,255,255,.6)" }}>{RAx.wlHi}</p>
+          <h1 className="gold-text font-extrabold mt-1" style={{ fontSize: "clamp(26px,7vw,38px)", lineHeight: 1.15 }}>{rep ? (lang === "en" ? rep.en : rep.ar) : t.brand}</h1>
+          <div className="h-px w-24 my-4" style={{ background: "linear-gradient(90deg,transparent,#E4B85C,transparent)" }} />
+          <p className="text-[16px] font-extrabold" style={{ color: "#fff" }}>{RAx.wlJoin}</p>
+          <p className="text-[12.5px] mt-2 leading-relaxed max-w-md" style={{ color: "rgba(255,255,255,.78)" }}>{RAx.wlJoinD}</p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl p-4 flex gap-3 items-start" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.3)" }}>
+        <Lock size={22} style={{ color: "#0B5C46" }} className="shrink-0 mt-0.5" />
+        <div><p className="text-[14px] font-extrabold" style={{ color: "#0B5C46" }}>{RAx.wlPrivT}</p><p className="text-[12.5px] mt-1 leading-relaxed" style={{ color: "#12151D" }}>{RAx.wlPrivD}</p></div>
+      </div>
+
+      <div className="rounded-2xl p-4" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+        <p className="text-[14px] font-extrabold">{RAx.wlWhyT}</p>
+        <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: "var(--muted)" }}>{RAx.wlWhyD}</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {pillars.map(([Ic, tk, dk]) => (
+          <div key={tk} className="rounded-2xl p-4 flex gap-3" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+            <span className="grid place-items-center w-11 h-11 rounded-xl shrink-0" style={{ background: "rgba(228,184,92,.16)" }}><Ic size={20} style={{ color: "#B8862E" }} /></span>
+            <div><p className="text-[13.5px] font-extrabold">{RAx[tk]}</p><p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>{RAx[dk]}</p></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg,#0E1424,#1B2A4A)", color: "#fff" }}>
+        <p className="text-[14px] font-extrabold gold-text">{RAx.wlPledgeT}</p>
+        <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(255,255,255,.82)" }}>{RAx.wlPledgeD}</p>
+      </div>
+
+      {onDone && <Btn variant="gold" full icon={Rocket} onClick={onDone}>{RAx.wlStart}</Btn>}
+    </div>
+  );
+  if (asPage) return body;
+  return (
+    <div className="fixed inset-0 z-[95] overflow-y-auto" style={{ background: "var(--bg, #F5F6F8)" }}>
+      <div className="mesh" />
+      {body}
+    </div>
+  );
+}
+function RiderAboutPage({ lang, activeRep }) { return <RiderWelcome lang={lang} rep={activeRep} asPage />; }
+
+function RiderHome({ onLogout, lang, role, user, activeRep, reps, employees, reports, tickets, repMessages, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, goPage }) {
+  const RAx = RA[lang], t = T[lang];
+  const [seenW, markW] = usePersonalFlag("welcome_seen_" + user);
   if (!activeRep) return <EmptyHint lang={lang} />;
   const today = riyadhToday(), month = today.slice(0, 7);
-  const myToday = attendance.find((a) => a.key === user && a.date === today);
   const todayEntries = monthEntriesFor(reports, activeRep.id, month).filter((e) => e.date === today);
   const tOrders = todayEntries.reduce((s, e) => s + (e.orders || 0), 0);
   const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
-  const lb = computeLeaderboard(reps, reports, month);
-  const sorted = [...lb.stats].sort((a, b) => b.orders - a.orders);
-  const rank = Math.max(1, sorted.findIndex((s) => s.rep.id === activeRep.id) + 1);
   const dd = activeRep.idExpiry ? daysUntil(activeRep.idExpiry) : null;
   const unread = repMessages.filter((m) => m.repId === user && !m.seen).length;
   const openTk = tickets.filter((tk) => tk.repId === user && tk.status === "open").length;
-  const sh = shifts.find((s) => s.repId === user && s.date === today);
-  const pct = Math.min(100, Math.round((me.orders / MONTH_TARGET.orders) * 100));
-  const doClock = () => {
-    const at = riyadhTimeHM();
-    if (!myToday) setAttendance((prev) => [...prev, { key: user, role: "rep", name: lang === "en" ? activeRep.en : activeRep.ar, date: today, in: at, out: null }]);
-    else if (!myToday.out) setAttendance((prev) => prev.map((a) => (a.key === user && a.date === today ? { ...a, out: at } : a)));
-    setToast(at); setTimeout(() => setToast(""), 2500);
-  };
-  const state = !myToday ? "in" : !myToday.out ? "out" : "done";
+  const sup = (employees || []).find((e) => e.id === activeRep.sup);
+  const supPhone = sup && sup.phone ? String(sup.phone).replace(/\D/g, "") : "";
+  const tgt = monthTargetOf(pricing, activeRep.app);
+  const pct = tgt ? Math.min(100, Math.round((me.orders / tgt) * 100)) : null;
   const Tile = ({ icon: Ic, label, value, onClick, tone }) => (
     <button onClick={onClick} className="rounded-2xl p-4 text-start transition active:scale-[.98]" style={{ background: "#fff", border: "1px solid var(--line)" }}>
       <Ic size={18} style={{ color: tone || role.accent }} /><div className="num text-[22px] font-extrabold mt-2">{value}</div><div className="text-[11.5px]" style={{ color: "var(--muted)" }}>{label}</div>
@@ -7564,16 +7265,13 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
   );
   return (
     <div className="space-y-4">
+      {!seenW && <RiderWelcome lang={lang} rep={activeRep} onDone={markW} />}
       <InstallBanner lang={lang} />
       <div className="rounded-3xl p-5 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#0E1424,#1B2A4A)", color: "#fff" }}>
         <p className="text-[12px] opacity-70">{RAx.rhToday} · {today}</p>
         <h2 className="text-[22px] font-extrabold mt-1">{lang === "en" ? activeRep.en : activeRep.ar}</h2>
-        {sh && <p className="text-[12px] mt-1 opacity-75">{RAx.rhShift}: <b className="num">{sh.start} – {sh.end}</b></p>}
-        <button onClick={doClock} disabled={state === "done"} className="w-full mt-5 rounded-2xl py-4 flex items-center justify-center gap-3 text-[16px] font-extrabold transition active:scale-[.98]"
-          style={{ background: state === "in" ? "linear-gradient(120deg,#3FD8B4,#2BAE8E)" : state === "out" ? "linear-gradient(120deg,#E4B85C,#C08A22)" : "rgba(255,255,255,.1)", color: state === "done" ? "rgba(255,255,255,.7)" : "#06121A" }}>
-          <Fingerprint size={24} />{state === "in" ? RAx.rhClockIn : state === "out" ? `${RAx.rhClockOut} · ${RAx.rhSince} ${myToday.in}` : RAx.rhDone}
-        </button>
-        {toast && <p className="text-center text-[12px] mt-2 font-bold" style={{ color: "#7FF0CF" }}>{x.clockInConfirmed} · {toast}</p>}
+        {activeRep.riderId && <p className="text-[11.5px] mt-1 opacity-70">{RAx.riderId}: <b className="num">{activeRep.riderId}</b></p>}
+        <button onClick={() => goPage("riderWelcome")} className="mt-3 text-[11.5px] font-bold px-3 py-1.5 rounded-xl" style={{ background: "rgba(228,184,92,.16)", border: "1px solid rgba(228,184,92,.4)", color: "#F3D58E" }}>{RAx.wlAboutBtn}</button>
       </div>
 
       {dd != null && dd <= 30 && (
@@ -7585,8 +7283,9 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
 
       <button onClick={() => goPage("myEarnings")} className="w-full rounded-3xl p-5 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}>
         <div className="flex items-center justify-between"><span className="text-[12px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.rhNet}</span><Chip tone={me.final ? "ok" : "warn"} sm>{me.final ? RAx.finalLbl : RAx.estimate}</Chip></div>
-        <p className="num text-[38px] font-extrabold mt-1" style={{ color: me.net >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(me.net)} <span className="text-[14px] font-semibold" style={{ color: "var(--muted)" }}>{t.sar}</span></p>
-        {!me.final && me.unpriced && <p className="text-[11.5px] font-bold mt-1" style={{ color: "#B8862E" }}>{RAx.noRateYet}</p>}
+        {!me.final && me.unpriced
+          ? <p className="text-[14px] font-bold mt-2" style={{ color: "#B8862E" }}>{RAx.noRateYet}</p>
+          : <p className="num text-[38px] font-extrabold mt-1" style={{ color: me.net >= 0 ? "#0B5C46" : "#C0443A" }}>{fmt(me.net)} <span className="text-[14px] font-semibold" style={{ color: "var(--muted)" }}>{t.sar}</span></p>}
       </button>
 
       <div className="grid grid-cols-2 gap-3">
@@ -7595,31 +7294,160 @@ function RiderHome({ lang, role, user, activeRep, reps, reports, attendance, set
       </div>
       {!todayEntries.length && <p className="text-[11.5px] -mt-1 px-1" style={{ color: "var(--muted)" }}>{RAx.rhNoEntry}</p>}
 
-      <Panel title={RAx.rhGoal}>
-        <div className="flex items-center gap-5">
-          <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />
-          <div className="space-y-1.5 text-[12.5px]">
-            <p><b className="num">{me.orders}</b> / {MONTH_TARGET.orders} {t.orders}</p>
-            <p style={{ color: "var(--muted)" }}>{RAx.rhRank}: <b className="num" style={{ color: role.accent }}>{rank}</b> {RAx.rhOf} <span className="num">{sorted.length}</span></p>
+      <div className="grid grid-cols-3 gap-2.5">
+        {[["coach", Lx(lang, "مدربي", "Coach")], ["support", Lx(lang, "دعم فوري", "Support")], ["teams", Lx(lang, "فريقي", "My team")], ["myRefer", Lx(lang, "رشّح", "Refer")], ["myScore", Lx(lang, "أدائي", "Score")], ["myWallet", Lx(lang, "محفظتي", "Wallet")], ["academy", Lx(lang, "الأكاديمية", "Academy")], ["myLeave", Lx(lang, "إجازاتي", "Leaves")], ["reportInc", Lx(lang, "بلّغ", "Report")]].map(([id, l]) => { const Ic = NAV_ICON[id]; return (
+          <button key={id} onClick={() => goPage(id)} className="flex flex-col items-center gap-1.5 rounded-2xl py-3.5 transition active:scale-95" style={{ background: `rgba(${role.glow},.09)`, border: `1px solid rgba(${role.glow},.25)` }}>
+            <Ic size={20} style={{ color: role.accent }} /><span className="text-[11.5px] font-bold">{l}</span></button>); })}
+      </div>
+
+      {pct != null && (
+        <Panel title={RAx.rhGoal}>
+          <div className="flex items-center gap-5">
+            <ProgressRing pct={pct} size={104} stroke={10} accent={role.glow} />
+            <p className="text-[12.5px]"><b className="num">{me.orders}</b> / {tgt} {t.orders}</p>
           </div>
+        </Panel>
+      )}
+
+      {sup && (
+        <div className="rounded-2xl p-4" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+          <p className="text-[11.5px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.rhMySup}</p>
+          <p className="text-[15px] font-extrabold mt-0.5">{sup.name}</p>
+          {supPhone && (
+            <div className="grid grid-cols-2 gap-2.5 mt-3">
+              <a href={`tel:+${supPhone.replace(/^00/, "")}`} className="rounded-xl py-2.5 text-center text-[12.5px] font-bold" style={{ background: "rgba(20,27,45,.06)", border: "1px solid var(--line)" }}><Phone size={14} className="inline me-1.5" />{RAx.rhCall}</a>
+              <a href={`https://wa.me/${supPhone.replace(/^00/, "").replace(/^0/, "966")}`} target="_blank" rel="noreferrer" className="rounded-xl py-2.5 text-center text-[12.5px] font-bold" style={{ background: "rgba(15,165,121,.12)", border: "1px solid rgba(15,165,121,.35)", color: "#0B5C46" }}><MessageSquare size={14} className="inline me-1.5" />WhatsApp</a>
+            </div>
+          )}
         </div>
-      </Panel>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Tile icon={MessageSquare} label={RAx.rhMsgs} value={unread} onClick={() => goPage("messages")} tone={unread ? "#E8837A" : undefined} />
         <Tile icon={Send} label={RAx.rhTickets} value={openTk} onClick={() => goPage("tickets")} />
       </div>
-      <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={15} className="opacity-50" /></button>
+      <button onClick={() => goPage("riderReceipts")} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}><Camera size={20} style={{ color: role.accent }} /><span className="flex-1 text-[13px] font-bold">{RAx.rhReceipt}</span><ChevronRight size={16} style={{ color: "var(--muted)" }} /></button>
+      {onLogout && <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-2xl p-3.5 text-[13px] font-bold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }}><LogOut size={16} />{t.logout}</button>}
     </div>
   );
 }
 
-function RiderLogin({ lang, setLang, onRep, err, setErr, onBack }) {
+/* ═══════════  ملفات المناديب — قسم مستقل بالموارد البشرية فقط  ═══════════ */
+function RepFilesPage({ lang, role, reps, setReps, pwResets, setPwResets, setAuditLog, actingEmployee }) {
+  const RAx = RA[lang], x = EX[lang];
+  const [q, setQ] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [f, setF] = useState(null);
+  const [show, setShow] = useState({});
+  const [err, setErr] = useState("");
+  const [newPw, setNewPw] = useState({});
+  const canEdit = role.id === "hr";
+  if (!canEdit) return <Panel title={RAx.rfTitle}><p className="text-[12.5px]" style={{ color: "var(--muted)" }}>{RAx.rfOnlyHr}</p></Panel>;
+  const genPw = () => String(Math.floor(100000 + Math.random() * 900000));
+  const list = reps.filter((r) => { const k = q.trim().toLowerCase(); return !k || [r.ar, r.en, r.phone, r.nid, r.riderId].some((v) => String(v || "").toLowerCase().includes(k)); });
+  const open = (pwResets || []).filter((z) => z.status === "open");
+  const start = (r) => { setEditId(r.id); setErr(""); setF({ name: r.ar, phone: r.phone || "", nid: r.nid || "", riderId: r.riderId || "", password: r.password || "", status: r.status }); };
+  const save = () => {
+    if (f.name.trim().length < 3) return setErr(x.errRepName);
+    if (!/^\d{10}$/.test(f.nid)) return setErr(x.errRepNid);
+    if (reps.some((r) => r.id !== editId && r.nid === f.nid)) return setErr(RAx.rfDupNid);
+    if (f.riderId.trim() && reps.some((r) => r.id !== editId && String(r.riderId || "").trim() === f.riderId.trim() && r.app === (reps.find((z) => z.id === editId) || {}).app)) return setErr(RA[lang].errRiderDup);
+    if (f.password.length < 4) return setErr(x.errRepPass);
+    setReps((prev) => prev.map((r) => (r.id === editId ? { ...r, ar: f.name.trim(), en: f.name.trim(), phone: f.phone.trim(), nid: f.nid, riderId: f.riderId.trim(), password: f.password, status: f.status } : r)));
+    logAudit(setAuditLog, role, "rep_file_edit", editId, actingEmployee);
+    setEditId(null); setF(null); setErr("");
+  };
+  const restore = (reqId, rep, pw) => {
+    if (!rep || pw.length < 4) return;
+    setReps((prev) => prev.map((r) => (r.id === rep.id ? { ...r, password: pw, status: "active" } : r)));
+    setPwResets((prev) => prev.map((z) => (z.id === reqId ? { ...z, status: "done", doneBy: actingEmployee?.name || role.id, doneAt: riyadhNow().toISOString() } : z)));
+    logAudit(setAuditLog, role, "rep_account_restore", rep.id, actingEmployee);
+  };
+  const inp = (k, label, type) => (
+    <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{label}</span>
+      {type === "number" ? <NumInput value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />
+        : <input type={type || "text"} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST} />}</label>
+  );
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
+        <div className="flex items-center gap-2.5 mb-1"><KeyRound size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{RAx.rfTitle}</h2></div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.rfSub}</p>
+      </div>
+
+      {open.length > 0 && (
+        <Panel title={`${RAx.rfResets} (${open.length})`}>
+          <div className="space-y-2.5">
+            {open.map((z) => {
+              const rep = reps.find((r) => r.nid === z.nid);
+              const pw = newPw[z.id] ?? "";
+              return (
+                <div key={z.id} className="rounded-xl p-3" style={{ background: "rgba(228,184,92,.08)", border: "1px solid rgba(228,184,92,.35)" }}>
+                  <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
+                    <b>{rep ? (lang === "en" ? rep.en : rep.ar) : RAx.rfUnknown}</b>
+                    <span className="num" style={{ color: "var(--muted)" }}>{z.nid}</span>{z.phone && <span className="num" style={{ color: "var(--muted)" }}>{z.phone}</span>}
+                    <span className="num text-[10.5px] ms-auto" style={{ color: "var(--muted)" }}>{(z.at || "").slice(0, 16).replace("T", " ")}</span>
+                  </div>
+                  {rep ? (
+                    <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                      <input value={pw} onChange={(e) => setNewPw({ ...newPw, [z.id]: e.target.value })} placeholder={RAx.rfNewPw} className="num rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none w-36" style={INPUT_ST} />
+                      <Btn icon={Sparkles} onClick={() => setNewPw({ ...newPw, [z.id]: genPw() })}>{RAx.rfGen}</Btn>
+                      <Btn variant="gold" icon={CheckCircle2} onClick={() => restore(z.id, rep, pw)} disabled={pw.length < 4}>{RAx.rfRestore}</Btn>
+                      <Btn icon={X} onClick={() => setPwResets((prev) => prev.map((w) => (w.id === z.id ? { ...w, status: "rejected" } : w)))}>{RAx.rfReject}</Btn>
+                    </div>
+                  ) : <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{RAx.rfNoMatch}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+      )}
+
+      <Panel title={`${RAx.rfAll} (${list.length})`} extra={<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={RAx.rfSearch} className="rounded-lg px-2.5 py-1.5 text-[12px] outline-none w-44" style={INPUT_ST} />}>
+        {list.length === 0 ? <EmptyHint lang={lang} /> : (
+          <div className="space-y-2.5">
+            {list.map((r) => editId === r.id && f ? (
+              <div key={r.id} className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.035)", border: `1px solid rgba(${role.glow},.4)` }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {inp("name", RAx.rfName)}{inp("phone", RAx.rfPhone)}{inp("nid", RAx.rfNid)}{inp("riderId", RA[lang].riderId)}{inp("password", RAx.rfPw)}
+                  <label className="block"><span className="block text-[10.5px] mb-1" style={{ color: "var(--muted)" }}>{RAx.rfStatus}</span>
+                    <select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })} className="w-full rounded-lg px-2.5 py-2 text-[13px] font-bold outline-none" style={INPUT_ST}>
+                      <option value="active">{RAx.rfActive}</option><option value="pending">{RAx.rfPending}</option><option value="suspended">{RAx.rfSuspended}</option></select></label>
+                </div>
+                {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+                <div className="flex gap-2 mt-3"><Btn variant="gold" icon={CheckCircle2} onClick={save}>{RAx.save}</Btn><Btn onClick={() => { setEditId(null); setF(null); setErr(""); }}>{RAx.cancel}</Btn></div>
+              </div>
+            ) : (
+              <div key={r.id} className="rounded-2xl p-3.5 flex items-center gap-3 flex-wrap" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap"><b className="text-[13.5px]">{lang === "en" ? r.en : r.ar}</b><Chip tone={r.status === "active" ? "ok" : r.status === "pending" ? "warn" : "bad"} sm>{r.status === "active" ? RAx.rfActive : r.status === "pending" ? RAx.rfPending : RAx.rfSuspended}</Chip></div>
+                  <div className="num text-[11.5px] mt-1 flex gap-x-4 gap-y-0.5 flex-wrap" style={{ color: "var(--muted)" }}>
+                    <span>{RAx.rfPhone}: {r.phone || "—"}</span><span>{RAx.rfNid}: {r.nid || "—"}</span><span>{RA[lang].riderId}: {r.riderId || "—"}</span>
+                    <span>{RAx.rfPw}: <b>{show[r.id] ? (r.password || "—") : "••••••"}</b> <button onClick={() => setShow({ ...show, [r.id]: !show[r.id] })} className="align-middle ms-1" aria-label="show">{show[r.id] ? <EyeOff size={13} /> : <Eye size={13} />}</button></span>
+                  </div>
+                </div>
+                <Btn icon={SlidersHorizontal} onClick={() => start(r)}>{RAx.rfEdit}</Btn>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+
+function RiderLogin({ lang, setLang, onRep, onForgot, err, setErr, onBack }) {
   const t = T[lang], x = EX[lang], RAx = RA[lang];
   const [nid, setNid] = useState(""); const [pw, setPw] = useState(""); const [local, setLocal] = useState(""); const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState("login"); const [fph, setFph] = useState(""); const [sent, setSent] = useState(false);
   const go = () => {
     if (nid.trim().length < 6 || pw.length < 4) { setLocal(x.errRep); return; }
     setLocal(""); setErr(""); setBusy(true); setTimeout(() => { setBusy(false); onRep(nid.trim(), pw); }, 400);
+  };
+  const sendForgot = () => {
+    if (!/^\d{10}$/.test(nid.trim()) || fph.trim().length < 9) { setLocal(RAx.forgotErr); return; }
+    setLocal(""); if (onForgot) onForgot(nid.trim(), fph.trim()); setSent(true);
   };
   const shown = local || err;
   return (
@@ -7630,13 +7458,24 @@ function RiderLogin({ lang, setLang, onRep, err, setErr, onBack }) {
         <InstallBanner lang={lang} />
         <div className="glass rounded-3xl p-5 space-y-3.5">
           <div className="flex items-center justify-between">
-            <div><h2 className="text-[17px] font-extrabold">{RAx.riderLoginT}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{RAx.riderLoginSub}</p></div>
-            <div className="flex gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2 py-1 rounded-lg text-[11px] font-bold" style={{ background: lang === l.code ? "rgba(228,184,92,.2)" : "rgba(20,27,45,.05)" }}>{l.mark}</button>)}</div>
+            <div><h2 className="text-[17px] font-extrabold">{mode === "login" ? RAx.riderLoginT : RAx.forgotT}</h2><p className="text-[12px]" style={{ color: "var(--muted)" }}>{mode === "login" ? RAx.riderLoginSub : RAx.forgotSub}</p></div>
+            <div className="flex gap-1">{LANGS.map((l) => <button key={l.code} onClick={() => setLang(l.code)} className="num px-2 py-1 rounded-lg text-[11px] font-bold" style={{ background: lang === l.code ? "#12151D" : "rgba(20,27,45,.06)", color: lang === l.code ? "#fff" : "var(--muted)" }}>{l.code.toUpperCase()}</button>)}</div>
           </div>
-          <GateField label={x.nationalId} val={nid} set={setNid} ph="1xxxxxxxxx" Icon={User} af type="text" accent={REP.accent} onEnter={go} />
-          <GateField label={t.pass} val={pw} set={setPw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={go} />
-          {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
-          <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={go}>{busy ? "…" : x.repTitle}</Btn>
+          <GateField label={x.nationalId} val={nid} set={setNid} ph="1xxxxxxxxx" Icon={User} af type="text" accent={REP.accent} onEnter={mode === "login" ? go : sendForgot} />
+          {mode === "login" ? (<>
+            <GateField label={t.pass} val={pw} set={setPw} ph="••••••••" Icon={Lock} type="password" accent={REP.accent} onEnter={go} />
+            {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
+            <Btn variant="accent" accent={REP.glow} full icon={Fingerprint} onClick={go}>{busy ? "…" : x.repTitle}</Btn>
+            <button onClick={() => { setMode("forgot"); setLocal(""); setErr(""); setSent(false); }} className="w-full text-[12.5px] font-bold py-1" style={{ color: "#B8862E" }}>{RAx.forgot}</button>
+          </>) : sent ? (<>
+            <div className="rounded-xl p-3.5 flex gap-2.5" style={{ background: "rgba(15,165,121,.08)", border: "1px solid rgba(15,165,121,.3)" }}><CheckCircle2 size={18} style={{ color: "#0FA579" }} className="shrink-0" /><p className="text-[12.5px] font-bold" style={{ color: "#0B5C46" }}>{RAx.forgotDone}</p></div>
+            <Btn full onClick={() => { setMode("login"); setSent(false); }}>{RAx.forgotBack}</Btn>
+          </>) : (<>
+            <GateField label={RAx.rfPhone} val={fph} set={setFph} ph="05xxxxxxxx" Icon={Phone} type="tel" accent={REP.accent} onEnter={sendForgot} />
+            {shown && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{shown}</p>}
+            <Btn variant="accent" accent={REP.glow} full icon={Send} onClick={sendForgot}>{RAx.forgotSend}</Btn>
+            <button onClick={() => { setMode("login"); setLocal(""); }} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.forgotBack}</button>
+          </>)}
           {onBack && <button onClick={onBack} className="w-full text-[12px] font-semibold py-1" style={{ color: "var(--muted)" }}>{RAx.ldBack}</button>}
         </div>
       </div>
@@ -7669,7 +7508,7 @@ Object.assign(RA.ar, {
   ldB1T: "أرباح عالية", ldB1D: "كل طلب وكل كيلومتر يُحتسب لك بتسعيرة واضحة، وتشوف ربحك يتحدث يومياً.",
   ldB2T: "شفافية كاملة", ldB2D: "كشف حسابك بالتفصيل: كل خصم له سبب، وتقدر تعترض على أي يوم.",
   ldB3T: "تطبيقات توصيل متعددة", ldB3D: "اشتغل على أكثر من تطبيق توصيل عبر شركة واحدة منظّمة.",
-  ldB4T: "مكافآت ومنافسة شريفة", ldB4D: "لوحة صدارة شهرية بمكافآت مالية وفرصة عمرة لأبطال الشهر.",
+  ldB4T: "تواصل مباشر مع الشركة", ldB4D: "رسائل وتذاكر ومشرف بضغطة — قنوات واضحة بينك وبين بوارق الشرق.",
   ldB5T: "دعم يتابعك", ldB5D: "مشرف مخصص وطلبات تُحل بسرعة، ومستحقات موثّقة بنظام واضح.",
   ldB6T: "ترقّى معنا", ldB6D: "المناديب المتميزون يترقّون إلى رقباء ويقودون فرقاً.",
   ldCalc: "احسب أرباحك المتوقعة", ldOrdersDay: "طلبات في اليوم", ldDaysMonth: "أيام العمل في الشهر", ldKmDay: "كيلومتر في اليوم", ldEst: "أرباحك المتوقعة",
@@ -7699,7 +7538,7 @@ Object.assign(RA.en, {
   ldB1T: "High earnings", ldB1D: "Every order and kilometer is paid at a clear rate, and you watch your profit update daily.",
   ldB2T: "Full transparency", ldB2D: "A detailed statement: every deduction has a reason, and you can dispute any day.",
   ldB3T: "Multiple delivery apps", ldB3D: "Work across several delivery apps through one organized company.",
-  ldB4T: "Rewards & fair competition", ldB4D: "A monthly leaderboard with cash rewards and an Umrah trip for the champions.",
+  ldB4T: "Direct line to the company", ldB4D: "Messages, tickets and your supervisor in a tap — clear channels to Bawariq Al-Sharq.",
   ldB5T: "Support that follows up", ldB5D: "A dedicated supervisor, fast request handling and documented payouts.",
   ldB6T: "Grow with us", ldB6D: "Outstanding riders get promoted to team leaders.",
   ldCalc: "Estimate your earnings", ldOrdersDay: "Orders per day", ldDaysMonth: "Working days per month", ldKmDay: "Km per day", ldEst: "Your expected earnings",
@@ -7727,7 +7566,7 @@ Object.assign(RA.ur, {
   ldUpTo: "کمائی تک", ldPerMonth: "ریال ماہانہ", ldDisc: "یہ اندازہ ہے، ضمانت شدہ رقم نہیں۔",
   ldWhy: "بوارق الشرق کیوں؟",
   ldB1T: "زیادہ کمائی", ldB1D: "ہر آرڈر اور کلومیٹر واضح قیمت پر شمار ہوتا ہے۔", ldB2T: "مکمل شفافیت", ldB2D: "ہر کٹوتی کی وجہ ہے اور آپ کسی بھی دن پر اعتراض کر سکتے ہیں۔",
-  ldB3T: "متعدد ڈیلیوری ایپس", ldB3D: "ایک منظم کمپنی کے ذریعے کئی ایپس پر کام کریں۔", ldB4T: "انعامات", ldB4D: "ماہانہ لیڈر بورڈ اور عمرہ کا موقع۔",
+  ldB3T: "متعدد ڈیلیوری ایپس", ldB3D: "ایک منظم کمپنی کے ذریعے کئی ایپس پر کام کریں۔", ldB4T: "کمپنی سے براہِ راست رابطہ", ldB4D: "پیغامات، ٹکٹ اور سپروائزر ایک ٹیپ میں۔",
   ldB5T: "مسلسل تعاون", ldB5D: "مخصوص سپروائزر اور تیز حل۔", ldB6T: "ترقی کریں", ldB6D: "بہترین نمائندے ٹیم لیڈر بنتے ہیں۔",
   ldCalc: "اپنی کمائی کا اندازہ لگائیں", ldOrdersDay: "روزانہ آرڈرز", ldDaysMonth: "مہینے میں کام کے دن", ldKmDay: "روزانہ کلومیٹر", ldEst: "متوقع کمائی",
   ldCalcNote: "موجودہ ریٹ پر تقریبی حساب، کٹوتیوں سے پہلے۔",
@@ -7814,7 +7653,7 @@ function InstallBanner({ lang }) {
   );
 }
 
-function RiderLanding({ lang, setLang, reps, pricing, go }) {
+function RiderLanding({ lang, setLang, reps, pricing, go, ext }) {
   const RAx = RA[lang], t = T[lang];
   const benefits = [[Wallet, "ldB1T", "ldB1D"], [ShieldCheck, "ldB2T", "ldB2D"], [Building2, "ldB3T", "ldB3D"], [Trophy, "ldB4T", "ldB4D"], [Users, "ldB5T", "ldB5D"], [Rocket, "ldB6T", "ldB6D"]];
   return (
@@ -7831,8 +7670,14 @@ function RiderLanding({ lang, setLang, reps, pricing, go }) {
           <p className="text-[16px] font-extrabold">{RAx.ldPerMonth}</p>
           <p className="text-[11px] mt-3 opacity-75 max-w-sm mx-auto">{RAx.ldDisc}</p>
         </div>
+        <div className="rounded-3xl px-5 py-6 text-center relative overflow-hidden" style={{ background: "linear-gradient(135deg,#0B5C46,#0FA579)", color: "#fff", boxShadow: "0 12px 34px -12px rgba(11,92,70,.6)" }}>
+          <BadgeCheck size={44} className="mx-auto mb-2" style={{ color: "#FFE9A8" }} />
+          <p className="font-extrabold leading-tight" style={{ fontSize: "clamp(24px,7.2vw,38px)" }}>{RAx.ldOpenAll}</p>
+          <p className="font-bold mt-1.5" style={{ fontSize: "clamp(15px,4.4vw,20px)", color: "#FFE9A8" }}>{RAx.ldOpenAllSub}</p>
+        </div>
         <p className="text-center text-[13px] font-semibold" style={{ color: "var(--muted)" }}>{RAx.ldHeadSub}</p>
 
+        <AppAvailCard lang={lang} ext={ext} />
         <div>
           <h3 className="text-[16px] font-extrabold mb-3">{RAx.ldWhy}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -7867,10 +7712,11 @@ function RiderLanding({ lang, setLang, reps, pricing, go }) {
   );
 }
 
-function RiderApply({ lang, reps, applications, setApplications, go }) {
+function RiderApply({ lang, reps, applications, setApplications, go, ext }) {
   const RAx = RA[lang], x = EX[lang];
-  const [f, setF] = useState({ name: "", phone: "", nid: "", idExpiry: "", vehicle: "car", own: true, app: "hs", note: "" });
+  const [f, setF] = useState({ name: "", phone: "", nid: "", idExpiry: "", vehicle: "car", own: true, app: "", city: "", note: "" });
   const [err, setErr] = useState(""); const [done, setDone] = useState(false);
+  const openApps = openAppsOf(ext); const selAv = f.app ? appAvailOf(ext, f.app) : null;
   const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
   const submit = () => {
     if (f.name.trim().length < 3) return setErr(RAx.apErrName);
@@ -7878,8 +7724,10 @@ function RiderApply({ lang, reps, applications, setApplications, go }) {
     if (!/^\d{10}$/.test(f.nid)) return setErr(RAx.apErrNid);
     if (!f.idExpiry) return setErr(RAx.apErrExpiry);
     if (reps.some((r) => r.nid === f.nid) || applications.some((a) => a.nid === f.nid && a.status !== "rejected")) return setErr(RAx.apDup);
+    if (openApps.length > 0 && !f.app) return setErr(Lx(lang, "اختر أحد التطبيقات المتاحة.", "Pick one of the open apps."));
+    if (selAv && selAv.cities.length > 0 && !f.city) return setErr(Lx(lang, "اختر مدينتك من مدن هذا التطبيق.", "Pick your city."));
     setErr("");
-    setApplications((prev) => [{ id: "APP-" + Date.now(), name: f.name.trim(), phone: f.phone.trim(), nid: f.nid, idExpiry: f.idExpiry, vehicle: f.vehicle, own: f.own, app: f.app, note: f.note.trim(), createdAt: riyadhNow().toISOString(), status: "new" }, ...prev]);
+    setApplications((prev) => [{ id: "APP-" + Date.now(), name: f.name.trim(), phone: f.phone.trim(), nid: f.nid, idExpiry: f.idExpiry, vehicle: f.vehicle, own: f.own, app: f.app, city: f.city, waitlist: openApps.length === 0, note: f.note.trim(), createdAt: riyadhNow().toISOString(), status: "new" }, ...prev]);
     setDone(true);
   };
   if (done) return (
@@ -7907,7 +7755,8 @@ function RiderApply({ lang, reps, applications, setApplications, go }) {
             <div className="flex gap-2">{opt(f.vehicle === "car", RAx.apCar, () => set("vehicle")("car"))}{opt(f.vehicle === "bike", RAx.apBike, () => set("vehicle")("bike"))}</div></div>
           <div className="flex gap-2">{opt(f.own, RAx.apOwn, () => set("own")(true))}{opt(!f.own, RAx.apNeed, () => set("own")(false))}</div>
           <div><p className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{RAx.apApp}</p>
-            <div className="flex flex-wrap gap-1.5">{APPS.map((a) => <button type="button" key={a.id} onClick={() => set("app")(a.id)} className="px-3 py-1.5 rounded-full text-[12px] font-bold" style={{ background: f.app === a.id ? "#12151D" : "rgba(20,27,45,.05)", color: f.app === a.id ? "#F3D58E" : "var(--muted)" }}>{a[lang]}</button>)}</div></div>
+            <AppAvailCard lang={lang} ext={ext} pick={f.app} onPick={(id) => setF((p) => ({ ...p, app: id, city: "" }))} />
+            {selAv && selAv.cities.length > 0 && <div className="mt-2.5"><p className="text-[11px] font-semibold mb-1.5" style={{ color: "var(--muted)" }}>{Lx(lang, "مدينتك", "Your city")}</p><div className="flex flex-wrap gap-1.5">{selAv.cities.map((c) => <button type="button" key={c} onClick={() => set("city")(c)} className="px-3 py-1.5 rounded-full text-[12px] font-bold" style={{ background: f.city === c ? "#12151D" : "rgba(20,27,45,.05)", color: f.city === c ? "#fff" : "inherit" }}>📍 {c}</button>)}</div></div>}</div>
           <GateField label={RAx.apNote} val={f.note} set={set("note")} ph="" Icon={MessageSquare} type="text" accent="#B8862E" />
           {err && <p className="text-[11.5px] flex items-start gap-1.5" style={{ color: "#C0443A" }}><AlertTriangle size={13} className="mt-px shrink-0" />{err}</p>}
           <Btn variant="gold" full icon={Send} onClick={submit}>{RAx.apSend}</Btn>
@@ -7960,7 +7809,7 @@ function ApplicationsPanel({ lang, role, applications, setApplications, reps, se
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div><p className="text-[13.5px] font-extrabold">{a.name}</p>
                 <p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{a.phone} · {a.nid} · {a.idExpiry}</p>
-                <p className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)" }}>{a.vehicle === "car" ? RAx.apCar : RAx.apBike} · {a.own ? RAx.apOwn : RAx.apNeed} · {appName(a.app)}</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)" }}>{a.vehicle === "car" ? RAx.apCar : RAx.apBike} · {a.own ? RAx.apOwn : RAx.apNeed} · {a.app ? appName(a.app) : Lx(lang, "قائمة انتظار", "Waitlist")}{a.city ? ` · 📍 ${a.city}` : ""}</p>
                 {a.note && <p className="text-[11.5px] mt-1">“{a.note}”</p>}</div>
               <Chip tone="info" sm>{RAx.apNew}</Chip>
             </div>
@@ -8073,6 +7922,2234 @@ function ReceiptsAdminPage({ lang, role, repReceipts, setRepReceipts, setAuditLo
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   الحزمة الموسّعة (bq_ext): مدرب الأرباح، الأداء والنقاط، المحفظة،
+   البلاغات، الإجازات، الأكاديمية، + صفحات الإدارة المرتبطة بها
+   ═══════════════════════════════════════════════════════════════ */
+const EXT0 = {
+  wallet: [], incidents: [], leaves: [], courses: [], progress: {}, ratings: {}, redeem: [], bonus: [],
+  crm: [], flow: {}, pipe: {}, snapIdx: [], copilot: {}, doneSeen: {}, daily: [],
+  cfg: { tol: 0, bonus: 100, bonusMin: 85, bonusTop: 3, dualLimit: 5000, advMaxPct: 30 },
+};
+const extOf = (ext) => ({ ...EXT0, ...(ext || {}), cfg: { ...EXT0.cfg, ...((ext || {}).cfg || {}) } });
+const Lx = (lang, ar, en) => (lang === "en" ? en : ar);
+const uidX = (p) => p + "-" + Date.now().toString(36) + Math.floor(Math.random() * 999);
+const extUpd = (setExt, key, fn) => setExt((p) => { const cur = (p && p[key]) !== undefined ? p[key] : EXT0[key]; return { ...(p || {}), [key]: fn(cur) }; });
+const extCfg = (setExt, patch) => setExt((p) => ({ ...(p || {}), cfg: { ...EXT0.cfg, ...((p || {}).cfg || {}), ...patch } }));
+const ADV_CAP = 30; // سقف السلفة: 30% من الصافي الحالي، ثابت ولا يتجاوزه أي إعداد
+// إضافة تسوية يدوية (مكافأة/سلفة) داخل كشف شهر المحاسبة نفسه — فتظهر للمندوب والمحاسب
+function addManualAdj(setRepSettlements, month, adj) {
+  setRepSettlements((prev) => {
+    const cur = prev.find((s) => s.month === month);
+    if (cur && cur.closed) return prev;
+    const base = cur || { id: "SET-" + month, month, closed: false, inputs: EMPTY_SETTLE_INPUTS };
+    const inputs = { ...EMPTY_SETTLE_INPUTS, ...base.inputs };
+    if ((inputs.manual || []).some((m) => m.id === adj.id)) return prev;
+    const next = { ...base, inputs: { ...inputs, manual: [...(inputs.manual || []), { ...adj, at: riyadhNow().toISOString() }] } };
+    return cur ? prev.map((s) => (s.month === month ? next : s)) : [next, ...prev];
+  });
+}
+const byName = (role, actingEmployee) => (actingEmployee && actingEmployee.name) || role.id;
+const XINP = { background: "#fff", border: "1px solid var(--line-strong)", color: "#12151D" };
+function XIn({ value, onChange, ph, type = "text", cls = "" }) {
+  if (type === "number") return <NumInput value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} className={`rounded-xl px-3 py-2.5 text-[12.5px] outline-none ${cls}`} style={XINP} />;
+  return <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={ph} type={type} className={`rounded-xl px-3 py-2.5 text-[12.5px] outline-none ${cls}`} style={XINP} />;
+}
+function XBar({ v, color = "#3FD8B4" }) {
+  return <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(20,27,45,.08)" }}><div className="h-full rounded-full" style={{ width: Math.round(Math.max(0, Math.min(1, v)) * 100) + "%", background: color }} /></div>;
+}
+function XTabs({ tabs, tab, setTab }) {
+  return <div className="flex gap-2 flex-wrap">{tabs.map(([k, l, n]) => (
+    <button key={k} onClick={() => setTab(k)} className="px-4 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: tab === k ? "#12151D" : "#fff", color: tab === k ? "#fff" : "var(--muted)", border: "1px solid var(--line)" }}>{l}{n != null && <span className="num"> ({n})</span>}</button>))}</div>;
+}
+const monthDays = (month) => { const [y, m] = month.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); };
+
+/* ─── محرك الأداء: 40 حضور / 30 إنتاجية / 20 تقييم المشرف / 10 مخالفات ─── */
+function perfOf(rep, month, reports, attendance, ext, pricing, wf, vp, teamAvg) {
+  const E = extOf(ext);
+  const entries = monthEntriesFor(reports, rep.id, month);
+  const f = monthFactor(month);
+  const days = new Set(entries.filter((e) => (e.orders || 0) > 0 || (e.hours || 0) > 0).map((e) => e.date));
+  (attendance || []).forEach((a) => { if (a.key === rep.nid && (a.date || "").startsWith(month)) days.add(a.date); });
+  const elapsed = Math.max(1, Math.round(monthDays(month) * f));
+  let excusedN = 0;
+  Object.keys(E.roll || {}).forEach((d) => { if (!d.startsWith(month)) return; const rc = (E.roll[d] || {})[rep.id]; if (!rc) return; if (rc.st === "present") days.add(d); else { days.delete(d); if (rc.excused) excusedN++; } });
+  const expected = Math.max(1, Math.round(elapsed * 6 / 7) - excusedN);
+  const att = Math.min(1, days.size / expected);
+  const c = repMonthCalc(entries, rep, pricing, wf, vp, f, month);
+  const tgt = monthTargetOf(pricing, c.main);
+  const goal = tgt ? tgt * f : (teamAvg || 0);
+  const hasGoal = goal > 0;
+  const prod = hasGoal ? Math.min(1, c.orders / goal) : 0.7;
+  const rk = E.ratings[rep.id + "|" + month];
+  const sup = rk ? rk.stars / 5 : 0.7;
+  const viol = c.weekendCount + c.appCount;
+  const vs = Math.max(0, 1 - viol / 5);
+  const score = Math.round(40 * att + 30 * prod + 20 * sup + 10 * vs);
+  return { score, att, prod, sup, vs, rated: !!rk, orders: c.orders, days: days.size, expected, viol, c, goal, hasGoal, target: tgt };
+}
+const perfLevel = (s, lang) => (s >= 85 ? [Lx(lang, "ممتاز", "Excellent"), "ok"] : s >= 70 ? [Lx(lang, "جيد", "Good"), "info"] : s >= 50 ? [Lx(lang, "مقبول", "Fair"), "warn"] : [Lx(lang, "يحتاج متابعة", "Needs follow-up"), "bad"]);
+function teamAvgOrders(reps, month, reports) {
+  const act = (reps || []).filter((r) => r.status === "active");
+  if (!act.length) return 0;
+  const tot = act.reduce((s, r) => s + monthEntriesFor(reports, r.id, month).reduce((a, e) => a + (e.orders || 0), 0), 0);
+  return (tot / act.length) * 1.1;
+}
+/* ─── النقاط والمستويات ─── */
+const TIERS = [[0, "bronze", "برونزي", "Bronze", "#B07A45"], [500, "silver", "فضي", "Silver", "#9AA4B2"], [1500, "gold", "ذهبي", "Gold", "#E4B85C"], [3000, "plat", "بلاتيني", "Platinum", "#5BC8E8"]];
+const REWARD_CATALOG = [{ id: "c50", cost: 400, amount: 50 }, { id: "c120", cost: 900, amount: 120 }, { id: "c300", cost: 2000, amount: 300 }];
+function pointsOf(rep, reports, ext) {
+  const E = extOf(ext);
+  const months = {};
+  reports.forEach((rp) => rp.entries.forEach((e) => {
+    if (e.id !== rep.id) return;
+    const g = months[rp.date.slice(0, 7)] || (months[rp.date.slice(0, 7)] = { orders: 0, days: new Set(), viol: 0 });
+    g.orders += e.orders || 0; if ((e.orders || 0) > 0) g.days.add(rp.date); g.viol += (e.weekendViolations || 0) + (e.appViolations || 0);
+  }));
+  let earned = 0;
+  Object.values(months).forEach((g) => { earned += Math.floor(g.orders / 5) + 5 * g.days.size - 10 * g.viol; });
+  earned = Math.max(0, earned);
+  const spent = E.redeem.filter((r) => r.repId === rep.id && r.status !== "rejected").reduce((s, r) => s + r.cost, 0);
+  const tier = [...TIERS].reverse().find((t) => earned >= t[0]) || TIERS[0];
+  const next = TIERS.find((t) => t[0] > earned);
+  return { earned, spent, balance: Math.max(0, earned - spent), tier, next };
+}
+
+/* ═══════════  مدرب الأرباح (النظام 14) — تطبيق المندوب  ═══════════ */
+function CoachPage({ lang, role, activeRep, reps, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, attendance, ext, goPage }) {
+  const t = T[lang];
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const today = riyadhToday(), month = today.slice(0, 7), dayN = +today.slice(8, 10), dim = monthDays(month);
+  const f = monthFactor(month);
+  const entries = monthEntriesFor(reports, activeRep.id, month);
+  const c = repMonthCalc(entries, activeRep, pricing, weekendFine, violationPenalty, f, month);
+  const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
+  const workedSet = new Set(entries.filter((e) => (e.orders || 0) > 0).map((e) => e.date));
+  const todayDone = workedSet.has(today);
+  const avg = workedSet.size ? c.orders / workedSet.size : 0;
+  const workLeft = Math.max(0, Math.round((dim - dayN) * 6 / 7)) + (todayDone ? 0 : 1);
+  const projOrders = Math.round(c.orders + avg * workLeft);
+  const price = getRepPrice(pricing, c.main);
+  const projMain = price ? priceCalc(price, ((c.byApp[c.main] || {}).orders || 0) + Math.round(avg * workLeft), 1).total : 0;
+  const nowMain = price ? priceCalc(price, (c.byApp[c.main] || {}).orders || 0, f).total : 0;
+  const projNet = Math.max(0, r2(me.net - nowMain + projMain));
+  // الخطوة التالية: الشريحة التالية أو الهدف
+  let nextT = null, step = null;
+  const mainOrders = (c.byApp[c.main] || {}).orders || 0;
+  const projMainOrders = mainOrders + Math.round(avg * workLeft);
+  if (price && price.mode === "tiers") {
+    const th = tiersN(price).map((x) => x.from).filter((v) => v > projMainOrders).sort((a, b) => a - b)[0];
+    if (th) { nextT = th; step = r2(priceCalc(price, th, 1).total - priceCalc(price, projMainOrders, 1).total); }
+  } else if (price && price.mode === "target") {
+    const tg = +price.ordersTarget;
+    if (tg > projMainOrders) { nextT = tg; step = r2(priceCalc(price, tg, 1).total - priceCalc(price, projMainOrders, 1).total); }
+  }
+  const perOrder = price ? (price.mode === "unit" ? +price.perOrder : price.mode === "target" ? (hasBelow(price) && mainOrders < +price.ordersTarget * f ? +price.belowRate : +price.perOrderDelta) : (() => { const ts = tiersN(price); const cur = ts.filter((x) => x.from <= mainOrders).pop(); return cur ? cur.rate : 0; })()) : 0;
+  const goalOrders = nextT || Math.round(avg * (workedSet.size + workLeft) * 1.1) || 0;
+  const needPerDay = workLeft > 0 && goalOrders > mainOrders ? Math.ceil((goalOrders - mainOrders) / workLeft) : 0;
+  // سلسلة الأيام المتواصلة
+  let streak = 0; { const d = new Date(today + "T00:00:00Z"); if (!workedSet.has(today)) d.setUTCDate(d.getUTCDate() - 1); for (let i = 0; i < 60; i++) { const k = d.toISOString().slice(0, 10); if (workedSet.has(k)) { streak++; d.setUTCDate(d.getUTCDate() - 1); } else break; } }
+  const ta = teamAvgOrders(reps, month, reports);
+  const p = perfOf(activeRep, month, reports, attendance, ext, pricing, weekendFine, violationPenalty, ta);
+  const pts = pointsOf(activeRep, reports, ext);
+  const tips = [];
+  if (!todayDone) tips.push(Lx(lang, "لم تُسجَّل لك طلبات اليوم بعد — ابدأ طلبات اليوم لتحافظ على سلسلتك.", "No orders logged for you today yet — start today to keep your streak."));
+  if (step && nextT) tips.push(Lx(lang, `بقي لك ${Math.max(0, nextT - projMainOrders)} طلب فوق توقعك لتصل للحد التالي ويرتفع دخلك ${fmt(step)} ر.س.`, `${Math.max(0, nextT - projMainOrders)} more orders beyond your forecast reach the next level and add ${fmt(step)} SAR.`));
+  if (p.viol > 0) tips.push(Lx(lang, `لديك ${p.viol} مخالفة هذا الشهر — كل مخالفة تخصم من دخلك وتخفض درجتك.`, `You have ${p.viol} violation(s) this month — each one cuts income and score.`));
+  if (p.att < 0.85) tips.push(Lx(lang, "حضورك أقل من المتوقع — كل يوم حضور يرفع درجتك أكثر من أي عامل آخر.", "Attendance is below expected — each attended day lifts your score the most."));
+  if (streak >= 5) tips.push(Lx(lang, `ما شاء الله، ${streak} أيام متواصلة — حافظ عليها.`, `${streak} days in a row — keep going.`));
+  if (!tips.length) tips.push(Lx(lang, "وتيرتك ممتازة — استمر على نفس الإيقاع.", "Great pace — keep it up."));
+  const Card = ({ k, v, sub, tone }) => (
+    <div className="rounded-2xl p-3.5" style={{ background: "rgba(20,27,45,.04)", border: "1px solid var(--line)" }}>
+      <p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{k}</p>
+      <p className="num text-[20px] font-extrabold mt-1" style={{ color: tone || "inherit" }}>{v}</p>
+      {sub && <p className="text-[11px] mt-0.5" style={{ color: "var(--muted)" }}>{sub}</p>}
+    </div>);
+  const [lv, lt] = perfLevel(p.score, lang);
+  return (
+    <div className="space-y-4">
+      <div className="rounded-3xl p-5 relative overflow-hidden" style={{ background: "radial-gradient(120% 140% at 50% 0%,#1B2A4A 0%,#0E1424 60%,#080C18 100%)", border: "1px solid rgba(228,184,92,.35)" }}>
+        <p className="text-[12px] font-bold" style={{ color: "rgba(255,255,255,.65)" }}>{Lx(lang, "دخلك المتوقع نهاية الشهر", "Expected income at month end")}</p>
+        <p className="num gold-text font-extrabold" style={{ fontSize: 40, lineHeight: 1.1 }}>{fmt(Math.round(projNet))} <span className="text-[16px]">{t.sar}</span></p>
+        <p className="text-[11.5px] mt-1" style={{ color: "rgba(255,255,255,.6)" }}>{Lx(lang, `تقدير بناءً على متوسطك ${Math.round(avg)} طلب/يوم ومتبقٍ ${workLeft} يوم عمل — الكشف المعتمد هو المرجع.`, `Estimate from your ${Math.round(avg)} orders/day and ${workLeft} working days left — the approved statement is final.`)}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Card k={Lx(lang, "صافيك حتى الآن", "Net so far")} v={`${fmt(Math.round(me.net))}`} sub={t.sar} />
+        <Card k={Lx(lang, "طلباتك / المتوقع", "Orders / forecast")} v={`${c.orders} / ${projOrders}`} sub={Lx(lang, "طلب", "orders")} />
+        <Card k={Lx(lang, "قيمة كل طلب إضافي", "Value of each extra order")} v={perOrder ? `${r2(perOrder)}` : "—"} sub={t.sar} tone="#0B5C46" />
+        <Card k={Lx(lang, "سلسلة الأيام", "Day streak")} v={streak} sub={Lx(lang, "يوم متواصل", "days in a row")} />
+      </div>
+      <Panel title={Lx(lang, "خطتك اليوم", "Today's plan")}>
+        {nextT ? (
+          <div className="space-y-2">
+            <p className="text-[13px] leading-relaxed">{Lx(lang, `هدفك التالي ${nextT} طلب. تحتاج حوالي `, `Your next goal is ${nextT} orders. You need about `)}<b className="num">{needPerDay}</b>{Lx(lang, " طلب/يوم من الآن، ويرفع دخلك ", " orders/day from now, adding ")}<b className="num" style={{ color: "#0B5C46" }}>{fmt(step)} {t.sar}</b>.</p>
+            <XBar v={nextT ? mainOrders / nextT : 0} />
+            <p className="num text-[11px]" style={{ color: "var(--muted)" }}>{mainOrders} / {nextT}</p>
+          </div>
+        ) : <p className="text-[13px]">{Lx(lang, "لا توجد شريحة أعلى محددة لتسعيرتك حالياً — كل طلب إضافي يزيد دخلك مباشرة.", "No higher tier set for your pricing — each extra order adds directly.")}</p>}
+        <div className="mt-3 space-y-1.5">{tips.map((x, i) => <p key={i} className="text-[12px] rounded-xl px-3 py-2" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.3)" }}>💡 {x}</p>)}</div>
+      </Panel>
+      <Panel title={Lx(lang, "درجتي ونقاطي", "My score & points")} extra={<Chip tone={lt} sm>{lv}</Chip>}>
+        <div className="flex items-end justify-between"><p className="num text-[34px] font-extrabold">{p.score}<span className="text-[14px]" style={{ color: "var(--muted)" }}>/100</span></p>
+          <p className="text-[12px] font-bold" style={{ color: pts.tier[4] }}>{Lx(lang, pts.tier[2], pts.tier[3])} · <span className="num">{pts.balance}</span> {Lx(lang, "نقطة", "pts")}</p></div>
+        <XBar v={p.score / 100} color={p.score >= 85 ? "#3FD8B4" : p.score >= 70 ? "#5BC8E8" : p.score >= 50 ? "#E4B85C" : "#E8837A"} />
+        <div className="grid grid-cols-2 gap-2 mt-3 text-[11.5px]">
+          {[[Lx(lang, "الحضور (40)", "Attendance (40)"), p.att], [Lx(lang, "الإنتاجية (30)", "Productivity (30)"), p.prod], [Lx(lang, "تقييم المشرف (20)", "Supervisor (20)"), p.sup], [Lx(lang, "الالتزام (10)", "Compliance (10)"), p.vs]].map(([k, v]) => (
+            <div key={k}><div className="flex justify-between mb-1"><span>{k}</span><span className="num">{Math.round(v * 100)}%</span></div><XBar v={v} /></div>))}
+        </div>
+        <div className="mt-3"><Btn icon={Trophy} onClick={() => goPage("myScore")}>{Lx(lang, "تفاصيل الأداء والمكافآت", "Performance & rewards")}</Btn></div>
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════  أدائي ونقاطي ومكافآتي  ═══════════ */
+function MyScorePage({ lang, role, activeRep, reps, reports, pricing, weekendFine, violationPenalty, attendance, ext, setExt }) {
+  const t = T[lang];
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext), month = riyadhToday().slice(0, 7);
+  const p = perfOf(activeRep, month, reports, attendance, ext, pricing, weekendFine, violationPenalty, teamAvgOrders(reps, month, reports));
+  const pts = pointsOf(activeRep, reports, ext);
+  const mine = E.redeem.filter((r) => r.repId === activeRep.id);
+  const myBonus = E.bonus.filter((b) => b.repId === activeRep.id);
+  const [msg, setMsg] = useState("");
+  const redeem = (rw) => {
+    if (pts.balance < rw.cost) return setMsg(Lx(lang, "رصيد نقاطك لا يكفي.", "Not enough points."));
+    extUpd(setExt, "redeem", (a) => [{ id: uidX("RD"), repId: activeRep.id, name: activeRep.ar, cost: rw.cost, amount: rw.amount, status: "pending", at: riyadhNow().toISOString() }, ...a]);
+    setMsg(Lx(lang, "تم إرسال الطلب لمدير التشغيل.", "Request sent to the Operations Manager."));
+  };
+  const tone = { pending: "warn", approved: "ok", rejected: "bad" };
+  const lbl = { pending: Lx(lang, "قيد المراجعة", "Pending"), approved: Lx(lang, "معتمد", "Approved"), rejected: Lx(lang, "مرفوض", "Rejected") };
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "درجة أدائي هذا الشهر", "My score this month")} extra={<Chip tone={perfLevel(p.score, lang)[1]} sm>{perfLevel(p.score, lang)[0]}</Chip>}>
+        <p className="num text-[38px] font-extrabold">{p.score}<span className="text-[14px]" style={{ color: "var(--muted)" }}>/100</span></p>
+        <div className="space-y-2 mt-2 text-[12px]">
+          <p>{Lx(lang, `الحضور: ${p.days} يوم من ${p.expected} متوقع`, `Attendance: ${p.days} of ${p.expected} expected days`)}</p>
+          <p>{p.hasGoal ? Lx(lang, `الإنتاج: ${p.orders} من ${Math.round(p.goal)} طلب`, `Output: ${p.orders} of ${Math.round(p.goal)} orders`) : Lx(lang, "الإنتاج: لا يوجد هدف محدد بعد", "Output: no target set yet")}</p>
+          <p>{p.rated ? Lx(lang, "تقييم المشرف: مُسجَّل", "Supervisor rating: recorded") : Lx(lang, "تقييم المشرف: لم يُسجَّل بعد (يُحتسب محايداً)", "Supervisor rating: not yet (neutral)")}</p>
+          <p>{Lx(lang, `المخالفات: ${p.viol}`, `Violations: ${p.viol}`)}</p>
+        </div>
+      </Panel>
+      <MyAttendanceCard lang={lang} activeRep={activeRep} ext={ext} setExt={setExt} />
+      <Panel title={Lx(lang, "نقاطي ومستواي", "My points & tier")}>
+        <p className="text-[22px] font-extrabold" style={{ color: pts.tier[4] }}>{Lx(lang, pts.tier[2], pts.tier[3])}</p>
+        <p className="num text-[13px]">{Lx(lang, "الرصيد", "Balance")}: <b>{pts.balance}</b> · {Lx(lang, "المكتسب", "Earned")}: {pts.earned}</p>
+        {pts.next && <><XBar v={pts.earned / pts.next[0]} color={pts.next[4]} /><p className="text-[11px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, `بقي ${pts.next[0] - pts.earned} نقطة للمستوى ${pts.next[2]}`, `${pts.next[0] - pts.earned} pts to ${pts.next[3]}`)}</p></>}
+        <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "كيف تكسب: كل 5 طلبات = نقطة · كل يوم عمل = 5 نقاط · كل مخالفة = -10 نقاط.", "Earn: 5 orders = 1 pt · each working day = 5 pts · each violation = -10 pts.")}</p>
+      </Panel>
+      <Panel title={Lx(lang, "استبدال النقاط بمكافأة نقدية", "Redeem points for cash")}>
+        <div className="grid gap-2 sm:grid-cols-3">{REWARD_CATALOG.map((rw) => (
+          <button key={rw.id} onClick={() => redeem(rw)} className="rounded-2xl p-3 text-start" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.35)" }}>
+            <p className="num text-[18px] font-extrabold">{rw.amount} {t.sar}</p><p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{rw.cost} {Lx(lang, "نقطة", "pts")}</p></button>))}</div>
+        {msg && <p className="text-[12px] mt-2 font-bold">{msg}</p>}
+        <div className="space-y-1.5 mt-3">{mine.map((r) => <div key={r.id} className="flex items-center justify-between text-[12px] rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.035)" }}><span className="num">{r.amount} {t.sar} · {r.cost} {Lx(lang, "نقطة", "pts")}</span><Chip tone={tone[r.status]} sm>{lbl[r.status]}</Chip></div>)}</div>
+      </Panel>
+      {myBonus.length > 0 && <Panel title={Lx(lang, "مكافآت الأداء المتميز", "Outstanding performance bonuses")}>
+        {myBonus.map((b) => <p key={b.id} className="num text-[12.5px]">{b.month} · <b>{b.amount} {t.sar}</b> · {b.status === "approved" ? lbl.approved : lbl[b.status]}</p>)}</Panel>}
+    </div>
+  );
+}
+
+/* ═══════════  محفظتي: سلف + ادخار  ═══════════ */
+const walletApproved = (w) => w.status === "approved";
+function walletFinal(w, limit) {
+  const roles = (w.approvals || []).map((a) => a.role);
+  return +w.amount > limit ? roles.includes("fin") && roles.includes("gm") : roles.includes("fin") || roles.includes("gm");
+}
+function MyWalletPage({ lang, role, activeRep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, ext, setExt }) {
+  const t = T[lang];
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext), month = riyadhToday().slice(0, 7);
+  const me = repNetFor(activeRep, month, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts);
+  const mine = E.wallet.filter((w) => w.repId === activeRep.id);
+  const advMonth = mine.filter((w) => w.kind === "advance" && w.status !== "rejected" && w.status !== "canceled" && w.month === month).reduce((s, w) => s + +w.amount, 0);
+  const advPct = Math.min(ADV_CAP, +E.cfg.advMaxPct || ADV_CAP);
+  const cap = Math.max(0, Math.floor((me.net * advPct) / 100) - advMonth);
+  const saved = mine.filter((w) => w.kind === "saving" && w.status === "approved").reduce((s, w) => s + +w.amount, 0) - mine.filter((w) => w.kind === "withdraw" && w.status === "approved").reduce((s, w) => s + +w.amount, 0);
+  const [kind, setKind] = useState("advance"); const [amt, setAmt] = useState(""); const [why, setWhy] = useState(""); const [err, setErr] = useState(""); const [agree, setAgree] = useState(false);
+  const send = () => {
+    const a = +amt;
+    if (!(a > 0)) return setErr(Lx(lang, "اكتب مبلغاً صحيحاً.", "Enter a valid amount."));
+    if (kind === "advance" && a > cap) return setErr(Lx(lang, `الحد المتاح لك الآن ${fmt(cap)} ر.س (${advPct}% من صافيك الحالي).`, `Your current limit is ${fmt(cap)} SAR (${advPct}% of net).`));
+    if (kind === "withdraw" && a > saved) return setErr(Lx(lang, "المبلغ أكبر من مدخراتك.", "More than your savings."));
+    if (kind === "advance" && why.trim().length < 5) return setErr(Lx(lang, "اكتب سبب السلفة.", "Give a reason."));
+    if (kind !== "withdraw" && !agree) return setErr(Lx(lang, "يجب الموافقة على الخصم من كشفك.", "You must consent to the deduction."));
+    setErr("");
+    extUpd(setExt, "wallet", (arr) => [{ id: uidX("WL"), repId: activeRep.id, name: activeRep.ar, kind, amount: a, reason: why.trim(), month, status: "pending", approvals: [], consent: kind !== "withdraw", at: riyadhNow().toISOString() }, ...arr]);
+    setAmt(""); setWhy(""); setAgree(false);
+  };
+  const KL = { advance: Lx(lang, "سلفة", "Advance"), saving: Lx(lang, "ادخار", "Saving"), withdraw: Lx(lang, "سحب ادخار", "Withdraw") };
+  const tone = { pending: "warn", approved: "ok", rejected: "bad", canceled: "n" };
+  const lbl = { pending: Lx(lang, "قيد الاعتماد", "Pending"), approved: Lx(lang, "معتمد", "Approved"), rejected: Lx(lang, "مرفوض", "Rejected"), canceled: Lx(lang, "ملغي", "Canceled") };
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl p-4" style={{ background: "rgba(63,216,180,.10)", border: "1px solid rgba(63,216,180,.35)" }}><p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "الحد المتاح للسلفة", "Advance limit now")}</p><p className="num text-[22px] font-extrabold">{fmt(cap)} <span className="text-[12px]">{t.sar}</span></p></div>
+        <div className="rounded-2xl p-4" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.35)" }}><p className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "مدخراتي", "My savings")}</p><p className="num text-[22px] font-extrabold">{fmt(saved)} <span className="text-[12px]">{t.sar}</span></p></div>
+      </div>
+      <Panel title={Lx(lang, "طلب جديد", "New request")}>
+        <div className="flex gap-2 mb-3">{["advance", "saving", "withdraw"].map((k) => <button key={k} onClick={() => setKind(k)} className="flex-1 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: kind === k ? "#12151D" : "rgba(20,27,45,.05)", color: kind === k ? "#fff" : "var(--muted)" }}>{KL[k]}</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2"><XIn value={amt} onChange={setAmt} ph={Lx(lang, "المبلغ", "Amount")} type="number" /><XIn value={why} onChange={setWhy} ph={Lx(lang, "السبب / ملاحظة", "Reason / note")} /></div>
+        {kind !== "withdraw" && <label className="flex items-start gap-2 mt-3 text-[11.5px] leading-relaxed cursor-pointer"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5" />{kind === "advance" ? Lx(lang, "أوافق على خصم هذه السلفة من كشف راتبي الشهري.", "I consent to deducting this advance from my monthly statement.") : Lx(lang, "أوافق طوعاً على اقتطاع هذا المبلغ كادخار من كشفي، ويحق لي سحبه متى شئت.", "I voluntarily agree to set aside this amount as savings and may withdraw it anytime.")}</label>}
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+        <div className="mt-3"><Btn variant="accent" accent={role.glow} icon={Send} onClick={send}>{Lx(lang, "إرسال الطلب", "Send request")}</Btn></div>
+      </Panel>
+      <Panel title={Lx(lang, "طلباتي", "My requests")}>
+        {mine.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد طلبات.", "No requests.")}</p> : <div className="space-y-2">{mine.map((w) => (
+          <div key={w.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex-1"><p className="num text-[14px] font-extrabold">{KL[w.kind]} · {fmt(w.amount)} {t.sar}</p><p className="num text-[11px]" style={{ color: "var(--muted)" }}>{(w.at || "").slice(0, 10)}{w.reason ? ` · ${w.reason}` : ""}</p>{w.status === "rejected" && w.why && <p className="text-[11px]" style={{ color: "#C0443A" }}>{w.why}</p>}</div>
+            <Chip tone={tone[w.status]} sm>{lbl[w.status]}</Chip>
+            {w.status === "pending" && <button onClick={() => extUpd(setExt, "wallet", (arr) => arr.map((z) => (z.id === w.id ? { ...z, status: "canceled" } : z)))} className="text-[11px] font-bold" style={{ color: "#C0443A" }}>{Lx(lang, "إلغاء", "Cancel")}</button>}
+          </div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════  بلّغ — الحوادث والمشاكل (المندوب)  ═══════════ */
+const INC_TYPES = { accident: ["حادث", "Accident"], theft: ["سرقة / فقدان", "Theft / loss"], fine: ["مخالفة مرورية", "Traffic fine"], breakdown: ["عطل المركبة", "Breakdown"], dispute: ["مشكلة مع عميل/مطعم", "Customer/restaurant issue"], other: ["أخرى", "Other"] };
+function ReportIncidentPage({ lang, role, activeRep, ext, setExt }) {
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext);
+  const [f, setF] = useState({ type: "accident", desc: "", urgent: false, photo: null });
+  const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  const mine = E.incidents.filter((i) => i.repId === activeRep.id);
+  const onPhoto = async (e) => { const file = e.target.files && e.target.files[0]; if (!file) return; setBusy(true); try { const d = await compressImage(file); setF((p) => ({ ...p, photo: d })); } catch { setErr(Lx(lang, "تعذّر رفع الصورة.", "Photo failed.")); } setBusy(false); };
+  const send = () => {
+    if (f.desc.trim().length < 8) return setErr(Lx(lang, "اشرح ما حدث (8 أحرف على الأقل).", "Describe what happened."));
+    setErr("");
+    extUpd(setExt, "incidents", (a) => [{ id: uidX("INC"), repId: activeRep.id, name: activeRep.ar, sup: activeRep.sup || null, type: f.type, desc: f.desc.trim(), urgent: f.urgent, photo: f.photo, status: "open", notes: [], at: riyadhNow().toISOString() }, ...a]);
+    setF({ type: "accident", desc: "", urgent: false, photo: null });
+  };
+  const tone = { open: "warn", investigating: "info", closed: "ok" };
+  const lbl = { open: Lx(lang, "مفتوح", "Open"), investigating: Lx(lang, "قيد المتابعة", "In progress"), closed: Lx(lang, "مغلق", "Closed") };
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "بلّغ عن حادث أو مشكلة", "Report an incident")}>
+        <div className="flex gap-2 flex-wrap mb-3">{Object.keys(INC_TYPES).map((k) => <button key={k} onClick={() => setF({ ...f, type: k })} className="px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: f.type === k ? "#12151D" : "rgba(20,27,45,.05)", color: f.type === k ? "#fff" : "var(--muted)" }}>{INC_TYPES[k][lang === "en" ? 1 : 0]}</button>)}</div>
+        <textarea value={f.desc} onChange={(e) => setF({ ...f, desc: e.target.value })} rows={3} placeholder={Lx(lang, "ماذا حدث؟ أين؟ هل أُصيب أحد؟", "What happened? Where? Anyone hurt?")} className="w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none" style={XINP} />
+        <label className="flex items-center gap-2 mt-2 text-[12px] font-bold cursor-pointer"><input type="checkbox" checked={f.urgent} onChange={(e) => setF({ ...f, urgent: e.target.checked })} />{Lx(lang, "حالة عاجلة / إصابة", "Urgent / injury")}</label>
+        <label className="mt-3 flex items-center gap-3 rounded-2xl p-3 cursor-pointer" style={{ border: "1.5px dashed var(--line-strong)", background: "rgba(20,27,45,.03)" }}>
+          {f.photo ? <img src={f.photo} alt="" className="w-14 h-14 rounded-xl object-cover" /> : <Camera size={24} />}<span className="text-[12.5px] font-bold">{busy ? "…" : Lx(lang, "أرفق صورة (اختياري)", "Attach photo (optional)")}</span>
+          <input type="file" accept="image/*" capture="environment" onChange={onPhoto} className="hidden" /></label>
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+        <div className="mt-3"><Btn variant="accent" accent={role.glow} icon={Send} onClick={send}>{Lx(lang, "إرسال البلاغ", "Send report")}</Btn></div>
+      </Panel>
+      <Panel title={Lx(lang, "بلاغاتي", "My reports")}>
+        {mine.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد بلاغات.", "None.")}</p> : <div className="space-y-2">{mine.map((i) => (
+          <div key={i.id} className="rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex items-center justify-between"><p className="text-[13px] font-extrabold">{INC_TYPES[i.type][lang === "en" ? 1 : 0]}{i.urgent ? " 🚨" : ""}</p><Chip tone={tone[i.status]} sm>{lbl[i.status]}</Chip></div>
+            <p className="text-[12px] mt-1">{i.desc}</p><p className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{(i.at || "").slice(0, 10)}</p>
+            {(i.notes || []).map((n, k) => <p key={k} className="text-[11.5px] mt-1" style={{ color: "#0B5C46" }}>↳ {n.text}</p>)}
+          </div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════  إجازاتي (المندوب)  ═══════════ */
+const LEAVE_KINDS = { annual: ["سنوية", "Annual"], sick: ["مرضية", "Sick"], emergency: ["طارئة", "Emergency"] };
+function MyLeavePage({ lang, role, activeRep, ext, setExt }) {
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext);
+  const [f, setF] = useState({ kind: "annual", from: "", to: "", reason: "" }); const [err, setErr] = useState("");
+  const mine = E.leaves.filter((l) => l.repId === activeRep.id);
+  const send = () => {
+    if (!f.from || !f.to || f.to < f.from) return setErr(Lx(lang, "حدّد تاريخ بداية ونهاية صحيحين.", "Pick valid dates."));
+    if (f.from < riyadhToday() && f.kind !== "sick") return setErr(Lx(lang, "لا يمكن طلب إجازة بتاريخ سابق (إلا المرضية).", "Past dates only allowed for sick leave."));
+    setErr("");
+    extUpd(setExt, "leaves", (a) => [{ id: uidX("LV"), repId: activeRep.id, name: activeRep.ar, sup: activeRep.sup || null, ...f, status: "pending", at: riyadhNow().toISOString() }, ...a]);
+    setF({ kind: "annual", from: "", to: "", reason: "" });
+  };
+  const tone = { pending: "warn", approved: "ok", rejected: "bad" };
+  const lbl = { pending: Lx(lang, "بانتظار مدير التشغيل", "Awaiting Ops Manager"), approved: Lx(lang, "معتمدة", "Approved"), rejected: Lx(lang, "مرفوضة", "Rejected") };
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "طلب إجازة", "Leave request")}>
+        <div className="flex gap-2 mb-3">{Object.keys(LEAVE_KINDS).map((k) => <button key={k} onClick={() => setF({ ...f, kind: k })} className="flex-1 py-2.5 rounded-xl text-[12.5px] font-bold" style={{ background: f.kind === k ? "#12151D" : "rgba(20,27,45,.05)", color: f.kind === k ? "#fff" : "var(--muted)" }}>{LEAVE_KINDS[k][lang === "en" ? 1 : 0]}</button>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2"><XIn type="date" value={f.from} onChange={(v) => setF({ ...f, from: v })} /><XIn type="date" value={f.to} onChange={(v) => setF({ ...f, to: v })} /></div>
+        <div className="mt-3"><XIn value={f.reason} onChange={(v) => setF({ ...f, reason: v })} ph={Lx(lang, "السبب (اختياري)", "Reason (optional)")} cls="w-full" /></div>
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+        <div className="mt-3"><Btn variant="accent" accent={role.glow} icon={Send} onClick={send}>{Lx(lang, "إرسال الطلب", "Send")}</Btn></div>
+      </Panel>
+      <Panel title={Lx(lang, "طلباتي", "My requests")}>
+        {mine.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد طلبات.", "None.")}</p> : <div className="space-y-2">{mine.map((l) => (
+          <div key={l.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex-1"><p className="text-[13px] font-extrabold">{LEAVE_KINDS[l.kind][lang === "en" ? 1 : 0]}</p><p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{l.from} → {l.to}</p>{l.status === "rejected" && l.why && <p className="text-[11px]" style={{ color: "#C0443A" }}>{l.why}</p>}</div>
+            <Chip tone={tone[l.status]} sm>{lbl[l.status]}</Chip></div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════  الأكاديمية (المندوب)  ═══════════ */
+const DEFAULT_COURSES = [
+  { id: "c-safety", title: ["السلامة على الطريق", "Road safety"], body: ["التزم بالسرعة المحددة، ولا تستخدم الجوال أثناء القيادة، واربط الخوذة دائماً، وتجنّب الطلبات المتتالية بسرعة خطرة. سلامتك أهم من أي طلب.", "Keep to speed limits, never use the phone while riding, always wear a helmet. Your safety beats any order."], mandatory: true, pass: 70,
+    quiz: [{ q: ["متى تستخدم الجوال أثناء القيادة؟", "When may you use the phone while riding?"], opts: [["أبداً، أتوقف أولاً", "Never — stop first"], ["عند الازدحام", "In traffic"], ["إذا كان الطلب مستعجلاً", "If order is urgent"]], ans: 0 },
+      { q: ["ما أهم أولوية؟", "Top priority?"], opts: [["السرعة", "Speed"], ["السلامة", "Safety"], ["عدد الطلبات", "Order count"]], ans: 1 }] },
+  { id: "c-customer", title: ["التعامل مع العميل", "Customer handling"], body: ["حيِّ العميل بلطف، تأكد من الطلب قبل التسليم، وإذا تعذّر الوصول اتصل قبل أي إجراء. لا تجادل العميل أبداً وارفع الأمر لمشرفك.", "Greet politely, verify the order, call before any action if unreachable. Never argue; escalate to your supervisor."], mandatory: true, pass: 70,
+    quiz: [{ q: ["العميل غاضب، ماذا تفعل؟", "Customer is angry — what now?"], opts: [["أجادله", "Argue"], ["أهدأ وأبلغ مشرفي", "Stay calm, tell supervisor"], ["أترك الطلب", "Leave order"]], ans: 1 }] },
+  { id: "c-earn", title: ["كيف تعظّم أرباحك", "Maximising earnings"], body: ["افهم تسعيرتك: الشرائح تعني أن كل طلب بعد الحد يرفع قيمة طلباتك. حافظ على حضورك، وتجنّب المخالفات لأنها تُخصم، وراجع «مدربي» يومياً.", "Know your pricing: tiers raise value past thresholds. Stay consistent, avoid violations (they are deducted), check your Coach daily."], mandatory: false, pass: 60,
+    quiz: [{ q: ["ما الذي يُخصم من أرباحك؟", "What is deducted?"], opts: [["المخالفات", "Violations"], ["الحضور", "Attendance"], ["الشرائح", "Tiers"]], ans: 0 }] },
+];
+const allCourses = (E) => [...DEFAULT_COURSES, ...(E.courses || [])];
+const cTitle = (c, lang) => (Array.isArray(c.title) ? c.title[lang === "en" ? 1 : 0] : c.title);
+const cBody = (c, lang) => (Array.isArray(c.body) ? c.body[lang === "en" ? 1 : 0] : c.body);
+function AcademyPage({ lang, role, activeRep, ext, setExt }) {
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext), prog = E.progress[activeRep.id] || {};
+  const [open, setOpen] = useState(null); const [ans, setAns] = useState({}); const [res, setRes] = useState(null);
+  const courses = allCourses(E);
+  const cur = courses.find((c) => c.id === open);
+  const submit = () => {
+    const right = cur.quiz.filter((q, i) => ans[i] === q.ans).length;
+    const pct = Math.round((right / Math.max(1, cur.quiz.length)) * 100);
+    const passed = pct >= (cur.pass || 70);
+    setRes({ pct, passed });
+    extUpd(setExt, "progress", (p) => ({ ...p, [activeRep.id]: { ...(p[activeRep.id] || {}), [cur.id]: { score: pct, passed: passed || !!((p[activeRep.id] || {})[cur.id] || {}).passed, at: riyadhNow().toISOString() } } }));
+  };
+  if (cur) return (
+    <div className="space-y-4">
+      <Panel title={cTitle(cur, lang)} extra={<button onClick={() => { setOpen(null); setAns({}); setRes(null); }} className="text-[12px] font-bold">{Lx(lang, "رجوع", "Back")}</button>}>
+        <p className="text-[13px] leading-loose">{cBody(cur, lang)}</p>
+      </Panel>
+      <Panel title={Lx(lang, "اختبار قصير", "Quick quiz")}>
+        {cur.quiz.map((q, i) => (
+          <div key={i} className="mb-4"><p className="text-[13px] font-bold mb-2">{Array.isArray(q.q) ? q.q[lang === "en" ? 1 : 0] : q.q}</p>
+            <div className="space-y-1.5">{q.opts.map((o, k) => <button key={k} onClick={() => setAns({ ...ans, [i]: k })} className="w-full text-start rounded-xl px-3 py-2.5 text-[12.5px] font-bold" style={{ background: ans[i] === k ? "#12151D" : "rgba(20,27,45,.05)", color: ans[i] === k ? "#fff" : "inherit" }}>{Array.isArray(o) ? o[lang === "en" ? 1 : 0] : o}</button>)}</div></div>))}
+        {res && <p className="text-[13px] font-extrabold" style={{ color: res.passed ? "#0B5C46" : "#C0443A" }}>{res.passed ? Lx(lang, `نجحت ✔ ${res.pct}%`, `Passed ✔ ${res.pct}%`) : Lx(lang, `لم تنجح ${res.pct}% — راجع الدرس وأعد المحاولة`, `Not passed ${res.pct}% — review and retry`)}</p>}
+        <div className="mt-3"><Btn variant="accent" accent={role.glow} onClick={submit} disabled={Object.keys(ans).length < cur.quiz.length}>{Lx(lang, "تسليم الإجابات", "Submit")}</Btn></div>
+      </Panel>
+    </div>
+  );
+  const done = courses.filter((c) => (prog[c.id] || {}).passed).length;
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "أكاديمية بوارق", "Bawariq Academy")}><p className="text-[12.5px]">{Lx(lang, `أنجزت ${done} من ${courses.length} دورة`, `${done} of ${courses.length} courses done`)}</p><XBar v={done / Math.max(1, courses.length)} /></Panel>
+      {courses.map((c) => { const pr = prog[c.id]; return (
+        <button key={c.id} onClick={() => setOpen(c.id)} className="w-full flex items-center gap-3 rounded-2xl p-4 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+          <div className="flex-1"><p className="text-[14px] font-extrabold">{cTitle(c, lang)}</p><p className="text-[11px]" style={{ color: "var(--muted)" }}>{c.mandatory ? Lx(lang, "إلزامية", "Mandatory") : Lx(lang, "اختيارية", "Optional")}{pr ? ` · ${pr.score}%` : ""}</p></div>
+          <Chip tone={pr && pr.passed ? "ok" : c.mandatory ? "warn" : "n"} sm>{pr && pr.passed ? Lx(lang, "منجزة", "Done") : Lx(lang, "ابدأ", "Start")}</Chip></button>); })}
+    </div>
+  );
+}
+
+/* ═══════════  صفحات الإدارة للحزمة الموسّعة  ═══════════ */
+const EMPTYT = (lang) => <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد عناصر.", "Nothing here.")}</p>;
+const repName = (reps, id, fb) => { const r = (reps || []).find((z) => z.id === id); return r ? r.ar : fb || id; };
+
+/* ─── الأداء والمكافآت (نظام 3 + 9) ─── */
+function PerfBoardPage({ lang, role, reps, reports, pricing, weekendFine, violationPenalty, attendance, ext, setExt, setRepSettlements, setAuditLog, actingEmployee, scopeSup }) {
+  const t = T[lang], E = extOf(ext);
+  const month = riyadhToday().slice(0, 7);
+  const [tab, setTab] = useState("board");
+  const canApprove = role.id === "opsm" || role.id === "gm";
+  const canCfg = role.id === "gm" || role.id === "fin";
+  const ta = teamAvgOrders(reps, month, reports);
+  const act = reps.filter((r) => r.status === "active");
+  const rows = act.map((r) => ({ r, p: perfOf(r, month, reports, attendance, ext, pricing, weekendFine, violationPenalty, ta) })).sort((a, b) => b.p.score - a.p.score);
+  const rate = (r, stars) => extUpd(setExt, "ratings", (m) => ({ ...m, [r.id + "|" + month]: { stars, by: byName(role, actingEmployee), at: riyadhNow().toISOString() } }));
+  const pendRedeem = E.redeem.filter((x) => x.status === "pending");
+  const pendBonus = E.bonus.filter((x) => x.status === "pending");
+  const eligible = rows.filter((x) => x.p.score >= E.cfg.bonusMin).slice(0, E.cfg.bonusTop).filter((x) => !E.bonus.some((b) => b.repId === x.r.id && b.month === month));
+  const proposeBonus = () => extUpd(setExt, "bonus", (a) => [...eligible.map((x) => ({ id: uidX("BN"), repId: x.r.id, name: x.r.ar, month, amount: E.cfg.bonus, score: x.p.score, status: "pending", at: riyadhNow().toISOString() })), ...a]);
+  const decideBonus = (b, ok) => {
+    extUpd(setExt, "bonus", (a) => a.map((z) => (z.id === b.id ? { ...z, status: ok ? "approved" : "rejected", by: byName(role, actingEmployee) } : z)));
+    if (ok) addManualAdj(setRepSettlements, b.month, { id: "BN-" + b.id, repId: b.repId, type: "add", amount: b.amount, reason: Lx(lang, "مكافأة أداء متميز", "Outstanding performance bonus"), by: byName(role, actingEmployee) });
+    logAudit(setAuditLog, role, ok ? "bonus_approved" : "bonus_rejected", `${b.name}: ${b.amount}`, actingEmployee);
+  };
+  const decideRedeem = (x, ok) => {
+    extUpd(setExt, "redeem", (a) => a.map((z) => (z.id === x.id ? { ...z, status: ok ? "approved" : "rejected", by: byName(role, actingEmployee) } : z)));
+    if (ok) addManualAdj(setRepSettlements, month, { id: "RD-" + x.id, repId: x.repId, type: "add", amount: x.amount, reason: Lx(lang, "استبدال نقاط", "Points redemption"), by: byName(role, actingEmployee) });
+    logAudit(setAuditLog, role, ok ? "redeem_approved" : "redeem_rejected", `${x.name}: ${x.amount}`, actingEmployee);
+  };
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["board", Lx(lang, "لوحة الأداء", "Scoreboard")], ["rewards", Lx(lang, "المكافآت والنقاط", "Rewards"), pendRedeem.length + pendBonus.length], ["cfg", Lx(lang, "الإعدادات", "Settings")]]} />
+      {tab === "board" && <Panel title={Lx(lang, `درجات المناديب — ${month}`, `Rider scores — ${month}`)}>
+        {rows.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{rows.map(({ r, p }, i) => { const [lv, lt] = perfLevel(p.score, lang); return (
+          <div key={r.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex items-center gap-3"><span className="num text-[12px] font-extrabold w-6">{i + 1}</span><p className="flex-1 text-[13px] font-extrabold">{r.ar}</p><span className="num text-[20px] font-extrabold">{p.score}</span><Chip tone={lt} sm>{lv}</Chip></div>
+            <div className="grid grid-cols-4 gap-2 mt-2 text-[10.5px]" style={{ color: "var(--muted)" }}>{[[Lx(lang, "حضور", "Att"), p.att], [Lx(lang, "إنتاج", "Prod"), p.prod], [Lx(lang, "تقييم", "Rating"), p.sup], [Lx(lang, "التزام", "Comp"), p.vs]].map(([k, v]) => <div key={k}><div className="flex justify-between"><span>{k}</span><span className="num">{Math.round(v * 100)}</span></div><XBar v={v} /></div>)}</div>
+            <div className="flex items-center gap-1 mt-2"><span className="text-[11px] font-bold ml-2">{Lx(lang, "تقييم المشرف:", "Supervisor rating:")}</span>{[1, 2, 3, 4, 5].map((s) => <button key={s} onClick={() => rate(r, s)} className="text-[18px]" style={{ color: p.rated && (E.ratings[r.id + "|" + month].stars >= s) ? "#E4B85C" : "rgba(20,27,45,.2)" }}>★</button>)}</div>
+          </div>); })}</div>}
+      </Panel>}
+      {tab === "rewards" && <>
+        <Panel title={Lx(lang, "مكافآت الأداء المتميز", "Outstanding performance bonuses")} extra={canApprove && eligible.length > 0 ? <Btn variant="accent" accent={role.glow} onClick={proposeBonus}>{Lx(lang, `اقتراح ${eligible.length} مكافأة`, `Propose ${eligible.length}`)}</Btn> : null}>
+          <p className="text-[11.5px] mb-2" style={{ color: "var(--muted)" }}>{Lx(lang, `أعلى ${E.cfg.bonusTop} مناديب بدرجة ≥ ${E.cfg.bonusMin} — المبلغ ${E.cfg.bonus} ر.س لكل مندوب، يُضاف تلقائياً لكشفه عند الاعتماد.`, `Top ${E.cfg.bonusTop} riders scoring ≥ ${E.cfg.bonusMin} — ${E.cfg.bonus} SAR each, auto-added to the statement on approval.`)}</p>
+          {E.bonus.length === 0 ? EMPTYT(lang) : E.bonus.map((b) => <div key={b.id} className="flex items-center gap-2 rounded-xl px-3 py-2 mb-1.5" style={{ background: "rgba(20,27,45,.035)" }}><span className="flex-1 text-[12.5px] font-bold">{b.name} <span className="num" style={{ color: "var(--muted)" }}>({b.score}) · {b.month} · {b.amount} {t.sar}</span></span>
+            {b.status === "pending" && canApprove ? <><Btn variant="accent" accent={role.glow} onClick={() => decideBonus(b, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn><Btn variant="danger" onClick={() => decideBonus(b, false)}>{Lx(lang, "رفض", "Reject")}</Btn></> : <Chip tone={b.status === "approved" ? "ok" : b.status === "rejected" ? "bad" : "warn"} sm>{b.status === "approved" ? Lx(lang, "معتمدة", "Approved") : b.status === "rejected" ? Lx(lang, "مرفوضة", "Rejected") : Lx(lang, "بانتظار الاعتماد", "Pending")}</Chip>}</div>)}
+        </Panel>
+        <Panel title={Lx(lang, "طلبات استبدال النقاط", "Points redemption requests")}>
+          {E.redeem.length === 0 ? EMPTYT(lang) : E.redeem.map((x) => <div key={x.id} className="flex items-center gap-2 rounded-xl px-3 py-2 mb-1.5" style={{ background: "rgba(20,27,45,.035)" }}><span className="flex-1 text-[12.5px] font-bold">{x.name} <span className="num" style={{ color: "var(--muted)" }}>· {x.cost} {Lx(lang, "نقطة", "pts")} → {x.amount} {t.sar}</span></span>
+            {x.status === "pending" && canApprove ? <><Btn variant="accent" accent={role.glow} onClick={() => decideRedeem(x, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn><Btn variant="danger" onClick={() => decideRedeem(x, false)}>{Lx(lang, "رفض", "Reject")}</Btn></> : <Chip tone={x.status === "approved" ? "ok" : x.status === "rejected" ? "bad" : "warn"} sm>{x.status}</Chip>}</div>)}
+        </Panel></>}
+      {tab === "cfg" && <Panel title={Lx(lang, "إعدادات المكافآت", "Reward settings")}>
+        {!canCfg && <p className="text-[11.5px] mb-2" style={{ color: "var(--muted)" }}>{Lx(lang, "التعديل للمدير العام والمالية فقط.", "Editable by GM and Finance only.")}</p>}
+        <div className="grid gap-3 sm:grid-cols-3">{[["bonus", Lx(lang, "مبلغ المكافأة (ر.س)", "Bonus (SAR)")], ["bonusMin", Lx(lang, "أدنى درجة", "Min score")], ["bonusTop", Lx(lang, "عدد المستحقين شهرياً", "Winners / month")]].map(([k, l]) => <div key={k}><p className="text-[11px] font-bold mb-1">{l}</p><XIn type="number" value={E.cfg[k]} onChange={(v) => canCfg && extCfg(setExt, { [k]: +v })} cls="w-full" /></div>)}</div>
+        <p className="text-[11px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "أوزان الدرجة: حضور 40 · إنتاجية 30 · تقييم المشرف 20 · مخالفات 10.", "Weights: attendance 40 · productivity 30 · supervisor 20 · violations 10.")}</p>
+      </Panel>}
+    </div>
+  );
+}
+
+/* ─── المحفظة: اعتماد السلف والادخار (نظام 13) — اعتماد مزدوج فوق الحد ─── */
+function WalletAdminPage({ lang, role, reps, ext, setExt, setRepSettlements, setAuditLog, actingEmployee }) {
+  const t = T[lang], E = extOf(ext), limit = +E.cfg.dualLimit;
+  const [tab, setTab] = useState("pending"); const [why, setWhy] = useState({});
+  const can = role.id === "fin" || role.id === "gm";
+  const list = E.wallet.filter((w) => (tab === "pending" ? w.status === "pending" : w.status === tab));
+  const KL = { advance: Lx(lang, "سلفة", "Advance"), saving: Lx(lang, "ادخار", "Saving"), withdraw: Lx(lang, "سحب", "Withdraw") };
+  const approve = (w) => {
+    const sign = { role: role.id, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
+    const approvals = [...(w.approvals || []).filter((a) => a.role !== role.id), sign];
+    const done = walletFinal({ ...w, approvals }, limit);
+    extUpd(setExt, "wallet", (a) => a.map((z) => (z.id === w.id ? { ...z, approvals, status: done ? "approved" : "pending" } : z)));
+    if (done) {
+      const mo = riyadhToday().slice(0, 7);
+      const type = w.kind === "withdraw" ? "add" : "deduct";
+      addManualAdj(setRepSettlements, mo, { id: "WL-" + w.id, repId: w.repId, type, amount: +w.amount, reason: (w.kind === "advance" ? Lx(lang, "سلفة معتمدة", "Approved advance") : w.kind === "saving" ? Lx(lang, "ادخار اختياري", "Voluntary saving") : Lx(lang, "سحب من الادخار", "Savings withdrawal")), by: sign.by });
+      logAudit(setAuditLog, role, "wallet_approved", `${w.name}: ${w.kind} ${w.amount}`, actingEmployee);
+    }
+  };
+  const reject = (w) => { if ((why[w.id] || "").trim().length < 4) return; extUpd(setExt, "wallet", (a) => a.map((z) => (z.id === w.id ? { ...z, status: "rejected", why: why[w.id].trim() } : z))); logAudit(setAuditLog, role, "wallet_rejected", `${w.name}: ${w.amount}`, actingEmployee); };
+  const bal = {}; E.wallet.forEach((w) => { if (w.status !== "approved") return; bal[w.repId] = (bal[w.repId] || 0) + (w.kind === "saving" ? +w.amount : w.kind === "withdraw" ? -w.amount : 0); });
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["pending", Lx(lang, "بانتظار الاعتماد", "Pending"), E.wallet.filter((w) => w.status === "pending").length], ["approved", Lx(lang, "معتمدة", "Approved")], ["rejected", Lx(lang, "مرفوضة", "Rejected")], ["savings", Lx(lang, "أرصدة الادخار", "Savings")]]} />
+      <p className="text-[11.5px] rounded-xl px-3 py-2" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.3)" }}>{Lx(lang, `المبالغ حتى ${fmt(limit)} ر.س تُعتمد من المالية أو المدير العام، وما فوقها يلزمه توقيع المالية والمدير العام معاً. الخصم يتم من كشف الشهر بموافقة المندوب المسجّلة.`, `Up to ${fmt(limit)} SAR: Finance or GM. Above: both Finance and GM must sign. Deducted from the monthly statement with the rider's recorded consent.`)}</p>
+      {tab !== "savings" ? <Panel title={Lx(lang, "الطلبات", "Requests")}>
+        {list.length === 0 ? EMPTYT(lang) : <div className="space-y-3">{list.map((w) => { const need = +w.amount > limit; const signed = (w.approvals || []).map((a) => a.role); return (
+          <div key={w.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <div className="flex items-center justify-between"><p className="text-[13.5px] font-extrabold">{w.name} · {KL[w.kind]}</p><p className="num text-[18px] font-extrabold">{fmt(w.amount)} {t.sar}</p></div>
+            <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{(w.at || "").slice(0, 10)}{w.reason ? ` · ${w.reason}` : ""}{w.consent ? ` · ${Lx(lang, "بموافقة المندوب", "rider consented")}` : ""}</p>
+            <div className="flex gap-2 mt-1.5 flex-wrap">{need && <Chip tone="warn" sm>{Lx(lang, "اعتماد مزدوج", "Dual approval")}</Chip>}<Chip tone={signed.includes("fin") ? "ok" : "n"} sm>{Lx(lang, "المالية", "Finance")}</Chip>{need && <Chip tone={signed.includes("gm") ? "ok" : "n"} sm>{Lx(lang, "المدير العام", "GM")}</Chip>}</div>
+            {w.status === "rejected" && <p className="text-[11.5px] mt-1" style={{ color: "#C0443A" }}>{w.why}</p>}
+            {w.status === "pending" && can && <div className="flex gap-2 mt-2 flex-wrap items-center">{!signed.includes(role.id) && <Btn variant="accent" accent={role.glow} onClick={() => approve(w)}>{Lx(lang, "اعتماد", "Approve")}</Btn>}
+              <input value={why[w.id] || ""} onChange={(e) => setWhy({ ...why, [w.id]: e.target.value })} placeholder={Lx(lang, "سبب الرفض", "Reason")} className="flex-1 min-w-[120px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} /><Btn variant="danger" onClick={() => reject(w)}>{Lx(lang, "رفض", "Reject")}</Btn></div>}
+          </div>); })}</div>}
+      </Panel> : <Panel title={Lx(lang, "أرصدة الادخار", "Savings balances")}>{Object.keys(bal).length === 0 ? EMPTYT(lang) : Object.keys(bal).map((id) => <p key={id} className="num text-[13px] py-1">{repName(reps, id)} — <b>{fmt(bal[id])} {t.sar}</b></p>)}</Panel>}
+    </div>
+  );
+}
+
+/* ─── البلاغات والحوادث (نظام 11) ─── */
+function IncidentsPage({ lang, role, reps, ext, setExt, setAuditLog, actingEmployee, scopeSup }) {
+  const E = extOf(ext); const [tab, setTab] = useState("open"); const [note, setNote] = useState({}); const [view, setView] = useState(null);
+  const vis = (i) => (!scopeSup || i.sup === scopeSup) && (role.id !== "legal" || ["accident", "theft", "fine", "dispute"].includes(i.type));
+  const all = E.incidents.filter(vis);
+  const list = all.filter((i) => (tab === "open" ? i.status !== "closed" : i.status === "closed"));
+  const act = (i, status) => { const txt = (note[i.id] || "").trim(); extUpd(setExt, "incidents", (a) => a.map((z) => (z.id === i.id ? { ...z, status, notes: txt ? [...(z.notes || []), { text: txt, by: byName(role, actingEmployee), at: riyadhNow().toISOString() }] : z.notes } : z))); setNote({ ...note, [i.id]: "" }); logAudit(setAuditLog, role, "incident_" + status, `${i.name}: ${i.type}`, actingEmployee); };
+  return (
+    <div className="space-y-4"><PhotoModal src={view} onClose={() => setView(null)} />
+      <XTabs tab={tab} setTab={setTab} tabs={[["open", Lx(lang, "مفتوحة", "Open"), all.filter((i) => i.status !== "closed").length], ["closed", Lx(lang, "مغلقة", "Closed")]]} />
+      <Panel title={Lx(lang, "البلاغات", "Incidents")}>
+        {list.length === 0 ? EMPTYT(lang) : <div className="space-y-3">{list.map((i) => (
+          <div key={i.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: `1px solid ${i.urgent ? "rgba(232,131,122,.5)" : "var(--line)"}` }}>
+            <div className="flex items-center justify-between"><p className="text-[13.5px] font-extrabold">{i.name} · {INC_TYPES[i.type][lang === "en" ? 1 : 0]}{i.urgent ? " 🚨" : ""}</p><Chip tone={i.status === "open" ? "warn" : i.status === "investigating" ? "info" : "ok"} sm>{i.status}</Chip></div>
+            <p className="text-[12.5px] mt-1">{i.desc}</p><p className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{(i.at || "").slice(0, 16).replace("T", " ")}</p>
+            {i.photo && <img src={i.photo} alt="" onClick={() => setView(i.photo)} className="w-20 h-20 rounded-xl object-cover mt-2 cursor-pointer" />}
+            {(i.notes || []).map((n, k) => <p key={k} className="text-[11.5px] mt-1" style={{ color: "#0B5C46" }}>↳ {n.by}: {n.text}</p>)}
+            {i.status !== "closed" && <div className="flex gap-2 mt-2 flex-wrap"><input value={note[i.id] || ""} onChange={(e) => setNote({ ...note, [i.id]: e.target.value })} placeholder={Lx(lang, "ملاحظة / إجراء", "Note / action")} className="flex-1 min-w-[140px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} />
+              {i.status === "open" && <Btn onClick={() => act(i, "investigating")}>{Lx(lang, "بدء المتابعة", "Investigate")}</Btn>}<Btn variant="accent" accent={role.glow} onClick={() => act(i, "closed")}>{Lx(lang, "إغلاق", "Close")}</Btn></div>}
+          </div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── الإجازات: اعتماد مدير التشغيل (قرارك رقم 5) ─── */
+function LeavesAdminPage({ lang, role, reps, ext, setExt, setAuditLog, actingEmployee, scopeSup }) {
+  const E = extOf(ext); const [tab, setTab] = useState("pending"); const [why, setWhy] = useState({});
+  const can = role.id === "opsm" || role.id === "gm";
+  const all = E.leaves.filter((l) => !scopeSup || l.sup === scopeSup);
+  const list = all.filter((l) => l.status === tab);
+  const overlap = (l) => E.leaves.filter((z) => z.id !== l.id && z.status === "approved" && z.sup === l.sup && !(z.to < l.from || z.from > l.to)).length;
+  const decide = (l, ok) => { if (!ok && (why[l.id] || "").trim().length < 4) return; extUpd(setExt, "leaves", (a) => a.map((z) => (z.id === l.id ? { ...z, status: ok ? "approved" : "rejected", why: ok ? "" : why[l.id].trim(), by: byName(role, actingEmployee) } : z))); logAudit(setAuditLog, role, ok ? "leave_approved" : "leave_rejected", `${l.name}: ${l.from}→${l.to}`, actingEmployee); };
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["pending", Lx(lang, "بانتظار الاعتماد", "Pending"), all.filter((l) => l.status === "pending").length], ["approved", Lx(lang, "معتمدة", "Approved")], ["rejected", Lx(lang, "مرفوضة", "Rejected")]]} />
+      {!can && <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "الاعتماد لمدير التشغيل — الصفحة للاطلاع.", "Approval belongs to the Operations Manager — view only.")}</p>}
+      <Panel title={Lx(lang, "طلبات الإجازة", "Leave requests")}>
+        {list.length === 0 ? EMPTYT(lang) : <div className="space-y-3">{list.map((l) => (
+          <div key={l.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <p className="text-[13.5px] font-extrabold">{l.name} · {LEAVE_KINDS[l.kind][lang === "en" ? 1 : 0]}</p>
+            <p className="num text-[12px]">{l.from} → {l.to}{l.reason ? ` · ${l.reason}` : ""}</p>
+            {overlap(l) > 0 && l.status === "pending" && <p className="text-[11.5px] font-bold" style={{ color: "#8A611E" }}>⚠ {Lx(lang, `يتعارض مع ${overlap(l)} إجازة معتمدة لنفس المشرف`, `Overlaps ${overlap(l)} approved leave(s) under same supervisor`)}</p>}
+            {l.status === "rejected" && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{l.why}</p>}
+            {l.status === "pending" && can && <div className="flex gap-2 mt-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => decide(l, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn>
+              <input value={why[l.id] || ""} onChange={(e) => setWhy({ ...why, [l.id]: e.target.value })} placeholder={Lx(lang, "سبب الرفض", "Reason")} className="flex-1 min-w-[120px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} /><Btn variant="danger" onClick={() => decide(l, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>}
+          </div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── إدارة التدريب (نظام 12) ─── */
+function TrainingAdminPage({ lang, role, reps, ext, setExt }) {
+  const E = extOf(ext); const courses = allCourses(E); const can = role.id === "hr" || role.id === "opsm" || role.id === "gm";
+  const [f, setF] = useState({ title: "", body: "", mandatory: true, qs: "" }); const [err, setErr] = useState("");
+  const add = () => {
+    const quiz = f.qs.split("\n").map((l) => l.split("|").map((s) => s.trim())).filter((p) => p.length >= 4).map((p) => ({ q: p[0], opts: p.slice(1, -1), ans: Math.max(0, (+p[p.length - 1] || 1) - 1) }));
+    if (f.title.trim().length < 3 || f.body.trim().length < 20) return setErr(Lx(lang, "اكتب عنواناً ومحتوى كافياً.", "Title and content needed."));
+    if (!quiz.length) return setErr(Lx(lang, "أضف سؤالاً واحداً على الأقل بالصيغة: السؤال|خيار1|خيار2|رقم الصحيح", "Add at least one question: Q|opt1|opt2|correct-number"));
+    setErr(""); extUpd(setExt, "courses", (a) => [...a, { id: uidX("C"), title: f.title.trim(), body: f.body.trim(), mandatory: f.mandatory, pass: 70, quiz }]); setF({ title: "", body: "", mandatory: true, qs: "" });
+  };
+  const act = reps.filter((r) => r.status === "active"); const mand = courses.filter((c) => c.mandatory);
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "إنجاز الدورات الإلزامية", "Mandatory course completion")}>
+        {act.length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">{act.map((r) => { const pr = E.progress[r.id] || {}; const n = mand.filter((c) => (pr[c.id] || {}).passed).length; return (
+          <div key={r.id} className="flex items-center gap-3 text-[12.5px]"><span className="flex-1 font-bold">{r.ar}</span><span className="num w-12 text-end">{n}/{mand.length}</span><div className="w-24"><XBar v={n / Math.max(1, mand.length)} /></div></div>); })}</div>}
+      </Panel>
+      {can && <Panel title={Lx(lang, "دورة جديدة", "New course")}>
+        <div className="space-y-2"><XIn value={f.title} onChange={(v) => setF({ ...f, title: v })} ph={Lx(lang, "عنوان الدورة", "Course title")} cls="w-full" />
+          <textarea value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} rows={4} placeholder={Lx(lang, "محتوى الدرس", "Lesson content")} className="w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none" style={XINP} />
+          <textarea value={f.qs} onChange={(e) => setF({ ...f, qs: e.target.value })} rows={3} placeholder={Lx(lang, "سؤال في كل سطر: السؤال|خيار1|خيار2|خيار3|رقم الصحيح", "One per line: Q|opt1|opt2|opt3|correct-number")} className="w-full rounded-xl px-3 py-2.5 text-[12.5px] outline-none" style={XINP} />
+          <label className="flex items-center gap-2 text-[12px] font-bold"><input type="checkbox" checked={f.mandatory} onChange={(e) => setF({ ...f, mandatory: e.target.checked })} />{Lx(lang, "إلزامية", "Mandatory")}</label>
+          {err && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err}</p>}<Btn variant="accent" accent={role.glow} onClick={add}>{Lx(lang, "إضافة الدورة", "Add course")}</Btn></div>
+      </Panel>}
+      <Panel title={Lx(lang, "الدورات", "Courses")}>{courses.map((c) => <p key={c.id} className="text-[12.5px] py-1">• {cTitle(c, lang)} <span style={{ color: "var(--muted)" }}>{c.mandatory ? Lx(lang, "(إلزامية)", "(mandatory)") : ""}</span></p>)}</Panel>
+    </div>
+  );
+}
+
+/* ─── خط سير التسوية الشهرية + مطابقة الفاتورة (نظام 2) — السماحية يضبطها المحاسب، الافتراضي 0 ─── */
+const FLOW = ["draft", "ops", "fin", "gm", "paid"];
+function SettleFlowPage({ lang, role, reps, reports, ext, setExt, repSettlements, setAuditLog, actingEmployee }) {
+  const t = T[lang], E = extOf(ext);
+  const [month, setMonth] = useState(riyadhToday().slice(0, 7)); const [note, setNote] = useState("");
+  const fl = E.flow[month] || { stage: "draft", log: [] };
+  const rec = repSettlements.find((s) => s.month === month);
+  const stm = (rec && rec.inputs && rec.inputs.appStatement) || {};
+  const diffs = [];
+  Object.keys(stm).forEach((appId) => { (stm[appId].rows || []).forEach((row) => {
+    const rep = reps.find((r) => String(r.riderId || "").trim() === row.id && r.app === appId); if (!rep) return;
+    const mine = monthEntriesFor(reports, rep.id, month).reduce((s, e) => s + ((e.app || rep.app) === appId ? (e.orders || 0) : 0), 0);
+    const pct = Math.abs(row.orders - mine) / Math.max(1, mine) * 100;
+    if (pct > +E.cfg.tol || (E.cfg.tol === 0 && row.orders !== mine)) diffs.push({ rep, appId, inv: row.orders, mine, pct });
+  }); });
+  const who = { draft: ["ops", "opsm"], ops: ["opsm"], fin: ["fin"], gm: ["gm"] };
+  const next = FLOW[FLOW.indexOf(fl.stage) + 1];
+  const mayAdvance = who[fl.stage] && who[fl.stage].includes(role.id);
+  const labels = { draft: Lx(lang, "إعداد", "Draft"), ops: Lx(lang, "مراجعة التشغيل", "Ops review"), fin: Lx(lang, "مراجعة المالية", "Finance review"), gm: Lx(lang, "اعتماد المدير العام", "GM approval"), paid: Lx(lang, "تم الصرف", "Paid") };
+  const move = (to) => {
+    if (to > fl.stage && diffs.length > 0 && fl.stage === "fin" && note.trim().length < 5) return;
+    const entry = { from: fl.stage, to, by: byName(role, actingEmployee), role: role.id, note: note.trim(), at: riyadhNow().toISOString() };
+    extUpd(setExt, "flow", (m) => ({ ...m, [month]: { stage: to, log: [...((m[month] || {}).log || []), entry] } }));
+    logAudit(setAuditLog, role, "settle_flow", `${month}: ${entry.from}→${to}`, actingEmployee); setNote("");
+  };
+  const back = FLOW[FLOW.indexOf(fl.stage) - 1];
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2"><XIn type="month" value={month} onChange={setMonth} /><Chip tone={rec ? "ok" : "warn"} sm>{rec ? Lx(lang, "يوجد كشف تسوية", "Statement exists") : Lx(lang, "لا كشف بعد", "No statement")}</Chip></div>
+      <Panel title={Lx(lang, "مسار الاعتماد", "Approval path")}>
+        <div className="flex gap-1.5 flex-wrap mb-3">{FLOW.map((s) => <Chip key={s} tone={s === fl.stage ? "info" : FLOW.indexOf(s) < FLOW.indexOf(fl.stage) ? "ok" : "n"}>{labels[s]}</Chip>)}</div>
+        {fl.stage !== "paid" && <div className="space-y-2">
+          <XIn value={note} onChange={setNote} ph={Lx(lang, "ملاحظة (إلزامية عند وجود فروقات في مرحلة المالية)", "Note (required with diffs at Finance)")} cls="w-full" />
+          <div className="flex gap-2 flex-wrap">{mayAdvance && next && <Btn variant="accent" accent={role.glow} onClick={() => move(next)}>{Lx(lang, "تمرير إلى: ", "Advance to: ")}{labels[next]}</Btn>}
+            {back && (who[fl.stage] || []).includes(role.id) && fl.stage !== "draft" && <Btn variant="danger" onClick={() => note.trim().length >= 4 && move(back)}>{Lx(lang, "إرجاع (مع ملاحظة)", "Return (with note)")}</Btn>}</div>
+          {!mayAdvance && <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "هذه المرحلة ليست لدورك.", "This stage is not yours.")}</p>}
+        </div>}
+        {fl.log.length > 0 && <div className="mt-3 space-y-1">{fl.log.map((l, i) => <p key={i} className="text-[11px]" style={{ color: "var(--muted)" }}>{(l.at || "").slice(0, 16).replace("T", " ")} · {l.by}: {labels[l.from]} → {labels[l.to]}{l.note ? ` — ${l.note}` : ""}</p>)}</div>}
+      </Panel>
+      <Panel title={Lx(lang, "مطابقة فاتورة التطبيق بإدخال المشرفين", "App invoice vs supervisor entries")}>
+        <div className="flex items-center gap-2 mb-3 flex-wrap"><span className="text-[12px] font-bold">{Lx(lang, "السماحية %:", "Tolerance %:")}</span>
+          <XIn type="number" value={E.cfg.tol} onChange={(v) => (role.id === "fin" || role.id === "gm") && extCfg(setExt, { tol: Math.max(0, +v || 0) })} cls="w-24" /><span className="text-[11px]" style={{ color: "var(--muted)" }}>{Lx(lang, "(0 = أي فرق يُعلَّم)، يضبطها المحاسب.", "(0 = flag any difference), set by accountant.")}</span></div>
+        {Object.keys(stm).length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لم تُرفع فواتير تطبيقات لهذا الشهر (من صفحة محاسبة المناديب).", "No app invoices uploaded for this month.")}</p> :
+          diffs.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا فروقات خارج السماحية.", "No differences beyond tolerance.")}</p> :
+            <div className="space-y-1.5">{diffs.map((d, i) => <div key={i} className="flex items-center gap-2 text-[12.5px] rounded-xl px-3 py-2" style={{ background: "rgba(232,131,122,.08)", border: "1px solid rgba(232,131,122,.25)" }}><span className="flex-1 font-bold">{d.rep.ar}</span><span className="num">{Lx(lang, "الفاتورة", "Invoice")} {d.inv} · {Lx(lang, "المشرف", "Supervisor")} {d.mine}</span><Chip tone="bad" sm>{d.pct.toFixed(1)}%</Chip></div>)}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── يومي المشرف (نظام 4) ─── */
+function DayOpsPage({ lang, role, reps, reports, attendance, ext, goPage }) {
+  const E = extOf(ext); const today = riyadhToday();
+  const act = reps.filter((r) => r.status === "active");
+  const onLeave = (r) => E.leaves.some((l) => l.repId === r.id && l.status === "approved" && l.from <= today && l.to >= today);
+  const rows = act.map((r) => { const ents = monthEntriesFor(reports, r.id, today.slice(0, 7)).filter((e) => e.date === today); return { r, orders: ents.reduce((s, e) => s + (e.orders || 0), 0), has: ents.length > 0, in: (attendance || []).some((a) => a.key === r.nid && a.date === today), leave: onLeave(r) }; });
+  const missing = rows.filter((x) => !x.has && !x.leave);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">{[[Lx(lang, "مناديب نشطون", "Active"), act.length], [Lx(lang, "سجّلوا اليوم", "Logged today"), rows.filter((x) => x.has).length], [Lx(lang, "لم يسجّلوا", "Missing"), missing.length]].map(([k, v]) => <div key={k} className="rounded-2xl p-3 text-center" style={{ background: "rgba(20,27,45,.04)", border: "1px solid var(--line)" }}><p className="num text-[22px] font-extrabold">{v}</p><p className="text-[11px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+      <Panel title={Lx(lang, "حالة اليوم", "Today")} extra={<Btn onClick={() => goPage("reports")}>{Lx(lang, "إدخال التقرير اليومي", "Daily report")}</Btn>}>
+        {rows.length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">{rows.map(({ r, orders, has, in: ci, leave }) => (
+          <div key={r.id} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.035)" }}>
+            <span className="flex-1 text-[12.5px] font-bold">{r.ar}</span>
+            {ci && <Chip tone="ok" sm>{Lx(lang, "بصم", "In")}</Chip>}{leave && <Chip tone="info" sm>{Lx(lang, "إجازة", "Leave")}</Chip>}
+            <Chip tone={has ? "ok" : leave ? "n" : "warn"} sm>{has ? `${orders} ${Lx(lang, "طلب", "ord")}` : Lx(lang, "بلا تقرير", "No report")}</Chip>
+            {r.phone && !has && !leave && <a href={"tel:" + r.phone} className="text-[11px] font-bold px-2 py-1 rounded-lg" style={{ background: "rgba(63,216,180,.15)" }}>{Lx(lang, "اتصال", "Call")}</a>}
+          </div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── مسار التوظيف (نظام 1) ─── */
+const PIPE = ["new", "contacted", "interview", "docs", "trial", "hired", "rejected"];
+function PipelinePage({ lang, role, applications, reps, ext, setExt }) {
+  const E = extOf(ext); const [open, setOpen] = useState(null);
+  const L = { new: Lx(lang, "جديد", "New"), contacted: Lx(lang, "تم التواصل", "Contacted"), interview: Lx(lang, "مقابلة", "Interview"), docs: Lx(lang, "مستندات", "Documents"), trial: Lx(lang, "فترة تجربة", "Trial"), hired: Lx(lang, "تم التعيين", "Hired"), rejected: Lx(lang, "مرفوض", "Rejected") };
+  const stageOf = (a) => (E.pipe[a.id] || {}).stage || (a.status === "approved" ? "hired" : a.status === "rejected" ? "rejected" : "new");
+  const setStage = (a, st) => extUpd(setExt, "pipe", (m) => ({ ...m, [a.id]: { ...(m[a.id] || {}), stage: st, at: riyadhNow().toISOString() } }));
+  const toggle = (a, k) => extUpd(setExt, "pipe", (m) => { const cur = m[a.id] || {}; return { ...m, [a.id]: { ...cur, check: { ...(cur.check || {}), [k]: !(cur.check || {})[k] } } }; });
+  const CHK = [["id", Lx(lang, "صورة الهوية/الإقامة", "ID copy")], ["lic", Lx(lang, "رخصة القيادة", "License")], ["contract", Lx(lang, "توقيع العقد", "Signed contract")]];
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">{PIPE.map((s) => <div key={s} className="rounded-xl p-2 text-center" style={{ background: "rgba(20,27,45,.04)", border: "1px solid var(--line)" }}><p className="num text-[18px] font-extrabold">{applications.filter((a) => stageOf(a) === s).length}</p><p className="text-[10px]" style={{ color: "var(--muted)" }}>{L[s]}</p></div>)}</div>
+      <Panel title={Lx(lang, "المتقدمون", "Applicants")}>
+        {applications.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{applications.map((a) => { const st = stageOf(a), pr = E.pipe[a.id] || {}; return (
+          <div key={a.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <button onClick={() => setOpen(open === a.id ? null : a.id)} className="w-full flex items-center gap-2 text-start"><span className="flex-1 text-[13px] font-extrabold">{a.name}</span><span className="num text-[11px]" style={{ color: "var(--muted)" }}>{a.phone}</span><Chip tone={st === "hired" ? "ok" : st === "rejected" ? "bad" : "info"} sm>{L[st]}</Chip></button>
+            {open === a.id && <div className="mt-2 space-y-2"><div className="flex gap-1.5 flex-wrap">{PIPE.map((s) => <button key={s} onClick={() => setStage(a, s)} className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: st === s ? "#12151D" : "rgba(20,27,45,.06)", color: st === s ? "#fff" : "inherit" }}>{L[s]}</button>)}</div>
+              <div className="flex gap-3 flex-wrap">{CHK.map(([k, l]) => <label key={k} className="flex items-center gap-1.5 text-[12px]"><input type="checkbox" checked={!!(pr.check || {})[k]} onChange={() => toggle(a, k)} />{l}</label>)}</div>
+              <p className="text-[11px]" style={{ color: "var(--muted)" }}>{Lx(lang, "التفعيل النهائي وإنشاء حساب المندوب من صفحة التوظيف.", "Final activation is done from the Hiring page.")}</p></div>}
+          </div>); })}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── علاقات العملاء (نظام 7) ─── */
+const CRM_ST = ["lead", "talk", "contract", "active", "lost"];
+function CrmPage({ lang, role, ext, setExt }) {
+  const E = extOf(ext); const [f, setF] = useState({ name: "", phone: "", value: "", note: "" }); const [err, setErr] = useState("");
+  const L = { lead: Lx(lang, "عميل محتمل", "Lead"), talk: Lx(lang, "تفاوض", "Negotiation"), contract: Lx(lang, "عقد", "Contract"), active: Lx(lang, "نشط", "Active"), lost: Lx(lang, "خسرناه", "Lost") };
+  const add = () => { if (f.name.trim().length < 2) return setErr(Lx(lang, "اكتب اسم العميل.", "Enter a name.")); setErr(""); extUpd(setExt, "crm", (a) => [{ id: uidX("CR"), ...f, name: f.name.trim(), value: +f.value || 0, stage: "lead", at: riyadhNow().toISOString(), next: "" }, ...a]); setF({ name: "", phone: "", value: "", note: "" }); };
+  const move = (c, st) => extUpd(setExt, "crm", (a) => a.map((z) => (z.id === c.id ? { ...z, stage: st } : z)));
+  const pipe = E.crm.filter((c) => ["lead", "talk", "contract"].includes(c.stage)).reduce((s, c) => s + (+c.value || 0), 0);
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-5 gap-2">{CRM_ST.map((s) => <div key={s} className="rounded-xl p-2 text-center" style={{ background: "rgba(20,27,45,.04)", border: "1px solid var(--line)" }}><p className="num text-[18px] font-extrabold">{E.crm.filter((c) => c.stage === s).length}</p><p className="text-[10px]" style={{ color: "var(--muted)" }}>{L[s]}</p></div>)}</div>
+      <p className="text-[12px] font-bold">{Lx(lang, "القيمة الشهرية المتوقعة في المسار:", "Pipeline monthly value:")} <span className="num">{fmt(pipe)}</span> {T[lang].sar}</p>
+      <Panel title={Lx(lang, "عميل جديد", "New client")}>
+        <div className="grid gap-2 sm:grid-cols-4"><XIn value={f.name} onChange={(v) => setF({ ...f, name: v })} ph={Lx(lang, "اسم المطعم/الشركة", "Name")} /><XIn value={f.phone} onChange={(v) => setF({ ...f, phone: v })} ph={Lx(lang, "الجوال", "Phone")} /><XIn type="number" value={f.value} onChange={(v) => setF({ ...f, value: v })} ph={Lx(lang, "قيمة شهرية متوقعة", "Expected monthly")} /><XIn value={f.note} onChange={(v) => setF({ ...f, note: v })} ph={Lx(lang, "ملاحظة", "Note")} /></div>
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-2"><Btn variant="accent" accent={role.glow} icon={Plus} onClick={add}>{Lx(lang, "إضافة", "Add")}</Btn></div>
+      </Panel>
+      <Panel title={Lx(lang, "العملاء", "Clients")}>{E.crm.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{E.crm.map((c) => (
+        <div key={c.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+          <div className="flex items-center gap-2"><span className="flex-1 text-[13px] font-extrabold">{c.name}</span><span className="num text-[12px]">{fmt(c.value)}</span></div>
+          <p className="text-[11px]" style={{ color: "var(--muted)" }}>{c.phone}{c.note ? ` · ${c.note}` : ""}</p>
+          <div className="flex gap-1.5 flex-wrap mt-1.5">{CRM_ST.map((s) => <button key={s} onClick={() => move(c, s)} className="px-2.5 py-1 rounded-lg text-[11px] font-bold" style={{ background: c.stage === s ? "#12151D" : "rgba(20,27,45,.06)", color: c.stage === s ? "#fff" : "inherit" }}>{L[s]}</button>)}</div>
+        </div>))}</div>}</Panel>
+    </div>
+  );
+}
+
+/* ─── النسخ الاحتياطي التلقائي (نظام 6) ─── */
+const SNAP_KEYS = ["bq_reps", "bq_daily_reports", "bq_employees", "bq_rep_settlements", "bq_applications", "bq_pricing", "bq_ext", "bq_rep_receipts", "bq_attendance", "bq_tickets", "bq_expenses", "bq_invoices", "bq_payroll_runs", "bq_contracts", "bq_cases", "bq_dept_security"];
+async function takeSnapshot(setExt, date) {
+  const out = {};
+  for (const k of SNAP_KEYS) { try { const r = await window.storage.get(k, true); if (r && r.value) out[k] = r.value; } catch (e) { /* مفتاح غير موجود */ } }
+  await window.storage.set("bq_snap_" + date, JSON.stringify({ date, keys: out }), true);
+  let drop = [];
+  setExt((p) => { const idx = [...new Set([date, ...(((p || {}).snapIdx) || [])])].sort().reverse(); drop = idx.slice(7); return { ...(p || {}), snapIdx: idx.slice(0, 7) }; });
+  setTimeout(() => { drop.forEach((d) => { try { window.storage.delete("bq_snap_" + d, true); } catch (e) { /* تجاهل */ } }); }, 1500);
+}
+function SnapshotsPage({ lang, role, ext, setExt, setAuditLog, actingEmployee }) {
+  const E = extOf(ext); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState(""); const [conf, setConf] = useState(null);
+  const run = async () => { setBusy(true); setMsg(""); try { await takeSnapshot(setExt, riyadhToday()); setMsg(Lx(lang, "تم حفظ نسخة اليوم.", "Today's snapshot saved.")); } catch (e) { setMsg(Lx(lang, "تعذّر الحفظ.", "Save failed.")); } setBusy(false); };
+  const restore = async (d) => {
+    setBusy(true);
+    try { const r = await window.storage.get("bq_snap_" + d, true); const snap = JSON.parse(r.value);
+      await takeSnapshot(setExt, "pre-" + riyadhToday()); // نسخة أمان قبل الاستعادة
+      for (const k of Object.keys(snap.keys)) { if (k === "bq_ext") continue; await window.storage.set(k, snap.keys[k], true); }
+      logAudit(setAuditLog, role, "snapshot_restore", d, actingEmployee); setMsg(Lx(lang, "تمت الاستعادة — حدّث الصفحة الآن.", "Restored — reload the page now."));
+    } catch (e) { setMsg(Lx(lang, "تعذّرت الاستعادة.", "Restore failed.")); }
+    setBusy(false); setConf(null);
+  };
+  const can = role.id === "gm";
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "النسخ الاحتياطي التلقائي", "Automatic snapshots")}>
+        <p className="text-[12px] leading-relaxed mb-3">{Lx(lang, "تُحفظ نسخة يومية تلقائياً عند دخول المدير العام، وتبقى آخر 7 نسخ. الاستعادة تعيد بيانات المناديب والتقارير والتسويات والموظفين لحالة النسخة (مع نسخة أمان قبلها).", "A daily snapshot is saved automatically when the GM signs in; the last 7 are kept. Restore rolls back riders, reports, settlements and staff (a safety snapshot is taken first).")}</p>
+        <Btn variant="accent" accent={role.glow} icon={Download} onClick={run} disabled={busy}>{Lx(lang, "حفظ نسخة الآن", "Snapshot now")}</Btn>
+        {msg && <p className="text-[12px] font-bold mt-2">{msg}</p>}
+      </Panel>
+      <Panel title={Lx(lang, "النسخ المحفوظة", "Saved snapshots")}>
+        {E.snapIdx.length === 0 ? EMPTYT(lang) : E.snapIdx.map((d) => (
+          <div key={d} className="flex items-center gap-3 py-2"><span className="num flex-1 text-[13px] font-bold">{d}</span>
+            {can && (conf === d ? <><Btn variant="danger" onClick={() => restore(d)} disabled={busy}>{Lx(lang, "تأكيد الاستعادة", "Confirm restore")}</Btn><Btn onClick={() => setConf(null)}>{Lx(lang, "إلغاء", "Cancel")}</Btn></> : <Btn onClick={() => setConf(d)}>{Lx(lang, "استعادة", "Restore")}</Btn>)}</div>))}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── المستشار الذكي: توصيات من البيانات (نظام 8) ─── */
+function CopilotPage({ lang, role, reps, reports, pricing, weekendFine, violationPenalty, attendance, ext, setExt, employees, repSettlements }) {
+  const E = extOf(ext); const month = riyadhToday().slice(0, 7); const today = riyadhToday();
+  const ta = teamAvgOrders(reps, month, reports);
+  const act = reps.filter((r) => r.status === "active");
+  const recs = [];
+  act.forEach((r) => {
+    const p = perfOf(r, month, reports, attendance, ext, pricing, weekendFine, violationPenalty, ta);
+    if (p.score < 50 && p.days >= 3) recs.push({ id: "low-" + r.id + month, tone: "bad", text: Lx(lang, `${r.ar}: درجة الأداء ${p.score} — جلسة متابعة مع المشرف.`, `${r.ar}: score ${p.score} — schedule a follow-up.`) });
+    if (p.score >= E.cfg.bonusMin && p.days >= 5) recs.push({ id: "top-" + r.id + month, tone: "ok", text: Lx(lang, `${r.ar}: أداء ممتاز (${p.score}) — مرشّح للمكافأة.`, `${r.ar}: excellent (${p.score}) — bonus candidate.`) });
+    const last = [...new Set(monthEntriesFor(reports, r.id, month).filter((e) => (e.orders || 0) > 0).map((e) => e.date))].sort().pop();
+    if (last && daysUntil(last) <= -4) recs.push({ id: "idle-" + r.id + last, tone: "warn", text: Lx(lang, `${r.ar}: بلا طلبات منذ ${-daysUntil(last)} أيام — تواصل معه.`, `${r.ar}: no orders for ${-daysUntil(last)} days — reach out.`) });
+    if (r.idExpiry && daysUntil(r.idExpiry) != null && daysUntil(r.idExpiry) <= 30) recs.push({ id: "iq-" + r.id + r.idExpiry, tone: "bad", text: Lx(lang, `${r.ar}: الإقامة تنتهي خلال ${daysUntil(r.idExpiry)} يوم.`, `${r.ar}: residence expires in ${daysUntil(r.idExpiry)} days.`) });
+  });
+  const unpriced = act.filter((r) => !getRepPrice(pricing, r.app)).length;
+  if (unpriced > 0) recs.push({ id: "unpriced" + month, tone: "warn", text: Lx(lang, `${unpriced} مندوب بلا تسعيرة معرّفة لتطبيقهم — اضبط التسعيرة قبل الإقفال.`, `${unpriced} riders have no pricing for their app — set it before closing.`) });
+  const noSup = reps.filter((r) => r.status === "active" && !r.sup).length;
+  if (noSup > 0) recs.push({ id: "nosup" + month, tone: "warn", text: Lx(lang, `${noSup} مندوب نشط بلا مشرف — لن يظهروا لأي مشرف.`, `${noSup} active riders have no supervisor.`) });
+  const seen = E.copilot;
+  const open = recs.filter((r) => !seen[r.id]);
+  const mark = (id, st) => extUpd(setExt, "copilot", (m) => ({ ...m, [id]: st }));
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "توصيات اليوم", "Today's recommendations")}>
+        <p className="text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{Lx(lang, "توصيات تقوم على قواعد واضحة من بياناتك الفعلية؛ القرار لك دائماً، وما ترفضه لا يظهر لك ثانية.", "Rule-based recommendations from your real data; you always decide, dismissed ones don't return.")}</p>
+        {open.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا توصيات معلّقة.", "Nothing pending.")}</p> : <div className="space-y-2">{open.map((r) => (
+          <div key={r.id} className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <Chip tone={r.tone} sm>●</Chip><p className="flex-1 text-[12.5px]">{r.text}</p><Btn onClick={() => mark(r.id, "done")}>{Lx(lang, "تم", "Done")}</Btn><Btn variant="danger" onClick={() => mark(r.id, "dismissed")}>{Lx(lang, "تجاهل", "Dismiss")}</Btn></div>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── صندوق المهام الموحّد (نظام 5) ─── */
+function InboxPage({ lang, role, reps, ext, decisions, expenses, payrollRuns, repReceipts, applications, goPage, scopeSup }) {
+  const E = extOf(ext); const today = riyadhToday();
+  const items = []; const add = (n, text, page, tone = "warn") => { if (n > 0) items.push({ n, text, page, tone }); };
+  const r = role.id;
+  if (r === "fin" || r === "gm") add(E.wallet.filter((w) => w.status === "pending" && (r === "gm" ? +w.amount > E.cfg.dualLimit || !(w.approvals || []).length : !(w.approvals || []).some((a) => a.role === "fin"))).length, Lx(lang, "طلبات سلف/ادخار بانتظار اعتمادك", "Wallet requests awaiting you"), "walletAdmin");
+  if (r === "gm" || r === "fin") add(E.daily.filter((d) => d.status === "pending").length, Lx(lang, "سلف يومية تنتظر المدير العام", "Daily advances awaiting GM"), "dailyLedger");
+  if (r === "fin") add(repReceipts.filter((q) => q.status === "pending").length, Lx(lang, "إيصالات مناديب للمراجعة", "Receipts to review"), "receiptsAdmin");
+  if (r === "gm") { add(decisions.filter((d) => !d.gmApproved).length, Lx(lang, "قرارات بانتظار المدير العام", "Decisions awaiting GM"), "decisions"); add(expenses.filter((e) => e.status === "pending").length, Lx(lang, "مصروفات معلّقة", "Pending expenses"), "expenses"); }
+  if (r === "fin" || r === "gm" || r === "opsm") Object.keys(E.flow).forEach((m) => { const st = E.flow[m].stage; if ((st === "fin" && r === "fin") || (st === "gm" && r === "gm") || (st === "ops" && r === "opsm")) add(1, Lx(lang, `تسوية ${m} بانتظار مرحلتك`, `Settlement ${m} awaiting you`), "settleFlow"); });
+  if (r === "opsm" || r === "gm") { add(E.leaves.filter((l) => l.status === "pending").length, Lx(lang, "طلبات إجازة", "Leave requests"), "leavesAdmin"); add(E.redeem.filter((x) => x.status === "pending").length + E.bonus.filter((x) => x.status === "pending").length, Lx(lang, "مكافآت/نقاط للاعتماد", "Rewards to approve"), "perfBoard"); }
+  if (r === "opsm" || r === "ops" || r === "legal" || r === "gm") add(E.incidents.filter((i) => i.status !== "closed" && (!scopeSup || i.sup === scopeSup)).length, Lx(lang, "بلاغات مفتوحة", "Open incidents"), "incidents", "bad");
+  if (r === "hr") { add(applications.filter((a) => !(E.pipe[a.id] || {}).stage && a.status === "new").length, Lx(lang, "متقدمون جدد لم يُراجَعوا", "New applicants"), "pipeline"); add(reps.filter((x) => x.idExpiry && daysUntil(x.idExpiry) != null && daysUntil(x.idExpiry) <= 30).length, Lx(lang, "إقامات تنتهي خلال 30 يوماً", "Residencies expiring ≤30d"), "iqama", "bad");
+    const mand = allCourses(E).filter((c) => c.mandatory); add(reps.filter((x) => x.status === "active" && mand.some((c) => !((E.progress[x.id] || {})[c.id] || {}).passed)).length, Lx(lang, "مناديب لم يكملوا الدورات الإلزامية", "Riders missing mandatory courses"), "trainingAdmin"); }
+  if (r === "ops" || r === "opsm") { const expectedToday = reps.filter((x) => x.status === "active").length; add(expectedToday > 0 ? 1 : 0, Lx(lang, "راجع حالة التقارير اليومية لليوم", "Review today's daily reports"), "dayOps", "info"); }
+  if (r === "gm") add(E.priceReq.filter((q) => q.status === "pending").length, Lx(lang, "طلبات اعتماد التسعيرات", "Pricing approval requests"), "repAccounting", "bad");
+  if (r === "hr" || r === "opsm" || r === "gm") { add(E.perfPlans.filter((p) => p.status === "escalated").length, Lx(lang, "خطط أداء مُصعَّدة تنتظر قراراً", "Escalated performance plans"), "perfPlans", "bad"); add(E.offboard.filter((c) => c.status === "open").length, Lx(lang, "حالات مغادرة مفتوحة", "Open offboardings"), "offboard"); }
+  if (r === "hr") add(Object.values(E.empDocs || {}).reduce((n, arr) => n + arr.filter((d) => { const x = daysUntil(d.expiry); return x != null && x <= 30; }).length, 0), Lx(lang, "مستندات موظفين تنتهي خلال 30 يوماً", "Staff documents expiring ≤30d"), "empFile");
+  return (
+    <div className="space-y-3">
+      <Panel title={Lx(lang, "مهامك اليوم", "Your tasks today")}>
+        {items.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا مهام معلّقة لدورك.", "Nothing pending for your role.")}</p> : <div className="space-y-2">{items.map((it, i) => (
+          <button key={i} onClick={() => goPage(it.page)} className="w-full flex items-center gap-3 rounded-2xl p-3.5 text-start" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+            <Chip tone={it.tone}>{it.n}</Chip><span className="flex-1 text-[13px] font-bold">{it.text}</span><ChevronLeft size={16} /></button>))}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══════════  توفّر التطبيقات والمدن (تحدده الموارد البشرية) — يظهر للمتقدم  ═══════════ */
+EXT0.appAvail = {};
+const appAvailOf = (ext, appId) => { const a = ((ext && ext.appAvail) || {})[appId] || {}; return { open: a.open !== false, cities: a.cities || [], note: a.note || "" }; };
+const openAppsOf = (ext) => APPS.filter((a) => appAvailOf(ext, a.id).open);
+function AppAvailCard({ lang, ext, pick, onPick }) {
+  const open = openAppsOf(ext), busy = APPS.filter((a) => !appAvailOf(ext, a.id).open);
+  return (
+    <div className="rounded-2xl p-3.5 space-y-2.5" style={{ background: "rgba(63,216,180,.08)", border: "1px solid rgba(63,216,180,.3)" }}>
+      <p className="text-[12.5px] font-extrabold">{Lx(lang, "التطبيقات المتاحة للتسجيل الآن", "Apps open for registration now")}</p>
+      {open.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا يوجد تطبيق متاح حالياً. سجّل بياناتك وسنتواصل معك فور فتح باب التسجيل.", "No app is open right now. Register and we will contact you when one opens.")}</p> :
+        open.map((a) => { const av = appAvailOf(ext, a.id); const on = pick === a.id; return (
+          <button type="button" key={a.id} onClick={() => onPick && onPick(a.id)} className="w-full text-start rounded-xl p-3" style={{ background: on ? "#12151D" : "#fff", color: on ? "#fff" : "inherit", border: `1px solid ${on ? "#12151D" : "var(--line)"}`, cursor: onPick ? "pointer" : "default" }}>
+            <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: "#3FD8B4" }} /><span className="text-[13px] font-extrabold">{a[lang] || a.ar}</span><span className="text-[10.5px] opacity-70">{Lx(lang, "متاح", "Open")}</span></div>
+            <div className="flex flex-wrap gap-1.5 mt-2">{av.cities.length ? av.cities.map((c) => <span key={c} className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: on ? "rgba(255,255,255,.16)" : "rgba(63,216,180,.16)" }}>📍 {c}</span>) : <span className="text-[11px] opacity-70">{Lx(lang, "كل المدن التي نغطيها", "All covered cities")}</span>}</div>
+            {av.note && <p className="text-[11px] mt-1.5 opacity-80">{av.note}</p>}
+          </button>); })}
+      {busy.length > 0 && <div className="flex flex-wrap gap-1.5 pt-1">{busy.map((a) => <span key={a.id} className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: "rgba(20,27,45,.06)", color: "var(--muted)", textDecoration: "line-through" }}>{a[lang] || a.ar}</span>)}<span className="text-[11px]" style={{ color: "var(--muted)" }}>{Lx(lang, "— مكتملة حالياً", "— currently full")}</span></div>}
+    </div>
+  );
+}
+function AppAvailAdminPage({ lang, role, applications, ext, setExt, setAuditLog, actingEmployee }) {
+  const E = extOf(ext); const [city, setCity] = useState({});
+  const can = role.id === "hr" || role.id === "opsm" || role.id === "gm";
+  const patch = (id, p) => { if (!can) return; extUpd(setExt, "appAvail", (m) => ({ ...m, [id]: { ...(m[id] || {}), ...p } })); logAudit(setAuditLog, role, "app_avail", `${id}: ${JSON.stringify(p).slice(0, 60)}`, actingEmployee); };
+  const addCity = (id) => { const v = (city[id] || "").trim(); if (!v) return; const cur = appAvailOf(ext, id).cities; if (!cur.includes(v)) patch(id, { cities: [...cur, v] }); setCity({ ...city, [id]: "" }); };
+  const waiting = (id) => applications.filter((a) => a.status === "new" && (a.app === id || (!a.app && a.waitlist))).length;
+  return (
+    <div className="space-y-4">
+      {!can && <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "التعديل للموارد البشرية ومدير التشغيل والمدير العام.", "Editable by HR, Ops Manager and GM.")}</p>}
+      <p className="text-[12px] rounded-xl px-3 py-2" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.3)" }}>{Lx(lang, "ما تفتحه هنا يظهر فوراً للمتقدمين في صفحة التسجيل مع مدن كل تطبيق. التطبيق المغلق يظهر لهم «مكتمل حالياً» ولا يمكن اختياره.", "What you open here shows instantly on the application page with each app's cities. Closed apps appear as full and can't be selected.")}</p>
+      <div className="grid gap-3 sm:grid-cols-2">{APPS.map((a) => { const av = appAvailOf(ext, a.id); return (
+        <Panel key={a.id} title={a[lang] || a.ar} extra={<button onClick={() => patch(a.id, { open: !av.open })} className="px-3 py-1.5 rounded-full text-[11.5px] font-extrabold" style={{ background: av.open ? "rgba(63,216,180,.2)" : "rgba(232,131,122,.15)", color: av.open ? "#0B5C46" : "#C0443A" }}>{av.open ? Lx(lang, "متاح ✓", "Open ✓") : Lx(lang, "مغلق", "Closed")}</button>}>
+          <p className="text-[11px] font-bold mb-1.5">{Lx(lang, "المدن المغطاة", "Covered cities")}</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">{av.cities.length === 0 ? <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لم تُحدَّد (تظهر «كل المدن»)", "None set (shows all cities)")}</span> : av.cities.map((c) => <span key={c} className="px-2.5 py-1 rounded-full text-[11.5px] font-bold flex items-center gap-1.5" style={{ background: "rgba(63,216,180,.16)" }}>{c}{can && <button onClick={() => patch(a.id, { cities: av.cities.filter((z) => z !== c) })} style={{ color: "#C0443A" }}>×</button>}</span>)}</div>
+          {can && <div className="flex gap-2"><XIn value={city[a.id] || ""} onChange={(v) => setCity({ ...city, [a.id]: v })} ph={Lx(lang, "أضف مدينة (مثال: الدمام)", "Add city")} cls="flex-1" /><Btn onClick={() => addCity(a.id)}>{Lx(lang, "إضافة", "Add")}</Btn></div>}
+          <div className="mt-2"><XIn value={av.note} onChange={(v) => patch(a.id, { note: v })} ph={Lx(lang, "ملاحظة تظهر للمتقدم (اختياري)", "Note shown to applicants")} cls="w-full" /></div>
+          <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `متقدمون جدد على هذا التطبيق: ${waiting(a.id)}`, `New applicants for this app: ${waiting(a.id)}`)}</p>
+        </Panel>); })}</div>
+    </div>
+  );
+}
+
+/* ═══════════  رادار الاستبقاء + دعم واتساب + ترشيح مندوب + منافسة الفرق  ═══════════ */
+const phoneWa = (p) => { const d = String(p || "").replace(/\D/g, ""); if (!d) return ""; return d.startsWith("00") ? d.slice(2) : d.startsWith("0") ? "966" + d.slice(1) : d; };
+const totalOrdersOf = (reports, repId) => { let n = 0; reports.forEach((rp) => rp.entries.forEach((e) => { if (e.id === repId) n += e.orders || 0; })); return n; };
+EXT0.retention = {}; EXT0.referrals = []; EXT0.contests = [];
+EXT0.cfg = { ...EXT0.cfg, refBonus: 100, refMinOrders: 200 };
+
+function churnOf(rep, reports, attendance, ext, pricing, wf, vp) {
+  const E = extOf(ext), month = riyadhToday().slice(0, 7), prev = prevMonthStr(month);
+  const daysIn = (m) => new Set(monthEntriesFor(reports, rep.id, m).filter((e) => (e.orders || 0) > 0).map((e) => e.date)).size;
+  const elapsed = Math.max(1, Math.round(monthDays(month) * monthFactor(month)));
+  const cur = daysIn(month) / elapsed, prv = daysIn(prev) / monthDays(prev);
+  const signals = []; let pts = 0;
+  if (prv > 0.3 && cur < prv * 0.7) { pts += 30; signals.push(["att", cur, prv]); }
+  const last = [...new Set(monthEntriesFor(reports, rep.id, month).filter((e) => (e.orders || 0) > 0).map((e) => e.date))].sort().pop();
+  const idle = last ? -daysUntil(last) : null;
+  if (idle != null && idle >= 4) { pts += 25; signals.push(["idle", idle]); }
+  const p = perfOf(rep, month, reports, attendance, ext, pricing, wf, vp, 0);
+  if (p.score < 50 && p.days >= 3) { pts += 15; signals.push(["score", p.score]); }
+  const advs = E.wallet.filter((w) => w.repId === rep.id && w.kind === "advance" && (w.at || "").slice(0, 10) >= new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10)).length;
+  if (advs >= 2) { pts += 15; signals.push(["adv", advs]); }
+  if (p.viol >= 3) { pts += 10; signals.push(["viol", p.viol]); }
+  return { pts, signals, level: pts >= 50 ? "high" : pts >= 25 ? "mid" : "low", active: daysIn(month) + daysIn(prev) > 0 };
+}
+function RetentionPage({ lang, role, allReps, reps, allReports, reports, attendance, pricing, weekendFine, violationPenalty, ext, setExt, setAuditLog, actingEmployee, scopeSup }) {
+  const E = extOf(ext); const RR = scopeSup ? reps : (allReps || reps); const RP = scopeSup ? reports : (allReports || reports);
+  const [note, setNote] = useState({});
+  const rows = RR.filter((r) => r.status === "active").map((r) => ({ r, c: churnOf(r, RP, attendance, ext, pricing, weekendFine, violationPenalty) })).filter((x) => x.c.active && x.c.level !== "low").sort((a, b) => b.c.pts - a.c.pts);
+  const sig = (s) => s[0] === "att" ? Lx(lang, `انخفض حضوره من ${Math.round(s[2] * 100)}% إلى ${Math.round(s[1] * 100)}%`, `Attendance fell ${Math.round(s[2] * 100)}% → ${Math.round(s[1] * 100)}%`) : s[0] === "idle" ? Lx(lang, `بلا طلبات منذ ${s[1]} أيام`, `No orders for ${s[1]} days`) : s[0] === "score" ? Lx(lang, `درجة الأداء ${s[1]}`, `Score ${s[1]}`) : s[0] === "adv" ? Lx(lang, `${s[1]} طلبات سلفة خلال 60 يوماً`, `${s[1]} advance requests in 60d`) : Lx(lang, `${s[1]} مخالفات هذا الشهر`, `${s[1]} violations this month`);
+  const log = (r) => { const txt = (note[r.id] || "").trim(); extUpd(setExt, "retention", (m) => ({ ...m, [r.id]: { at: riyadhNow().toISOString(), by: byName(role, actingEmployee), note: txt } })); setNote({ ...note, [r.id]: "" }); logAudit(setAuditLog, role, "retention_contact", r.ar, actingEmployee); };
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "رادار الاستبقاء — مناديب معرّضون للترك", "Retention radar — riders at risk")}>
+        <p className="text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{Lx(lang, "المؤشرات: هبوط الحضور عن الشهر الماضي، الانقطاع، ضعف الأداء، تكرار السلف، المخالفات. هدفه أن تتحدث مع المندوب قبل أن يغادر، وليس معاقبته.", "Signals: attendance drop, idle days, weak score, repeated advances, violations. The aim is to talk to the rider early, not to penalize.")}</p>
+        {rows.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا مناديب في خطر حالياً.", "No riders at risk.")}</p> : <div className="space-y-3">{rows.map(({ r, c }) => { const done = E.retention[r.id]; return (
+          <div key={r.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: `1px solid ${c.level === "high" ? "rgba(232,131,122,.5)" : "var(--line)"}` }}>
+            <div className="flex items-center gap-2"><span className="flex-1 text-[13.5px] font-extrabold">{r.ar}</span><Chip tone={c.level === "high" ? "bad" : "warn"} sm>{c.level === "high" ? Lx(lang, "خطر مرتفع", "High risk") : Lx(lang, "خطر متوسط", "Medium")} · {c.pts}</Chip></div>
+            <div className="mt-1.5 space-y-0.5">{c.signals.map((s, i) => <p key={i} className="text-[12px]">• {sig(s)}</p>)}</div>
+            {done && <p className="text-[11px] mt-1" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "تم التواصل", "Contacted")} {done.at.slice(0, 10)} — {done.by}{done.note ? `: ${done.note}` : ""}</p>}
+            <div className="flex gap-2 mt-2 flex-wrap items-center"><input value={note[r.id] || ""} onChange={(e) => setNote({ ...note, [r.id]: e.target.value })} placeholder={Lx(lang, "ما دار في الحديث", "What was discussed")} className="flex-1 min-w-[140px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} />
+              {r.phone && <a href={"https://wa.me/" + phoneWa(r.phone)} target="_blank" rel="noreferrer" className="text-[12px] font-bold px-3 py-2 rounded-xl" style={{ background: "rgba(63,216,180,.18)" }}>{Lx(lang, "واتساب", "WhatsApp")}</a>}
+              <Btn variant="accent" accent={role.glow} onClick={() => log(r)}>{Lx(lang, "سجّلت التواصل", "Log contact")}</Btn></div>
+          </div>); })}</div>}
+      </Panel>
+      <LeaveReasonsPanel lang={lang} ext={ext} />
+    </div>
+  );
+}
+
+/* ─── دعم فوري عبر واتساب (المندوب) ─── */
+function SupportPage({ lang, role, activeRep, employees }) {
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const sup = (employees || []).find((e) => e.id === activeRep.sup);
+  const wa = sup && sup.phone ? phoneWa(sup.phone) : "";
+  const topics = [[Lx(lang, "عطل في الدراجة/السيارة", "Vehicle breakdown")], [Lx(lang, "مشكلة في طلب", "Order problem")], [Lx(lang, "مشكلة في التطبيق", "App problem")], [Lx(lang, "استفسار عن راتبي", "Pay question")], [Lx(lang, "حادث / حالة طارئة", "Accident / emergency")]];
+  const link = (topic) => wa ? "https://wa.me/" + wa + "?text=" + encodeURIComponent(`${Lx(lang, "السلام عليكم، أنا المندوب", "Hello, I'm rider")} ${activeRep.ar} (${Lx(lang, "رقم", "ID")} ${activeRep.riderId || activeRep.nid || ""})\n${Lx(lang, "الموضوع", "Topic")}: ${topic}`) : "";
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "دعم فوري من مشرفك", "Instant support from your supervisor")}>
+        {!wa ? <p className="text-[12.5px]">{Lx(lang, "لا يوجد رقم مسجّل لمشرفك بعد. اطلب من الإدارة إضافته، أو افتح تذكرة.", "No supervisor number on file. Ask management to add it, or open a ticket.")}</p> : <>
+          <p className="text-[12px] mb-3" style={{ color: "var(--muted)" }}>{Lx(lang, `اختر الموضوع وستفتح محادثة واتساب جاهزة مع ${sup.name}، ومعها اسمك ورقمك.`, `Pick a topic to open a ready WhatsApp chat with ${sup.name} including your name and ID.`)}</p>
+          <div className="space-y-2">{topics.map(([tp], i) => <a key={i} href={link(tp)} target="_blank" rel="noreferrer" className="block w-full rounded-2xl px-4 py-3.5 text-[13px] font-extrabold" style={{ background: i === 4 ? "rgba(232,131,122,.12)" : "rgba(63,216,180,.12)", border: `1px solid ${i === 4 ? "rgba(232,131,122,.4)" : "rgba(63,216,180,.35)"}` }}>{tp}</a>)}</div></>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── ترشيح مندوب (المندوب) ─── */
+function MyReferPage({ lang, role, activeRep, allReports, reports, ext, setExt }) {
+  const t = T[lang];
+  if (!activeRep) return <EmptyHint lang={lang} />;
+  const E = extOf(ext); const mine = E.referrals.filter((r) => r.referrerId === activeRep.id);
+  const [f, setF] = useState({ name: "", phone: "" }); const [err, setErr] = useState("");
+  const send = () => {
+    const ph = phoneWa(f.phone);
+    if (f.name.trim().length < 3 || ph.length < 9) return setErr(Lx(lang, "اكتب اسمه ورقم جواله الصحيح.", "Enter a name and valid phone."));
+    if (E.referrals.some((r) => phoneWa(r.phone) === ph)) return setErr(Lx(lang, "هذا الرقم مرشَّح من قبل.", "This number was already referred."));
+    if (phoneWa(activeRep.phone) === ph) return setErr(Lx(lang, "لا يمكنك ترشيح نفسك.", "You can't refer yourself."));
+    setErr(""); extUpd(setExt, "referrals", (a) => [{ id: uidX("RF"), referrerId: activeRep.id, referrerName: activeRep.ar, name: f.name.trim(), phone: f.phone.trim(), status: "pending", at: riyadhNow().toISOString() }, ...a]); setF({ name: "", phone: "" });
+  };
+  const lbl = { pending: Lx(lang, "بانتظار الانضمام", "Waiting to join"), approved: Lx(lang, "تم صرف المكافأة", "Bonus paid"), rejected: Lx(lang, "غير مستحقة", "Not eligible") };
+  return (
+    <div className="space-y-4">
+      <div className="rounded-3xl p-5" style={{ background: "rgba(228,184,92,.12)", border: "1px solid rgba(228,184,92,.4)" }}>
+        <p className="text-[15px] font-extrabold">{Lx(lang, `رشّح مندوباً واربح ${E.cfg.refBonus} ${t.sar}`, `Refer a rider and earn ${E.cfg.refBonus} ${t.sar}`)}</p>
+        <p className="text-[12px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, `تُصرف المكافأة بعد أن ينضم من رشّحته ويُكمل ${E.cfg.refMinOrders} طلباً. تُضاف إلى كشفك تلقائياً.`, `Paid once your referral joins and completes ${E.cfg.refMinOrders} orders. Added to your statement automatically.`)}</p>
+      </div>
+      <Panel title={Lx(lang, "ترشيح جديد", "New referral")}>
+        <div className="grid gap-3 sm:grid-cols-2"><XIn value={f.name} onChange={(v) => setF({ ...f, name: v })} ph={Lx(lang, "اسمه", "Name")} /><XIn value={f.phone} onChange={(v) => setF({ ...f, phone: v })} ph={Lx(lang, "رقم جواله", "Phone")} /></div>
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-3"><Btn variant="accent" accent={role.glow} icon={Send} onClick={send}>{Lx(lang, "إرسال الترشيح", "Submit")}</Btn></div>
+      </Panel>
+      <Panel title={Lx(lang, "ترشيحاتي", "My referrals")}>
+        {mine.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا ترشيحات بعد.", "None yet.")}</p> : mine.map((r) => <div key={r.id} className="flex items-center gap-2 py-1.5 text-[12.5px]"><span className="flex-1 font-bold">{r.name}</span><Chip tone={r.status === "approved" ? "ok" : r.status === "rejected" ? "bad" : "warn"} sm>{lbl[r.status]}</Chip></div>)}
+      </Panel>
+    </div>
+  );
+}
+function ReferralsAdminPage({ lang, role, allReps, reps, allReports, reports, ext, setExt, setRepSettlements, setAuditLog, actingEmployee }) {
+  const t = T[lang], E = extOf(ext); const RR = allReps || reps, RP = allReports || reports;
+  const can = role.id === "hr" || role.id === "opsm" || role.id === "gm" || role.id === "fin";
+  const [tab, setTab] = useState("pending");
+  const info = (rf) => { const rep = RR.find((r) => phoneWa(r.phone) === phoneWa(rf.phone)); const orders = rep ? totalOrdersOf(RP, rep.id) : 0; return { rep, orders, ok: !!rep && rep.status === "active" && orders >= E.cfg.refMinOrders && rep.id !== rf.referrerId }; };
+  const pay = (rf) => { const mo = riyadhToday().slice(0, 7); extUpd(setExt, "referrals", (a) => a.map((z) => (z.id === rf.id ? { ...z, status: "approved", by: byName(role, actingEmployee) } : z))); addManualAdj(setRepSettlements, mo, { id: "RF-" + rf.id, repId: rf.referrerId, type: "add", amount: +E.cfg.refBonus, reason: Lx(lang, "مكافأة ترشيح مندوب", "Referral bonus"), by: byName(role, actingEmployee) }); logAudit(setAuditLog, role, "referral_paid", `${rf.referrerName} → ${rf.name}`, actingEmployee); };
+  const list = E.referrals.filter((r) => r.status === tab);
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["pending", Lx(lang, "قيد المتابعة", "Pending"), E.referrals.filter((r) => r.status === "pending").length], ["approved", Lx(lang, "مصروفة", "Paid")], ["rejected", Lx(lang, "مرفوضة", "Rejected")]]} />
+      <Panel title={Lx(lang, "ترشيحات المناديب", "Rider referrals")} extra={(role.id === "gm" || role.id === "fin") ? <div className="flex gap-2 items-center"><XIn type="number" value={E.cfg.refBonus} onChange={(v) => extCfg(setExt, { refBonus: +v || 0 })} cls="w-20" /><XIn type="number" value={E.cfg.refMinOrders} onChange={(v) => extCfg(setExt, { refMinOrders: +v || 0 })} cls="w-20" /></div> : null}>
+        {list.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{list.map((rf) => { const i = info(rf); return (
+          <div key={rf.id} className="rounded-2xl p-3" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+            <p className="text-[13px] font-extrabold">{rf.referrerName} ← {rf.name} <span className="num text-[11px]" style={{ color: "var(--muted)" }}>{rf.phone}</span></p>
+            <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{i.rep ? Lx(lang, `انضم — ${i.orders} / ${E.cfg.refMinOrders} طلب`, `Joined — ${i.orders} / ${E.cfg.refMinOrders} orders`) : Lx(lang, "لم ينضم بعد (يُطابق برقم الجوال)", "Not joined yet (matched by phone)")}</p>
+            {rf.status === "pending" && can && <div className="flex gap-2 mt-2"><Btn variant="accent" accent={role.glow} disabled={!i.ok} onClick={() => pay(rf)}>{Lx(lang, `صرف ${E.cfg.refBonus} ${t.sar}`, `Pay ${E.cfg.refBonus} ${t.sar}`)}</Btn><Btn variant="danger" onClick={() => extUpd(setExt, "referrals", (a) => a.map((z) => (z.id === rf.id ? { ...z, status: "rejected" } : z)))}>{Lx(lang, "رفض", "Reject")}</Btn></div>}
+          </div>); })}</div>}
+        <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "المربعان العلويان للمدير العام/المالية: مبلغ المكافأة، ثم الحد الأدنى للطلبات.", "Top boxes (GM/Finance): bonus amount, then minimum orders.")}</p>
+      </Panel>
+    </div>
+  );
+}
+
+/* ─── منافسة الفرق (مشرف = فريق) — المقياس: متوسط الطلبات لكل مندوب ─── */
+function TeamsPage({ lang, role, allReps, reps, allReports, reports, employees, activeRep, ext, setExt, setRepSettlements, setAuditLog, actingEmployee }) {
+  const t = T[lang], E = extOf(ext); const RR = allReps || reps, RP = allReports || reports;
+  const month = riyadhToday().slice(0, 7); const isRep = role.id === "rep";
+  const sups = supervisorsOf(employees).filter((s) => s.id !== "sup1");
+  const teams = sups.map((s) => { const m = RR.filter((r) => r.status === "active" && r.sup === s.id); const tot = m.reduce((a, r) => a + monthEntriesFor(RP, r.id, month).reduce((x, e) => x + (e.orders || 0), 0), 0); return { s, m, tot, avg: m.length ? tot / m.length : 0 }; }).filter((x) => x.m.length > 0).sort((a, b) => b.avg - a.avg);
+  const contest = E.contests.find((c) => c.month === month);
+  const [f, setF] = useState({ title: "", prize: "" }); const [err, setErr] = useState("");
+  const can = role.id === "opsm" || role.id === "gm";
+  const create = () => { if (f.title.trim().length < 3 || !(+f.prize > 0)) return setErr(Lx(lang, "اكتب عنواناً ومبلغاً.", "Title and amount needed.")); setErr(""); extUpd(setExt, "contests", (a) => [{ id: uidX("CT"), month, title: f.title.trim(), prize: +f.prize, status: "open", at: riyadhNow().toISOString() }, ...a]); setF({ title: "", prize: "" }); };
+  const close = () => {
+    const w = teams[0]; if (!w || !contest) return;
+    extUpd(setExt, "contests", (a) => a.map((c) => (c.id === contest.id ? { ...c, status: "closed", winnerId: w.s.id, winnerName: w.s.ar, avg: Math.round(w.avg), by: byName(role, actingEmployee) } : c)));
+    w.m.forEach((r) => addManualAdj(setRepSettlements, month, { id: "CT-" + contest.id + "-" + r.id, repId: r.id, type: "add", amount: contest.prize, reason: Lx(lang, `فوز الفريق: ${contest.title}`, `Team win: ${contest.title}`), by: byName(role, actingEmployee) }));
+    logAudit(setAuditLog, role, "contest_closed", `${contest.title} → ${w.s.ar}`, actingEmployee);
+  };
+  const myTeam = isRep && activeRep ? activeRep.sup : null;
+  return (
+    <div className="space-y-4">
+      {contest ? <div className="rounded-3xl p-5" style={{ background: "radial-gradient(120% 140% at 50% 0%,#1B2A4A 0%,#0E1424 70%)", border: "1px solid rgba(228,184,92,.35)" }}>
+        <p className="text-[12px]" style={{ color: "rgba(255,255,255,.6)" }}>{Lx(lang, "تحدي الشهر", "Challenge of the month")}</p>
+        <p className="gold-text text-[20px] font-extrabold">{contest.title}</p>
+        <p className="text-[13px]" style={{ color: "#fff" }}>{Lx(lang, `جائزة كل عضو في الفريق الفائز: ${contest.prize} ${t.sar}`, `Prize for each member of the winning team: ${contest.prize} ${t.sar}`)}</p>
+        {contest.status === "closed" && <p className="text-[13px] font-extrabold mt-1" style={{ color: "#F3D58E" }}>🏆 {Lx(lang, "الفائز", "Winner")}: {contest.winnerName}</p>}
+      </div> : <p className="text-[12.5px] rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.04)" }}>{Lx(lang, "لا يوجد تحدٍّ معلن لهذا الشهر.", "No challenge announced this month.")}</p>}
+      <Panel title={Lx(lang, "ترتيب الفرق — متوسط الطلبات لكل مندوب", "Team ranking — avg orders per rider")}>
+        {teams.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{teams.map((x, i) => (
+          <div key={x.s.id} className="rounded-2xl p-3" style={{ background: myTeam === x.s.id ? "rgba(228,184,92,.14)" : "rgba(20,27,45,.035)", border: `1px solid ${myTeam === x.s.id ? "rgba(228,184,92,.5)" : "var(--line)"}` }}>
+            <div className="flex items-center gap-3"><span className="num text-[18px] font-extrabold w-7">{i === 0 ? "🏆" : i + 1}</span><span className="flex-1 text-[13.5px] font-extrabold">{Lx(lang, "فريق", "Team")} {x.s.ar}{myTeam === x.s.id ? ` — ${Lx(lang, "فريقك", "your team")}` : ""}</span><span className="num text-[15px] font-extrabold">{Math.round(x.avg)}</span></div>
+            <p className="num text-[11px] mt-0.5" style={{ color: "var(--muted)" }}>{x.m.length} {Lx(lang, "مندوب", "riders")} · {fmt(x.tot)} {Lx(lang, "طلب", "orders")}</p>
+          </div>))}</div>}
+        <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "المقياس متوسط الطلبات لكل مندوب حتى تكون المنافسة عادلة بين الفرق الكبيرة والصغيرة.", "Average per rider keeps it fair between big and small teams.")}</p>
+      </Panel>
+      {can && <Panel title={Lx(lang, "إدارة التحدي", "Manage challenge")}>
+        {!contest ? <><div className="grid gap-3 sm:grid-cols-2"><XIn value={f.title} onChange={(v) => setF({ ...f, title: v })} ph={Lx(lang, "اسم التحدي", "Challenge name")} /><XIn type="number" value={f.prize} onChange={(v) => setF({ ...f, prize: v })} ph={Lx(lang, "جائزة كل عضو (ر.س)", "Prize per member (SAR)")} /></div>
+          {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-3"><Btn variant="accent" accent={role.glow} onClick={create}>{Lx(lang, "إعلان التحدي", "Announce")}</Btn></div></>
+          : contest.status === "open" ? <Btn variant="accent" accent={role.glow} onClick={close} disabled={!teams.length}>{Lx(lang, "إغلاق التحدي وصرف الجوائز لأعضاء الفريق الفائز", "Close & pay winning team")}</Btn>
+            : <p className="text-[12.5px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "أُغلق التحدي وأُضيفت الجوائز لكشوف الفريق الفائز.", "Closed; prizes added to the winners' statements.")}</p>}
+      </Panel>}
+    </div>
+  );
+}
+
+/* ═══════════  الأنظمة 15–22: المشرفون • المدير العام • المحاسب • الموارد البشرية  ═══════════ */
+Object.assign(EXT0, { priceReq: [], perfPlans: [], bench: [], coverLog: [], cockpit: {}, scenarios: [], closeL: {}, cashItems: [], cashOpen: null, recvEsc: {}, empDocs: {}, reviews: {}, offboard: [] });
+EXT0.cfg = { ...EXT0.cfg, planWeeks: 4, payTerm: 30, payDay: 28, cashFloor: 0, mOk: 12, mBad: 5 };
+
+const addDays = (d, n) => { const x = new Date(d + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const rangeStats = (reports, repId, from, to) => {
+  let orders = 0; const days = new Set();
+  reports.forEach((rp) => { if (rp.date < from || rp.date > to) return; rp.entries.forEach((e) => { if (e.id === repId && (e.orders || 0) > 0) { orders += e.orders; days.add(rp.date); } }); });
+  return { orders, days: days.size };
+};
+const escH = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const printDoc = (title, body) => {
+  try {
+    const w = window.open("", "_blank"); if (!w) return false;
+    w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${escH(title)}</title><style>body{font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;padding:28px;color:#12151D}h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;margin:8px 0}td,th{border:1px solid #ccc;padding:6px 8px;font-size:13px;text-align:right}.g{color:#0B5C46;font-weight:700}.a{color:#B07A00;font-weight:700}.r{color:#C0443A;font-weight:700}.m{color:#666;font-size:12px}</style></head><body>${body}<script>setTimeout(function(){window.print()},400)<\/script></body></html>`);
+    w.document.close(); return true;
+  } catch (e) { return false; }
+};
+function XSel({ value, onChange, children, cls = "" }) {
+  return <select value={value} onChange={(e) => onChange(e.target.value)} className={`rounded-xl px-3 py-2.5 text-[12.5px] outline-none ${cls}`} style={XINP}>{children}</select>;
+}
+const BOXS = { background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" };
+const settleOf = (month, RR, RP, pricing, repSettlements, wf, vp, expenses, receipts) => {
+  const rec = (repSettlements || []).find((s) => s.month === month);
+  if (rec && rec.closed && rec.snapshot && rec.snapshot.totals) return { ...rec.snapshot, closed: true, rec };
+  try { return { ...computeSettlement(month, RR, RP, pricing, rec && rec.inputs, wf, vp, expenses, receipts), closed: false, rec }; } catch (e) { return null; }
+};
+
+/* ═══ 15) خطة تحسين الأداء وجلسات المتابعة ═══ */
+function PerfPlansPage({ lang, role, reps, allReps, reports, allReports, attendance, pricing, weekendFine, violationPenalty, ext, setExt, setAuditLog, actingEmployee, scopeSup, goPage }) {
+  const E = extOf(ext); const RR = scopeSup ? reps : (allReps || reps); const RP = scopeSup ? reports : (allReports || reports);
+  const today = riyadhToday(), month = today.slice(0, 7);
+  const [tab, setTab] = useState("active"); const [sel, setSel] = useState(null);
+  const [f, setF] = useState({ ordersWk: "", daysWk: "5", note: "" }); const [note, setNote] = useState({}); const [dec, setDec] = useState({}); const [err, setErr] = useState("");
+  const canAct = role.id === "ops" || role.id === "opsm" || role.id === "gm";
+  const plans = E.perfPlans.filter((p) => !scopeSup || p.sup === scopeSup);
+  const busy = new Set(plans.filter((p) => p.status === "active").map((p) => p.repId));
+  const tAvg = teamAvgOrders(RR, month, RP);
+  const cands = RR.filter((r) => r.status === "active" && !busy.has(r.id)).map((r) => ({ r, p: perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg) })).filter((x) => x.p.days >= 3 && x.p.score < 60).sort((a, b) => a.p.score - b.p.score);
+  const upd = (id, fn) => extUpd(setExt, "perfPlans", (a) => a.map((z) => (z.id === id ? fn(z) : z)));
+  const me = byName(role, actingEmployee);
+  const start = () => {
+    const r = RR.find((x) => x.id === sel); if (!r) return;
+    const ow = +f.ordersWk, dw = +f.daysWk;
+    if (!(ow > 0) || !(dw > 0 && dw <= 7) || f.note.trim().length < 6) return setErr(Lx(lang, "حدّد هدف الطلبات الأسبوعي وأيام العمل واكتب ملخص الجلسة الأولى.", "Set weekly orders goal, days per week and first-session notes."));
+    setErr("");
+    const base = perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg); const s14 = rangeStats(RP, r.id, addDays(today, -13), today);
+    const weeks = +E.cfg.planWeeks || 4;
+    extUpd(setExt, "perfPlans", (a) => [{ id: uidX("PP"), repId: r.id, repName: r.ar, sup: r.sup || null, startAt: today, endAt: addDays(today, weeks * 7), weeks, extended: 0, goals: { ordersWk: ow, daysWk: dw }, baseline: { score: base.score, orders14: s14.orders, days14: s14.days }, sessions: [{ at: riyadhNow().toISOString(), by: me, kind: "first", note: f.note.trim() }], status: "active", by: me }, ...a]);
+    logAudit(setAuditLog, role, "perf_plan_start", r.ar, actingEmployee); setSel(null); setF({ ordersWk: "", daysWk: "5", note: "" }); setTab("active");
+  };
+  const weeksOf = (p) => Array.from({ length: p.weeks }, (_, i) => { const from = addDays(p.startAt, i * 7), to = addDays(from, 6); const s = rangeStats(RP, p.repId, from, to); const done = to < today; return { i, from, to, ...s, done, future: from > today, met: s.orders >= p.goals.ordersWk && s.days >= p.goals.daysWk }; });
+  const verdict = (p) => {
+    const w = weeksOf(p).filter((x) => x.done); const ended = today >= p.endAt;
+    const rep = RR.find((x) => x.id === p.repId); const nowScore = rep ? perfOf(rep, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg).score : p.baseline.score;
+    if (w.length >= 2 && w[w.length - 1].met && w[w.length - 2].met) return ["success", nowScore];
+    if (ended) return nowScore >= p.baseline.score + 10 && p.extended < 2 ? ["extend", nowScore] : ["escalate", nowScore];
+    return ["continue", nowScore];
+  };
+  const VL = { success: [Lx(lang, "حقق الهدف — يُنصح بالإغلاق", "Goal met — close"), "ok"], extend: [Lx(lang, "تحسّن — يُنصح بالتمديد", "Improving — extend"), "info"], escalate: [Lx(lang, "لم يتحسّن — يُنصح بالتصعيد", "No progress — escalate"), "bad"], continue: [Lx(lang, "الخطة جارية", "In progress"), "warn"] };
+  const shown = plans.filter((p) => (tab === "active" ? p.status === "active" : tab === "escalated" ? p.status === "escalated" : tab === "closed" ? p.status === "closed" : false));
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["active", Lx(lang, "خطط جارية", "Active"), plans.filter((p) => p.status === "active").length], ["cands", Lx(lang, "يحتاجون خطة", "Need a plan"), cands.length], ["escalated", Lx(lang, "مُصعَّدة", "Escalated"), plans.filter((p) => p.status === "escalated").length], ["closed", Lx(lang, "مغلقة", "Closed")]]} />
+      <p className="text-[11.5px] rounded-xl px-3 py-2" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.3)" }}>{Lx(lang, "الهدف دعم المندوب لا معاقبته: جلسة موثّقة، ثم هدف أسبوعي واضح لمدة أسابيع، ثم قرار مبني على الأرقام (إغلاق أو تمديد أو تصعيد).", "The aim is to support, not punish: a documented session, clear weekly goals, then a data-based decision.")}</p>
+      {tab === "cands" ? <Panel title={Lx(lang, "مناديب درجتهم أقل من 60", "Riders scoring below 60")}>
+        {cands.length === 0 ? <p className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا أحد يحتاج خطة حالياً.", "Nobody needs a plan now.")}</p> : <div className="space-y-2">{cands.map(({ r, p }) => (
+          <div key={r.id} className="rounded-2xl p-3" style={BOXS}>
+            <div className="flex items-center gap-2"><span className="flex-1 text-[13px] font-extrabold">{r.ar}</span><Chip tone="bad" sm>{Lx(lang, "الدرجة", "Score")} {p.score}</Chip>{canAct && <Btn variant="accent" accent={role.glow} onClick={() => { if (sel === r.id) { setSel(null); return; } const s14 = rangeStats(RP, r.id, addDays(today, -13), today); const wk = s14.orders / 2; const g = Math.max(Math.ceil(wk * 1.25), Math.ceil(wk + 10)); const dd = Math.min(6, Math.max(4, Math.ceil(s14.days / 2) + 1)); setF({ ordersWk: String(g), daysWk: String(dd), note: Lx(lang, `جلسة متابعة: درجة الأداء ${p.score}. اتفقنا على هدف أسبوعي ${g} طلباً في ${dd} أيام مع متابعة أسبوعية.`, `Follow-up session: score ${p.score}. Agreed weekly goal ${g} orders over ${dd} days.`) }); setSel(r.id); setErr(""); }}>{sel === r.id ? Lx(lang, "إلغاء", "Cancel") : Lx(lang, "خطة مقترحة تلقائياً", "Auto-suggested plan")}</Btn>}</div>
+            <p className="num text-[11px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, `حضور ${Math.round(p.att * 100)}% · طلبات ${p.orders} · مخالفات ${p.viol}`, `Attendance ${Math.round(p.att * 100)}% · orders ${p.orders} · violations ${p.viol}`)}</p>
+            {sel === r.id && <div className="mt-3 space-y-2">
+              <p className="text-[11.5px] font-bold" style={{ color: "#B07A00" }}>{Lx(lang, "الأرقام التالية مقترحة من نشاطه آخر 14 يوماً — عدّلها إن لزم ثم اعتمد.", "Suggested from the last 14 days — adjust if needed, then confirm.")}</p>
+              <div className="grid gap-2 sm:grid-cols-2"><XIn type="number" value={f.ordersWk} onChange={(v) => setF({ ...f, ordersWk: v })} ph={Lx(lang, "هدف الطلبات الأسبوعي", "Weekly orders goal")} /><XIn type="number" value={f.daysWk} onChange={(v) => setF({ ...f, daysWk: v })} ph={Lx(lang, "أيام العمل أسبوعياً", "Days per week")} /></div>
+              <XIn value={f.note} onChange={(v) => setF({ ...f, note: v })} ph={Lx(lang, "ملخص الجلسة الأولى (الأسباب والاتفاق)", "First session summary")} cls="w-full" />
+              {err && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err}</p>}
+              <Btn variant="accent" accent={role.glow} onClick={start}>{Lx(lang, `اعتماد الخطة (${E.cfg.planWeeks} أسابيع)`, `Confirm plan (${E.cfg.planWeeks} weeks)`)}</Btn></div>}
+          </div>))}</div>}
+      </Panel> : <div className="space-y-3">{shown.length === 0 ? <Panel title={Lx(lang, "الخطط", "Plans")}>{EMPTYT(lang)}</Panel> : shown.map((p) => { const ws = weeksOf(p); const [vk, nowScore] = verdict(p); return (
+        <Panel key={p.id} title={`${p.repName}`} extra={p.status === "active" ? <Chip tone={VL[vk][1]} sm>{VL[vk][0]}</Chip> : <Chip tone={p.status === "escalated" ? "bad" : "ok"} sm>{p.status === "escalated" ? Lx(lang, "مُصعَّدة", "Escalated") : Lx(lang, "مغلقة", "Closed")}</Chip>}>
+          <p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{p.startAt} → {p.endAt} · {Lx(lang, `الهدف أسبوعياً: ${p.goals.ordersWk} طلب في ${p.goals.daysWk} أيام`, `Weekly goal: ${p.goals.ordersWk} orders / ${p.goals.daysWk} days`)} · {Lx(lang, `الدرجة ${p.baseline.score} ← ${nowScore}`, `Score ${p.baseline.score} → ${nowScore}`)}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">{ws.map((w) => (
+            <div key={w.i} className="rounded-xl p-2 text-center" style={{ background: w.future ? "rgba(20,27,45,.03)" : w.met ? "rgba(63,216,180,.16)" : w.done ? "rgba(232,131,122,.14)" : "rgba(228,184,92,.14)" }}>
+              <p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "أسبوع", "Wk")} {w.i + 1}</p>
+              <p className="num text-[13px] font-extrabold">{w.future ? "—" : `${w.orders} / ${p.goals.ordersWk}`}</p>
+              <p className="num text-[10.5px]">{w.future ? "" : `${w.days} / ${p.goals.daysWk} ${Lx(lang, "أيام", "d")}`}</p></div>))}</div>
+          <div className="mt-2 space-y-1">{p.sessions.map((s, i) => <p key={i} className="text-[11.5px]">• <span className="num" style={{ color: "var(--muted)" }}>{(s.at || "").slice(0, 10)}</span> {s.by}: {s.note}</p>)}</div>
+          {p.decision && <p className="text-[12px] font-bold mt-1">{Lx(lang, "القرار", "Decision")}: {p.decision}</p>}
+          {p.status === "active" && canAct && <div className="mt-3 space-y-2">
+            <div className="flex gap-2"><XIn value={note[p.id] || ""} onChange={(v) => setNote({ ...note, [p.id]: v })} ph={Lx(lang, "جلسة متابعة جديدة: ما تم الاتفاق عليه", "Follow-up session notes")} cls="flex-1" /><Btn onClick={() => { const n = (note[p.id] || "").trim(); if (n.length < 4) return; upd(p.id, (z) => ({ ...z, sessions: [...z.sessions, { at: riyadhNow().toISOString(), by: me, kind: "follow", note: n }] })); setNote({ ...note, [p.id]: "" }); }}>{Lx(lang, "تسجيل", "Log")}</Btn></div>
+            <div className="flex gap-2 flex-wrap">
+              <Btn variant="accent" accent={role.glow} onClick={() => { upd(p.id, (z) => ({ ...z, status: "closed", outcome: "success", closedAt: today, decision: Lx(lang, "أُغلقت بنجاح", "Closed successfully") })); logAudit(setAuditLog, role, "perf_plan_close", p.repName, actingEmployee); }}>{Lx(lang, "إغلاق (نجحت)", "Close (success)")}</Btn>
+              {p.extended < 2 && <Btn onClick={() => upd(p.id, (z) => ({ ...z, endAt: addDays(z.endAt, 14), weeks: z.weeks + 2, extended: z.extended + 1 }))}>{Lx(lang, "تمديد أسبوعين", "Extend 2 weeks")}</Btn>}
+              <Btn variant="danger" onClick={() => { upd(p.id, (z) => ({ ...z, status: "escalated", escalatedAt: today, escalatedBy: me })); logAudit(setAuditLog, role, "perf_plan_escalate", p.repName, actingEmployee); }}>{Lx(lang, "تصعيد للإدارة", "Escalate")}</Btn></div></div>}
+          {p.status === "escalated" && (role.id === "hr" || role.id === "opsm" || role.id === "gm") && <div className="mt-3 space-y-2">
+            <XIn value={dec[p.id] || ""} onChange={(v) => setDec({ ...dec, [p.id]: v })} ph={Lx(lang, "القرار (إنذار، نقل فريق، تدريب، ...)", "Decision (warning, transfer, training…)")} cls="w-full" />
+            <div className="flex gap-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => { const d = (dec[p.id] || "").trim(); if (d.length < 4) return; upd(p.id, (z) => ({ ...z, status: "closed", outcome: "decision", closedAt: today, decision: d })); logAudit(setAuditLog, role, "perf_plan_decision", `${p.repName}: ${d.slice(0, 40)}`, actingEmployee); }}>{Lx(lang, "تسجيل القرار وإغلاق", "Record decision & close")}</Btn>
+              {goPage && role.nav.includes("offboard") && <Btn onClick={() => goPage("offboard")}>{Lx(lang, "بدء إنهاء خدمة", "Start offboarding")}</Btn>}</div></div>}
+        </Panel>); })}</div>}
+    </div>
+  );
+}
+
+/* ═══ 16) التغطية والبدائل وقائمة الاحتياط ═══ */
+function CoveragePage({ lang, role, reps, allReps, reports, allReports, attendance, pricing, weekendFine, violationPenalty, applications, employees, ext, setExt, setAuditLog, actingEmployee, scopeSup }) {
+  const E = extOf(ext); const RR = scopeSup ? reps : (allReps || reps); const RP = scopeSup ? reports : (allReports || reports);
+  const today = riyadhToday(); const month = today.slice(0, 7);
+  const [date, setDate] = useState(addDays(today, 1)); const [bf, setBf] = useState({ name: "", phone: "", app: "hs", city: "" }); const [err, setErr] = useState("");
+  const wd = new Date(date + "T00:00:00Z").getUTCDay();
+  const canBench = role.id === "ops" || role.id === "opsm" || role.id === "hr" || role.id === "gm";
+  const onLeave = (r) => E.leaves.some((l) => l.repId === r.id && l.status === "approved" && l.from <= date && l.to >= date);
+  const idBad = (r) => !!r.idExpiry && r.idExpiry < date;
+  const sups = supervisorsOf(employees).filter((s) => (scopeSup ? s.id === scopeSup : s.id !== "sup1"));
+  const past = []; for (let i = 1; i <= 8 && past.length < 4; i++) { const d = addDays(date, -7 * i); if (d < today) past.push(d); }
+  const tAvg = teamAvgOrders(RR, month, RP);
+  const scoreOf = (r) => perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg).score;
+  const teams = sups.map((s) => {
+    const members = RR.filter((r) => r.status === "active" && r.sup === s.id); if (!members.length) return null;
+    const ids = new Set(members.map((m) => m.id));
+    const worked = past.map((d) => { const rp = RP.filter((x) => x.date === d); if (!rp.length) return null; const set = new Set(); rp.forEach((x) => x.entries.forEach((e) => { if (ids.has(e.id) && (e.orders || 0) > 0) set.add(e.id); })); return set.size; }).filter((x) => x != null);
+    const expected = worked.length ? Math.round(worked.reduce((a, b) => a + b, 0) / worked.length) : Math.round(members.length * 6 / 7);
+    const avail = members.filter((r) => !onLeave(r) && !idBad(r)); const out = members.filter((r) => onLeave(r) || idBad(r));
+    return { s, members, expected, avail, out, short: Math.max(0, expected - avail.length), basis: worked.length };
+  }).filter(Boolean);
+  const wa = (phone, text) => "https://wa.me/" + phoneWa(phone) + "?text=" + encodeURIComponent(text);
+  const pool = (t) => {
+    const apps = new Set(t.members.map((m) => m.app));
+    const others = RR.filter((r) => r.status === "active" && r.sup !== t.s.id && !onLeave(r) && !idBad(r) && apps.has(r.app)).map((r) => ({ kind: "rider", id: r.id, name: r.ar, phone: r.phone, score: scoreOf(r), tag: Lx(lang, "من فريق آخر", "Other team") }));
+    const bench = E.bench.filter((b) => b.status === "ready" && (apps.size === 0 || apps.has(b.app))).map((b) => ({ kind: "bench", id: b.id, name: b.name, phone: b.phone, score: 50, tag: Lx(lang, "احتياط", "Bench") + (b.city ? ` · ${b.city}` : "") }));
+    const wait = (applications || []).filter((a) => a.status === "new" && apps.has(a.app)).map((a) => ({ kind: "app", id: a.id, name: a.name, phone: a.phone, score: 40, tag: Lx(lang, "متقدم", "Applicant") + (a.city ? ` · ${a.city}` : "") }));
+    return [...others, ...bench, ...wait].sort((a, b) => b.score - a.score).slice(0, 6);
+  };
+  const invite = (t, c) => { extUpd(setExt, "coverLog", (a) => [{ id: uidX("CV"), date, supId: t.s.id, supName: t.s.ar, name: c.name, kind: c.kind, by: byName(role, actingEmployee), at: riyadhNow().toISOString() }, ...a].slice(0, 200)); };
+  const addBench = () => { if (bf.name.trim().length < 3 || phoneWa(bf.phone).length < 9) return setErr(Lx(lang, "اكتب الاسم والجوال.", "Name and phone required.")); setErr(""); extUpd(setExt, "bench", (a) => [{ id: uidX("BN"), ...bf, name: bf.name.trim(), phone: bf.phone.trim(), city: bf.city.trim(), status: "ready", at: riyadhNow().toISOString() }, ...a]); setBf({ name: "", phone: "", app: bf.app, city: "" }); logAudit(setAuditLog, role, "bench_add", bf.name, actingEmployee); };
+  const totalShort = teams.reduce((s, t) => s + t.short, 0);
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "التغطية المتوقعة", "Expected coverage")} extra={<XIn type="date" value={date} onChange={setDate} cls="w-40" />}>
+        <p className="text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{Lx(lang, "المتوقع = متوسط من عملوا في نفس اليوم من الأسبوع خلال آخر 4 أسابيع. المتاح = النشطون ناقص من في إجازة معتمدة أو إقامته منتهية.", "Expected = average riders working the same weekday over 4 weeks. Available = active minus approved leave or expired ID.")}</p>
+        {teams.length === 0 ? EMPTYT(lang) : <><div className="rounded-xl px-3 py-2 mb-3 text-[13px] font-extrabold" style={{ background: totalShort ? "rgba(232,131,122,.14)" : "rgba(63,216,180,.16)" }}>{totalShort ? Lx(lang, `نقص متوقع في ${date}: ${totalShort} مندوب`, `Expected shortage on ${date}: ${totalShort}`) : "✔ " + Lx(lang, "التغطية كافية.", "Coverage is sufficient.")}</div>
+          <div className="space-y-3">{teams.map((t) => (
+            <div key={t.s.id} className="rounded-2xl p-3" style={{ ...BOXS, border: `1px solid ${t.short ? "rgba(232,131,122,.5)" : "var(--line)"}` }}>
+              <div className="flex items-center gap-2 flex-wrap"><span className="flex-1 text-[13.5px] font-extrabold">{Lx(lang, "فريق", "Team")} {t.s.ar}</span><Chip tone={t.short ? "bad" : "ok"} sm>{Lx(lang, `متوقع ${t.expected} · متاح ${t.avail.length}`, `Need ${t.expected} · have ${t.avail.length}`)}</Chip>{t.short > 0 && <Chip tone="bad" sm>{Lx(lang, `نقص ${t.short}`, `Short ${t.short}`)}</Chip>}</div>
+              {t.out.length > 0 && <p className="text-[11.5px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, "غائبون: ", "Out: ")}{t.out.map((r) => `${r.ar} (${onLeave(r) ? Lx(lang, "إجازة", "leave") : Lx(lang, "إقامة منتهية", "ID expired")})`).join("، ")}</p>}
+              {t.short > 0 && <div className="mt-2 space-y-1.5"><p className="text-[11.5px] font-bold">{Lx(lang, "بدائل مقترحة (الأعلى أداءً أولاً):", "Suggested substitutes:")}</p>
+                {pool(t).length === 0 ? <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا بدائل مناسبة — أضف أسماء لقائمة الاحتياط أدناه.", "No substitutes — add names to the bench below.")}</p> : pool(t).map((c) => (
+                  <div key={c.kind + c.id} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+                    <span className="flex-1 text-[12.5px] font-bold">{c.name} <span className="text-[10.5px] font-normal" style={{ color: "var(--muted)" }}>{c.tag}</span></span>
+                    {c.kind === "rider" && <span className="num text-[11px]">{c.score}</span>}
+                    {c.phone && <a href={wa(c.phone, Lx(lang, `السلام عليكم ${c.name}، نحتاجك للعمل مع فريق ${t.s.ar} بتاريخ ${date}. هل تستطيع؟`, `Hello ${c.name}, can you cover for team ${t.s.ar} on ${date}?`))} target="_blank" rel="noreferrer" onClick={() => invite(t, c)} className="text-[12px] font-bold px-3 py-1.5 rounded-xl" style={{ background: "rgba(63,216,180,.18)" }}>{Lx(lang, "دعوة واتساب", "Invite")}</a>}
+                  </div>))}</div>}
+            </div>))}</div></>}
+      </Panel>
+      <Panel title={Lx(lang, "قائمة الاحتياط", "Bench list")}>
+        {canBench && <div className="grid gap-2 sm:grid-cols-4 mb-3"><XIn value={bf.name} onChange={(v) => setBf({ ...bf, name: v })} ph={Lx(lang, "الاسم", "Name")} /><XIn value={bf.phone} onChange={(v) => setBf({ ...bf, phone: v })} ph={Lx(lang, "الجوال", "Phone")} />
+          <XSel value={bf.app} onChange={(v) => setBf({ ...bf, app: v })}>{APPS.map((a) => <option key={a.id} value={a.id}>{a[lang] || a.ar}</option>)}</XSel><XIn value={bf.city} onChange={(v) => setBf({ ...bf, city: v })} ph={Lx(lang, "المدينة", "City")} /></div>}
+        {canBench && <div className="mb-3"><Btn variant="accent" accent={role.glow} onClick={addBench}>{Lx(lang, "إضافة للاحتياط", "Add to bench")}</Btn>{err && <span className="text-[11.5px] mx-2" style={{ color: "#C0443A" }}>{err}</span>}</div>}
+        {E.bench.filter((b) => b.status === "ready").length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">{E.bench.filter((b) => b.status === "ready").map((b) => (
+          <div key={b.id} className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><span className="flex-1 text-[12.5px] font-bold">{b.name} <span className="text-[10.5px] font-normal" style={{ color: "var(--muted)" }}>{(APPS.find((a) => a.id === b.app) || {})[lang] || b.app}{b.city ? ` · ${b.city}` : ""}</span></span>
+            {canBench && <button onClick={() => extUpd(setExt, "bench", (a) => a.map((z) => (z.id === b.id ? { ...z, status: "removed" } : z)))} className="text-[11.5px] font-bold" style={{ color: "#C0443A" }}>{Lx(lang, "إزالة", "Remove")}</button>}</div>))}</div>}
+        {E.coverLog.length > 0 && <p className="text-[10.5px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "آخر دعوة: ", "Last invite: ")}{E.coverLog[0].name} — {E.coverLog[0].supName} ({E.coverLog[0].date})</p>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══ 20) التدفق النقدي والتوقعات (دالة مشتركة مع غرفة القيادة) ═══ */
+function cashForecast(E, invoices, payrollRuns, expenses, delay, days = 60) {
+  const today = riyadhToday(); const open = E.cashOpen; if (!open || open.amount == null || open.amount === "") return null;
+  const ev = []; const end = addDays(today, days);
+  const term = +E.cfg.payTerm || 0;
+  (invoices || []).filter((v) => v.st === "review").forEach((v) => { let d = addDays(v.date || today, term + (+delay || 0)); if (d < today) d = today; if (d <= end) ev.push({ date: d, amt: +v.amt || 0, dir: "in", label: Lx("ar", "فاتورة " + v.app, "") + " " + (v.no || "") }); });
+  const lastRun = (payrollRuns || []).find((r) => +r.totalPayroll > 0); const pay = lastRun ? +lastRun.totalPayroll : 0;
+  if (pay > 0) for (let k = 0; k < 4; k++) { const base = new Date(today + "T00:00:00Z"); base.setUTCMonth(base.getUTCMonth() + k, 1); const ym = base.toISOString().slice(0, 7); const dim = monthDays(ym); const d = ym + "-" + String(Math.min(+E.cfg.payDay || 28, dim)).padStart(2, "0"); if (d >= today && d <= end) ev.push({ date: d, amt: pay, dir: "out", label: "payroll" }); }
+  (E.cashItems || []).forEach((it) => {
+    const amt = +it.amount || 0; if (!amt || !it.date) return;
+    if (it.repeat === "monthly") { for (let k = 0; k < 4; k++) { const base = new Date(it.date + "T00:00:00Z"); base.setUTCMonth(base.getUTCMonth() + k); const d = base.toISOString().slice(0, 10); if (d >= today && d <= end) ev.push({ date: d, amt, dir: it.dir, label: it.label }); } }
+    else if (it.date >= today && it.date <= end) ev.push({ date: it.date, amt, dir: it.dir, label: it.label });
+  });
+  const since = addDays(today, -90); const expTotal = (expenses || []).filter((e) => (e.status === "approved" || !e.status) && (e.date || "") >= since).reduce((s, e) => s + (+e.v || 0), 0); const daily = expTotal / 90;
+  let bal = +open.amount; const rows = []; let min = bal, minDate = today, firstNeg = null;
+  for (let i = 0; i <= days; i++) {
+    const d = addDays(today, i); const inn = ev.filter((x) => x.date === d && x.dir === "in").reduce((s, x) => s + x.amt, 0); const out = ev.filter((x) => x.date === d && x.dir === "out").reduce((s, x) => s + x.amt, 0) + (i > 0 ? daily : 0);
+    bal = bal + inn - out; rows.push({ date: d, label: d.slice(5), bal: Math.round(bal), inn: Math.round(inn), out: Math.round(out) });
+    if (bal < min) { min = bal; minDate = d; } if (bal < 0 && !firstNeg) firstNeg = d;
+  }
+  return { rows, min: Math.round(min), minDate, firstNeg, start: +open.amount, pay, daily: Math.round(daily), events: ev.sort((a, b) => a.date.localeCompare(b.date)) };
+}
+function CashFlowPage({ lang, role, invoices, payrollRuns, expenses, ext, setExt, setAuditLog, actingEmployee }) {
+  const t = T[lang]; const E = extOf(ext); const [delay, setDelay] = useState(0); const [op, setOp] = useState(""); const [it, setIt] = useState({ label: "", amount: "", dir: "out", date: riyadhToday(), repeat: "once" }); const [err, setErr] = useState("");
+  const can = role.id === "fin" || role.id === "gm";
+  const fc = cashForecast(E, invoices, payrollRuns, expenses, delay);
+  const floor = +E.cfg.cashFloor || 0; const first14 = fc ? fc.rows.slice(0, 15) : []; const min14 = first14.length ? Math.min(...first14.map((r) => r.bal)) : 0;
+  const addItem = () => { if (it.label.trim().length < 2 || !(+it.amount > 0) || !it.date) return setErr(Lx(lang, "اكتب البيان والمبلغ والتاريخ.", "Label, amount and date needed.")); setErr(""); extUpd(setExt, "cashItems", (a) => [{ id: uidX("CI"), ...it, label: it.label.trim(), amount: +it.amount }, ...a]); setIt({ ...it, label: "", amount: "" }); logAudit(setAuditLog, role, "cash_item", it.label, actingEmployee); };
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "الرصيد الافتتاحي", "Opening balance")}>
+        <div className="flex gap-2 items-center flex-wrap"><XIn type="number" value={op} onChange={setOp} ph={E.cashOpen ? String(E.cashOpen.amount) : Lx(lang, "الرصيد البنكي/النقدي اليوم", "Bank/cash balance today")} cls="w-52" />
+          {can && <Btn variant="accent" accent={role.glow} onClick={() => { if (op === "" || isNaN(+op)) return; extUpd(setExt, "cashOpen", () => ({ amount: +op, date: riyadhToday(), by: byName(role, actingEmployee) })); setOp(""); logAudit(setAuditLog, role, "cash_open", String(op), actingEmployee); }}>{Lx(lang, "تحديث الرصيد اليوم", "Set today's balance")}</Btn>}
+          {E.cashOpen && <span className="text-[11px]" style={{ color: "var(--muted)" }}>{Lx(lang, "آخر تحديث", "Updated")} {E.cashOpen.date} — {E.cashOpen.by}</span>}</div>
+        <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "حدّث الرصيد كل يوم (أو أسبوعياً) ليبقى التوقع دقيقاً. التوقع تقدير وليس كشف حساب.", "Update the balance regularly. The forecast is an estimate, not a bank statement.")}</p>
+      </Panel>
+      {!fc ? <p className="text-[12.5px] rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.04)" }}>{Lx(lang, "أدخل الرصيد الافتتاحي لعرض التوقع.", "Enter the opening balance to see the forecast.")}</p> : <>
+        <div className="rounded-2xl px-4 py-3 text-[13px] font-extrabold" style={{ background: min14 < floor ? "rgba(232,131,122,.16)" : "rgba(63,216,180,.16)" }}>
+          {min14 < floor ? Lx(lang, `⚠ تنبيه: الرصيد يهبط إلى ${fmt(min14)} ${t.sar} خلال 14 يوماً${fc.firstNeg ? ` (سالب من ${fc.firstNeg})` : ""}.`, `⚠ Balance drops to ${fmt(min14)} within 14 days.`) : "✔ " + Lx(lang, `لا عجز متوقع خلال 14 يوماً (أدنى رصيد ${fmt(min14)}).`, `No shortfall within 14 days (min ${fmt(min14)}).`)}</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><Kpi label={Lx(lang, "الرصيد الحالي", "Current")} value={money(fc.start)} unit={t.sar} icon={Wallet} accent={role.glow} /><Kpi label={Lx(lang, "أدنى رصيد (60 يوماً)", "Lowest (60d)")} value={money(fc.min)} unit={t.sar} icon={TrendingDown} accent="232,131,122" /><Kpi label={Lx(lang, "الرصيد بعد 60 يوماً", "In 60 days")} value={money(fc.rows[fc.rows.length - 1].bal)} unit={t.sar} icon={TrendingUp} accent="15,165,121" /><Kpi label={Lx(lang, "راتب الشهر المقدّر", "Est. payroll")} value={money(fc.pay)} unit={t.sar} icon={Users} accent="139,155,247" /></div>
+        <Panel title={Lx(lang, "الرصيد المتوقع يومياً", "Projected daily balance")} extra={<div className="flex gap-1">{[0, 7, 14, 21].map((d) => <button key={d} onClick={() => setDelay(d)} className="px-2.5 py-1 rounded-lg text-[11px] font-bold" style={{ background: delay === d ? "#12151D" : "rgba(20,27,45,.06)", color: delay === d ? "#fff" : "var(--muted)" }}>{d ? `+${d}` : Lx(lang, "طبيعي", "Normal")}</button>)}</div>}>
+          <div style={{ height: 220 }} dir="ltr"><ResponsiveContainer width="100%" height="100%"><AreaChart data={fc.rows}><CartesianGrid strokeDasharray="3 3" stroke="rgba(20,27,45,.08)" /><XAxis dataKey="label" tick={{ fontSize: 10 }} interval={6} /><YAxis tick={{ fontSize: 10 }} width={48} tickFormatter={(v) => money(v)} /><Tooltip formatter={(v) => fmt(v)} /><Area type="monotone" dataKey="bal" stroke="#3FD8B4" fill="rgba(63,216,180,.25)" /></AreaChart></ResponsiveContainer></div>
+          <p className="text-[10.5px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, `الأزرار: تأخّر سداد التطبيقات بعدد الأيام. المحصَّل المتوقع = تاريخ الفاتورة + ${E.cfg.payTerm} يوماً. المصروفات اليومية المقدّرة ${fmt(fc.daily)} ${t.sar} من متوسط 90 يوماً.`, `Buttons simulate late app payments. Daily expenses estimated from the 90-day average.`)}</p>
+        </Panel>
+        <Panel title={Lx(lang, "أكبر الحركات القادمة", "Upcoming movements")}>
+          {fc.events.length === 0 ? EMPTYT(lang) : <div className="space-y-1">{fc.events.slice(0, 12).map((e, i) => <div key={i} className="flex items-center gap-2 text-[12.5px] py-1"><span className="num w-24" style={{ color: "var(--muted)" }}>{e.date}</span><span className="flex-1">{e.label === "payroll" ? Lx(lang, "رواتب المناديب والموظفين", "Payroll") : e.label}</span><span className="num font-extrabold" style={{ color: e.dir === "in" ? "#0B5C46" : "#C0443A" }}>{e.dir === "in" ? "+" : "−"}{fmt(Math.round(e.amt))}</span></div>)}</div>}
+        </Panel></>}
+      {can && <Panel title={Lx(lang, "بنود نقدية يدوية (إيجار، تسديد، دفعة...)", "Manual cash items")}>
+        <div className="grid gap-2 sm:grid-cols-5"><XIn value={it.label} onChange={(v) => setIt({ ...it, label: v })} ph={Lx(lang, "البيان", "Label")} /><XIn type="number" value={it.amount} onChange={(v) => setIt({ ...it, amount: v })} ph={Lx(lang, "المبلغ", "Amount")} /><XIn type="date" value={it.date} onChange={(v) => setIt({ ...it, date: v })} />
+          <XSel value={it.dir} onChange={(v) => setIt({ ...it, dir: v })}><option value="out">{Lx(lang, "خروج", "Out")}</option><option value="in">{Lx(lang, "دخول", "In")}</option></XSel><XSel value={it.repeat} onChange={(v) => setIt({ ...it, repeat: v })}><option value="once">{Lx(lang, "مرة واحدة", "Once")}</option><option value="monthly">{Lx(lang, "شهرياً", "Monthly")}</option></XSel></div>
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-2"><Btn variant="accent" accent={role.glow} onClick={addItem}>{Lx(lang, "إضافة", "Add")}</Btn></div>
+        <div className="mt-3 space-y-1">{E.cashItems.map((c) => <div key={c.id} className="flex items-center gap-2 text-[12.5px] rounded-xl px-3 py-1.5" style={BOXS}><span className="flex-1 font-bold">{c.label}</span><span className="num" style={{ color: c.dir === "in" ? "#0B5C46" : "#C0443A" }}>{c.dir === "in" ? "+" : "−"}{fmt(c.amount)}</span><span className="num text-[11px]" style={{ color: "var(--muted)" }}>{c.date}{c.repeat === "monthly" ? " ↻" : ""}</span><button onClick={() => extUpd(setExt, "cashItems", (a) => a.filter((z) => z.id !== c.id))} aria-label="delete" style={{ color: "#C0443A" }}><Trash2 size={14} /></button></div>)}</div>
+      </Panel>}
+    </div>
+  );
+}
+
+/* ═══ 17) غرفة القيادة والتقرير التنفيذي ═══ */
+function CockpitPage({ lang, role, allReps, reps, allReports, reports, attendance, pricing, repSettlements, weekendFine, violationPenalty, expenses, decisions, invoices, payrollRuns, repReceipts, employees, ext, setExt, setAuditLog, actingEmployee }) {
+  const t = T[lang]; const E = extOf(ext); const RR = allReps || reps, RP = allReports || reports;
+  const today = riyadhToday(), month = today.slice(0, 7); const me = byName(role, actingEmployee);
+  const [txt, setTxt] = useState({});
+  const act = RR.filter((r) => r.status === "active");
+  const dates = [...new Set(RP.map((x) => x.date))].filter((d) => d <= today).sort().reverse();
+  const dayOrders = (d) => RP.filter((x) => x.date === d).reduce((s, x) => s + x.entries.reduce((a, e) => a + (e.orders || 0), 0), 0);
+  const lastD = dates[0]; const prevD = dates.slice(1, 8); const lastO = lastD ? dayOrders(lastD) : 0; const avgO = prevD.length ? prevD.reduce((s, d) => s + dayOrders(d), 0) / prevD.length : 0;
+  const opsR = !lastD || !avgO ? null : lastO / avgO;
+  const st = settleOf(month, RR, RP, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts);
+  const rev = st ? st.totals.revenue : 0; const mar = st && rev > 0 ? (st.totals.afterExpenses / rev) * 100 : null;
+  const risk = act.map((r) => churnOf(r, RP, attendance, ext, pricing, weekendFine, violationPenalty)).filter((c) => c.active && c.level === "high").length;
+  const riskPct = act.length ? (risk / act.length) * 100 : 0;
+  const idExp = RR.filter((r) => r.status === "active" && r.idExpiry).map((r) => daysUntil(r.idExpiry)).filter((d) => d != null);
+  const expired = idExp.filter((d) => d < 0).length, soon = idExp.filter((d) => d >= 0 && d <= 30).length;
+  const pend = (decisions || []).filter((d) => !d.gmApproved).length + (expenses || []).filter((e) => e.status === "pending").length + E.wallet.filter((w) => w.status === "pending").length + E.leaves.filter((l) => l.status === "pending").length + (repReceipts || []).filter((q) => q.status === "pending").length;
+  const fc = cashForecast(E, invoices, payrollRuns, expenses, 0); const min14 = fc ? Math.min(...fc.rows.slice(0, 15).map((r) => r.bal)) : null; const floor = +E.cfg.cashFloor || 0;
+  const G = "g", A = "a", R = "r", N = "n";
+  const tiles = [
+    { k: "ops", ic: ShoppingBag, ti: Lx(lang, "التشغيل", "Operations"), val: opsR == null ? "—" : Math.round(opsR * 100) + "%", sub: opsR == null ? Lx(lang, "لا بيانات كافية", "Not enough data") : Lx(lang, `طلبات ${lastD}: ${fmt(lastO)} مقابل متوسط ${fmt(Math.round(avgO))}`, `Orders ${lastD}: ${fmt(lastO)} vs avg ${fmt(Math.round(avgO))}`), s: opsR == null ? N : opsR >= 0.9 ? G : opsR >= 0.7 ? A : R },
+    { k: "fin", ic: CircleDollarSign, ti: Lx(lang, "هامش الربح (الشهر)", "Profit margin (month)"), val: mar == null ? "—" : mar.toFixed(1) + "%", sub: st ? Lx(lang, `الإيراد ${fmt(Math.round(rev))} · الصافي ${fmt(Math.round(st.totals.afterExpenses))}`, `Revenue ${fmt(Math.round(rev))} · net ${fmt(Math.round(st.totals.afterExpenses))}`) : "—", s: mar == null ? N : mar >= +E.cfg.mOk ? G : mar >= +E.cfg.mBad ? A : R },
+    { k: "hr", ic: Users, ti: Lx(lang, "القوى العاملة", "Workforce"), val: `${act.length}`, sub: Lx(lang, `${risk} مندوب بخطر ترك مرتفع (${riskPct.toFixed(0)}%)`, `${risk} at high churn risk (${riskPct.toFixed(0)}%)`), s: !act.length ? N : riskPct >= 15 ? R : riskPct >= 5 ? A : G },
+    { k: "cmp", ic: ShieldAlert, ti: Lx(lang, "الامتثال والإقامات", "Compliance"), val: String(expired + soon), sub: Lx(lang, `${expired} منتهية · ${soon} خلال 30 يوماً`, `${expired} expired · ${soon} within 30d`), s: expired > 0 ? R : soon > 0 ? A : G },
+    { k: "apr", ic: BadgeCheck, ti: Lx(lang, "طلبات بانتظار الاعتماد", "Pending approvals"), val: String(pend), sub: Lx(lang, "قرارات ومصروفات وسلف وإجازات وإيصالات", "Decisions, expenses, wallet, leave, receipts"), s: pend > 15 ? R : pend > 5 ? A : G },
+    { k: "cash", ic: Wallet, ti: Lx(lang, "السيولة (14 يوماً)", "Cash (14 days)"), val: min14 == null ? "—" : money(min14), sub: min14 == null ? Lx(lang, "أدخل الرصيد في صفحة التدفق النقدي", "Set balance in Cash Flow") : Lx(lang, "أدنى رصيد متوقع", "Lowest projected balance"), s: min14 == null ? N : min14 < floor ? R : min14 < floor + (fc.pay || 0) * 0.25 ? A : G },
+  ];
+  const COL = { g: ["#0B5C46", "rgba(63,216,180,.14)", "rgba(63,216,180,.45)"], a: ["#B07A00", "rgba(228,184,92,.16)", "rgba(228,184,92,.5)"], r: ["#C0443A", "rgba(232,131,122,.15)", "rgba(232,131,122,.55)"], n: ["#6B7280", "rgba(20,27,45,.04)", "var(--line)"] };
+  const cm = E.cockpit || {};
+  const sinceKey = (k) => "since|" + k; const cKey = (k) => "c|" + k + "|" + (cm[sinceKey(k)] || today);
+  useEffect(() => {
+    const cur = (ext && ext.cockpit) || {}; const patch = {}; let ch = false;
+    tiles.forEach((x) => { const sk = sinceKey(x.k); if (x.s === R && !cur[sk]) { patch[sk] = today; ch = true; } if (x.s !== R && cur[sk]) { patch[sk] = null; ch = true; } });
+    if (ch) extUpd(setExt, "cockpit", (m) => { const n = { ...m }; Object.keys(patch).forEach((k) => { if (patch[k] == null) delete n[k]; else n[k] = patch[k]; }); return n; });
+  }); // eslint-disable-line
+  const comment = (k) => { const v = (txt[k] || "").trim(); if (v.length < 4) return; extUpd(setExt, "cockpit", (m) => ({ ...m, [cKey(k)]: { by: me, at: riyadhNow().toISOString(), text: v } })); setTxt({ ...txt, [k]: "" }); logAudit(setAuditLog, role, "cockpit_comment", `${k}: ${v.slice(0, 40)}`, actingEmployee); };
+  const overdue = (k) => { const since = cm[sinceKey(k)]; return since && !cm[cKey(k)] && (new Date(today) - new Date(since)) / 86400000 >= 2; };
+  const top = act.map((r) => ({ r, p: perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, 0) })).filter((x) => x.p.days > 0).sort((a, b) => b.p.score - a.p.score);
+  const exec = () => {
+    const rows = tiles.map((x) => `<tr><td>${escH(x.ti)}</td><td class="${x.s}">${escH(x.val)}</td><td>${escH(x.sub)}</td><td>${escH((cm[cKey(x.k)] || {}).text || "")}</td></tr>`).join("");
+    const lst = (arr) => arr.map((x) => `<tr><td>${escH(x.r.ar)}</td><td>${x.p.score}</td><td>${x.p.orders}</td></tr>`).join("");
+    const body = `<h1>${escH(Lx(lang, "التقرير التنفيذي الأسبوعي — بوارق الشرق", "Weekly Executive Report — Bawariq Al-Sharq"))}</h1><p class="m">${today}</p><h2>${escH(Lx(lang, "المؤشرات الستة", "Six indicators"))}</h2><table><tr><th>${escH(Lx(lang, "المؤشر", "Indicator"))}</th><th>${escH(Lx(lang, "القيمة", "Value"))}</th><th>${escH(Lx(lang, "التفاصيل", "Details"))}</th><th>${escH(Lx(lang, "تعليق المدير", "GM comment"))}</th></tr>${rows}</table><h2>${escH(Lx(lang, "الأعلى أداءً", "Top performers"))}</h2><table>${lst(top.slice(0, 5))}</table><h2>${escH(Lx(lang, "الأحوج للمتابعة", "Need attention"))}</h2><table>${lst(top.slice(-5).reverse())}</table>`;
+    if (!printDoc(Lx(lang, "التقرير التنفيذي", "Executive report"), body)) alert(Lx(lang, "اسمح بالنوافذ المنبثقة لطباعة التقرير.", "Allow pop-ups to print the report."));
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 flex-wrap"><p className="flex-1 text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "كل رقم أحمر يلزمه تعليق منك خلال 48 ساعة، ويظهر التعليق في التقرير الأسبوعي.", "Every red indicator needs your comment within 48 hours; it appears in the weekly report.")}</p><Btn icon={Printer} onClick={exec}>{Lx(lang, "التقرير التنفيذي (PDF)", "Executive report (PDF)")}</Btn></div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{tiles.map((x) => { const c = COL[x.s]; const Ic = x.ic; const cmt = cm[cKey(x.k)]; return (
+        <div key={x.k} className="rounded-3xl p-4" style={{ background: c[1], border: `1px solid ${c[2]}` }}>
+          <div className="flex items-center gap-2"><Ic size={16} style={{ color: c[0] }} /><span className="flex-1 text-[12.5px] font-extrabold">{x.ti}</span>{overdue(x.k) && <Chip tone="bad" sm>{Lx(lang, "تعليق متأخر", "Overdue")}</Chip>}</div>
+          <p className="num text-[28px] font-extrabold mt-1" style={{ color: c[0] }}>{x.val}</p>
+          <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{x.sub}</p>
+          {x.s === R && <div className="mt-2">{cmt ? <p className="text-[11.5px] font-bold" style={{ color: "#0B5C46" }}>✔ {cmt.by}: {cmt.text}</p> : role.id === "gm" ? <div className="flex gap-2"><XIn value={txt[x.k] || ""} onChange={(v) => setTxt({ ...txt, [x.k]: v })} ph={Lx(lang, "سبب الأحمر والإجراء", "Cause & action")} cls="flex-1 min-w-0" /><Btn onClick={() => comment(x.k)}>{Lx(lang, "تعليق", "Comment")}</Btn></div> : <p className="text-[11px]" style={{ color: "#C0443A" }}>{Lx(lang, "بانتظار تعليق المدير العام", "Awaiting GM comment")}</p>}</div>}
+        </div>); })}</div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Panel title={Lx(lang, "الأعلى أداءً هذا الشهر", "Top performers")}>{top.length === 0 ? EMPTYT(lang) : top.slice(0, 5).map((x) => <div key={x.r.id} className="flex items-center gap-2 text-[12.5px] py-1"><span className="flex-1 font-bold">{x.r.ar}</span><span className="num">{x.p.orders}</span><Chip tone="ok" sm>{x.p.score}</Chip></div>)}</Panel>
+        <Panel title={Lx(lang, "الأحوج للمتابعة", "Need attention")}>{top.length === 0 ? EMPTYT(lang) : top.slice(-5).reverse().map((x) => <div key={x.r.id} className="flex items-center gap-2 text-[12.5px] py-1"><span className="flex-1 font-bold">{x.r.ar}</span><span className="num">{x.p.orders}</span><Chip tone="bad" sm>{x.p.score}</Chip></div>)}</Panel>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ 18) محاكي القرار «ماذا لو؟» ═══ */
+function WhatIfPage({ lang, role, allReps, reps, allReports, reports, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts, ext, setExt, setAuditLog, actingEmployee }) {
+  const t = T[lang]; const E = extOf(ext); const RR = allReps || reps, RP = allReports || reports; const today = riyadhToday();
+  const months = [today.slice(0, 7), prevMonthStr(today.slice(0, 7))];
+  const [mo, setMo] = useState(months[0]); const [name, setName] = useState("");
+  const [v, setV] = useState({ a: "0", b: "0", c: "0", m: "0", fixed: "0", oneOff: "0" });
+  const can = role.id === "gm" || role.id === "fin";
+  const st = settleOf(mo, RR, RP, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts);
+  const N = st ? st.repLines.reduce((s, l) => s + (l.orders || 0), 0) : 0; const K = st ? st.repLines.filter((l) => (l.orders || 0) > 0).length : 0;
+  const R0 = st ? st.totals.revenue : 0, G0 = st ? st.totals.repGross : 0, X0 = st ? st.totals.expenses : 0; const adj0 = st ? st.totals.repNet - st.totals.repGross : 0;
+  const base = R0 - G0 - adj0 - X0;
+  const a = +v.a || 0, b = +v.b || 0, c = +v.c || 0, m = +v.m || 0, fixed = +v.fixed || 0, one = +v.oneOff || 0;
+  const oavg = K ? N / K : 0; const N1 = N * (1 + c / 100) + m * oavg * 0.8;
+  const rpo = N ? R0 / N : 0, gpo = N ? G0 / N : 0;
+  const R1 = N1 * (rpo + b), G1 = N1 * (gpo + a), adj1 = N ? adj0 * (N1 / N) : 0, X1 = X0 + m * fixed + one;
+  const sc = R1 - G1 - adj1 - X1; const d = sc - base;
+  const curMargin = (() => { const s2 = settleOf(today.slice(0, 7), RR, RP, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts); return s2 ? s2.totals.afterExpenses : null; })();
+  const save = () => { if (name.trim().length < 3) return; extUpd(setExt, "scenarios", (arr) => [{ id: uidX("SC"), name: name.trim(), baseMonth: mo, inputs: { ...v }, base: Math.round(base), predicted: Math.round(sc), at: riyadhNow().toISOString(), by: byName(role, actingEmployee) }, ...arr].slice(0, 30)); setName(""); logAudit(setAuditLog, role, "whatif_save", name.trim(), actingEmployee); };
+  const Row = ({ k, a1, a2 }) => <div className="grid grid-cols-3 gap-2 py-1.5 text-[12.5px] border-b" style={{ borderColor: "var(--line)" }}><span className="font-bold">{k}</span><span className="num text-center">{a1}</span><span className="num text-center font-extrabold">{a2}</span></div>;
+  const FLD = [["a", Lx(lang, "تغيير ما يُدفع للمندوب لكل طلب (ر.س)", "Rider pay change per order (SAR)")], ["b", Lx(lang, "تغيير سعر التطبيق للشركة لكل طلب (ر.س)", "App price change per order (SAR)")], ["c", Lx(lang, "نمو/انخفاض الطلبات (%)", "Order growth (%)")], ["m", Lx(lang, "إضافة مناديب جدد (عدد)", "Add riders (count)")], ["fixed", Lx(lang, "تكلفة شهرية ثابتة لكل مندوب جديد (ر.س)", "Fixed monthly cost / new rider")], ["oneOff", Lx(lang, "تكلفة لمرة واحدة (ر.س)", "One-off cost (SAR)")]];
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "ماذا لو؟ — اختبر القرار على أرقامك الفعلية", "What if? — test a decision on your real numbers")} extra={<XSel value={mo} onChange={setMo}>{months.map((x) => <option key={x} value={x}>{x}</option>)}</XSel>}>
+        {!st || N === 0 ? <p className="text-[12.5px]">{Lx(lang, "لا طلبات كافية في هذا الشهر لبناء المحاكاة.", "Not enough orders this month to simulate.")}</p> : <>
+          <p className="num text-[11.5px] mb-3" style={{ color: "var(--muted)" }}>{Lx(lang, `الأساس: ${fmt(N)} طلب · ${K} مندوب · الصافي بعد المصروفات ${fmt(Math.round(base))} ${t.sar}`, `Base: ${fmt(N)} orders · ${K} riders · net ${fmt(Math.round(base))}`)}</p>
+          <div className="grid gap-2 sm:grid-cols-2">{FLD.map(([k, l]) => <label key={k} className="block"><span className="text-[11.5px] font-bold block mb-1">{l}</span><XIn type="number" value={v[k]} onChange={(x) => setV({ ...v, [k]: x })} cls="w-full" /></label>)}</div>
+          <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "المندوب الجديد يُفترض أن يُنتج 80% من متوسط المناديب الحاليين.", "A new rider is assumed to produce 80% of the current average.")}</p>
+          <div className="mt-4 rounded-2xl p-3" style={BOXS}>
+            <div className="grid grid-cols-3 gap-2 text-[11px] pb-1.5" style={{ color: "var(--muted)" }}><span /><span className="text-center">{Lx(lang, "الآن", "Now")}</span><span className="text-center">{Lx(lang, "بعد القرار", "After")}</span></div>
+            <Row k={Lx(lang, "الطلبات", "Orders")} a1={fmt(Math.round(N))} a2={fmt(Math.round(N1))} />
+            <Row k={Lx(lang, "إيراد التطبيقات", "Revenue")} a1={fmt(Math.round(R0))} a2={fmt(Math.round(R1))} />
+            <Row k={Lx(lang, "تكلفة المناديب", "Rider cost")} a1={fmt(Math.round(G0 + adj0))} a2={fmt(Math.round(G1 + adj1))} />
+            <Row k={Lx(lang, "المصروفات", "Expenses")} a1={fmt(Math.round(X0))} a2={fmt(Math.round(X1))} />
+            <Row k={Lx(lang, "الصافي", "Net")} a1={fmt(Math.round(base))} a2={fmt(Math.round(sc))} />
+            <p className="text-[14px] font-extrabold mt-2" style={{ color: d >= 0 ? "#0B5C46" : "#C0443A" }}>{d >= 0 ? "▲" : "▼"} {fmt(Math.abs(Math.round(d)))} {t.sar} {Lx(lang, "شهرياً", "per month")}{R1 > 0 ? ` · ${Lx(lang, "هامش", "margin")} ${((sc / R1) * 100).toFixed(1)}%` : ""}</p></div>
+          {can && <div className="flex gap-2 mt-3"><XIn value={name} onChange={setName} ph={Lx(lang, "اسم السيناريو لحفظه", "Scenario name")} cls="flex-1" /><Btn variant="accent" accent={role.glow} onClick={save}>{Lx(lang, "حفظ السيناريو", "Save")}</Btn></div>}
+        </>}
+      </Panel>
+      <Panel title={Lx(lang, "السيناريوهات المحفوظة والمقارنة بالواقع", "Saved scenarios vs. reality")}>
+        {E.scenarios.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{E.scenarios.map((s) => { const diff = s.actual != null ? s.actual.net - s.predicted : null; return (
+          <div key={s.id} className="rounded-2xl p-3" style={BOXS}>
+            <div className="flex items-center gap-2"><span className="flex-1 text-[13px] font-extrabold">{s.name}</span><span className="num text-[11px]" style={{ color: "var(--muted)" }}>{s.at.slice(0, 10)}</span></div>
+            <p className="num text-[12px] mt-1">{Lx(lang, "المتوقع", "Predicted")}: {fmt(s.predicted)} {t.sar} · {Lx(lang, "الأساس", "Base")}: {fmt(s.base)}{s.actual != null ? ` · ${Lx(lang, "الفعلي", "Actual")} (${s.actual.month}): ${fmt(s.actual.net)} (${diff >= 0 ? "+" : ""}${fmt(Math.round(diff))})` : ""}</p>
+            {can && curMargin != null && <div className="mt-2"><Btn onClick={() => extUpd(setExt, "scenarios", (arr) => arr.map((z) => (z.id === s.id ? { ...z, actual: { month: today.slice(0, 7), net: Math.round(curMargin), at: today } } : z)))}>{Lx(lang, "قارن بصافي الشهر الحالي", "Compare with this month's net")}</Btn></div>}
+          </div>); })}</div>}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══ 19) قائمة الإقفال الشهري وذمم التطبيقات ═══ */
+function CloseListPage({ lang, role, allReps, reps, allReports, reports, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts, invoices, payrollRuns, ext, setExt, setAuditLog, actingEmployee }) {
+  const t = T[lang]; const E = extOf(ext); const RR = allReps || reps, RP = allReports || reports; const today = riyadhToday();
+  const months = [prevMonthStr(today.slice(0, 7)), today.slice(0, 7)];
+  const [mo, setMo] = useState(months[0]); const [why, setWhy] = useState({});
+  const can = role.id === "fin" || role.id === "gm";
+  const st = settleOf(mo, RR, RP, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts);
+  const rec = E.closeL[mo] || { signs: {} };
+  const inM = (d) => (d || "").startsWith(mo);
+  const pendRep = RP.filter((x) => inM(x.date) && (x.hrStatus || "pending") === "pending").length;
+  const stmts = ((st && st.rec && st.rec.inputs && st.rec.inputs.appStatement) || (st && st.closed ? {} : {})); const appsWithOrders = st ? st.appLines.filter((l) => l.recOrders > 0) : [];
+  const noStmt = st && !st.closed ? appsWithOrders.filter((l) => !l.hasStatement).length : 0;
+  const unmatched = st ? st.appLines.reduce((s, l) => s + (l.unmatched || []).length, 0) : 0;
+  const pendExp = (expenses || []).filter((e) => e.status === "pending" && inM(e.date)).length;
+  const pendRc = (repReceipts || []).filter((q) => q.status === "pending" && inM(q.date)).length + E.wallet.filter((w) => w.status === "pending" && (w.month === mo || inM(w.at))).length;
+  const unpriced = st ? st.repLines.filter((l) => l.unpriced).length + st.appLines.filter((l) => !l.appPriced || !l.repPriced).length : 0;
+  const run = (payrollRuns || []).find((r) => r.month === mo);
+  const ITEMS = [
+    ["rep", Lx(lang, "كل التقارير اليومية معتمدة من الموارد البشرية", "All daily reports approved by HR"), pendRep === 0, Lx(lang, `${pendRep} تقرير بانتظار الاعتماد`, `${pendRep} reports pending`)],
+    ["stm", Lx(lang, "كشف كل تطبيق مرفوع ومطابَق", "Every app statement uploaded"), noStmt === 0, Lx(lang, `${noStmt} تطبيق بلا كشف`, `${noStmt} apps without statement`)],
+    ["unm", Lx(lang, "لا مناديب غير مطابَقين في الكشوف", "No unmatched statement rows"), unmatched === 0, Lx(lang, `${unmatched} صف غير مطابَق`, `${unmatched} unmatched rows`)],
+    ["exp", Lx(lang, "لا مصروفات معلّقة", "No pending expenses"), pendExp === 0, Lx(lang, `${pendExp} مصروف معلّق`, `${pendExp} pending`)],
+    ["rc", Lx(lang, "لا إيصالات أو سلف معلّقة", "No pending receipts / advances"), pendRc === 0, Lx(lang, `${pendRc} معلّق`, `${pendRc} pending`)],
+    ["prc", Lx(lang, "كل التسعيرات مكتملة", "All pricing complete"), unpriced === 0, Lx(lang, `${unpriced} عنصر بلا تسعيرة`, `${unpriced} unpriced`)],
+    ["pay", Lx(lang, "مسيرة الرواتب معدّة للشهر", "Payroll run prepared"), !!run, Lx(lang, "لم تُعدّ مسيرة الرواتب", "No payroll run")],
+  ];
+  const ready = ITEMS.every(([k, , ok]) => ok || rec.signs[k]);
+  const sign = (k) => { const w = (why[k] || "").trim(); if (w.length < 5) return; extUpd(setExt, "closeL", (m) => { const cur = m[mo] || { signs: {} }; return { ...m, [mo]: { ...cur, signs: { ...cur.signs, [k]: { by: byName(role, actingEmployee), at: riyadhNow().toISOString(), why: w } } } }; }); setWhy({ ...why, [k]: "" }); logAudit(setAuditLog, role, "close_override", `${mo}/${k}: ${w.slice(0, 40)}`, actingEmployee); };
+  const closeIt = () => { if (!ready) return; extUpd(setExt, "closeL", (m) => ({ ...m, [mo]: { ...(m[mo] || { signs: {} }), closed: { by: byName(role, actingEmployee), at: riyadhNow().toISOString() } } })); logAudit(setAuditLog, role, "close_ready", mo, actingEmployee); };
+  // ذمم التطبيقات
+  const open = (invoices || []).filter((v) => v.st === "review").map((v) => ({ ...v, age: -(daysUntil(v.date) || 0) }));
+  const bucket = (x) => (x.age <= 30 ? 0 : x.age <= 60 ? 1 : 2);
+  const byApp = APPS.map((a) => { const L = open.filter((v) => v.app === a.id); return { a, tot: L.reduce((s, v) => s + (+v.amt || 0), 0), b: [0, 1, 2].map((i) => L.filter((v) => bucket(v) === i).reduce((s, v) => s + (+v.amt || 0), 0)), over: L.filter((v) => bucket(v) === 2) }; }).filter((x) => x.tot > 0);
+  const paidInMonth = (id) => (invoices || []).filter((v) => v.app === id && v.st === "paid" && inM(v.date)).reduce((s, v) => s + (+v.amt || 0), 0);
+  return (
+    <div className="space-y-4">
+      <Panel title={Lx(lang, "قائمة الإقفال الشهري", "Month-end checklist")} extra={<XSel value={mo} onChange={setMo}>{months.map((x) => <option key={x} value={x}>{x}</option>)}</XSel>}>
+        {rec.closed && <div className="rounded-xl px-3 py-2 mb-3 text-[12.5px] font-extrabold" style={{ background: "rgba(63,216,180,.16)" }}>✔ {Lx(lang, `اعتُمد جاهزاً للإقفال بواسطة ${rec.closed.by} (${rec.closed.at.slice(0, 10)})`, `Marked ready by ${rec.closed.by} (${rec.closed.at.slice(0, 10)})`)}</div>}
+        <div className="space-y-2">{ITEMS.map(([k, label, ok, bad]) => { const sg = rec.signs[k]; return (
+          <div key={k} className="rounded-2xl p-3" style={{ ...BOXS, border: `1px solid ${ok ? "rgba(63,216,180,.4)" : sg ? "rgba(228,184,92,.5)" : "rgba(232,131,122,.45)"}` }}>
+            <div className="flex items-center gap-2"><span className="text-[15px]">{ok ? "✅" : sg ? "🟡" : "⛔"}</span><span className="flex-1 text-[12.5px] font-bold">{label}</span>{!ok && <span className="text-[11px]" style={{ color: "#C0443A" }}>{bad}</span>}</div>
+            {!ok && sg && <p className="text-[11px] mt-1" style={{ color: "#B07A00" }}>{Lx(lang, "استثناء موثّق", "Documented exception")}: {sg.by} — {sg.why}</p>}
+            {!ok && !sg && can && <div className="flex gap-2 mt-2"><XIn value={why[k] || ""} onChange={(x) => setWhy({ ...why, [k]: x })} ph={Lx(lang, "سبب الاستثناء (إلزامي)", "Exception reason (required)")} cls="flex-1 min-w-0" /><Btn onClick={() => sign(k)}>{Lx(lang, "استثناء", "Override")}</Btn></div>}
+          </div>); })}</div>
+        {can && !rec.closed && <div className="mt-3"><Btn variant="accent" accent={role.glow} disabled={!ready} onClick={closeIt}>{ready ? Lx(lang, "اعتماد: الشهر جاهز للإقفال", "Mark month ready to close") : Lx(lang, "أكمل البنود أو وثّق الاستثناءات", "Complete items or document exceptions")}</Btn></div>}
+        <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "هذه القائمة ضابط جودة قبل الإقفال؛ الإقفال الفعلي يتم من «مسار التسوية».", "This is a quality gate; actual closing is done in Settlement Flow.")}</p>
+      </Panel>
+      <Panel title={Lx(lang, "ذمم التطبيقات — أعمار الديون", "App receivables — aging")}>
+        {byApp.length === 0 ? <p className="text-[12.5px] font-bold" style={{ color: "#0B5C46" }}>✔ {Lx(lang, "لا فواتير مستحقة التحصيل.", "No outstanding invoices.")}</p> : <div className="space-y-2">
+          <div className="grid grid-cols-5 gap-1 text-[10.5px] px-2" style={{ color: "var(--muted)" }}><span>{Lx(lang, "التطبيق", "App")}</span><span className="text-center">0–30</span><span className="text-center">31–60</span><span className="text-center">+60</span><span className="text-center">{Lx(lang, "الإجمالي", "Total")}</span></div>
+          {byApp.map((x) => <div key={x.a.id} className="rounded-xl p-2" style={BOXS}>
+            <div className="grid grid-cols-5 gap-1 items-center text-[12px]"><span className="font-extrabold">{x.a[lang] || x.a.ar}</span>{x.b.map((n, i) => <span key={i} className="num text-center" style={{ color: i === 2 && n > 0 ? "#C0443A" : i === 1 && n > 0 ? "#B07A00" : "inherit", fontWeight: n > 0 && i > 0 ? 800 : 400 }}>{fmt(Math.round(n))}</span>)}<span className="num text-center font-extrabold">{fmt(Math.round(x.tot))}</span></div>
+            {x.over.map((v) => <div key={v.no} className="flex items-center gap-2 mt-1.5 text-[11.5px]"><span className="flex-1">{v.no} · {v.age} {Lx(lang, "يوم", "d")} · {fmt(v.amt)} {t.sar}</span>{E.recvEsc[v.no] ? <Chip tone="warn" sm>{Lx(lang, "تم التصعيد", "Escalated")} · {E.recvEsc[v.no].by}</Chip> : can && <Btn variant="danger" onClick={() => { extUpd(setExt, "recvEsc", (m) => ({ ...m, [v.no]: { by: byName(role, actingEmployee), at: riyadhNow().toISOString() } })); logAudit(setAuditLog, role, "recv_escalate", `${x.a.ar} ${v.no}`, actingEmployee); }}>{Lx(lang, "تصعيد للمدير العام", "Escalate to GM")}</Btn>}</div>)}
+          </div>)}</div>}
+      </Panel>
+      {st && <Panel title={Lx(lang, `المستحق مقابل المحصَّل — ${mo}`, `Expected vs received — ${mo}`)}>
+        {st.appLines.length === 0 ? EMPTYT(lang) : <div className="space-y-1">{st.appLines.map((l) => { const got = paidInMonth(l.app); const gap = l.revenue - got; return <div key={l.app} className="flex items-center gap-2 text-[12.5px] py-1"><span className="flex-1 font-bold">{(APPS.find((a) => a.id === l.app) || {})[lang] || l.app}</span><span className="num">{fmt(Math.round(l.revenue))}</span><span className="num" style={{ color: "var(--muted)" }}>/ {fmt(Math.round(got))}</span><Chip tone={gap > Math.max(1, l.revenue * 0.02) ? "warn" : "ok"} sm>{gap > 0 ? "−" : "+"}{fmt(Math.abs(Math.round(gap)))}</Chip></div>; })}</div>}
+        <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "المستحق من التسوية، والمحصَّل من الفواتير المسددة بتاريخ الشهر. الفرق قد يعني تأخّراً في السداد وليس خطأً.", "Expected from settlement; received from invoices paid in the month. A gap may be late payment, not an error.")}</p>
+      </Panel>}
+    </div>
+  );
+}
+
+/* ═══ 21) ملف الموظف والمستندات والتقييم السنوي ═══ */
+const DOC_TYPES = [["id", "هوية / إقامة", "ID / Iqama"], ["lic", "رخصة قيادة", "Driving licence"], ["contract", "عقد عمل", "Contract"], ["health", "شهادة صحية", "Health card"], ["ins", "تأمين طبي", "Medical insurance"], ["cert", "شهادة / دورة", "Certificate"], ["other", "أخرى", "Other"]];
+const REVIEW_CRIT = [["quality", "جودة العمل", "Work quality"], ["att", "الانضباط والحضور", "Discipline"], ["team", "العمل الجماعي", "Teamwork"], ["init", "المبادرة", "Initiative"], ["comm", "التواصل", "Communication"]];
+const docTier = (d) => (d == null ? null : d < 0 ? ["bad", "expired"] : d <= 7 ? ["bad", "7"] : d <= 30 ? ["warn", "30"] : d <= 60 ? ["info", "60"] : null);
+function EmpFilePage({ lang, role, reps, allReps, employees, ext, setExt, setAuditLog, actingEmployee }) {
+  const E = extOf(ext); const RR = allReps || reps; const year = new Date().getUTCFullYear();
+  const can = role.id === "hr";
+  const people = [...(employees || []).map((e) => ({ id: e.id, name: e.name, kind: "emp", sub: e.position || e.dept, data: e })), ...RR.filter((r) => r.status !== "pending").map((r) => ({ id: r.id, name: r.ar, kind: "rep", sub: Lx(lang, "مندوب", "Rider"), data: r }))];
+  const [q, setQ] = useState(""); const [sel, setSel] = useState(null); const [kindF, setKindF] = useState("all");
+  const [d, setD] = useState({ type: "id", no: "", expiry: "", file: null, fileName: "" }); const [err, setErr] = useState("");
+  const [rv, setRv] = useState({ quality: 0, att: 0, team: 0, init: 0, comm: 0, note: "" });
+  const docsOf = (p) => { const own = (E.empDocs[p.id] || []).map((x) => ({ ...x, own: true })); if (p.kind === "rep" && p.data.idExpiry && !own.some((x) => x.type === "id")) own.unshift({ id: "auto-id", type: "id", no: p.data.nid || "", expiry: p.data.idExpiry, auto: true }); return own; };
+  const alerts = people.flatMap((p) => docsOf(p).map((x) => ({ p, x, days: daysUntil(x.expiry) })).filter((z) => docTier(z.days))).sort((a, b) => a.days - b.days);
+  const cnt = (f) => alerts.filter(f).length;
+  const list = people.filter((p) => (kindF === "all" || p.kind === kindF) && (!q.trim() || p.name.includes(q.trim())));
+  const P = people.find((p) => p.id === sel);
+  const tn = (ty) => { const z = DOC_TYPES.find((x) => x[0] === ty); return z ? (lang === "en" ? z[2] : z[1]) : ty; };
+  const onFile = (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; if (f.size > 350 * 1024) { setErr(Lx(lang, "الملف أكبر من 350KB — اضغطه أو احفظ بياناته فقط.", "File over 350KB.")); return; } const rd = new FileReader(); rd.onload = () => setD((z) => ({ ...z, file: rd.result, fileName: f.name })); rd.readAsDataURL(f); };
+  const addDoc = () => { if (!P) return; if (!d.expiry) return setErr(Lx(lang, "حدّد تاريخ الانتهاء.", "Expiry date required.")); setErr(""); extUpd(setExt, "empDocs", (m) => ({ ...m, [P.id]: [{ id: uidX("DC"), type: d.type, no: d.no.trim(), expiry: d.expiry, file: d.file, fileName: d.fileName, at: riyadhNow().toISOString(), by: byName(role, actingEmployee) }, ...(m[P.id] || [])] })); setD({ type: "id", no: "", expiry: "", file: null, fileName: "" }); logAudit(setAuditLog, role, "emp_doc_add", `${P.name}: ${d.type}`, actingEmployee); };
+  const revs = P ? (E.reviews[P.id] || []) : [];
+  const saveRv = () => { if (!P) return; if (REVIEW_CRIT.some(([k]) => !rv[k])) return setErr(Lx(lang, "قيّم المعايير الخمسة.", "Rate all five criteria.")); setErr(""); const avg = REVIEW_CRIT.reduce((s, [k]) => s + rv[k], 0) / REVIEW_CRIT.length; extUpd(setExt, "reviews", (m) => ({ ...m, [P.id]: [{ year, scores: Object.fromEntries(REVIEW_CRIT.map(([k]) => [k, rv[k]])), avg: +avg.toFixed(2), note: rv.note.trim(), by: byName(role, actingEmployee), at: riyadhNow().toISOString() }, ...(m[P.id] || []).filter((x) => x.year !== year)] })); setRv({ quality: 0, att: 0, team: 0, init: 0, comm: 0, note: "" }); logAudit(setAuditLog, role, "emp_review", `${P.name} ${year}`, actingEmployee); };
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[[Lx(lang, "منتهية", "Expired"), cnt((z) => z.days < 0), "#C0443A"], [Lx(lang, "خلال 7 أيام", "≤ 7 days"), cnt((z) => z.days >= 0 && z.days <= 7), "#C0443A"], [Lx(lang, "خلال 30 يوماً", "≤ 30 days"), cnt((z) => z.days > 7 && z.days <= 30), "#B07A00"], [Lx(lang, "خلال 60 يوماً", "≤ 60 days"), cnt((z) => z.days > 30 && z.days <= 60), "#2563EB"]].map(([k, n, c]) => <div key={k} className="rounded-2xl p-3 text-center" style={BOXS}><p className="num text-[24px] font-extrabold" style={{ color: c }}>{n}</p><p className="text-[11px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+      {alerts.length > 0 && <Panel title={Lx(lang, "تنبيهات المستندات", "Document alerts")}><div className="space-y-1">{alerts.slice(0, 10).map((z, i) => { const tr = docTier(z.days); return <button key={i} onClick={() => setSel(z.p.id)} className="w-full flex items-center gap-2 text-[12.5px] py-1 text-start"><span className="flex-1 font-bold">{z.p.name}</span><span style={{ color: "var(--muted)" }}>{tn(z.x.type)}</span><Chip tone={tr[0]} sm>{z.days < 0 ? Lx(lang, `منتهٍ منذ ${-z.days} يوم`, `${-z.days}d ago`) : Lx(lang, `بعد ${z.days} يوم`, `in ${z.days}d`)}</Chip></button>; })}</div></Panel>}
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Panel title={Lx(lang, "الأشخاص", "People")}>
+          <div className="flex gap-2 mb-2"><XIn value={q} onChange={setQ} ph={Lx(lang, "بحث بالاسم", "Search")} cls="flex-1 min-w-0" /><XSel value={kindF} onChange={setKindF}><option value="all">{Lx(lang, "الكل", "All")}</option><option value="emp">{Lx(lang, "موظفون", "Staff")}</option><option value="rep">{Lx(lang, "مناديب", "Riders")}</option></XSel></div>
+          <div className="space-y-1 max-h-[420px] overflow-auto">{list.length === 0 ? EMPTYT(lang) : list.map((p) => { const worst = docsOf(p).map((x) => daysUntil(x.expiry)).filter((x) => x != null).sort((a, b) => a - b)[0]; const tr = docTier(worst); return <button key={p.id} onClick={() => { setSel(p.id); setErr(""); }} className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-start" style={{ background: sel === p.id ? "#12151D" : "rgba(20,27,45,.035)", color: sel === p.id ? "#fff" : "inherit" }}><span className="flex-1 text-[12.5px] font-bold">{p.name}</span><span className="text-[10.5px] opacity-70">{p.sub}</span>{tr && <span className="w-2 h-2 rounded-full" style={{ background: tr[0] === "bad" ? "#E8837A" : tr[0] === "warn" ? "#E4B85C" : "#5BC8E8" }} />}</button>; })}</div>
+        </Panel>
+        {!P ? <Panel title={Lx(lang, "الملف", "File")}><p className="text-[12.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "اختر شخصاً لعرض ملفه ومستنداته وتقييمه السنوي.", "Pick a person to open the file.")}</p></Panel> : <div className="space-y-4">
+          <Panel title={P.name} extra={<Chip tone="n" sm>{P.kind === "emp" ? Lx(lang, "موظف", "Staff") : Lx(lang, "مندوب", "Rider")}</Chip>}>
+            <p className="text-[12px]" style={{ color: "var(--muted)" }}>{P.data.phone || ""} {P.kind === "rep" ? `· ${(APPS.find((a) => a.id === P.data.app) || {})[lang] || ""}` : `· ${P.data.position || ""}`}</p>
+          </Panel>
+          <Panel title={Lx(lang, "المستندات", "Documents")}>
+            {docsOf(P).length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">{docsOf(P).map((x) => { const dd = daysUntil(x.expiry); const tr = docTier(dd); return <div key={x.id} className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><span className="flex-1 text-[12.5px] font-bold">{tn(x.type)} <span className="num text-[11px] font-normal" style={{ color: "var(--muted)" }}>{x.no}</span></span><span className="num text-[11.5px]">{x.expiry}</span>{tr ? <Chip tone={tr[0]} sm>{dd < 0 ? Lx(lang, "منتهٍ", "Expired") : `${dd}d`}</Chip> : <Chip tone="ok" sm>{Lx(lang, "ساري", "Valid")}</Chip>}{x.file && <a href={x.file} download={x.fileName || "doc"} className="text-[11px] font-bold" style={{ color: "#2563EB" }}>{Lx(lang, "تنزيل", "Download")}</a>}{can && x.own && <button onClick={() => extUpd(setExt, "empDocs", (m) => ({ ...m, [P.id]: (m[P.id] || []).filter((z) => z.id !== x.id) }))} style={{ color: "#C0443A" }} aria-label="delete"><Trash2 size={14} /></button>}</div>; })}</div>}
+            {can && <div className="mt-3 grid gap-2 sm:grid-cols-4"><XSel value={d.type} onChange={(v) => setD({ ...d, type: v })}>{DOC_TYPES.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel><XIn value={d.no} onChange={(v) => setD({ ...d, no: v })} ph={Lx(lang, "الرقم", "Number")} /><XIn type="date" value={d.expiry} onChange={(v) => setD({ ...d, expiry: v })} /><label className="text-[11.5px] rounded-xl px-3 py-2.5 cursor-pointer text-center font-bold" style={{ background: "rgba(20,27,45,.05)" }}>{d.fileName || Lx(lang, "إرفاق ملف (اختياري)", "Attach (optional)")}<input type="file" accept="image/*,application/pdf" className="hidden" onChange={onFile} /></label></div>}
+            {can && <div className="mt-2"><Btn variant="accent" accent={role.glow} onClick={addDoc}>{Lx(lang, "إضافة مستند", "Add document")}</Btn></div>}
+            {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}
+          </Panel>
+          <Panel title={Lx(lang, `التقييم السنوي ${year}`, `Annual review ${year}`)}>
+            {revs.length > 0 && <div className="space-y-1.5 mb-3">{revs.map((r) => <div key={r.year} className="rounded-xl px-3 py-2" style={BOXS}><div className="flex items-center gap-2"><span className="num font-extrabold">{r.year}</span><Chip tone={r.avg >= 4 ? "ok" : r.avg >= 3 ? "info" : "warn"} sm>{r.avg} / 5</Chip><span className="flex-1" /><span className="text-[11px]" style={{ color: "var(--muted)" }}>{r.by}</span></div>{r.note && <p className="text-[11.5px] mt-1">{r.note}</p>}</div>)}</div>}
+            {can && <><div className="space-y-1.5">{REVIEW_CRIT.map(([k, ar, en]) => <div key={k} className="flex items-center gap-2"><span className="flex-1 text-[12px] font-bold">{lang === "en" ? en : ar}</span>{[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setRv({ ...rv, [k]: n })} className="w-8 h-8 rounded-lg text-[12px] font-extrabold" style={{ background: rv[k] >= n ? "#12151D" : "rgba(20,27,45,.06)", color: rv[k] >= n ? "#fff" : "var(--muted)" }}>{n}</button>)}</div>)}</div>
+              <XIn value={rv.note} onChange={(v) => setRv({ ...rv, note: v })} ph={Lx(lang, "ملاحظات التقييم", "Review notes")} cls="w-full mt-2" />
+              <div className="mt-2"><Btn variant="accent" accent={role.glow} onClick={saveRv}>{revs.some((r) => r.year === year) ? Lx(lang, "تحديث تقييم هذا العام", "Update this year's review") : Lx(lang, "حفظ التقييم", "Save review")}</Btn></div></>}
+          </Panel>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ 22) إنهاء الخدمة والمغادرة المنظّمة ═══ */
+const OB_REASONS = [["pay", "الدخل / الأجر", "Pay"], ["orders", "قلة الطلبات", "Few orders"], ["sup", "علاقة بالمشرف", "Supervisor"], ["job", "فرصة أخرى", "Other job"], ["personal", "ظروف شخصية", "Personal"], ["end", "انتهاء العقد", "Contract end"], ["company", "قرار الشركة / انضباط", "Company decision"]];
+const OB_STEPS = [["assets", "تسليم العهدة والمعدات", "Return assets & equipment", ["hr", "opsm", "ops", "gm"]], ["accounts", "إغلاق حسابه على التطبيق وإيقاف الدخول", "Close app account & access", ["hr", "opsm", "gm"]], ["advances", "تسوية السلف والمستحقات", "Settle advances & dues", ["fin", "gm"]], ["docs", "تسليم المستندات وشهادة الخبرة", "Hand over documents & experience letter", ["hr", "gm"]], ["exit", "مقابلة الخروج", "Exit interview", ["hr", "opsm", "gm"]]];
+const EXIT_TYPES = [["resign", "استقالة", "Resignation"], ["suspend", "إيقاف عن العمل", "Suspension"], ["fire", "إنهاء من الشركة", "Termination"]];
+const exitName = (k, lang) => { const z = EXIT_TYPES.find((x) => x[0] === (k || "resign")) || EXIT_TYPES[0]; return lang === "en" ? z[2] : z[1]; };
+const exitBanner = (k, lang) => (k === "suspend" ? Lx(lang, "موقوف عن العمل", "Suspended from work") : k === "fire" ? Lx(lang, "تم إنهاء تعاقدك — موقوف عن العمل", "Contract ended — suspended from work") : Lx(lang, "مستقال وموقوف عن العمل", "Resigned — suspended from work"));
+// كشف المغادرة الدقيق للمندوب: تاريخ البدء والنهاية والطلبات والأرباح والمخالفات شهراً بشهر
+function exitStatement(rep, RP, pricing, repSettlements, wf, vp, receipts, endDate) {
+  const mine = RP.filter((rp) => rp.entries.some((e) => e.id === rep.id));
+  const months = [...new Set(mine.map((rp) => rp.date.slice(0, 7)))].sort();
+  const dates = []; mine.forEach((rp) => { if (rp.entries.some((e) => e.id === rep.id && ((e.orders || 0) > 0 || (e.hours || 0) > 0))) dates.push(rp.date); }); dates.sort();
+  const rows = months.map((m) => {
+    const c = repMonthCalc(monthEntriesFor(RP, rep.id, m), rep, pricing, wf, vp, monthFactor(m), m);
+    const n = repNetFor(rep, m, RP, pricing, repSettlements, wf, vp, receipts);
+    return { month: m, orders: c.orders, base: (c.byApp[c.main] || {}).base || 0, gross: c.gross, weekend: c.weekendCount, app: c.appCount, fines: r2(c.weekendAuto + c.appAuto), net: n.net, final: !!n.final };
+  });
+  const sum = (k) => rows.reduce((a, x) => a + (x[k] || 0), 0);
+  return { startDate: rep.startDate || dates[0] || null, endDate: endDate || rep.leftAt || null, firstOrderDate: dates[0] || null, lastOrderDate: dates[dates.length - 1] || null, workDays: dates.length,
+    orders: sum("orders"), gross: r2(sum("gross")), net: r2(sum("net")), weekend: sum("weekend"), app: sum("app"), violations: sum("weekend") + sum("app"), fines: r2(sum("fines")), months: rows, appId: rep.app };
+}
+const daysBetween = (a, b) => (a && b ? Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000)) : null);
+const reasonName = (k, lang) => { const z = OB_REASONS.find((x) => x[0] === k); return z ? (lang === "en" ? z[2] : z[1]) : k; };
+function LeaveReasonsPanel({ lang, ext }) {
+  const E = extOf(ext); const done = E.offboard.filter((c) => c.exit && c.exit.reason); if (!done.length) return null;
+  const cnt = {}; done.forEach((c) => { cnt[c.exit.reason] = (cnt[c.exit.reason] || 0) + 1; });
+  const rows = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+  return <Panel title={Lx(lang, "أسباب المغادرة (من مقابلات الخروج)", "Leaving reasons (exit interviews)")}><div className="space-y-1.5">{rows.map((k) => <div key={k} className="flex items-center gap-2 text-[12.5px]"><span className="w-36 font-bold">{reasonName(k, lang)}</span><div className="flex-1"><XBar v={cnt[k] / done.length} color="#E4B85C" /></div><span className="num w-8 text-end">{cnt[k]}</span></div>)}</div></Panel>;
+}
+const liveOrSnap = (c, rr, rp, pricing, rs, wf, vp, receipts) => { if (c.snap) return c.snap; const r = rr.find((x) => x.id === c.pid); return r ? exitStatement(r, rp, pricing, rs, wf, vp, receipts, c.lastDay) : null; };
+function StatBox({ label, value, tone }) { return <div className="rounded-xl px-3 py-2" style={BOXS}><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{label}</p><p className="num text-[14px] font-extrabold" style={tone ? { color: tone } : null}>{value}</p></div>; }
+function ExitMonthsTable({ lang, S, sar, internal }) {
+  return <div className="overflow-x-auto mt-2"><table className="w-full text-[11.5px]"><thead><tr style={{ color: "var(--muted)" }}>{[Lx(lang, "الشهر", "Month"), Lx(lang, "الطلبات", "Orders"), Lx(lang, "الإجمالي", "Gross"), Lx(lang, "مخالفات", "Violations"), Lx(lang, "غرامات", "Fines"), Lx(lang, "الصافي", "Net")].map((h, i) => <th key={i} className="text-start font-semibold py-1 pe-3">{h}</th>)}</tr></thead>
+    <tbody>{S.months.map((m) => <tr key={m.month} style={{ borderTop: "1px solid var(--line)" }}><td className="num py-1.5 pe-3">{m.month}</td><td className="num pe-3">{fmt(m.orders)}{internal && m.base ? <span style={{ color: "#8A611E" }}> ({Lx(lang, "عدّاد الشركة يبدأ من", "company counter from")} {m.base})</span> : null}</td><td className="num pe-3">{fmt(Math.round(m.gross))}</td><td className="num pe-3">{m.weekend + m.app}</td><td className="num pe-3">{fmt(Math.round(m.fines))}</td><td className="num font-bold">{fmt(Math.round(m.net))} {sar}</td></tr>)}
+      {!S.months.length && <tr><td colSpan={6} className="py-2" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد تقارير مسجّلة له.", "No reports on record.")}</td></tr>}</tbody></table></div>;
+}
+function ExitStatementBox({ lang, c, rr, rp, pricing, repSettlements, wf, vp, receipts, sar }) {
+  const S = liveOrSnap(c, rr, rp, pricing, repSettlements, wf, vp, receipts); const [show, setShow] = useState(false); if (!S) return null;
+  const dur = daysBetween(S.startDate, c.lastDay);
+  return <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+    <p className="text-[12.5px] font-extrabold mb-2">{Lx(lang, "كشف المغادرة الدقيق", "Exact exit statement")} {c.snap ? "🔒" : ""}</p>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <StatBox label={Lx(lang, "تاريخ البدء", "Start date")} value={S.startDate || "—"} />
+      <StatBox label={Lx(lang, "تاريخ النهاية", "End date")} value={c.lastDay} />
+      <StatBox label={Lx(lang, "مدة الخدمة (يوم)", "Service (days)")} value={dur == null ? "—" : fmt(dur)} />
+      <StatBox label={Lx(lang, "أيام عمل فعلية", "Worked days")} value={fmt(S.workDays)} />
+      <StatBox label={Lx(lang, "إجمالي الطلبات", "Total orders")} value={fmt(S.orders)} />
+      <StatBox label={Lx(lang, "صافي الأرباح", "Net earnings")} value={`${fmt(Math.round(S.net))} ${sar}`} tone="#0B5C46" />
+      <StatBox label={Lx(lang, "المخالفات", "Violations")} value={`${S.violations} (${Lx(lang, "نهاية أسبوع", "wknd")} ${S.weekend} · ${Lx(lang, "تطبيق", "app")} ${S.app})`} tone={S.violations ? "#C0443A" : null} />
+      <StatBox label={Lx(lang, "قيمة الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${sar}`} tone={S.fines ? "#C0443A" : null} />
+    </div>
+    <button onClick={() => setShow(!show)} className="text-[11.5px] font-bold mt-2 underline">{show ? Lx(lang, "إخفاء التفصيل الشهري", "Hide monthly detail") : Lx(lang, "التفصيل الشهري", "Monthly detail")}</button>
+    {show && <ExitMonthsTable lang={lang} S={S} sar={sar} internal />}
+  </div>;
+}
+function ExitRegistry({ lang, cases, rr, rp, pricing, repSettlements, wf, vp, receipts, sar, today }) {
+  const [q, setQ] = useState(""); const [typ, setTyp] = useState("all"); const [open, setOpen] = useState(null);
+  const rows = cases.filter((c) => c.kind === "rep" && (typ === "all" || (c.exitType || "resign") === typ) && (!q.trim() || c.name.includes(q.trim()))).map((c) => ({ c, S: liveOrSnap(c, rr, rp, pricing, repSettlements, wf, vp, receipts) }));
+  const staff = cases.filter((c) => c.kind !== "rep" && (typ === "all" || (c.exitType || "resign") === typ) && (!q.trim() || c.name.includes(q.trim())));
+  const exportX = () => {
+    const out = rows.map(({ c, S }) => ({ [Lx(lang, "الاسم", "Name")]: c.name, [Lx(lang, "النوع", "Type")]: exitName(c.exitType, lang), [Lx(lang, "السبب", "Reason")]: reasonName(c.reason, lang), [Lx(lang, "تاريخ البدء", "Start")]: S ? S.startDate || "" : "", [Lx(lang, "تاريخ النهاية", "End")]: c.lastDay, [Lx(lang, "أيام العمل", "Worked days")]: S ? S.workDays : "", [Lx(lang, "إجمالي الطلبات", "Orders")]: S ? S.orders : "", [Lx(lang, "صافي الأرباح", "Net")]: S ? S.net : "", [Lx(lang, "المخالفات", "Violations")]: S ? S.violations : "", [Lx(lang, "الغرامات", "Fines")]: S ? S.fines : "", [Lx(lang, "البديل", "Replacement")]: c.replName || "", [Lx(lang, "طلبات موروثة", "Inherited")]: c.inheritOrders || 0, [Lx(lang, "الحالة", "Status")]: c.status === "closed" ? Lx(lang, "مكتملة", "Closed") : Lx(lang, "مفتوحة", "Open") }));
+    if (!out.length) return; const ws = XLSX.utils.json_to_sheet(out); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Exits"); XLSX.writeFile(wb, `exits_${today}.xlsx`);
+  };
+  return <Panel title={Lx(lang, "سجل الاستقالات والإيقاف", "Resignations & suspensions register")} extra={<Btn onClick={exportX}>Excel</Btn>}>
+    <div className="flex gap-2 flex-wrap mb-3"><XIn value={q} onChange={setQ} ph={Lx(lang, "بحث بالاسم", "Search name")} cls="w-44" />
+      <XSel value={typ} onChange={setTyp}><option value="all">{Lx(lang, "كل الأنواع", "All types")}</option>{EXIT_TYPES.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel></div>
+    {rows.length === 0 && staff.length === 0 ? EMPTYT(lang) : <div className="space-y-2">
+      {rows.map(({ c, S }) => <div key={c.id} className="rounded-2xl p-3" style={BOXS}>
+        <div className="flex items-center gap-2 flex-wrap"><b className="text-[13.5px]">{c.name}</b><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><Chip tone={c.status === "closed" ? "ok" : "warn"} sm>{c.status === "closed" ? Lx(lang, "مكتملة", "Closed") : Lx(lang, "مفتوحة", "Open")}</Chip>
+          <span className="num text-[11.5px] ms-auto" style={{ color: "var(--muted)" }}>{S && S.startDate ? S.startDate : "—"} ← {c.lastDay}</span></div>
+        {S && <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+          <StatBox label={Lx(lang, "الطلبات", "Orders")} value={fmt(S.orders)} /><StatBox label={Lx(lang, "صافي الأرباح", "Net")} value={`${fmt(Math.round(S.net))} ${sar}`} tone="#0B5C46" />
+          <StatBox label={Lx(lang, "المخالفات", "Violations")} value={S.violations} tone={S.violations ? "#C0443A" : null} /><StatBox label={Lx(lang, "الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${sar}`} />
+          <StatBox label={Lx(lang, "البديل", "Replacement")} value={c.replName ? `${c.replName} (${c.inheritOrders})` : "—"} /></div>}
+        {S && <button onClick={() => setOpen(open === c.id ? null : c.id)} className="text-[11.5px] font-bold mt-2 underline">{open === c.id ? Lx(lang, "إخفاء التفصيل", "Hide detail") : Lx(lang, "التفصيل الشهري", "Monthly detail")}</button>}
+        {S && open === c.id && <ExitMonthsTable lang={lang} S={S} sar={sar} internal />}
+      </div>)}
+      {staff.map((c) => <div key={c.id} className="rounded-2xl p-3 flex items-center gap-2 flex-wrap" style={BOXS}><b className="text-[13px]">{c.name}</b><Chip tone="n" sm>{Lx(lang, "موظف", "Staff")}</Chip><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><span className="num text-[11.5px] ms-auto" style={{ color: "var(--muted)" }}>{c.lastDay}</span></div>)}
+    </div>}
+  </Panel>;
+}
+/* شاشة المندوب بعد الاستقالة/الإيقاف: كشف دقيق بتاريخ البدء والنهاية والطلبات والأرباح والمخالفات */
+function RepExitScreen({ lang, setLang, rep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, ext, onLogout }) {
+  const E = extOf(ext); const t = T[lang];
+  const cs = (E.offboard || []).filter((c) => c.pid === rep.id).sort((a, b) => (b.at || "").localeCompare(a.at || ""))[0] || null;
+  const typ = (cs && cs.exitType) || rep.exitType || (rep.status === "suspended" ? "suspend" : "resign");
+  const end = (cs && cs.lastDay) || rep.leftAt || null;
+  const S = (cs && cs.snap) || exitStatement(rep, reports, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, end);
+  const dur = daysBetween(S.startDate, end); const settled = cs && cs.settle && cs.settle.status === "approved";
+  return (
+    <div className="min-h-screen px-4 py-6" dir={lang === "en" ? "ltr" : "rtl"} style={{ background: "#F4F1EA", color: "#12151D" }}>
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg,#3A1513,#7A2A24)", color: "#fff" }}>
+          <p className="text-[12px] opacity-70 mb-1">{lang === "en" ? rep.en : rep.ar}</p>
+          <p className="text-[22px] font-extrabold">{exitBanner(typ, lang)}</p>
+          <p className="num text-[13px] mt-2 opacity-90">{Lx(lang, "تاريخ الإيقاف", "Effective")}: {end || "—"}</p>
+          <p className="text-[11.5px] mt-1 opacity-70">{Lx(lang, "حسابك لم يعد يستقبل الطلبات. هذا كشف بحسابك حتى تاريخ الإيقاف.", "Your account no longer takes orders. This is your statement up to the effective date.")}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatBox label={Lx(lang, "تاريخ البدء", "Start date")} value={S.startDate || "—"} />
+          <StatBox label={Lx(lang, "تاريخ النهاية", "End date")} value={end || "—"} />
+          <StatBox label={Lx(lang, "مدة الخدمة (يوم)", "Service (days)")} value={dur == null ? "—" : fmt(dur)} />
+          <StatBox label={Lx(lang, "أيام العمل الفعلية", "Worked days")} value={fmt(S.workDays)} />
+          <StatBox label={Lx(lang, "إجمالي الطلبات", "Total orders")} value={fmt(S.orders)} />
+          <StatBox label={Lx(lang, "صافي أرباحك", "Net earnings")} value={`${fmt(Math.round(S.net))} ${t.sar}`} tone="#0B5C46" />
+          <StatBox label={Lx(lang, "عدد المخالفات", "Violations")} value={`${S.violations}`} tone={S.violations ? "#C0443A" : null} />
+          <StatBox label={Lx(lang, "قيمة الغرامات", "Fines")} value={`${fmt(Math.round(S.fines))} ${t.sar}`} tone={S.fines ? "#C0443A" : null} />
+        </div>
+        {S.violations > 0 && <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, `المخالفات: نهاية أسبوع ${S.weekend} · مخالفات التطبيق ${S.app}`, `Weekend ${S.weekend} · app ${S.app}`)}</p>}
+        <div className="rounded-2xl p-4 bg-white" style={{ border: "1px solid var(--line)" }}>
+          <p className="text-[13px] font-extrabold">{Lx(lang, "التفصيل الشهري", "Monthly detail")}</p>
+          <ExitMonthsTable lang={lang} S={S} sar={t.sar} />
+        </div>
+        {cs && <div className="rounded-2xl p-4 bg-white text-[12.5px]" style={{ border: "1px solid var(--line)" }}>
+          <p className="font-extrabold mb-1">{Lx(lang, "التسوية النهائية", "Final settlement")}</p>
+          {settled ? <p className="num">{Lx(lang, "معتمدة — الصافي المستحق", "Approved — net due")}: <b>{fmt(Math.round(cs.settle.amount || 0))} {t.sar}</b></p> : <p style={{ color: "var(--muted)" }}>{Lx(lang, "قيد الاعتماد لدى المالية.", "Pending with Finance.")}</p>}
+        </div>}
+        <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-2xl p-3.5 text-[13px] font-bold" style={{ background: "rgba(232,131,122,.1)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }}><LogOut size={16} />{t.logout}</button>
+      </div>
+    </div>
+  );
+}
+function OffboardPage({ lang, role, reps, allReps, allReports, reports, employees, setReps, setEmployees, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, ext, setExt, setRepSettlements, setAuditLog, actingEmployee }) {
+  const t = T[lang]; const E = extOf(ext); const RR = allReps || reps, RP = allReports || reports; const today = riyadhToday(); const me = byName(role, actingEmployee);
+  const canStart = role.id === "hr" || role.id === "opsm" || role.id === "gm";
+  const [tab, setTab] = useState("open");
+  const [f, setF] = useState({ kind: "rep", pid: "", lastDay: today, reason: "personal", text: "", exitType: "resign", repl: "" }); const [open, setOpen] = useState({}); const [err, setErr] = useState(""); const [ded, setDed] = useState({}); const [ex, setEx] = useState({});
+  const upd = (id, fn) => extUpd(setExt, "offboard", (a) => a.map((z) => (z.id === id ? fn(z) : z)));
+  const baseFor = (r, lastDay) => {
+    const mo = lastDay.slice(0, 7); const by = {};
+    monthEntriesFor(RP, r.id, mo).filter((e) => e.date <= lastDay).forEach((e) => { const a = e.app || r.app || "hs"; by[a] = (by[a] || 0) + (e.orders || 0); });
+    const apps = Object.keys(by).sort((x, y) => by[y] - by[x]); const a = apps[0] || r.app;
+    return { app: a, orders: by[a] || 0, month: mo };
+  };
+  const pushInherit = (c, rid, info) => setReps((p) => p.map((r) => {
+    if (r.inherit && r.inherit.caseId === c.id && r.id !== rid) { const { inherit: _x, ...rest } = r; return rest; }
+    if (r.id === rid) return { ...r, inherit: { ...info, fromId: c.pid, fromName: c.name, date: c.lastDay, caseId: c.id } };
+    return r;
+  }));
+  const assignRepl = (c, rid) => {
+    const old = RR.find((r) => r.id === c.pid); if (!old) return;
+    if (!rid) { setReps((p) => p.map((r) => { if (r.inherit && r.inherit.caseId === c.id) { const { inherit: _x, ...rest } = r; return rest; } return r; })); upd(c.id, (z) => ({ ...z, replacementId: "", replName: "", inheritOrders: 0 })); return; }
+    const nr = RR.find((r) => r.id === rid); const info = baseFor(old, c.lastDay);
+    pushInherit(c, rid, info);
+    upd(c.id, (z) => ({ ...z, replacementId: rid, replName: nr ? nr.ar : rid, inheritOrders: info.orders, inheritApp: info.app, inheritMonth: info.month, replAt: today, replBy: me }));
+    logAudit(setAuditLog, role, "offboard_replacement", `${c.name} → ${nr ? nr.ar : rid} (${info.orders})`, actingEmployee);
+  };
+  const pool = f.kind === "rep" ? RR.filter((r) => r.status === "active").map((r) => ({ id: r.id, name: r.ar })) : (employees || []).filter((e) => e.status !== "suspended").map((e) => ({ id: e.id, name: e.name }));
+  const openIds = new Set(E.offboard.filter((c) => c.status === "open").map((c) => c.pid));
+  const start = () => {
+    const p = pool.find((x) => x.id === f.pid); if (!p || !f.lastDay) return setErr(Lx(lang, "اختر الشخص وآخر يوم عمل.", "Pick a person and last day."));
+    if (openIds.has(p.id)) return setErr(Lx(lang, "توجد حالة مفتوحة له.", "An open case exists."));
+    if (f.text.trim().length < 4) return setErr(Lx(lang, "اكتب تفاصيل السبب.", "Add reason details.")); setErr("");
+    const isSup = f.kind === "emp" && (employees || []).some((e) => e.id === p.id && e.isSupervisor);
+    const teamN = isSup ? RR.filter((r) => r.sup === p.id && r.status === "active").length : 0;
+    const steps = Object.fromEntries(OB_STEPS.map(([k]) => [k, null]));
+    const oid = uidX("OB"); const oldRep = f.kind === "rep" ? RR.find((r) => r.id === p.id) : null; const nr = f.repl ? RR.find((r) => r.id === f.repl) : null; const info = oldRep && nr ? baseFor(oldRep, f.lastDay) : null;
+    if (info) pushInherit({ id: oid, pid: p.id, name: p.name, lastDay: f.lastDay }, f.repl, info);
+    extUpd(setExt, "offboard", (a) => [{ id: oid, exitType: f.exitType, replacementId: info ? f.repl : "", replName: info ? nr.ar : "", inheritOrders: info ? info.orders : 0, inheritApp: info ? info.app : "", inheritMonth: info ? info.month : "", kind: f.kind, pid: p.id, name: p.name, lastDay: f.lastDay, reason: f.reason, text: f.text.trim(), steps, teamN, teamMoved: teamN === 0 ? { by: "—", at: today } : null, deds: [], settle: { status: "draft" }, exit: null, status: "open", by: me, at: riyadhNow().toISOString() }, ...a]);
+    logAudit(setAuditLog, role, "offboard_start", `${p.name}: ${f.reason}`, actingEmployee); setF({ ...f, pid: "", text: "", repl: "" }); setTab("open");
+  };
+  const calc = (c) => {
+    if (c.kind !== "rep") return { net: 0, savings: 0, dedTotal: (c.deds || []).reduce((s, x) => s + (+x.amount || 0), 0), final: 0 - (c.deds || []).reduce((s, x) => s + (+x.amount || 0), 0), isRep: false };
+    const rep = RR.find((r) => r.id === c.pid); const net = rep ? repNetFor(rep, c.lastDay.slice(0, 7), RP, pricing, repSettlements, weekendFine, violationPenalty, repReceipts).net : 0;
+    const savings = E.wallet.filter((w) => w.repId === c.pid && w.status === "approved").reduce((s, w) => s + (w.kind === "saving" ? +w.amount : w.kind === "withdraw" ? -w.amount : 0), 0);
+    const dedTotal = (c.deds || []).reduce((s, x) => s + (+x.amount || 0), 0);
+    return { net, savings: Math.max(0, savings), dedTotal, final: r2(net + Math.max(0, savings) - dedTotal), isRep: true };
+  };
+  const toggle = (c, k) => upd(c.id, (z) => ({ ...z, steps: { ...z.steps, [k]: z.steps[k] ? null : { by: me, at: riyadhNow().toISOString() } } }));
+  const addDed = (c) => { const d = ded[c.id] || {}; if (!(+d.amount > 0) || (d.reason || "").trim().length < 4) return; upd(c.id, (z) => ({ ...z, deds: [...z.deds, { amount: +d.amount, reason: d.reason.trim(), by: me }], settle: { status: "draft" } })); setDed({ ...ded, [c.id]: { amount: "", reason: "" } }); };
+  const approveSettle = (c) => {
+    const k = calc(c); const sign = { role: role.id, by: me, at: riyadhNow().toISOString() };
+    const approvals = [...((c.settle.approvals || []).filter((a) => a.role !== role.id)), sign];
+    const done = walletFinal({ amount: Math.abs(k.final), approvals }, +E.cfg.dualLimit);
+    upd(c.id, (z) => ({ ...z, settle: { ...z.settle, approvals, status: done ? "approved" : "draft", amount: k.final } }));
+    if (done && c.kind === "rep" && !c.settle.applied) {
+      const mo = c.lastDay.slice(0, 7);
+      if (k.savings > 0) { extUpd(setExt, "wallet", (a) => [{ id: uidX("WL"), repId: c.pid, name: c.name, kind: "withdraw", amount: k.savings, month: mo, status: "approved", approvals: approvals, reason: Lx(lang, "تسوية نهاية الخدمة", "End-of-service refund"), at: riyadhNow().toISOString() }, ...a]); addManualAdj(setRepSettlements, mo, { id: "OB-" + c.id, repId: c.pid, type: "add", amount: k.savings, reason: Lx(lang, "رد رصيد الادخار عند المغادرة", "Savings refund on exit"), by: me }); }
+      (c.deds || []).forEach((dd, i) => addManualAdj(setRepSettlements, mo, { id: "OBD-" + c.id + "-" + i, repId: c.pid, type: "deduct", amount: +dd.amount, reason: dd.reason, by: me }));
+      upd(c.id, (z) => ({ ...z, settle: { ...z.settle, applied: true } }));
+    }
+    logAudit(setAuditLog, role, "offboard_settle_sign", `${c.name}: ${k.final}`, actingEmployee);
+  };
+  const closeCase = (c) => {
+    const old = c.kind === "rep" ? RR.find((r) => r.id === c.pid) : null;
+    const snap = old ? { ...exitStatement(old, RP, pricing, repSettlements, weekendFine, violationPenalty, repReceipts, c.lastDay), at: today } : null;
+    if (c.kind === "rep") setReps((p) => p.map((r) => (r.id === c.pid ? { ...r, status: c.exitType === "suspend" ? "suspended" : "left", leftAt: c.lastDay, exitType: c.exitType || "resign", exitCaseId: c.id } : r)));
+    else setEmployees((p) => p.map((e) => (e.id === c.pid ? { ...e, status: "suspended", leftAt: c.lastDay } : e)));
+    if (old && c.replacementId) assignRepl(c, c.replacementId);
+    upd(c.id, (z) => ({ ...z, status: "closed", closedAt: today, closedBy: me, snap })); logAudit(setAuditLog, role, "offboard_close", c.name, actingEmployee);
+  };
+  const shown = tab === "registry" ? [] : E.offboard.filter((c) => c.status === tab);
+  const rv = (c) => ({ rating: 0, reason: c.reason, comment: "", back: "yes", ...(ex[c.id] || {}) });
+  return (
+    <div className="space-y-4">
+      <XTabs tab={tab} setTab={setTab} tabs={[["open", Lx(lang, "حالات مفتوحة", "Open"), E.offboard.filter((c) => c.status === "open").length], ["closed", Lx(lang, "مكتملة", "Closed"), E.offboard.filter((c) => c.status === "closed").length], ["registry", Lx(lang, "سجل الاستقالات والإيقاف", "Exit register"), E.offboard.length]]} />
+      {tab === "registry" && <ExitRegistry lang={lang} cases={E.offboard} rr={RR} rp={RP} pricing={pricing} repSettlements={repSettlements} wf={weekendFine} vp={violationPenalty} receipts={repReceipts} sar={t.sar} today={today} />}
+      {canStart && tab === "open" && <Panel title={Lx(lang, "بدء إجراء مغادرة", "Start an offboarding")}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <XSel value={f.kind} onChange={(v) => setF({ ...f, kind: v, pid: "" })}><option value="rep">{Lx(lang, "مندوب", "Rider")}</option><option value="emp">{Lx(lang, "موظف مكتب/مشرف", "Staff / supervisor")}</option></XSel>
+          <XSel value={f.pid} onChange={(v) => setF({ ...f, pid: v })}><option value="">{Lx(lang, "— اختر —", "— pick —")}</option>{pool.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</XSel>
+          <XIn type="date" value={f.lastDay} onChange={(v) => setF({ ...f, lastDay: v })} />
+          <XSel value={f.reason} onChange={(v) => setF({ ...f, reason: v })}>{OB_REASONS.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel>
+          <XSel value={f.exitType} onChange={(v) => setF({ ...f, exitType: v })}>{EXIT_TYPES.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel>
+          {f.kind === "rep" && <XSel value={f.repl} onChange={(v) => setF({ ...f, repl: v })}><option value="">{Lx(lang, "— البديل (اختياري، يمكن تحديده لاحقاً) —", "— Replacement (optional) —")}</option>{RR.filter((r) => (r.status === "active" || r.status === "pending") && r.id !== f.pid).map((r) => <option key={r.id} value={r.id}>{r.ar}{r.status === "pending" ? Lx(lang, " (قيد الاعتماد)", " (pending)") : ""}</option>)}</XSel>}</div>
+        {f.kind === "rep" && f.repl && f.pid && (() => { const o = RR.find((r) => r.id === f.pid); if (!o) return null; const b = baseFor(o, f.lastDay); const nr = RR.find((r) => r.id === f.repl); return <p className="text-[11.5px] mt-2 font-semibold" style={{ color: "#8A611E" }}>{Lx(lang, `عدّاد الشركة للبديل (${nr ? nr.ar : ""}) يكمل من ${b.orders} طلب لشهر ${b.month}. أجر المندوب يبدأ من الطلب 1 ولا يعرف بذلك.`, `Company counter continues from ${b.orders} orders (${b.month}); rider pay starts at 1 and he is not told.`)}{nr && nr.app !== b.app ? Lx(lang, " ⚠ تطبيقه مختلف عن تطبيق المستقيل فلن يعمل العدّاد.", " ⚠ different app — no tier effect.") : ""}</p>; })()}
+        <XIn value={f.text} onChange={(v) => setF({ ...f, text: v })} ph={Lx(lang, "تفاصيل السبب", "Reason details")} cls="w-full mt-2" />
+        {err && <p className="text-[11.5px] mt-2" style={{ color: "#C0443A" }}>{err}</p>}<div className="mt-2"><Btn variant="accent" accent={role.glow} onClick={start}>{Lx(lang, "بدء الإجراء", "Start")}</Btn></div>
+      </Panel>}
+      {tab === "registry" ? null : shown.length === 0 ? <Panel title={Lx(lang, "الحالات", "Cases")}>{EMPTYT(lang)}</Panel> : shown.map((c) => { const k = calc(c); const stepsDone = OB_STEPS.every(([s]) => c.steps[s]) && !!c.exit && !!c.teamMoved; const settled = c.settle.status === "approved"; const V = rv(c); const need = walletFinal({ amount: Math.abs(k.final), approvals: [] }, +E.cfg.dualLimit); const signed = (c.settle.approvals || []).map((a) => a.role); return (
+        <Panel key={c.id} title={`${c.name} · ${c.kind === "rep" ? Lx(lang, "مندوب", "Rider") : Lx(lang, "موظف", "Staff")}`} extra={<div className="flex gap-1.5"><Chip tone="bad" sm>{exitName(c.exitType, lang)}</Chip><Chip tone={c.status === "closed" ? "ok" : "warn"} sm>{reasonName(c.reason, lang)}</Chip></div>}>
+          <p className="num text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "آخر يوم", "Last day")}: {c.lastDay} · {c.text}</p>
+          {c.kind === "rep" && <ExitStatementBox lang={lang} c={c} rr={RR} rp={RP} pricing={pricing} repSettlements={repSettlements} wf={weekendFine} vp={violationPenalty} receipts={repReceipts} sar={t.sar} />}
+          {c.kind === "rep" && <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+            <p className="text-[12.5px] font-extrabold mb-1.5">{Lx(lang, "البديل — عدّاد شريحة التطبيق يكمل (داخلي، لا يراه المندوب)", "Replacement — company tier counter continues (internal, hidden from rider)")}</p>
+            {canStart ? <XSel value={c.replacementId || ""} onChange={(v) => assignRepl(c, v)}><option value="">{Lx(lang, "— لم يُحدَّد بعد —", "— not set —")}</option>{RR.filter((r) => (r.status === "active" || r.status === "pending") && r.id !== c.pid).map((r) => <option key={r.id} value={r.id}>{r.ar}{r.status === "pending" ? Lx(lang, " (قيد الاعتماد)", " (pending)") : ""}</option>)}</XSel> : null}
+            {c.replacementId ? <p className="num text-[12px] mt-1.5">{c.replName} · {Lx(lang, `عدّاد الشركة يكمل من ${c.inheritOrders} طلب (${c.inheritMonth}) — أما أجر المندوب فيبدأ من الطلب 1 بشكل عادي`, `Company counter continues from ${c.inheritOrders} orders (${c.inheritMonth}); rider pay starts at order 1`)}</p> : <p className="text-[11.5px] mt-1" style={{ color: "var(--muted)" }}>{Lx(lang, "لا يوجد بديل محدد.", "No replacement set.")}</p>}
+          </div>}
+          <div className="mt-3 space-y-1.5">
+            {OB_STEPS.filter(([s]) => s !== "exit").map(([s, ar, en, who]) => { const dn = c.steps[s]; const ok = who.includes(role.id); return <div key={s} className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><button disabled={!ok || c.status === "closed" || (s === "advances" && !settled && !dn)} onClick={() => toggle(c, s)} className="text-[16px]" aria-label="toggle">{dn ? "✅" : "⬜"}</button><span className="flex-1 text-[12.5px] font-bold">{lang === "en" ? en : ar}</span>{dn && <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{dn.by}</span>}</div>; })}
+            {c.teamN > 0 && <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={BOXS}><button disabled={!canStart || c.status === "closed"} onClick={() => upd(c.id, (z) => ({ ...z, teamMoved: z.teamMoved && z.teamMoved.by !== "—" ? null : { by: me, at: today } }))} className="text-[16px]" aria-label="toggle">{c.teamMoved && c.teamMoved.by !== "—" ? "✅" : "⬜"}</button><span className="flex-1 text-[12.5px] font-bold">{Lx(lang, `نقل مناديب فريقه (${c.teamN}) لمشرف آخر`, `Reassign his ${c.teamN} riders`)}</span></div>}
+          </div>
+          <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+            <p className="text-[12.5px] font-extrabold mb-1.5">{Lx(lang, "مقابلة الخروج", "Exit interview")} {c.exit ? "✅" : ""}</p>
+            {c.exit ? <p className="text-[12px]">{reasonName(c.exit.reason, lang)} · {"★".repeat(c.exit.rating)}{"☆".repeat(5 - c.exit.rating)} · {c.exit.back === "yes" ? Lx(lang, "يعود للعمل معنا", "Would return") : Lx(lang, "لن يعود", "Would not return")}{c.exit.comment ? ` — ${c.exit.comment}` : ""}</p> : c.status === "open" && (role.id === "hr" || role.id === "opsm" || role.id === "gm") ? <div className="space-y-2">
+              <div className="flex gap-1 items-center"><span className="text-[11.5px] ml-2">{Lx(lang, "تقييم تجربته", "Experience")}</span>{[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setEx({ ...ex, [c.id]: { ...V, rating: n } })} className="text-[18px]" style={{ color: V.rating >= n ? "#E4B85C" : "rgba(20,27,45,.2)" }}>★</button>)}</div>
+              <div className="grid gap-2 sm:grid-cols-2"><XSel value={V.reason} onChange={(x) => setEx({ ...ex, [c.id]: { ...V, reason: x } })}>{OB_REASONS.map((z) => <option key={z[0]} value={z[0]}>{lang === "en" ? z[2] : z[1]}</option>)}</XSel><XSel value={V.back} onChange={(x) => setEx({ ...ex, [c.id]: { ...V, back: x } })}><option value="yes">{Lx(lang, "يعود للعمل معنا", "Would return")}</option><option value="no">{Lx(lang, "لن يعود", "Would not return")}</option></XSel></div>
+              <XIn value={V.comment} onChange={(x) => setEx({ ...ex, [c.id]: { ...V, comment: x } })} ph={Lx(lang, "ما الذي كان سيبقيه؟", "What would have kept him?")} cls="w-full" />
+              <Btn variant="accent" accent={role.glow} onClick={() => { if (!V.rating) return; upd(c.id, (z) => ({ ...z, exit: { rating: V.rating, reason: V.reason, back: V.back, comment: V.comment.trim(), by: me, at: today }, steps: { ...z.steps, exit: { by: me, at: riyadhNow().toISOString() } } })); }}>{Lx(lang, "حفظ المقابلة", "Save interview")}</Btn></div> : <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "بانتظار الموارد البشرية.", "Awaiting HR.")}</p>}
+          </div>
+          <div className="mt-3 rounded-2xl p-3" style={BOXS}>
+            <p className="text-[12.5px] font-extrabold mb-1.5">{Lx(lang, "التسوية النهائية", "Final settlement")} {settled ? "✅" : ""}</p>
+            {k.isRep && <p className="num text-[12px]">{Lx(lang, "صافي شهر المغادرة", "Net for last month")}: {fmt(Math.round(k.net))} · {Lx(lang, "رصيد الادخار المردود", "Savings refund")}: {fmt(Math.round(k.savings))}</p>}
+            {(c.deds || []).map((x, i) => <p key={i} className="num text-[12px]" style={{ color: "#C0443A" }}>− {fmt(x.amount)} {x.reason} ({x.by})</p>)}
+            <p className="num text-[15px] font-extrabold mt-1">{Lx(lang, "الصافي المستحق", "Net due")}: {fmt(Math.round(k.final))} {t.sar}</p>
+            {c.status === "open" && role.id === "fin" && !settled && <div className="flex gap-2 mt-2"><XIn type="number" value={(ded[c.id] || {}).amount || ""} onChange={(x) => setDed({ ...ded, [c.id]: { ...(ded[c.id] || {}), amount: x } })} ph={Lx(lang, "خصم (ر.س)", "Deduction")} cls="w-28" /><XIn value={(ded[c.id] || {}).reason || ""} onChange={(x) => setDed({ ...ded, [c.id]: { ...(ded[c.id] || {}), reason: x } })} ph={Lx(lang, "سبب الخصم (مثل: عهدة غير مُسلَّمة)", "Reason")} cls="flex-1 min-w-0" /><Btn onClick={() => addDed(c)}>{Lx(lang, "إضافة", "Add")}</Btn></div>}
+            {c.status === "open" && !settled && (role.id === "fin" || role.id === "gm") && <div className="flex gap-2 mt-2 items-center flex-wrap"><Chip tone={signed.includes("fin") ? "ok" : "n"} sm>{Lx(lang, "المالية", "Finance")}</Chip>{need && <Chip tone={signed.includes("gm") ? "ok" : "n"} sm>{Lx(lang, "المدير العام", "GM")}</Chip>}<Btn variant="accent" accent={role.glow} onClick={() => approveSettle(c)}>{Lx(lang, "اعتماد التسوية", "Approve settlement")}</Btn></div>}
+            <p className="text-[10.5px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "الخصم من المستحقات النهائية مقيَّد بنظام العمل ويحتاج موافقة موثّقة — راجع الشؤون القانونية قبل أي خصم. إن كان شهر المغادرة مغلقاً لن تُضاف التعديلات تلقائياً لكشفه.", "Deductions from final dues are restricted by labor law; consult Legal first. If the month is closed, adjustments are not auto-added.")}</p>
+          </div>
+          {c.status === "open" && canStart && <div className="mt-3"><Btn variant="accent" accent={role.glow} disabled={!stepsDone || !settled} onClick={() => closeCase(c)}>{stepsDone && settled ? Lx(lang, "إغلاق الحالة وتعطيل الحساب", "Close case & disable account") : Lx(lang, "أكمل كل الخطوات واعتماد التسوية", "Finish all steps & settlement")}</Btn></div>}
+        </Panel>); })}
+      <LeaveReasonsPanel lang={lang} ext={ext} />
+    </div>
+  );
+}
+
+Object.assign(T.ar.nav, {perfPlans: "خطط تحسين الأداء", coverage: "التغطية والبدائل", cockpit: "غرفة القيادة", whatIf: "ماذا لو؟", closeList: "الإقفال والذمم", cashflow: "التدفق النقدي", empFile: "ملفات الموظفين", offboard: "الاستقالات والإيقاف"});
+Object.assign(T.en.nav, {perfPlans: "Improvement Plans", coverage: "Coverage & Bench", cockpit: "Command Room", whatIf: "What If?", closeList: "Close & Receivables", cashflow: "Cash Flow", empFile: "Staff Files", offboard: "Resignations & Suspensions"});
+Object.assign(T.ur.nav, {perfPlans: "Improvement Plans", coverage: "Coverage & Bench", cockpit: "Command Room", whatIf: "What If?", closeList: "Close & Receivables", cashflow: "Cash Flow", empFile: "Staff Files", offboard: "Offboarding"});
+/* ═══════════  حضور المناديب اليومي (نبض المناديب) + إشعارات بصوت + تقارير المناديب  ═══════════ */
+EXT0.roll = {};
+
+/* ─── صوت التنبيه والإشعار ─── */
+const SND_KEY = "bq_sound";
+function playAlert(urgent) {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    const ctx = window.__bqAudio || (window.__bqAudio = new AC()); if (ctx.state === "suspended") ctx.resume();
+    const seq = urgent ? [880, 660, 880, 660, 880] : [740, 988]; let t0 = ctx.currentTime;
+    seq.forEach((f) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = urgent ? "square" : "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(urgent ? 0.22 : 0.14, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22); o.connect(g); g.connect(ctx.destination); o.start(t0); o.stop(t0 + 0.24); t0 += 0.27; });
+  } catch (e) {}
+}
+function AlertSoundToggle({ lang, score, urgent, body }) {
+  const [on, setOn] = useState(() => { try { return localStorage.getItem(SND_KEY) !== "off"; } catch (e) { return true; } });
+  const prev = useRef(null); const base = useRef(null);
+  useEffect(() => {
+    const unlock = () => { try { const AC = window.AudioContext || window.webkitAudioContext; if (!window.__bqAudio && AC) window.__bqAudio = new AC(); if (window.__bqAudio && window.__bqAudio.state === "suspended") window.__bqAudio.resume(); } catch (e) {} };
+    document.addEventListener("click", unlock); document.addEventListener("touchstart", unlock);
+    return () => { document.removeEventListener("click", unlock); document.removeEventListener("touchstart", unlock); };
+  }, []);
+  useEffect(() => {
+    if (prev.current !== null && score > prev.current && on) {
+      playAlert(urgent);
+      try { if (window.Notification && Notification.permission === "granted" && document.hidden) new Notification("بوارق الشرق", { body: body || "" }); } catch (e) {}
+    }
+    prev.current = score;
+    try { if (base.current == null) base.current = document.title.replace(/^\(\d+\)\s*/, ""); document.title = (score > 0 ? `(${score}) ` : "") + base.current; } catch (e) {}
+  }, [score]); // eslint-disable-line
+  useEffect(() => { // تذكير هادئ كل دقيقتين ما دام هناك بلاغ عاجل لم يُعالَج
+    if (!on || !urgent) return;
+    const iv = setInterval(() => playAlert(true), 120000);
+    return () => clearInterval(iv);
+  }, [on, urgent]);
+  const toggle = () => { const n = !on; setOn(n); try { localStorage.setItem(SND_KEY, n ? "on" : "off"); } catch (e) {} if (n) { playAlert(false); try { if (window.Notification && Notification.permission === "default") Notification.requestPermission(); } catch (e) {} } };
+  return (
+    <button onClick={toggle} className="relative p-2 rounded-xl" style={{ background: on ? "rgba(63,216,180,.14)" : "rgba(20,27,45,.045)", border: "1px solid var(--line)" }} aria-label={Lx(lang, "صوت التنبيه", "Alert sound")} title={on ? Lx(lang, "صوت التنبيه يعمل — اضغط للإيقاف", "Sound on") : Lx(lang, "صوت التنبيه متوقف — اضغط للتشغيل", "Sound off")}>
+      {on ? <Volume2 size={16} style={{ color: "#0B5C46" }} /> : <VolumeX size={16} style={{ color: "var(--muted)" }} />}
+    </button>
+  );
+}
+
+/* ─── نبض المناديب: تحضير يومي يقوم به المشرف ─── */
+function PulsePage({ lang, role, reps, allReps, attendance, ext, setExt, employees, setRepMessages, setAuditLog, actingEmployee, scopeSup, pricing, reports, allReports, weekendFine, violationPenalty }) {
+  const E = extOf(ext); const today = riyadhToday(), month = today.slice(0, 7);
+  const RR = scopeSup ? reps : (allReps || reps); const RP = scopeSup ? reports : (allReports || reports);
+  const act = RR.filter((r) => r.status === "active");
+  const [date, setDate] = useState(today); const [tab, setTab] = useState("roll"); const [dr, setDr] = useState({}); const [rej, setRej] = useState({}); const [err, setErr] = useState({});
+  const canMark = role.id === "ops" || role.id === "opsm" || role.id === "hr" || role.id === "gm";
+  const me = byName(role, actingEmployee);
+  const dayRoll = (E.roll || {})[date] || {};
+  const onLeave = (r) => E.leaves.some((l) => l.repId === r.id && l.status === "approved" && l.from <= date && l.to >= date);
+  const clockOf = (r) => (attendance || []).find((a) => a.key === r.nid && a.date === date);
+  const setRoll = (r, rec, d = date) => extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...(m[d] || {}), [r.id]: rec } }));
+  const tell = (r, text) => setRepMessages && setRepMessages((prev) => [{ id: "RM-" + Date.now() + "-" + r.id, from: role.id, repId: r.id, text, at: riyadhNow().toISOString(), seen: false, seenAt: null }, ...prev]);
+  const present = (r) => { setRoll(r, { st: "present", by: me, at: riyadhNow().toISOString() }); logAudit(setAuditLog, role, "roll_present", `${r.ar} ${date}`, actingEmployee); };
+  const presentAll = () => act.filter((r) => !dayRoll[r.id] && !onLeave(r)).forEach((r) => setRoll(r, { st: "present", by: me, at: riyadhNow().toISOString() }));
+  const leaveAbs = (r) => { setRoll(r, { st: "absent", contact: "leave", reason: Lx(lang, "إجازة معتمدة", "Approved leave"), excused: true, by: me, at: riyadhNow().toISOString() }); };
+  const absent = (r) => {
+    const d = dr[r.id] || {};
+    if (!d.contact) return setErr({ ...err, [r.id]: Lx(lang, "حدّد: هل تواصلت مع المندوب؟", "Did you reach the rider?") });
+    const reason = d.contact === "noanswer" ? (Lx(lang, "لم يجب على الاتصال", "Did not answer") + ((d.reason || "").trim() ? ` — ${d.reason.trim()}` : "")) : (d.reason || "").trim();
+    if (d.contact === "reached" && reason.length < 4) return setErr({ ...err, [r.id]: Lx(lang, "اكتب سبب الغياب كما ذكره المندوب.", "Write the reason given.") });
+    const excused = d.contact === "reached" && !!d.excused;
+    setErr({ ...err, [r.id]: "" });
+    setRoll(r, { st: "absent", contact: d.contact, reason, excused, by: me, at: riyadhNow().toISOString() });
+    tell(r, excused
+      ? Lx(lang, `سُجّل غيابك بتاريخ ${date} بعذر مقبول (${reason}). نذكّرك بأن أي غياب يلزمه سبب واضح وطارئ وتقديمه بشكل رسمي.`, `Your absence on ${date} was recorded as excused (${reason}).`)
+      : Lx(lang, `⚠ سُجّل غيابك بتاريخ ${date} بدون عذر مقبول. السبب المسجَّل: ${reason}. تنبيه رسمي: لا غياب بدون سبب واضح وطارئ يُقدَّم بشكل رسمي. قدّم عذرك من صفحة «أدائي ونقاطي» خلال 48 ساعة وإلا يُحتسب بلا عذر ويخفض درجة الحضور.`, `⚠ Your absence on ${date} was recorded without an accepted excuse. Reason noted: ${reason}. Official notice: every absence needs a clear, urgent reason submitted formally. Submit your excuse within 48 hours or it counts as unexcused and lowers your attendance score.`));
+    logAudit(setAuditLog, role, "roll_absent", `${r.ar} ${date}: ${reason.slice(0, 40)}`, actingEmployee);
+    setDr({ ...dr, [r.id]: {} });
+  };
+  const undo = (r) => extUpd(setExt, "roll", (m) => { const day = { ...(m[date] || {}) }; delete day[r.id]; return { ...m, [date]: day }; });
+  const decideExcuse = (d, r, ok) => {
+    const note = (rej[r.id] || "").trim(); if (!ok && note.length < 4) return;
+    extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...(m[d] || {}), [r.id]: { ...m[d][r.id], excused: ok, excuse: { ...m[d][r.id].excuse, status: ok ? "accepted" : "rejected", by: me, note: ok ? "" : note } } } }));
+    tell(r, ok ? Lx(lang, `قُبل عذرك عن غياب ${d}.`, `Your excuse for ${d} was accepted.`) : Lx(lang, `لم يُقبل عذرك عن غياب ${d}: ${note}`, `Your excuse for ${d} was not accepted: ${note}`));
+    logAudit(setAuditLog, role, ok ? "excuse_accept" : "excuse_reject", `${r.ar} ${d}`, actingEmployee);
+  };
+  const nPresent = act.filter((r) => (dayRoll[r.id] || {}).st === "present").length;
+  const nAbsent = act.filter((r) => (dayRoll[r.id] || {}).st === "absent").length;
+  const nPend = act.length - nPresent - nAbsent;
+  const pending = []; Object.keys(E.roll || {}).sort().reverse().slice(0, 14).forEach((d) => act.forEach((r) => { const rc = E.roll[d][r.id]; if (rc && rc.st === "absent" && rc.excuse && rc.excuse.status === "pending") pending.push({ d, r, rc }); }));
+  const tAvg = teamAvgOrders(RR, month, RP);
+  const mrows = act.map((r) => { const p = perfOf(r, month, RP, attendance, ext, pricing, weekendFine, violationPenalty, tAvg); let pr = 0, ex = 0, un = 0; Object.keys(E.roll || {}).filter((d) => d.startsWith(month)).forEach((d) => { const rc = E.roll[d][r.id]; if (!rc) return; if (rc.st === "present") pr++; else if (rc.excused) ex++; else un++; }); return { r, pr, ex, un, att: p.att, pts: Math.round(40 * p.att) }; }).sort((a, b) => a.att - b.att);
+  const bad = { background: "rgba(232,131,122,.14)", border: "1px solid rgba(232,131,122,.45)" };
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
+        <div className="flex items-center gap-2.5 mb-1"><Radio size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{Lx(lang, "حضور المناديب اليومي", "Daily rider attendance")}</h2></div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "يحضّر المشرف مناديب فريقه كل يوم. الحضور هو أساس درجة الالتزام (40 من 100). الغياب بلا عذر واضح وطارئ يُقدَّم رسمياً يخفض الدرجة.", "The supervisor takes daily attendance. It drives the commitment score (40/100); unexcused absence lowers it.")}</p>
+      </div>
+      <XTabs tab={tab} setTab={setTab} tabs={[["roll", Lx(lang, "تحضير اليوم", "Roll call")], ["excuse", Lx(lang, "أعذار مقدّمة", "Excuses"), pending.length], ["month", Lx(lang, "التزام الشهر", "Month")]]} />
+      {tab === "roll" && <>
+        <div className="grid grid-cols-3 gap-3">{[[Lx(lang, "حضروا", "Present"), nPresent, "#0B5C46", "rgba(63,216,180,.16)"], [Lx(lang, "غائبون", "Absent"), nAbsent, "#C0443A", "rgba(232,131,122,.15)"], [Lx(lang, "لم يُحضَّروا", "Not marked"), nPend, "#B07A00", "rgba(228,184,92,.16)"]].map(([k, n, c, bg]) => <div key={k} className="rounded-2xl p-3 text-center" style={{ background: bg }}><p className="num text-[26px] font-extrabold" style={{ color: c }}>{n}</p><p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+        <Panel title={Lx(lang, `مناديب فريقك (${act.length})`, `Your riders (${act.length})`)} extra={<div className="flex gap-2 items-center"><XIn type="date" value={date} onChange={(v) => v && v <= today && v >= addDays(today, -7) && setDate(v)} cls="w-36" />{canMark && nPend > 0 && <Btn variant="accent" accent={role.glow} onClick={presentAll}>{Lx(lang, "الباقون حاضرون", "Rest present")}</Btn>}</div>}>
+          {act.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{act.map((r) => { const rc = dayRoll[r.id]; const ck = clockOf(r); const lv = onLeave(r); const d = dr[r.id] || {}; return (
+            <div key={r.id} className="rounded-2xl p-3" style={rc && rc.st === "absent" && !rc.excused ? bad : BOXS}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="flex-1 min-w-[120px]"><span className="text-[13.5px] font-extrabold">{r.ar}</span>{ck && <span className="num text-[10.5px] mx-2" style={{ color: "var(--muted)" }}>{Lx(lang, "بصم", "clock")} {ck.in}</span>}</span>
+                {lv && !rc && <Chip tone="info" sm>{Lx(lang, "إجازة معتمدة", "On approved leave")}</Chip>}
+                {rc ? <Chip tone={rc.st === "present" ? "ok" : rc.excused ? "warn" : "bad"} sm>{rc.st === "present" ? Lx(lang, "حاضر", "Present") : rc.excused ? Lx(lang, "غائب بعذر", "Excused") : Lx(lang, "غائب بلا عذر", "Unexcused")}</Chip> : null}
+                {canMark && !rc && (lv ? <Btn onClick={() => leaveAbs(r)}>{Lx(lang, "تسجيل: إجازة", "Mark leave")}</Btn> : <><Btn variant="accent" accent={role.glow} onClick={() => present(r)}>{Lx(lang, "حاضر", "Present")}</Btn><Btn variant="danger" onClick={() => setDr({ ...dr, [r.id]: { open: !d.open } })}>{Lx(lang, "غائب", "Absent")}</Btn></>)}
+                {canMark && rc && <button onClick={() => undo(r)} className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "تراجع", "Undo")}</button>}
+              </div>
+              {rc && rc.st === "absent" && <p className="text-[11.5px] mt-1.5">{rc.contact === "noanswer" ? "📵 " : rc.contact === "leave" ? "🏖 " : "📞 "}{rc.reason}{rc.excuse ? ` · ${Lx(lang, "العذر الرسمي", "Formal excuse")}: ${rc.excuse.status === "accepted" ? Lx(lang, "مقبول", "accepted") : rc.excuse.status === "rejected" ? Lx(lang, "مرفوض", "rejected") : Lx(lang, "قيد المراجعة", "pending")}` : ""}</p>}
+              {canMark && !rc && d.open && <div className="mt-3 space-y-2 rounded-xl p-3" style={{ background: "#fff", border: "1px solid var(--line)" }}>
+                <p className="text-[12px] font-bold">{Lx(lang, "تواصل مع المندوب أولاً ثم سجّل النتيجة:", "Contact the rider first, then record:")}</p>
+                <div className="flex gap-2 flex-wrap">{[["reached", Lx(lang, "📞 تواصلت معه", "Reached him")], ["noanswer", Lx(lang, "📵 لم يجب على الاتصال", "No answer")]].map(([k, l]) => <button key={k} onClick={() => setDr({ ...dr, [r.id]: { ...d, contact: k } })} className="px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: d.contact === k ? "#12151D" : "rgba(20,27,45,.06)", color: d.contact === k ? "#fff" : "inherit" }}>{l}</button>)}</div>
+                {d.contact && <XIn value={d.reason || ""} onChange={(v) => setDr({ ...dr, [r.id]: { ...d, reason: v } })} ph={d.contact === "reached" ? Lx(lang, "سبب الغياب كما ذكره (إلزامي)", "Reason he gave (required)") : Lx(lang, "ملاحظة (اختياري)", "Note (optional)")} cls="w-full" />}
+                {d.contact === "reached" && <label className="flex items-start gap-2 text-[11.5px] cursor-pointer"><input type="checkbox" checked={!!d.excused} onChange={(e) => setDr({ ...dr, [r.id]: { ...d, excused: e.target.checked } })} className="mt-0.5" />{Lx(lang, "السبب واضح وطارئ ومقبول (وإلا يُسجَّل بلا عذر وينبَّه المندوب)", "Reason is clear, urgent and accepted")}</label>}
+                {err[r.id] && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err[r.id]}</p>}
+                <Btn variant="danger" onClick={() => absent(r)}>{Lx(lang, "تسجيل الغياب وإخطار المندوب", "Record absence & notify rider")}</Btn></div>}
+            </div>); })}</div>}
+          <p className="text-[10.5px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "عند تسجيل الغياب بلا عذر يصل المندوب إخطار رسمي بصوت تنبيه، ويمكنه تقديم عذره رسمياً خلال 48 ساعة من صفحة «أدائي ونقاطي».", "An unexcused absence sends the rider an official notice; he can submit a formal excuse within 48 hours.")}</p>
+        </Panel></>}
+      {tab === "excuse" && <Panel title={Lx(lang, "أعذار مقدّمة بانتظار قرارك", "Excuses awaiting your decision")}>
+        {pending.length === 0 ? EMPTYT(lang) : <div className="space-y-2">{pending.map(({ d, r, rc }) => (
+          <div key={d + r.id} className="rounded-2xl p-3" style={BOXS}>
+            <p className="text-[13px] font-extrabold">{r.ar} · <span className="num">{d}</span></p>
+            <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "سجّل المشرف: ", "Logged: ")}{rc.reason}</p>
+            <p className="text-[12.5px] mt-1">{Lx(lang, "عذر المندوب: ", "Rider's excuse: ")}{rc.excuse.text}</p>
+            {canMark && <div className="flex gap-2 mt-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => decideExcuse(d, r, true)}>{Lx(lang, "قبول العذر", "Accept")}</Btn><XIn value={rej[r.id] || ""} onChange={(v) => setRej({ ...rej, [r.id]: v })} ph={Lx(lang, "سبب الرفض", "Reject reason")} cls="flex-1 min-w-[120px]" /><Btn variant="danger" onClick={() => decideExcuse(d, r, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>}
+          </div>))}</div>}
+      </Panel>}
+      {tab === "month" && <Panel title={Lx(lang, "التزام الحضور هذا الشهر", "Attendance commitment this month")}>
+        {mrows.length === 0 ? EMPTYT(lang) : <div className="space-y-1.5">
+          <div className="grid grid-cols-5 gap-1 text-[10.5px] px-3" style={{ color: "var(--muted)" }}><span className="col-span-2">{Lx(lang, "المندوب", "Rider")}</span><span className="text-center">{Lx(lang, "حضر", "Pres.")}</span><span className="text-center">{Lx(lang, "بلا عذر", "Unexc.")}</span><span className="text-center">{Lx(lang, "درجة الحضور", "Score")}</span></div>
+          {mrows.map((m) => <div key={m.r.id} className="grid grid-cols-5 gap-1 items-center rounded-xl px-3 py-2 text-[12.5px]" style={BOXS}><span className="col-span-2 font-bold">{m.r.ar}</span><span className="num text-center">{m.pr}</span><span className="num text-center" style={{ color: m.un ? "#C0443A" : "inherit", fontWeight: m.un ? 800 : 400 }}>{m.un}</span><span className="num text-center font-extrabold">{m.pts} / 40</span></div>)}</div>}
+      </Panel>}
+    </div>
+  );
+}
+
+/* ─── المندوب: حضوري وتقديم العذر الرسمي ─── */
+function MyAttendanceCard({ lang, activeRep, ext, setExt }) {
+  const E = extOf(ext); const month = riyadhToday().slice(0, 7); const today = riyadhToday();
+  const [txt, setTxt] = useState({}); const [err, setErr] = useState("");
+  if (!activeRep) return null;
+  const mine = Object.keys(E.roll || {}).filter((d) => d.startsWith(month)).sort().reverse().map((d) => ({ d, rc: E.roll[d][activeRep.id] })).filter((x) => x.rc);
+  if (!mine.length) return null;
+  const pr = mine.filter((x) => x.rc.st === "present").length, un = mine.filter((x) => x.rc.st === "absent" && !x.rc.excused).length, ex = mine.filter((x) => x.rc.st === "absent" && x.rc.excused).length;
+  const send = (d) => { const t = (txt[d] || "").trim(); if (t.length < 10) return setErr(Lx(lang, "اشرح عذرك بوضوح (10 أحرف على الأقل).", "Explain clearly (10+ chars).")); setErr(""); extUpd(setExt, "roll", (m) => ({ ...m, [d]: { ...m[d], [activeRep.id]: { ...m[d][activeRep.id], excuse: { text: t, at: riyadhNow().toISOString(), status: "pending" } } } })); };
+  return (
+    <Panel title={Lx(lang, "حضوري هذا الشهر", "My attendance this month")}>
+      <div className="grid grid-cols-3 gap-2 mb-3">{[[Lx(lang, "حضرت", "Present"), pr, "#0B5C46"], [Lx(lang, "غياب بعذر", "Excused"), ex, "#B07A00"], [Lx(lang, "غياب بلا عذر", "Unexcused"), un, "#C0443A"]].map(([k, n, c]) => <div key={k} className="rounded-xl p-2 text-center" style={{ background: "rgba(20,27,45,.04)" }}><p className="num text-[20px] font-extrabold" style={{ color: c }}>{n}</p><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{k}</p></div>)}</div>
+      <div className="space-y-2">{mine.filter((x) => x.rc.st === "absent").map(({ d, rc }) => { const canSend = !rc.excused && !rc.excuse && (new Date(today) - new Date(d)) / 86400000 <= 2; return (
+        <div key={d} className="rounded-xl p-3" style={{ background: rc.excused ? "rgba(228,184,92,.12)" : "rgba(232,131,122,.12)", border: "1px solid var(--line)" }}>
+          <p className="text-[12.5px] font-bold"><span className="num">{d}</span> — {rc.excused ? Lx(lang, "غياب بعذر مقبول", "Excused") : Lx(lang, "غياب بلا عذر", "Unexcused")}</p>
+          <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{rc.reason}</p>
+          {rc.excuse && <p className="text-[11.5px] mt-1">{Lx(lang, "عذرك المقدَّم: ", "Your excuse: ")}{rc.excuse.text} — <b>{rc.excuse.status === "accepted" ? Lx(lang, "مقبول", "accepted") : rc.excuse.status === "rejected" ? Lx(lang, "مرفوض", "rejected") : Lx(lang, "قيد المراجعة", "under review")}</b></p>}
+          {canSend && <div className="mt-2 space-y-2"><XIn value={txt[d] || ""} onChange={(v) => setTxt({ ...txt, [d]: v })} ph={Lx(lang, "عذرك الرسمي: سبب واضح وطارئ", "Your formal excuse: a clear, urgent reason")} cls="w-full" />{err && <p className="text-[11.5px]" style={{ color: "#C0443A" }}>{err}</p>}<Btn variant="accent" accent="228,184,92" onClick={() => send(d)}>{Lx(lang, "تقديم العذر رسمياً", "Submit formally")}</Btn></div>}
+        </div>); })}</div>
+      <p className="text-[10.5px] mt-3" style={{ color: "var(--muted)" }}>{Lx(lang, "لا غياب بدون سبب واضح وطارئ يُقدَّم بشكل رسمي خلال 48 ساعة، وإلا يخفض درجة الحضور.", "Every absence needs a clear, urgent reason submitted formally within 48 hours, or it lowers your attendance score.")}</p>
+    </Panel>
+  );
+}
+
+/* ─── تقارير المناديب (مع إجمالي الطلبات) ─── */
+function ReportsPage({ lang, role, reps, reports, query, setQuery, employees }) {
+  const t = T[lang], x = EX[lang];
+  const [open, setOpen] = useState(null);
+  const q = (query || "").trim().toLowerCase();
+  const supName = (sid) => supervisorsOf(employees).find((s) => s.id === sid)?.[lang] || "—";
+  const filtered = !q ? reports : reports.filter((rp) => rp.entries.some((e) => { const rep = reps.find((r) => r.id === e.id); return rep && (rep.ar.toLowerCase().includes(q) || (rep.en || "").toLowerCase().includes(q) || (rep.phone || "").includes(q) || (rep.nid || "").includes(q)); }));
+  const totOf = (rp) => rp.entries.reduce((s, e) => s + (e.orders || 0), 0);
+  const grand = filtered.reduce((s, rp) => s + totOf(rp), 0);
+  const TotalBar = ({ label, n, strong }) => <div className="flex items-center justify-between rounded-xl px-3.5 py-2.5" style={{ background: strong ? "#12151D" : "rgba(63,216,180,.14)", color: strong ? "#fff" : "inherit", border: strong ? "none" : "1px solid rgba(63,216,180,.4)" }}><span className="text-[12.5px] font-extrabold">{label}</span><span className="num text-[16px] font-extrabold">{fmt(n)}</span></div>;
+  return (
+    <div className="space-y-4">
+      <Panel title={x.repReportsT}
+        extra={<div className="hidden sm:flex items-center gap-2">
+          <span className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}><Search size={14} style={{ color: "var(--muted)" }} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep} className="bg-transparent outline-none border-0 text-[12px] w-40" style={{ color: "#12151D" }} /></span>
+          <Btn icon={Download} onClick={() => {
+            const rows = [];
+            filtered.forEach((rp) => { rp.entries.forEach((e) => { const rep = reps.find((r) => r.id === e.id) || { ar: e.id, en: e.id, empType: "—" }; rows.push({ [t.h.employee]: lang === "en" ? rep.en : rep.ar, [x.empTypeCol]: EMP_TYPES[rep.empType]?.[lang] || rep.empType, Date: rp.date, [x.ordersCol]: e.orders, [x.hoursCol]: e.hours, [x.weekendViolCol]: e.weekendViolations || 0, [x.appViolCol]: e.appViolations || 0 }); }); });
+            rows.push({ [t.h.employee]: Lx(lang, "إجمالي الطلبات", "Total orders"), [x.ordersCol]: grand });
+            exportToExcel(rows, `rep-reports-${riyadhToday()}`, "Reports");
+          }}>{t.export}</Btn></div>}>
+        <div className="sm:hidden flex items-center gap-2 rounded-xl px-3 py-2 mb-3.5" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }}><Search size={14} style={{ color: "var(--muted)" }} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={x.searchRep} className="bg-transparent outline-none border-0 text-[12px] flex-1" style={{ color: "#12151D" }} /></div>
+        {filtered.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{q ? x.globalNoMatch : x.noReports}</p> : (
+          <div className="space-y-2.5">
+            {filtered.map((rp) => {
+              const isOpen = open === rp.id;
+              return (
+                <div key={rp.id} className="rounded-2xl overflow-hidden" style={{ background: "rgba(20,27,45,.035)", border: "1px solid var(--line)" }}>
+                  <button onClick={() => setOpen(isOpen ? null : rp.id)} className="w-full flex items-center justify-between gap-3 p-3.5 text-start">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="grid place-items-center w-9 h-9 rounded-xl shrink-0" style={{ background: `rgba(${role.glow},.13)` }}><ClipboardList size={16} style={{ color: role.accent }} /></span>
+                      <span className="min-w-0"><span className="block text-[13px] font-bold">{rp.id} · <span className="num">{rp.date}</span></span><span className="block text-[11px]" style={{ color: "var(--muted)" }}>{x.teamOf} {supName(rp.sup)} · {x.repsCount}: {rp.entries.length}</span></span>
+                    </div>
+                    <span className="flex items-center gap-2 shrink-0"><Chip tone="ok" sm>{Lx(lang, "الطلبات", "Orders")} {fmt(totOf(rp))}</Chip><ChevronRight size={16} style={{ color: "var(--muted)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .3s" }} /></span>
+                  </button>
+                  {isOpen && (() => {
+                    const withType = rp.entries.map((e) => ({ e, rep: reps.find((r) => r.id === e.id) || { ...e, ar: e.id, en: e.id, empType: "kafala" } }));
+                    const kafala = withType.filter((w) => w.rep.empType !== "ajeer"), ajeer = withType.filter((w) => w.rep.empType === "ajeer");
+                    const toRows = (list) => list.map(({ e, rep }) => ({ key: e.id, cells: [{ v: lang === "en" ? rep.en : rep.ar, strong: 1 }, { v: e.orders, mono: 1 }, { v: e.hours, mono: 1 }, { v: e.weekendViolations || 0, mono: 1, dim: 1 }, { v: e.appViolations || 0, mono: 1, dim: 1 }] }));
+                    const heads = [t.h.employee, x.ordersCol, x.hoursCol, x.weekendViolCol, x.appViolCol];
+                    const sumO = (l) => l.reduce((s, w) => s + (w.e.orders || 0), 0);
+                    return (
+                      <div className="px-3.5 pb-3.5 space-y-3">
+                        <div><p className="text-[10.5px] font-bold mb-1.5" style={{ color: "var(--muted)" }}>{EMP_TYPES.kafala[lang]}</p>{kafala.length === 0 ? <EmptyHint lang={lang} /> : <><DataTable headers={heads} rows={toRows(kafala)} /><div className="mt-2"><TotalBar label={Lx(lang, "إجمالي طلبات الكفالة", "Sponsored total")} n={sumO(kafala)} /></div></>}</div>
+                        {ajeer.length > 0 && <div><p className="text-[10.5px] font-bold mb-1.5 pt-2" style={{ color: "var(--muted)", borderTop: "1px solid var(--line)" }}>{EMP_TYPES.ajeer[lang]}</p><DataTable headers={heads} rows={toRows(ajeer)} /><div className="mt-2"><TotalBar label={Lx(lang, "إجمالي طلبات الأجير", "Contracted total")} n={sumO(ajeer)} /></div></div>}
+                        <TotalBar strong label={Lx(lang, "إجمالي الطلبات في التقرير", "Report total orders")} n={totOf(rp)} />
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })}
+            <TotalBar strong label={Lx(lang, `إجمالي الطلبات (${filtered.length} تقرير)`, `Total orders (${filtered.length} reports)`)} n={grand} />
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+/* ═══ اعتماد المدير العام لتسعيرة المندوب ═══ */
+const priceSummary = (p, lang) => {
+  if (!p) return Lx(lang, "افتراضي / غير محدد", "Default / unset");
+  if (p.mode === "target") return Lx(lang, `هدف شهري ${p.ordersTarget} طلب · راتب ثابت ${p.ordersBase || 0} · زائد +${p.perOrderDelta || 0}/طلب${hasBelow(p) ? ` · دون الهدف ${p.belowRate}/طلب فقط` : ""}`, `Target ${p.ordersTarget} orders · salary ${p.ordersBase || 0} · above +${p.perOrderDelta || 0}${hasBelow(p) ? ` · below target ${p.belowRate}/order only` : ""}`);
+  const tiers = tiersN(p);
+  if (p.mode === "tiers" || tiers.length > 1) return Lx(lang, (p.tierCalc === "all" ? "كل الطلبات بسعر الشريحة — " : "") + (p.scope === "total" ? "شرائح (على إجمالي التطبيق): " : "شرائح (لكل مندوب): "), p.scope === "total" ? "Tiers (app total): " : "Tiers (per rider): ") + tiers.map((x) => `${x.from}${x.to === Infinity ? "+" : "–" + x.to} → ${x.rate}`).join("، ") + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
+  return Lx(lang, `${p.perOrder} لكل طلب`, `${p.perOrder} per order`) + (+p.fixedMonthly ? ` · ${Lx(lang, "ثابت", "fixed")} ${p.fixedMonthly}` : "");
+};
+function PriceReqPanel({ lang, role, pricing, setPricing, ext, setExt, setAuditLog, actingEmployee }) {
+  const E = extOf(ext); const [why, setWhy] = useState({});
+  const list = E.priceReq.filter((r) => r.status === "pending"); const hist = E.priceReq.filter((r) => r.status !== "pending").slice(0, 5);
+  const nm = (ids) => ids.length === APPS.length ? Lx(lang, "كل التطبيقات", "All apps") : ids.map((i) => (APPS.find((a) => a.id === i) || {})[lang] || i).join("، ");
+  const decide = (r, ok) => {
+    if (!ok && (why[r.id] || "").trim().length < 4) return;
+    if (ok) setPricing((prev) => { const cur = prev || { app: {}, rep: {} }; const kd = r.kind || "rep"; const map = { ...(cur[kd] || {}) }; r.appIds.forEach((id) => { if (r.price) map[id] = r.price; else delete map[id]; }); return { ...cur, [kd]: map }; });
+    extUpd(setExt, "priceReq", (a) => a.map((z) => (z.id === r.id ? { ...z, status: ok ? "approved" : "rejected", decidedBy: byName(role, actingEmployee), decidedAt: riyadhNow().toISOString(), why: ok ? "" : why[r.id].trim() } : z)));
+    logAudit(setAuditLog, role, ok ? "price_approved" : "price_rejected", nm(r.appIds), actingEmployee);
+  };
+  if (!list.length && !hist.length) return null;
+  return (
+    <Panel title={Lx(lang, "طلبات اعتماد التسعيرات (تنتظر المدير العام)", "Pricing approval requests (GM)")}>
+      {list.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا طلبات معلّقة.", "No pending requests.")}</p> : <div className="space-y-3">{list.map((r) => (
+        <div key={r.id} className="rounded-2xl p-3" style={{ background: "rgba(228,184,92,.10)", border: "1px solid rgba(228,184,92,.4)" }}>
+          <p className="text-[13px] font-extrabold"><Chip tone={(r.kind || "rep") === "app" ? "ok" : "warn"} sm>{(r.kind || "rep") === "app" ? Lx(lang, "تسعيرة الشركة (من التطبيق)", "Company price (from app)") : Lx(lang, "تسعيرة المندوب", "Rider price")}</Chip> {nm(r.appIds)} <span className="text-[11px] font-normal" style={{ color: "var(--muted)" }}>— {r.by} · {r.at.slice(0, 10)}</span></p>
+          <p className="text-[12px] mt-1">{Lx(lang, "الحالية: ", "Current: ")}{priceSummary(r.old, lang)}</p>
+          <p className="text-[12px] font-bold">{Lx(lang, "المطلوبة: ", "Requested: ")}{r.price ? priceSummary(r.price, lang) : Lx(lang, "حذف التسعيرة", "Remove pricing")}</p>
+          {role.id === "gm" ? <div className="flex gap-2 mt-2 flex-wrap"><Btn variant="accent" accent={role.glow} onClick={() => decide(r, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn><XIn value={why[r.id] || ""} onChange={(v) => setWhy({ ...why, [r.id]: v })} ph={Lx(lang, "سبب الرفض", "Reject reason")} cls="flex-1 min-w-[120px]" /><Btn variant="danger" onClick={() => decide(r, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>
+            : <p className="text-[11.5px] mt-1.5" style={{ color: "#B8862E" }}>{Lx(lang, "بانتظار اعتماد المدير العام", "Awaiting GM approval")}{role.id === "fin" && <button onClick={() => extUpd(setExt, "priceReq", (a) => a.filter((z) => z.id !== r.id))} className="mx-3 font-bold" style={{ color: "#C0443A" }}>{Lx(lang, "سحب الطلب", "Withdraw")}</button>}</p>}
+        </div>))}</div>}
+      {hist.length > 0 && <div className="mt-3 space-y-1">{hist.map((r) => <p key={r.id} className="text-[11.5px]" style={{ color: "var(--muted)" }}>{r.status === "approved" ? "✔" : "✖"} {nm(r.appIds)} — {r.decidedBy} {r.decidedAt.slice(0, 10)}{r.why ? ` (${r.why})` : ""}</p>)}</div>}
+    </Panel>
+  );
+}
+
+Object.assign(T.ar.nav, { coach: "مدربي", myScore: "أدائي ونقاطي", myWallet: "محفظتي", reportInc: "بلّغ", myLeave: "إجازاتي", academy: "الأكاديمية", perfBoard: "الأداء والمكافآت", walletAdmin: "السلف والادخار", incidents: "البلاغات", leavesAdmin: "الإجازات", trainingAdmin: "التدريب", settleFlow: "مسار التسوية", dayOps: "يوم المشرف", pipeline: "مسار التوظيف", crm: "العملاء", snapshots: "النسخ الاحتياطي", copilot: "المستشار الذكي", inbox: "مهامي", retention: "رادار الاستبقاء", support: "دعم فوري", myRefer: "رشّح مندوباً", referrals: "ترشيحات المناديب", teams: "منافسة الفرق", appAvail: "التطبيقات والمدن" });
+Object.assign(T.en.nav, { coach: "My Coach", myScore: "Score & Points", myWallet: "My Wallet", reportInc: "Report", myLeave: "My Leaves", academy: "Academy", perfBoard: "Performance & Rewards", walletAdmin: "Advances & Savings", incidents: "Incidents", leavesAdmin: "Leaves", trainingAdmin: "Training", settleFlow: "Settlement Flow", dayOps: "Supervisor Day", pipeline: "Hiring Pipeline", crm: "Clients", snapshots: "Backups", copilot: "Smart Advisor", inbox: "My Tasks", retention: "Retention Radar", support: "Instant Support", myRefer: "Refer a Rider", referrals: "Referrals", teams: "Team Contest", appAvail: "Apps & Cities" });
+Object.assign(T.ur.nav, { coach: "My Coach", myScore: "Score & Points", myWallet: "My Wallet", reportInc: "Report", myLeave: "My Leaves", academy: "Academy", perfBoard: "Performance & Rewards", walletAdmin: "Advances & Savings", incidents: "Incidents", leavesAdmin: "Leaves", trainingAdmin: "Training", settleFlow: "Settlement Flow", dayOps: "Supervisor Day", pipeline: "Hiring Pipeline", crm: "Clients", snapshots: "Backups", copilot: "Smart Advisor", inbox: "My Tasks", retention: "Retention Radar", support: "Instant Support", myRefer: "Refer a Rider", referrals: "Referrals", teams: "Team Contest", appAvail: "Apps & Cities" });
+/* ═══════════════════════════════════════════════════════════════
+   اليومية: عهدة المناديب اليومية (خدّ كم وسلّم كم)
+   — المحاسب يدخل المبالغ فقط، والطلبات تأتي تلقائياً من إدخال المشرف
+   — كل شيء يتجمع تلقائياً في كشف نهاية الشهر
+   ═══════════════════════════════════════════════════════════════ */
+const DL_LIVE = (d) => d.status !== "pending" && d.status !== "rejected";
+const dlAdv = (d) => (+d.fuel || 0) + (+d.ordAdv || 0) + (+d.otherAdv || 0);
+const dlId = (date, repId) => `DL-${date}-${repId}`;
+function dailyTotals(daily, repId, month, upTo) {
+  const src = daily === undefined ? DAILY_CTX : daily || [];
+  const list = src.filter((d) => d.repId === repId && (d.date || "").startsWith(month) && (!upTo || d.date <= upTo) && DL_LIVE(d));
+  const s = { adv: 0, settled: 0, collected: 0, handed: 0, days: list.length };
+  list.forEach((d) => { s.adv += dlAdv(d); s.settled += +d.settled || 0; s.collected += +d.collected || 0; s.handed += +d.handed || 0; });
+  return { adv: r2(s.adv), settled: r2(s.settled), collected: r2(s.collected), handed: r2(s.handed), advBal: r2(s.adv - s.settled), gap: r2(s.collected - s.handed), days: s.days };
+}
+const DL_WD = { ar: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
+const dlSar = (lang) => Lx(lang, "ر.س", "SAR");
+const dlColor = (v, goodNeg) => (v > 0 ? "#C0443A" : v < 0 ? "#0B5C46" : null);
+const dlN = (v, col) => <span className="num font-bold" style={col ? { color: col } : null}>{fmt(r2(v))}</span>;
+
+function dailyStatementRows(repId, month, reports, daily, showAll) {
+  const nd = monthDays(month), ordBy = {};
+  reports.forEach((rp) => { if (!(rp.date || "").startsWith(month)) return; rp.entries.forEach((e) => { if (e.id === repId) ordBy[rp.date] = (ordBy[rp.date] || 0) + (e.orders || 0); }); });
+  let advBal = 0, gap = 0; const rows = [], T0 = { orders: 0, adv: 0, settled: 0, collected: 0, handed: 0 };
+  for (let d = 1; d <= nd; d++) {
+    const date = `${month}-${String(d).padStart(2, "0")}`;
+    const ents = (daily || []).filter((z) => z.repId === repId && z.date === date);
+    const live = ents.filter(DL_LIVE);
+    const orders = ordBy[date] || 0;
+    const adv = live.reduce((s, z) => s + dlAdv(z), 0), settled = live.reduce((s, z) => s + (+z.settled || 0), 0);
+    const collected = live.reduce((s, z) => s + (+z.collected || 0), 0), handed = live.reduce((s, z) => s + (+z.handed || 0), 0);
+    advBal += adv - settled; gap += collected - handed;
+    T0.orders += orders; T0.adv += adv; T0.settled += settled; T0.collected += collected; T0.handed += handed;
+    if (showAll || orders || ents.length) rows.push({ date, wd: new Date(date + "T00:00:00Z").getUTCDay(), orders, adv, settled, collected, handed, advBal: r2(advBal), gap: r2(gap), note: ents.map((z) => z.note).filter(Boolean).join(" · "), pending: ents.some((z) => z.status === "pending"), rejected: ents.some((z) => z.status === "rejected"), fuel: live.reduce((s, z) => s + (+z.fuel || 0), 0) });
+  }
+  return { rows, tot: { ...T0, advBal: r2(advBal), gap: r2(gap) } };
+}
+
+function RiderDayStatement({ lang, repId, month, reports, daily, showAll }) {
+  const { rows, tot } = dailyStatementRows(repId, month, reports, daily, showAll);
+  const sar = dlSar(lang);
+  const th = "text-start text-[10.5px] font-bold px-2 py-2 whitespace-nowrap", td = "px-2 py-2 text-[12px] whitespace-nowrap";
+  if (!rows.length) return EMPTYT(lang);
+  return (
+    <div className="overflow-x-auto no-scrollbar">
+      <table className="w-full" style={{ minWidth: 820, borderCollapse: "collapse" }}>
+        <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
+          {[Lx(lang, "التاريخ", "Date"), Lx(lang, "طلبات اليوم", "Orders"), Lx(lang, "خدّ سلفة", "Took (advance)"), Lx(lang, "سلّم من السلفة", "Returned of it"), Lx(lang, "رصيد السلفة عليه", "Advance balance"),
+            Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "كاش سلّمه", "Cash handed in"), Lx(lang, "عجز / فائض تراكمي", "Cash gap (cum.)"), Lx(lang, "ملاحظة", "Note")].map((h) => <th key={h} className={th}>{h}</th>)}
+        </tr></thead>
+        <tbody>{rows.map((r) => (
+          <tr key={r.date} style={{ borderBottom: "1px solid var(--line)", background: r.pending ? "rgba(228,184,92,.08)" : r.rejected ? "rgba(232,131,122,.07)" : null }}>
+            <td className={td}><span className="num font-bold">{r.date.slice(8)}</span> <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{(DL_WD[lang === "en" ? "en" : "ar"])[r.wd]}</span>
+              {r.pending && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار اعتماد المدير العام", "Awaiting GM")}</Chip></span>}{r.rejected && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
+            <td className={td}>{dlN(r.orders)}</td><td className={td}>{dlN(r.adv)}</td><td className={td}>{dlN(r.settled)}</td>
+            <td className={td}>{dlN(r.advBal, r.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(r.collected)}</td><td className={td}>{dlN(r.handed)}</td>
+            <td className={td}>{dlN(r.gap, dlColor(r.gap))}</td><td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{r.note}</td>
+          </tr>))}
+          <tr style={{ background: "rgba(20,27,45,.05)" }}>
+            <td className={td}><b>{Lx(lang, "الإجمالي", "Total")}</b></td><td className={td}>{dlN(tot.orders)}</td><td className={td}>{dlN(tot.adv)}</td><td className={td}>{dlN(tot.settled)}</td>
+            <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(tot.collected)}</td><td className={td}>{dlN(tot.handed)}</td><td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td><td className={td} />
+          </tr>
+        </tbody>
+      </table>
+      <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `رصيد السلفة = ما خدّه − ما سلّمه منها. عجز الكاش = كاش استلمه من العملاء − كاش سلّمه للشركة (بالسالب = فائض له). كلها بـ ${sar} وتُخصم تلقائياً في كشف نهاية الشهر. الطلبات من إدخال المشرف.`, `Advance balance = took − returned of it. Cash gap = collected from customers − handed in (negative = surplus owed to him), in ${sar}. Deducted automatically in the month-end statement. Orders come from the supervisor.`)}</p>
+    </div>
+  );
+}
+
+function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts, setAuditLog, actingEmployee }) {
+  const E = extOf(ext), limit = +E.cfg.dualLimit, sar = dlSar(lang);
+  const [tab, setTab] = useState("day");
+  const [date, setDate] = useState(riyadhToday());
+  const [month, setMonth] = useState(riyadhToday().slice(0, 7));
+  const [drafts, setDrafts] = useState({});
+  const [open, setOpen] = useState(null);
+  const [why, setWhy] = useState({});
+  const [err, setErr] = useState("");
+  const isFin = role.id === "fin", isGm = role.id === "gm";
+  const mo = date.slice(0, 7);
+  const closedMonth = (m) => (repSettlements || []).some((s) => s.month === m && s.closed);
+  const closed = closedMonth(mo);
+  const nm = (r) => (lang === "en" ? r.en || r.ar : r.ar);
+  const byRep = {}; E.daily.filter((d) => d.date === date).forEach((d) => { byRep[d.repId] = d; });
+  const ordersOn = (repId, dt) => reports.filter((rp) => rp.date === dt).reduce((s, rp) => s + rp.entries.filter((e) => e.id === repId).reduce((a, e) => a + (e.orders || 0), 0), 0);
+  const riders = reps.filter((r) => r.status === "active" || byRep[r.id] || ordersOn(r.id, date) > 0).sort((a, b) => nm(a).localeCompare(nm(b)));
+  const KEYS = ["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled"];
+  const val = (r, k) => (drafts[r.id] && drafts[r.id][k] !== undefined ? drafts[r.id][k] : byRep[r.id] && byRep[r.id][k] ? String(byRep[r.id][k]) : "");
+  const setD = (r, k, v) => setDrafts((d) => ({ ...d, [r.id]: { ...(d[r.id] || {}), [k]: v } }));
+  const saveRow = (r) => {
+    if (!isFin) return;
+    if (closed) return setErr(Lx(lang, "هذا الشهر مُقفل — افتح التسوية أولاً لتعديل اليومية.", "This month is closed — reopen the settlement first."));
+    setErr("");
+    const g = (k) => r2(+val(r, k) || 0);
+    const e = { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), note: String(drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (byRep[r.id] && byRep[r.id].note) || "").trim() };
+    const id = dlId(date, r.id);
+    const empty = !(e.fuel || e.ordAdv || e.otherAdv || e.collected || e.handed || e.settled || e.note);
+    if (empty) extUpd(setExt, "daily", (a) => a.filter((z) => z.id !== id));
+    else {
+      const needGm = dlAdv(e) > limit;
+      const entry = { id, date, repId: r.id, name: r.ar, ...e, status: needGm ? "pending" : "approved", needGm, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
+      extUpd(setExt, "daily", (a) => [entry, ...a.filter((z) => z.id !== id)]);
+      logAudit(setAuditLog, role, "daily_ledger_save", `${r.ar} ${date}: adv ${dlAdv(e)} / collected ${e.collected} / handed ${e.handed}${needGm ? " (GM approval)" : ""}`, actingEmployee);
+    }
+    setDrafts((d) => { const n = { ...d }; delete n[r.id]; return n; });
+  };
+  const saveAll = () => Object.keys(drafts).forEach((id) => { const r = reps.find((z) => z.id === id); if (r) saveRow(r); });
+  const decide = (d, ok) => {
+    if (!isGm) return;
+    if (!ok && (why[d.id] || "").trim().length < 4) return;
+    extUpd(setExt, "daily", (a) => a.map((z) => (z.id === d.id ? { ...z, status: ok ? "approved" : "rejected", decidedBy: byName(role, actingEmployee), decidedAt: riyadhNow().toISOString(), why: ok ? "" : why[d.id].trim() } : z)));
+    logAudit(setAuditLog, role, ok ? "daily_ledger_approved" : "daily_ledger_rejected", `${d.name} ${d.date}: ${dlAdv(d)}`, actingEmployee);
+  };
+  const live = useMemo(() => { try { return settleOf(month, reps, reports, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts); } catch (e) { return null; } }, [month, reps, reports, pricing, repSettlements, weekendFine, violationPenalty, expenses, repReceipts, E.daily]);
+  const lineOf = {}; (live ? live.repLines : []).forEach((l) => { lineOf[l.repId] = l; });
+  const mRows = reps.map((r) => ({ r, l: lineOf[r.id], d: dailyTotals(E.daily, r.id, month) })).filter((x) => x.l || x.d.days > 0)
+    .map((x) => { const net = x.l ? (x.l.net || 0) : 0; return { ...x, net, orders: x.l ? x.l.orders : 0, pay: r2(net - x.d.advBal - x.d.gap) }; }).sort((a, b) => nm(a.r).localeCompare(nm(b.r)));
+  const cap = +E.cfg.advMaxPct || ADV_CAP;
+  const mTot = mRows.reduce((s, x) => ({ orders: s.orders + x.orders, net: s.net + x.net, adv: s.adv + x.d.adv, settled: s.settled + x.d.settled, advBal: s.advBal + x.d.advBal, collected: s.collected + x.d.collected, handed: s.handed + x.d.handed, gap: s.gap + x.d.gap, pay: s.pay + x.pay }), { orders: 0, net: 0, adv: 0, settled: 0, advBal: 0, collected: 0, handed: 0, gap: 0, pay: 0 });
+  const exportMonth = () => exportToExcel(mRows.map((x) => ({
+    [Lx(lang, "المندوب", "Rider")]: nm(x.r), [Lx(lang, "المعرف", "ID")]: x.r.riderId || "", [Lx(lang, "الطلبات", "Orders")]: x.orders, [Lx(lang, "أجره قبل اليومية", "Earnings before ledger")]: x.net,
+    [Lx(lang, "خدّ سلف", "Advances")]: x.d.adv, [Lx(lang, "سلّم منها", "Returned")]: x.d.settled, [Lx(lang, "رصيد السلف", "Advance balance")]: x.d.advBal,
+    [Lx(lang, "كاش استلمه", "Cash collected")]: x.d.collected, [Lx(lang, "كاش سلّمه", "Cash handed")]: x.d.handed, [Lx(lang, "عجز(+)/فائض(−) الكاش", "Cash gap")]: x.d.gap,
+    [Lx(lang, "الصافي بعد اليومية", "Net after ledger")]: x.pay })), `daily-ledger-${month}`, month);
+  const dayTot = riders.reduce((s, r) => { const d = byRep[r.id]; if (!d || !DL_LIVE(d)) return s; return { adv: s.adv + dlAdv(d), collected: s.collected + (+d.collected || 0), handed: s.handed + (+d.handed || 0), settled: s.settled + (+d.settled || 0) }; }, { adv: 0, collected: 0, handed: 0, settled: 0 });
+  const dayOrders = riders.reduce((s, r) => s + ordersOn(r.id, date), 0);
+  const pendingAll = E.daily.filter((d) => d.status === "pending");
+  const th = "text-start text-[10.5px] font-bold px-2 py-2 whitespace-nowrap", td = "px-2 py-2 text-[12px] whitespace-nowrap";
+  const Tile = ({ k, v, c }) => <div className="rounded-xl p-3" style={BOXS}><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{k}</p><p className="num text-[17px] font-extrabold" style={c ? { color: c } : null}>{fmt(r2(v))}</p></div>;
+  const shiftDay = (n) => { const dt = new Date(date + "T00:00:00Z"); dt.setUTCDate(dt.getUTCDate() + n); setDate(dt.toISOString().slice(0, 10)); setDrafts({}); };
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl p-4" style={{ background: `linear-gradient(100deg,rgba(${role.glow},.13),rgba(${role.glow},.03))`, border: `1px solid rgba(${role.glow},.28)` }}>
+        <div className="flex items-center gap-2.5 mb-1"><ClipboardList size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{Lx(lang, "يومية المناديب", "Riders' daily ledger")}</h2></div>
+        <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "سجّل لكل مندوب كم خدّ (سلفة بنزين/طلبات) وكم سلّم (كاش وسلف). الطلبات تأتي تلقائياً من إدخال المشرف — لا تُدخل هنا. وفي نهاية الشهر يتجمع كل شيء ويُحسب تلقائياً في كشف التسوية.", "Record what each rider took (fuel/order advances) and returned (cash and advances). Orders come from the supervisor automatically. Everything rolls into the month-end settlement.")}</p>
+      </div>
+      <XTabs tab={tab} setTab={setTab} tabs={[["day", Lx(lang, "اليوم", "Day sheet")], ["month", Lx(lang, "كشف الشهر", "Month statement")], ["pending", Lx(lang, "بانتظار المدير العام", "Awaiting GM"), pendingAll.length]]} />
+      {err && <p className="text-[12px] font-bold" style={{ color: "#C0443A" }}>{err}</p>}
+      {tab === "day" && (<>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Btn onClick={() => shiftDay(-1)}>{Lx(lang, "اليوم السابق", "Prev")}</Btn>
+          <XIn type="date" value={date} onChange={(v) => { if (v) { setDate(v); setDrafts({}); } }} />
+          <Btn onClick={() => shiftDay(1)}>{Lx(lang, "اليوم التالي", "Next")}</Btn>
+          {closed && <Chip tone="warn">{Lx(lang, "الشهر مُقفل", "Month closed")}</Chip>}
+          {!isFin && <Chip tone="n">{Lx(lang, "عرض فقط — الإدخال للمحاسب", "View only — accountant enters")}</Chip>}
+          {isFin && Object.keys(drafts).length > 0 && <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveAll}>{Lx(lang, `حفظ الكل (${Object.keys(drafts).length})`, `Save all (${Object.keys(drafts).length})`)}</Btn>}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <Tile k={Lx(lang, "طلبات اليوم (من المشرف)", "Orders (supervisor)")} v={dayOrders} /><Tile k={Lx(lang, "سلف اليوم", "Advances")} v={dayTot.adv} />
+          <Tile k={Lx(lang, "كاش استلموه", "Cash collected")} v={dayTot.collected} /><Tile k={Lx(lang, "كاش سلّموه", "Cash handed in")} v={dayTot.handed} />
+          <Tile k={Lx(lang, "فرق الكاش اليوم", "Cash gap today")} v={dayTot.collected - dayTot.handed} c={dlColor(dayTot.collected - dayTot.handed)} />
+        </div>
+        <Panel title={Lx(lang, `ورقة ${date}`, `Sheet ${date}`)}>
+          {riders.length === 0 ? EMPTYT(lang) : (
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full" style={{ minWidth: 1180, borderCollapse: "collapse" }}>
+                <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
+                  {[Lx(lang, "المندوب", "Rider"), Lx(lang, "الطلبات", "Orders"), Lx(lang, "خدّ: بنزين", "Took: fuel"), Lx(lang, "خدّ: طلبات", "Took: orders"), Lx(lang, "خدّ: أخرى", "Took: other"),
+                    Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "سلّم كاش", "Cash handed"), Lx(lang, "سلّم من السلفة", "Returned of advance"), Lx(lang, "ملاحظة", "Note"), Lx(lang, "رصيد السلف", "Adv. balance"), Lx(lang, "فرق الكاش", "Cash gap"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}
+                </tr></thead>
+                <tbody>{riders.map((r) => {
+                  const tot = dailyTotals(E.daily, r.id, mo, date);
+                  const ent = byRep[r.id], dirty = !!drafts[r.id];
+                  const ord = ordersOn(r.id, date);
+                  const inp = (k, w = 84) => isFin && !closed ? <XIn type="number" value={val(r, k)} onChange={(v) => setD(r, k, v)} cls="!px-2 !py-1.5" ph="0" /> : <span className="num text-[12px]">{val(r, k) || "—"}</span>;
+                  return (
+                    <tr key={r.id} style={{ borderBottom: "1px solid var(--line)", background: dirty ? "rgba(228,184,92,.08)" : null }}>
+                      <td className={td}><b>{nm(r)}</b> {r.riderId ? <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.riderId}</span> : null}
+                        {ent && ent.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip></span>}
+                        {ent && ent.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
+                      <td className={td}>{ord > 0 ? <Chip tone="ok" sm>{ord}</Chip> : <span style={{ color: "var(--muted)" }}>0</span>}</td>
+                      {["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled"].map((k) => <td key={k} className={td} style={{ minWidth: 92 }}>{inp(k)}</td>)}
+                      <td className={td} style={{ minWidth: 140 }}>{isFin && !closed ? <XIn value={drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (ent && ent.note) || ""} onChange={(v) => setD(r, "note", v)} cls="!px-2 !py-1.5 w-full" ph={Lx(lang, "اختياري", "optional")} /> : <span className="text-[11px]">{(ent && ent.note) || ""}</span>}</td>
+                      <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td>
+                      <td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td>
+                      <td className={td}>{isFin && dirty && <Btn variant="accent" accent={role.glow} onClick={() => saveRow(r)}>{Lx(lang, "حفظ", "Save")}</Btn>}</td>
+                    </tr>);
+                })}</tbody>
+              </table>
+            </div>)}
+          <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `السلف التي يتجاوز مجموعها ${fmt(limit)} ${sar} في اليوم لمندوب واحد تحتاج اعتماد المدير العام قبل أن تدخل الحساب. عمودا الرصيد والفرق تراكميان من أول الشهر حتى هذا اليوم.`, `Advances over ${fmt(limit)} ${sar} per rider per day need GM approval before they count. Balance and gap are cumulative from month start to this day.`)}</p>
+        </Panel>
+      </>)}
+      {tab === "month" && (<>
+        <div className="flex items-center gap-2 flex-wrap"><XIn type="month" value={month} onChange={(v) => v && setMonth(v)} />
+          {closedMonth(month) && <Chip tone="warn">{Lx(lang, "الشهر مُقفل", "Month closed")}</Chip>}
+          <Btn icon={Download} onClick={exportMonth}>{Lx(lang, "تصدير Excel", "Export Excel")}</Btn></div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <Tile k={Lx(lang, "طلبات الشهر", "Month orders")} v={mTot.orders} /><Tile k={Lx(lang, "سلف مصروفة", "Advances")} v={mTot.adv} /><Tile k={Lx(lang, "رصيد السلف غير المسوّى", "Unsettled advances")} v={mTot.advBal} c={mTot.advBal > 0 ? "#8A611E" : null} />
+          <Tile k={Lx(lang, "عجز الكاش", "Cash gap")} v={mTot.gap} c={dlColor(mTot.gap)} /><Tile k={Lx(lang, "صافي المناديب بعد اليومية", "Riders' net after ledger")} v={mTot.pay} />
+        </div>
+        <Panel title={Lx(lang, "كشف الشهر لكل مندوب", "Month statement per rider")}>
+          {mRows.length === 0 ? EMPTYT(lang) : (
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full" style={{ minWidth: 1050, borderCollapse: "collapse" }}>
+                <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
+                  {[Lx(lang, "المندوب", "Rider"), Lx(lang, "الطلبات", "Orders"), Lx(lang, "أجره قبل اليومية", "Earnings"), Lx(lang, "خدّ سلف", "Advances"), Lx(lang, "سلّم منها", "Returned"), Lx(lang, "رصيد السلف", "Balance"), Lx(lang, "كاش استلمه", "Cash in"), Lx(lang, "كاش سلّمه", "Cash handed"), Lx(lang, "عجز/فائض", "Gap"), Lx(lang, "الصافي بعد اليومية", "Net after ledger"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}
+                </tr></thead>
+                <tbody>{mRows.map((x) => { const over = x.net > 0 && x.d.advBal > x.net * cap / 100; return (
+                  <React.Fragment key={x.r.id}>
+                    <tr style={{ borderBottom: open === x.r.id ? "none" : "1px solid var(--line)" }}>
+                      <td className={td}><b>{nm(x.r)}</b> {x.r.riderId ? <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{x.r.riderId}</span> : null}
+                        {over && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, `السلف فوق ${cap}% من أجره`, `Advances > ${cap}% of earnings`)}</Chip></span>}</td>
+                      <td className={td}>{dlN(x.orders)}</td><td className={td}>{dlN(x.net)}</td><td className={td}>{dlN(x.d.adv)}</td><td className={td}>{dlN(x.d.settled)}</td>
+                      <td className={td}>{dlN(x.d.advBal, x.d.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(x.d.collected)}</td><td className={td}>{dlN(x.d.handed)}</td>
+                      <td className={td}>{dlN(x.d.gap, dlColor(x.d.gap))}</td><td className={td}>{dlN(x.pay, x.pay >= 0 ? "#0B5C46" : "#C0443A")}{x.pay < 0 && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "عجز عليه", "Owes")}</Chip></span>}</td>
+                      <td className={td}><button onClick={() => setOpen(open === x.r.id ? null : x.r.id)} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{open === x.r.id ? Lx(lang, "إخفاء", "Hide") : Lx(lang, "كشف يومي", "Daily")}</button></td>
+                    </tr>
+                    {open === x.r.id && <tr style={{ borderBottom: "1px solid var(--line)" }}><td colSpan={11} className="px-2 pb-3"><div className="rounded-xl p-3" style={{ background: "#fff", border: "1px solid var(--line)" }}><RiderDayStatement lang={lang} repId={x.r.id} month={month} reports={reports} daily={E.daily} /></div></td></tr>}
+                  </React.Fragment>); })}
+                  <tr style={{ background: "rgba(20,27,45,.05)" }}><td className={td}><b>{Lx(lang, "الإجمالي", "Total")}</b></td><td className={td}>{dlN(mTot.orders)}</td><td className={td}>{dlN(mTot.net)}</td><td className={td}>{dlN(mTot.adv)}</td><td className={td}>{dlN(mTot.settled)}</td><td className={td}>{dlN(mTot.advBal)}</td><td className={td}>{dlN(mTot.collected)}</td><td className={td}>{dlN(mTot.handed)}</td><td className={td}>{dlN(mTot.gap, dlColor(mTot.gap))}</td><td className={td}>{dlN(mTot.pay)}</td><td className={td} /></tr>
+                </tbody>
+              </table>
+            </div>)}
+          <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, "الصافي بعد اليومية = أجره بعد الغرامات والتسويات − رصيد السلف غير المسوّى − عجز الكاش (أو + فائضه). هذا نفس الرقم الذي يظهر في كشف التسوية.", "Net after ledger = earnings after fines/adjustments − unsettled advances − cash gap (or + surplus). Same figure as in the settlement.")}</p>
+        </Panel>
+      </>)}
+      {tab === "pending" && (
+        <Panel title={Lx(lang, "سلف تحتاج اعتماد المدير العام", "Advances needing GM approval")}>
+          {pendingAll.length === 0 ? EMPTYT(lang) : <div className="space-y-3">{pendingAll.map((d) => (
+            <div key={d.id} className="rounded-2xl p-3" style={BOXS}>
+              <div className="flex items-center justify-between"><p className="text-[13.5px] font-extrabold">{d.name} · {d.date}</p><p className="num text-[18px] font-extrabold">{fmt(dlAdv(d))} {sar}</p></div>
+              <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, `بنزين ${fmt(d.fuel || 0)} · طلبات ${fmt(d.ordAdv || 0)} · أخرى ${fmt(d.otherAdv || 0)}`, `Fuel ${fmt(d.fuel || 0)} · Orders ${fmt(d.ordAdv || 0)} · Other ${fmt(d.otherAdv || 0)}`)}{d.note ? ` · ${d.note}` : ""} · {Lx(lang, "أدخلها", "entered by")} {d.by}</p>
+              {isGm ? <div className="flex gap-2 mt-2 flex-wrap items-center"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => decide(d, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn>
+                <input value={why[d.id] || ""} onChange={(e) => setWhy({ ...why, [d.id]: e.target.value })} placeholder={Lx(lang, "سبب الرفض", "Reason")} className="flex-1 min-w-[120px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} /><Btn variant="danger" onClick={() => decide(d, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>
+                : <p className="text-[11.5px] mt-1" style={{ color: "#8A611E" }}>{Lx(lang, "بانتظار المدير العام (لا تدخل الحساب قبل اعتماده).", "Awaiting GM — not counted until approved.")}</p>}
+            </div>))}</div>}
+        </Panel>)}
+    </div>
+  );
+}
+
+/* ─── يوميتي: كشف المندوب اليومي (خدّ/سلّم) — بلا أي أرقام عن ربح الشركة ─── */
+function MyDailyPage({ lang, role, activeRep, reports, ext }) {
+  const E = extOf(ext);
+  const [month, setMonth] = useState(riyadhToday().slice(0, 7));
+  const [all, setAll] = useState(false);
+  if (!activeRep) return null;
+  const d = dailyTotals(E.daily, activeRep.id, month);
+  const orders = monthEntriesFor(reports, activeRep.id, month).reduce((s, e) => s + (e.orders || 0), 0);
+  const Tile = ({ k, v, c }) => <div className="rounded-xl p-3" style={BOXS}><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{k}</p><p className="num text-[17px] font-extrabold" style={c ? { color: c } : null}>{fmt(r2(v))}</p></div>;
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 flex-wrap"><XIn type="month" value={month} onChange={(v) => v && setMonth(v)} />
+        <button onClick={() => setAll(!all)} className="px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: "#fff", border: "1px solid var(--line)" }}>{all ? Lx(lang, "أيام النشاط فقط", "Active days only") : Lx(lang, "كل أيام الشهر", "All days")}</button></div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Tile k={Lx(lang, "طلباتي هذا الشهر", "My orders")} v={orders} /><Tile k={Lx(lang, "خدتّه من سلف", "Advances taken")} v={d.adv} />
+        <Tile k={Lx(lang, "رصيد السلف عليّ", "Advance balance")} v={d.advBal} c={d.advBal > 0 ? "#8A611E" : null} /><Tile k={d.gap < 0 ? Lx(lang, "فائض كاش لي", "Cash surplus (mine)") : Lx(lang, "كاش عليّ تسليمه", "Cash I owe")} v={Math.abs(d.gap)} c={dlColor(d.gap)} />
+      </div>
+      <Panel title={Lx(lang, "كشفي اليومي", "My daily statement")}><RiderDayStatement lang={lang} repId={activeRep.id} month={month} reports={reports} daily={E.daily} showAll={all} /></Panel>
+    </div>
+  );
+}
+
 const PAGES = {
   overview: Overview, orders: OrdersPage, cars: CarsPage, zones: ZonesPage,
   restaurants: RestaurantsPage, invoices: InvoicesPage, expenses: ExpensesPage,
@@ -8081,14 +10158,20 @@ const PAGES = {
   approvals: ApprovalsPage, reports: ReportsPage, settings: SettingsPage,
   hiring: HiringPage, shifts: ShiftsPage, tickets: TicketsPage, circulars: CircularsPage,
   pulse: PulsePage, iqama: IqamaAlertsPage, payrollRuns: PayrollRunsPage,
-  chat: CommsPage, messages: RepMessagesPage, leaderboard: LeaderboardPage, audit: AuditLogPage,
-  hall: HallOfFamePage, charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
+  chat: CommsPage, messages: RepMessagesPage, audit: AuditLogPage,
+  charter: CharterPage, checklist: PreLaunchChecklistPage, growth: GrowthPage, security: SecurityPage,
   permissions: PermissionsMapPage, mystory: MyStoryPage, equipCompliance: ComplianceEquipmentPage,
   boardCouncil: BoardCouncilPage, decisions: DecisionsPage,
-  repAccounting: RepAccountingPage, myEarnings: MyEarningsPage, today: TodayPage, riderHome: RiderHome, riderReceipts: RiderReceiptsPage, receiptsAdmin: ReceiptsAdminPage,
+  repAccounting: RepAccountingPage, repFiles: RepFilesPage, riderWelcome: RiderAboutPage, myEarnings: MyEarningsPage, today: TodayPage, riderHome: RiderHome, riderReceipts: RiderReceiptsPage, receiptsAdmin: ReceiptsAdminPage,
   financeHub: HubPage, repsHub: HubPage, commsHub: HubPage, hrHub: HubPage, legalHub: HubPage,
+  coach: CoachPage, myScore: MyScorePage, myWallet: MyWalletPage, reportInc: ReportIncidentPage, myLeave: MyLeavePage, academy: AcademyPage,
+  perfBoard: PerfBoardPage, walletAdmin: WalletAdminPage, incidents: IncidentsPage, leavesAdmin: LeavesAdminPage, trainingAdmin: TrainingAdminPage,
+  appAvail: AppAvailAdminPage, retention: RetentionPage, support: SupportPage, myRefer: MyReferPage, referrals: ReferralsAdminPage, teams: TeamsPage,
+  perfPlans: PerfPlansPage, coverage: CoveragePage, cockpit: CockpitPage, whatIf: WhatIfPage, closeList: CloseListPage, cashflow: CashFlowPage, empFile: EmpFilePage, offboard: OffboardPage,
+  dailyLedger: DailyLedgerPage, myDaily: MyDailyPage, settleFlow: SettleFlowPage, dayOps: DayOpsPage, pipeline: PipelinePage, crm: CrmPage, snapshots: SnapshotsPage, copilot: CopilotPage, inbox: InboxPage,
 };
 const NAV_ICON = {
+  repFiles: KeyRound, riderWelcome: Sparkles,
   overview: LayoutDashboard, orders: ShoppingBag, cars: Car, zones: MapPin,
   restaurants: Store, invoices: ReceiptText, expenses: Wallet, payroll: CircleDollarSign,
   employees: Users, attendance: CalendarClock, contracts: FileSignature, cases: Gavel,
@@ -8099,6 +10182,11 @@ const NAV_ICON = {
   security: ShieldAlert, permissions: ShieldCheck, mystory: Sparkles, equipCompliance: ShieldAlert,
   boardCouncil: Scale, decisions: Gavel, repAccounting: HandCoins, myEarnings: Wallet, today: Sparkles, riderHome: LayoutDashboard, riderReceipts: Camera, receiptsAdmin: ReceiptText,
   financeHub: Wallet, repsHub: Trophy, commsHub: MessageSquare, hrHub: Users, legalHub: Scale,
+  coach: Rocket, myScore: Trophy, myWallet: HandCoins, reportInc: ShieldAlert, myLeave: CalendarDays, academy: Award,
+  perfBoard: Trophy, walletAdmin: HandCoins, incidents: ShieldAlert, leavesAdmin: CalendarDays, trainingAdmin: Award,
+  appAvail: Navigation, retention: AlertTriangle, support: Phone, myRefer: UserPlus, referrals: UserPlus, teams: Trophy,
+  perfPlans: Target, coverage: Users, cockpit: LayoutDashboard, whatIf: Zap, closeList: BadgeCheck, cashflow: TrendingUp, empFile: ClipboardList, offboard: LogOut,
+  dailyLedger: ClipboardList, myDaily: CalendarDays, settleFlow: BadgeCheck, dayOps: ClipboardList, pipeline: UserPlus, crm: Building2, snapshots: Download, copilot: Sparkles, inbox: Bell,
 };
 
 /* ═══════════  الهيكل  ═══════════ */
@@ -8107,7 +10195,7 @@ const TOUR_STEPS = {
   ar: {
     rep: [
       { t: "أهلاً بك في بوارق الشرق", d: "هذه لوحتك الشخصية — تعرض إنجازك الشهري وحالة حضورك في نظرة واحدة." },
-      { t: "بصمة وشفت جديد", d: "الزرّان العائمان بالأسفل يفتحان لك تسجيل الحضور وحجز شفت جديد من أي صفحة." },
+      { t: "بصمة الحضور", d: "الزر العائم بالأسفل يسجّل بصمتك من أي صفحة، والمشرف يحضّرك يومياً وتظهر درجة حضورك في «أدائي ونقاطي»." },
       { t: "التذاكر والرسائل", d: "أي طلب أو استفسار يمر عبر التذاكر، ورسائل الإدارة تصلك للاطلاع فقط." },
     ],
     office: [
@@ -8119,7 +10207,7 @@ const TOUR_STEPS = {
   en: {
     rep: [
       { t: "Welcome to Bawariq Al-Sharq", d: "This is your personal dashboard — your monthly progress and attendance status at a glance." },
-      { t: "Clock in & new shift", d: "The floating buttons at the bottom open attendance clock-in and shift booking from any page." },
+      { t: "Clock in", d: "The floating button clocks you in from any page; your supervisor takes daily attendance and your score shows in My Score." },
       { t: "Tickets & messages", d: "Any request goes through Tickets, and department messages arrive for you to acknowledge only." },
     ],
     office: [
@@ -8131,7 +10219,7 @@ const TOUR_STEPS = {
   ur: {
     rep: [
       { t: "بوارق الشرق میں خوش آمدید", d: "یہ آپ کا ذاتی ڈیش بورڈ ہے — آپ کی ماہانہ کارکردگی اور حاضری ایک نظر میں۔" },
-      { t: "حاضری اور نئی شفٹ", d: "نیچے موجود بٹن کسی بھی صفحے سے حاضری اور نئی شفٹ بکنگ کھولتے ہیں۔" },
+      { t: "حاضری", d: "نیچے موجود بٹن کسی بھی صفحے سے حاضری لگاتا ہے، اور سپروائزر روزانہ حاضری لیتا ہے۔" },
       { t: "ٹکٹس اور پیغامات", d: "کوئی بھی درخواست ٹکٹس کے ذریعے جاتی ہے، اور شعبے کے پیغامات صرف دیکھنے کے لیے آتے ہیں۔" },
     ],
     office: [
@@ -8258,15 +10346,29 @@ function IdentityPicker({ lang, role, staff, onPick }) {
   );
 }
 
+Object.assign(RA.ar, { opsPickSup: "اختر اسمك", supLabel: "مشرف", opsNoSup: "لا يوجد موظفون في إدارة التشغيل بعد — تضيفهم الموارد البشرية.", opsViaDept: "دخول بكلمة سر الإدارة (للمدير)", supPass: "كلمة سرّك الشخصية", supScopeNote: "أنت تشاهد فريقك فقط" });
+Object.assign(RA.en, { opsPickSup: "Choose your name", supLabel: "Supervisor", opsNoSup: "No operations staff yet — HR adds them.", opsViaDept: "Sign in with department password (manager)", supPass: "Your personal password", supScopeNote: "You only see your own team" });
+Object.assign(RA.ur, { opsPickSup: "اپنا نام منتخب کریں", supLabel: "سپروائزر", opsNoSup: "ابھی کوئی عملہ نہیں — HR شامل کرے گا۔", opsViaDept: "شعبہ کے پاس ورڈ سے داخل ہوں (مینیجر)", supPass: "آپ کا ذاتی پاس ورڈ", supScopeNote: "آپ صرف اپنی ٹیم دیکھتے ہیں" });
+
 function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduce, setReduce, reps, setReps, reports, setReports,
-  tickets, setTickets, circulars, setCirculars, attendance, setAttendance, shifts, setShifts,
+  tickets, setTickets, circulars, setCirculars, attendance, setAttendance,
   orders, setOrders, cars, setCars, restaurants, setRestaurants, invoices, setInvoices,
   employees, setEmployees, contracts, setContracts, cases, setCases, approvalReqs, setApprovalReqs,
   expenses, setExpenses, iqamaAlerts, setIqamaAlerts, payrollRuns, setPayrollRuns,
   deptChats, setDeptChats, repMessages, setRepMessages, leaderboardHistory, setLeaderboardHistory, auditLog, setAuditLog,
   weekendFine, setWeekendFine, charterClauses, setCharterClauses, violationPenalty, setViolationPenalty,
-  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, pricing, setPricing, repSettlements, setRepSettlements, applications, setApplications, repReceipts, setRepReceipts,
-  equipStatus, setEquipStatus, tgaFines, setTgaFines, decisions, setDecisions, query, setQuery }) {
+  deptPasswords, setDeptPasswords, deptSecurity, setDeptSecurity, pricing, setPricing, repSettlements, setRepSettlements, applications, setApplications, pwResets, setPwResets, repReceipts, setRepReceipts,
+  equipStatus, setEquipStatus, tgaFines, setTgaFines, decisions, setDecisions, query, setQuery, startEmployee, ext, setExt }) {
+  // نسخة احتياطية يومية تلقائية عند دخول المدير العام (مرة واحدة في اليوم)
+  useEffect(() => {
+    if (role.id !== "gm" || !ext) return;
+    const idx = (ext.snapIdx || []);
+    const today = riyadhToday();
+    if (idx.includes(today)) return;
+    const tm = setTimeout(() => { takeSnapshot(setExt, today).catch(() => {}); }, 12000);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line
+  }, [role.id, ext && (ext.snapIdx || []).join(",")]);
   const t = T[lang], x = EX[lang];
   const navEff = (() => {
     const out = role.id === "rep" ? [] : ["today"];
@@ -8283,7 +10385,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
     const h = HUB_OF[id];
     if (h && navEff.includes(h)) { setHubNav({ tab: id, stamp: Date.now() }); setPage(h); } else setPage(id);
   };
-  const [showAll, setShowAll] = useState(() => { try { return localStorage.getItem("bq_showall") === "1"; } catch (e) { return false; } });
+  const [showAll, setShowAll] = useState(() => { try { return localStorage.getItem("bq_showall") !== "0"; } catch (e) { return true; } });
   const toggleAll = () => setShowAll((v) => { const nv = !v; try { localStorage.setItem("bq_showall", nv ? "1" : "0"); } catch (e) {} return nv; });
   useEffect(() => { if (!navEff.includes(page) && page !== "settings") setPage(navEff[0]); }, [role.id]); // eslint-disable-line
   const [collapsed, setCollapsed] = useState({});
@@ -8294,14 +10396,20 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   }, []);
   const [drawer, setDrawer] = useState(false);
   const [bell, setBell] = useState(false);
-  const [logShift, setLogShift] = useState(false);
   const [fabToast, setFabToast] = useState(null);
   const [tourSeen, setTourSeen] = useState(false);
   const markTourSeen = () => setTourSeen(true);
   const deptStaff = employees.filter((e) => e.dept === role.id && e.status !== "suspended");
   const needsIdentity = role.id !== "gm" && deptStaff.length >= 2;
-  const [actingEmployee, setActingEmployee] = useState(deptStaff.length === 1 ? deptStaff[0] : null);
+  const [actingEmployee, setActingEmployee] = useState(startEmployee || (deptStaff.length === 1 ? deptStaff[0] : null));
   const Page = PAGES[page] || Overview;
+  // عزل المشرف: كل مشرف يشوف مناديب فريقه وتقاريره وتذاكره ورسائله فقط
+  const scopeSup = role.id === "ops" && actingEmployee && actingEmployee.isSupervisor ? actingEmployee.id : null;
+  const vReps = scopeSup ? reps.filter((r) => r.sup === scopeSup) : reps;
+  const teamNids = new Set(vReps.map((r) => r.nid));
+  const vReports = scopeSup ? reports.filter((r) => r.sup === scopeSup) : reports;
+  const vTickets = scopeSup ? tickets.filter((tk) => teamNids.has(tk.repId)) : tickets;
+  const vRepMessages = scopeSup ? repMessages.filter((m) => teamNids.has(m.repId)) : repMessages;
   useEffect(() => { setDrawer(false); setBell(false); }, [page]);
 
   const isRep = role.id === "rep";
@@ -8317,13 +10425,14 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
   };
 
   const notifs = [];
+  const EXn = extOf(ext);
   if (isRep) {
     {
       const pm = prevMonthStr(riyadhNow().toISOString().slice(0, 7));
       if (repSettlements.some((z) => (z.month === pm || z.month === riyadhNow().toISOString().slice(0, 7)) && z.closed)) notifs.push({ text: RA[lang].repClosedNotif, tone: "ok", page: "myEarnings" });
     }
     repMessages.filter((m) => m.repId === user && !m.seen).forEach((m) =>
-      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: "info", page: "messages" }));
+      notifs.push({ text: `${(ALL_ROLES.find((r) => r.id === m.from) || {})[lang]?.t}: ${m.text}`, tone: m.text.indexOf("⚠") === 0 ? "bad" : "info", page: "messages", snd: m.text.indexOf("⚠") === 0 ? "urgent" : "normal" }));
     tickets.filter((tk) => tk.repId === user && (tk.status === "resolved" || tk.status === "rejected" || tk.status === "auto_closed"))
       .slice(0, 3).forEach((tk) => notifs.push({ text: `${ticketTypeOf(tk.type)[lang]} — ${tk.status === "resolved" ? x.stageResolved : tk.status === "auto_closed" ? x.stageAutoClosed : x.stageRejected}`, tone: tk.status === "resolved" ? "ok" : "n", page: "tickets" }));
     tickets.filter((tk) => tk.repId === user).forEach((tk) => {
@@ -8331,6 +10440,14 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       if (mins != null && mins >= 0 && mins <= 60) notifs.unshift({ text: `${x.apptSoonT}: ${tk.apptAt.slice(11, 16)} (${x.apptSoonNote})`, tone: "warn", page: "tickets" });
     });
   } else {
+    if (role.id === "ops" || role.id === "opsm" || role.id === "legal" || role.id === "gm") {
+      const openInc = EXn.incidents.filter((i) => i.status !== "closed" && (!scopeSup || i.sup === scopeSup));
+      const urgentInc = openInc.filter((i) => i.urgent);
+      if (openInc.length > 0) notifs.unshift({ text: Lx(lang, `🚨 بلاغات مفتوحة: ${openInc.length}${urgentInc.length ? ` (عاجل: ${urgentInc.length})` : ""} — آخرها: ${openInc[0].name}`, `🚨 Open incidents: ${openInc.length}${urgentInc.length ? ` (urgent: ${urgentInc.length})` : ""} — latest: ${openInc[0].name}`), tone: "bad", page: "incidents", count: openInc.length, snd: "urgent" });
+    }
+    if (role.id === "gm") { const prq = (EXn.priceReq || []).filter((r) => r.status === "pending"); if (prq.length > 0) notifs.unshift({ text: Lx(lang, `💰 تسعيرات تنتظر اعتمادك: ${prq.length} — ${prq.some((r) => (r.kind || "rep") === "app") ? "تسعيرة الشركة من التطبيق" : "تسعيرة المندوب"}`, `💰 Pricing awaiting your approval: ${prq.length}`), tone: "warn", page: "repAccounting", count: prq.length, snd: "normal" }); }
+    if ((role.id === "ops" || role.id === "opsm") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !((EXn.roll || {})[riyadhToday()] && Object.keys(EXn.roll[riyadhToday()]).length > 0))
+      notifs.unshift({ text: Lx(lang, "لم يُسجَّل حضور مناديب اليوم بعد", "Today's rider attendance isn't taken yet"), tone: "warn", page: "pulse", count: 1, snd: "normal" });
     if ((role.id === "opsm" || role.id === "ops") && riyadhNow().getUTCHours() >= 12 && reps.some((r) => r.status === "active") && !reports.some((rp) => rp.date === new Date(riyadhNow().getTime() - 86400000).toISOString().slice(0, 10)))
       notifs.unshift({ text: RA[lang].missingEntryNotif, tone: "warn", page: "shifts", count: 1 });
     if (role.id === "hr" || role.id === "opsm") {
@@ -8346,11 +10463,11 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
       const hasPrev = reports.some((rp) => rp.date.startsWith(pm));
       if (hasPrev && !repSettlements.some((z) => z.month === pm && z.closed)) notifs.unshift({ text: `${RA[lang].finCloseNotif} (${pm})`, tone: "warn", page: "repAccounting", count: 1 });
     }
-    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets });
+    if (myInboxTickets > 0) notifs.push({ text: `${x.inboxTickets}: ${myInboxTickets}`, tone: "warn", page: "tickets", count: myInboxTickets, snd: "normal" });
 
     // ===== تنبيه رسائل الإدارات غير المقروءة (كل الأقسام) =====
     const unseenDeptMsgs = deptChats.filter((m) => m.to === role.id && !m.seen).length;
-    if (unseenDeptMsgs > 0) notifs.unshift({ text: `${x.deptMsgsNotif}: ${unseenDeptMsgs}`, tone: "info", page: "chat", count: unseenDeptMsgs });
+    if (unseenDeptMsgs > 0) notifs.unshift({ text: `${x.deptMsgsNotif}: ${unseenDeptMsgs}`, tone: "info", page: "chat", count: unseenDeptMsgs, snd: "normal" });
     tickets.forEach((tk) => {
       const mins = minutesUntilAppt(tk);
       if (mins != null && mins >= 0 && mins <= 60 && ticketVisibleToRole(tk, role.id) && (ticketCurrentOwner(tk) === role.id)) {
@@ -8412,7 +10529,7 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
     // ===== تنبيهات القانونية (بلاغات محالة + قضايا مفتوحة) =====
     if (role.id === "legal") {
       const forwarded = tickets.filter((tk) => tk.forwardedToLegal && tk.status !== "resolved").length;
-      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad", page: "tickets", count: forwarded });
+      if (forwarded > 0) notifs.unshift({ text: `${x.legalForwardedNotif}: ${forwarded}`, tone: "bad", page: "tickets", count: forwarded, snd: "normal" });
       const openCasesCount = cases.filter((c) => c.st === "open").length;
       if (openCasesCount > 0) notifs.push({ text: `${x.legalOpenCasesNotif}: ${openCasesCount}`, tone: "warn", page: "cases", count: openCasesCount });
     }
@@ -8509,7 +10626,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         )}
       </div>
       <div className="p-3 space-y-1.5" style={{ borderTop: "1px solid rgba(255,255,255,.08)" }}>
-        {isRep && <Btn full variant="accent" accent={role.glow} icon={Route} onClick={() => setLogShift(true)}>{x.logNewShift}</Btn>}
         {[[KeyRound, x.secTitle, () => setPage("settings")], ...(RIDER_MODE ? [] : [[ShoppingBag, t.switchDept, onSwitch]]), [LogOut, t.logout, onLogout]].map(([Ic, label, fn], i) => (
           <button key={i} onClick={fn} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold hover:brightness-125 transition" style={fn === onLogout ? { ...sideBtn, color: "#F4A8A0" } : sideBtn}><Ic size={14} />{label}</button>
         ))}
@@ -8524,13 +10640,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
         <IdentityPicker lang={lang} role={role} staff={deptStaff} onPick={setActingEmployee} />
       )}
       {(!needsIdentity || actingEmployee) && !tourSeen && <OnboardingTour lang={lang} role={role} onDone={markTourSeen} />}
-      {logShift && (
-        <LogShiftModal lang={lang} role={role} onClose={() => setLogShift(false)}
-          onConfirm={(start, end) => {
-            setShifts((prev) => [...prev, { repId: user, date: riyadhToday(), start, end, loggedAt: riyadhNow().toISOString() }]);
-            setLogShift(false);
-          }} />
-      )}
       <aside className="hidden lg:block fixed z-30 rounded-[26px] overflow-hidden" style={{ insetInlineStart: 14, top: 14, bottom: 14, width: 258, background: "#0E1424", border: "1px solid rgba(255,255,255,.06)", boxShadow: "0 30px 70px -30px rgba(10,16,32,.6)" }}>
         <SideInner />
       </aside>
@@ -8592,10 +10701,11 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               )}
             </div>
             <div className="flex-1 sm:hidden" />
+            <AlertSoundToggle lang={lang} score={notifs.reduce((a, n) => a + (n.snd ? (n.count || 1) : 0), 0)} urgent={notifs.some((n) => n.snd === "urgent")} body={(notifs.find((n) => n.snd === "urgent") || notifs.find((n) => n.snd) || {}).text} />
             <div className="relative">
               <button onClick={() => setBell(!bell)} className="relative p-2 rounded-xl" style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)" }} aria-label={t.alerts}>
                 <Bell size={16} />
-                {notifs.length > 0 && <span className="absolute top-1.5 w-2 h-2 rounded-full pulse-dot" style={{ insetInlineEnd: 6, background: "#E8837A" }} />}
+                {notifs.length > 0 && <span className="absolute -top-1 min-w-[16px] h-4 px-1 grid place-items-center rounded-full text-[9.5px] font-extrabold pulse-dot" style={{ insetInlineEnd: -3, background: "#E8837A", color: "#fff" }}>{Math.min(99, notifs.reduce((a, n) => a + (n.count || 1), 0))}</span>}
               </button>
               {bell && (
                 <div className="absolute mt-2 w-[280px] rise glass rounded-2xl p-3 z-50" style={{ insetInlineEnd: 0 }}>
@@ -8615,6 +10725,9 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
                 </div>
               )}
             </div>
+            <button onClick={onLogout} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold" style={{ background: "rgba(232,131,122,.12)", border: "1px solid rgba(232,131,122,.35)", color: "#C0443A" }} aria-label={t.logout}>
+              <LogOut size={15} /><span>{t.logout}</span>
+            </button>
             <div className="hidden sm:block">
               <select value={lang} onChange={(e) => setLang(e.target.value)} className="rounded-xl px-2.5 py-2.5 text-[12px] font-semibold outline-none"
                 style={{ background: "rgba(20,27,45,.045)", border: "1px solid var(--line)", color: "#12151D" }}>
@@ -8636,17 +10749,17 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
             <span className="num hidden sm:block text-[11.5px]" style={{ color: "var(--muted)" }}>{t.thisMonth} · 2026</span>
           </div>
           <div key={page} className="rise">
-            <Page lang={lang} role={role} user={user} activeRep={activeRep} setLang={setLang} reduce={reduce} setReduce={setReduce}
-              reps={reps} setReps={setReps} reports={reports} setReports={setReports}
-              tickets={tickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
-              attendance={attendance} setAttendance={setAttendance} shifts={shifts} setShifts={setShifts}
+            <Page lang={lang} role={role} user={user} activeRep={activeRep} onLogout={onLogout} setLang={setLang} reduce={reduce} setReduce={setReduce}
+              reps={vReps} setReps={setReps} reports={vReports} setReports={setReports} scopeSup={scopeSup}
+              tickets={vTickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
+              attendance={attendance} setAttendance={setAttendance}
               orders={orders} setOrders={setOrders} cars={cars} setCars={setCars}
               restaurants={restaurants} setRestaurants={setRestaurants} invoices={invoices} setInvoices={setInvoices}
               employees={employees} setEmployees={setEmployees} contracts={contracts} setContracts={setContracts}
               cases={cases} setCases={setCases} approvalReqs={approvalReqs} setApprovalReqs={setApprovalReqs}
               expenses={expenses} setExpenses={setExpenses}
               iqamaAlerts={iqamaAlerts} setIqamaAlerts={setIqamaAlerts} payrollRuns={payrollRuns} setPayrollRuns={setPayrollRuns}
-              deptChats={deptChats} setDeptChats={setDeptChats} repMessages={repMessages} setRepMessages={setRepMessages}
+              deptChats={deptChats} setDeptChats={setDeptChats} repMessages={vRepMessages} setRepMessages={setRepMessages}
               leaderboardHistory={leaderboardHistory} setLeaderboardHistory={setLeaderboardHistory}
               auditLog={auditLog} setAuditLog={setAuditLog} actingEmployee={actingEmployee} weekendFine={weekendFine} setWeekendFine={setWeekendFine} charterClauses={charterClauses} setCharterClauses={setCharterClauses}
               violationPenalty={violationPenalty} setViolationPenalty={setViolationPenalty}
@@ -8654,7 +10767,8 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
               equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
               decisions={decisions} setDecisions={setDecisions}
               pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
-              applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
+              applications={applications} setApplications={setApplications} pwResets={pwResets} setPwResets={setPwResets} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
+              ext={ext} setExt={setExt} allReps={reps} allReports={reports}
               query={query} setQuery={setQuery} goPage={goTo} notifs={notifs} hubId={page} hubTab={hubNav.tab} hubStamp={hubNav.stamp} navBadges={navBadges} />
           </div>
         </main>
@@ -8683,10 +10797,6 @@ function Shell({ lang, setLang, role, user, activeRep, onSwitch, onLogout, reduc
                   </span>
                 </div>
               )}
-              <button onClick={() => setLogShift(true)} className="grid place-items-center w-12 h-12 rounded-2xl shadow-lg active:scale-95 transition"
-                style={{ background: "rgba(20,26,38,.92)", border: `1px solid rgba(${role.glow},.4)`, boxShadow: `0 8px 24px -8px rgba(${role.glow},.5)` }} aria-label={x.logNewShift}>
-                <Route size={19} style={{ color: role.accent }} />
-              </button>
               <button onClick={doClock} className="grid place-items-center w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition"
                 style={{ background: myToday && !myToday.out ? "linear-gradient(140deg,#3FD8B4,#2BAE8E)" : `linear-gradient(140deg,rgba(${role.glow},.95),rgba(${role.glow},.6))`, boxShadow: "0 10px 28px -8px rgba(63,216,180,.55)" }}
                 aria-label={x.clockIn}>
@@ -8737,7 +10847,6 @@ export default function App() {
   const [tickets, setTickets] = usePersisted("bq_tickets", []);
   const [circulars, setCirculars] = usePersisted("bq_circulars", []);
   const [attendance, setAttendance] = usePersisted("bq_attendance", []);
-  const [shifts, setShifts] = usePersisted("bq_shifts", []);
   const [orders, setOrders] = usePersisted("bq_orders", []);
   const [cars, setCars] = usePersisted("bq_cars", []);
   const [restaurants, setRestaurants] = usePersisted("bq_restaurants", []);
@@ -8764,7 +10873,10 @@ export default function App() {
   const [pricing, setPricing] = usePersisted("bq_pricing", { app: {}, rep: {} });
   const [repSettlements, setRepSettlements] = usePersisted("bq_rep_settlements", []);
   const [applications, setApplications] = usePersisted("bq_applications", []);
+  const [pwResets, setPwResets] = usePersisted("bq_pw_resets", []);
   const [repReceipts, setRepReceipts] = usePersisted("bq_rep_receipts", []);
+  const [ext, setExt] = usePersisted("bq_ext", EXT0);
+  DAILY_CTX = (ext && ext.daily) || [];
   const [riderView, setRiderView] = useState("landing");
   const [charterClauses, setCharterClauses] = usePersisted("bq_charter_clauses", []);
   const [query, setQuery] = useState("");
@@ -8792,7 +10904,7 @@ export default function App() {
     const IDLE_MS = 15 * 60 * 1000;
     const reset = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => { setRoleId(null); setStep("gate"); }, IDLE_MS);
+      timer = setTimeout(() => { setRoleId(null); setStartEmp(null); setStep("gate"); }, IDLE_MS);
     };
     const events = ["mousedown", "keydown", "touchstart", "scroll"];
     events.forEach((ev) => window.addEventListener(ev, reset));
@@ -8802,13 +10914,14 @@ export default function App() {
 
   const IDLE_LIMIT_MS = 10 * 60 * 1000;
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [startEmp, setStartEmp] = useState(null);
   const idleTimer = useRef(null);
   useEffect(() => {
     if (step !== "app") return;
     const resetIdle = () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       idleTimer.current = setTimeout(() => {
-        setRoleId(null); setStep("gate"); setSessionExpired(true);
+        setRoleId(null); setStartEmp(null); setStep("gate"); setSessionExpired(true);
       }, IDLE_LIMIT_MS);
     };
     const events = ["mousemove", "keydown", "touchstart", "click", "scroll"];
@@ -8822,7 +10935,6 @@ export default function App() {
   }, [step]);
 
   const todayStr = () => riyadhToday();
-  const needsShiftPick = role && role.id === "rep" && !shifts.some((s) => s.repId === user && s.date === todayStr());
 
   return (
     <div dir={dir} className={`bq min-h-screen w-full ${reduce ? "reduce" : ""}`}>
@@ -8841,13 +10953,14 @@ export default function App() {
         </div>
       )}
       {step === "lang" && <LangScreen lang={lang} setLang={setLang} next={() => setStep("gate")} />}
-      {step === "gate" && RIDER_MODE && riderView === "landing" && <RiderLanding lang={lang} setLang={setLang} reps={reps} pricing={pricing} go={setRiderView} />}
-      {step === "gate" && RIDER_MODE && riderView === "apply" && <RiderApply lang={lang} reps={reps} applications={applications} setApplications={setApplications} go={setRiderView} />}
+      {step === "gate" && RIDER_MODE && riderView === "landing" && <RiderLanding lang={lang} setLang={setLang} reps={reps} pricing={pricing} go={setRiderView} ext={ext} />}
+      {step === "gate" && RIDER_MODE && riderView === "apply" && <RiderApply lang={lang} reps={reps} applications={applications} setApplications={setApplications} go={setRiderView} ext={ext} />}
       {step === "gate" && RIDER_MODE && riderView === "login" && (
         <RiderLogin lang={lang} setLang={setLang} err={loginErr} setErr={setLoginErr} onBack={() => setRiderView("landing")}
+          onForgot={(nid, phone) => setPwResets((prev) => (prev.some((q) => q.nid === nid && q.status === "open") ? prev : [{ id: "PWR-" + Date.now(), nid, phone, at: riyadhNow().toISOString(), status: "open" }, ...prev]))}
           onRep={(nid, pass) => {
             const rec = reps.find((r) => r.nid === nid.trim());
-            if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
+            if (!rec || !["active", "left", "suspended"].includes(rec.status)) { setLoginErr(EX[lang].errRepNotActive); return; }
             if (rec.password && rec.password !== pass) { setLoginErr(EX[lang].errRepWrongPass); return; }
             setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
           }} />
@@ -8855,24 +10968,23 @@ export default function App() {
       {step === "gate" && !RIDER_MODE && (
         <DeptGate lang={lang} setLang={setLang} reps={reps} employees={employees} err={loginErr} setErr={setLoginErr} sessionExpired={sessionExpired}
           deptPasswords={deptPasswords} deptSecurity={deptSecurity} setDeptSecurity={setDeptSecurity}
-          onEmployee={(id) => { setRoleId(id); setUser("BQ-" + id.toUpperCase()); setStep("app"); setSessionExpired(false); }}
+          onEmployee={(id, emp) => { setStartEmp(emp || null); setRoleId(id); setUser("BQ-" + id.toUpperCase()); setStep("app"); setSessionExpired(false); }}
           onRep={(nid, pass) => {
             const rec = reps.find((r) => r.nid === nid.trim());
-            if (!rec || rec.status !== "active") { setLoginErr(EX[lang].errRepNotActive); return; }
+            if (!rec || !["active", "left", "suspended"].includes(rec.status)) { setLoginErr(EX[lang].errRepNotActive); return; }
             if (rec.password && rec.password !== pass) { setLoginErr(EX[lang].errRepWrongPass); return; }
             setLoginErr(""); setRoleId("rep"); setUser(nid.trim()); setStep("app"); setSessionExpired(false);
           }} />
       )}
-      {step === "app" && role && role.id === "rep" && needsShiftPick && (
-        <ShiftPickScreen lang={lang} rep={activeRep} onConfirm={(start, end) => {
-          setShifts((prev) => [...prev, { repId: user, date: todayStr(), start, end, loggedAt: riyadhNow().toISOString() }]);
-        }} />
+      {step === "app" && role && role.id === "rep" && activeRep && activeRep.status !== "active" && (
+        <RepExitScreen lang={lang} setLang={setLang} rep={activeRep} reports={reports} pricing={pricing} repSettlements={repSettlements} weekendFine={weekendFine} violationPenalty={violationPenalty} repReceipts={repReceipts} ext={ext}
+          onLogout={() => { setRoleId(null); setStartEmp(null); setStep("gate"); }} />
       )}
-      {step === "app" && role && !(role.id === "rep" && needsShiftPick) && (
-        <Shell lang={lang} setLang={setLang} role={role} user={user} activeRep={activeRep} reduce={reduce} setReduce={setReduce}
+      {step === "app" && role && !(role.id === "rep" && activeRep && activeRep.status !== "active") && (
+        <Shell startEmployee={startEmp} lang={lang} setLang={setLang} role={role} user={user} activeRep={activeRep} reduce={reduce} setReduce={setReduce}
           reps={reps} setReps={setReps} reports={reports} setReports={setReports}
           tickets={tickets} setTickets={setTickets} circulars={circulars} setCirculars={setCirculars}
-          attendance={attendance} setAttendance={setAttendance} shifts={shifts} setShifts={setShifts}
+          attendance={attendance} setAttendance={setAttendance}
           orders={orders} setOrders={setOrders} cars={cars} setCars={setCars}
           restaurants={restaurants} setRestaurants={setRestaurants} invoices={invoices} setInvoices={setInvoices}
           employees={employees} setEmployees={setEmployees} contracts={contracts} setContracts={setContracts}
@@ -8888,9 +11000,9 @@ export default function App() {
           equipStatus={equipStatus} setEquipStatus={setEquipStatus} tgaFines={tgaFines} setTgaFines={setTgaFines}
           decisions={decisions} setDecisions={setDecisions}
           pricing={pricing} setPricing={setPricing} repSettlements={repSettlements} setRepSettlements={setRepSettlements}
-          applications={applications} setApplications={setApplications} repReceipts={repReceipts} setRepReceipts={setRepReceipts}
+          applications={applications} setApplications={setApplications} pwResets={pwResets} setPwResets={setPwResets} repReceipts={repReceipts} setRepReceipts={setRepReceipts} ext={ext} setExt={setExt}
           query={query} setQuery={setQuery}
-          onSwitch={() => setStep("gate")} onLogout={() => { setRoleId(null); setStep("gate"); }} />
+          onSwitch={() => { setStartEmp(null); setStep("gate"); }} onLogout={() => { setRoleId(null); setStartEmp(null); setStep("gate"); }} />
       )}
     </div>
   );
