@@ -6924,7 +6924,7 @@ Object.assign(T.ar.nav, { dailyLedger: "يومية المناديب", myDaily: "
 Object.assign(T.en.nav, { dailyLedger: "Riders' Daily Ledger", myDaily: "My Daily" });
 Object.assign(T.ur.nav, { dailyLedger: "Riders' Daily Ledger", myDaily: "My Daily" });
 const HUBS = {
-  financeHub: ["repAccounting", "dailyLedger", "settleFlow", "closeList", "cashflow", "whatIf", "walletAdmin", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
+  financeHub: ["repAccounting", "settleFlow", "closeList", "cashflow", "whatIf", "walletAdmin", "receiptsAdmin", "payrollRuns", "expenses", "invoices"],
   repsHub: ["pulse", "retention", "perfPlans", "coverage", "teams", "dayOps", "perfBoard", "incidents", "leavesAdmin", "trainingAdmin"],
   commsHub: ["tickets", "chat", "circulars", "messages"],
   hrHub: ["appAvail", "referrals", "pipeline", "hiring", "repFiles", "employees", "empFile", "offboard", "iqama"],
@@ -6943,8 +6943,8 @@ const PRIMARY_NAV = {
   rep: ["riderHome", "coach", "myEarnings", "myScore", "myWallet", "myDaily", "academy", "myLeave", "reportInc", "support", "myRefer", "teams", "riderReceipts", "commsHub", "mystory", "riderWelcome"],
 };
 const TODAY_QUICK = {
-  gm: ["inbox", "decisions", "expenses", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
-  fin: ["repAccounting", "payrollRuns", "expenses"], hr: ["repFiles", "hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
+  gm: ["inbox", "decisions", "dailyLedger", "repAccounting", "pulse"], opsm: ["shifts", "pulse", "cars", "hiring"], ops: ["shifts", "pulse", "cars"],
+  fin: ["dailyLedger", "repAccounting", "payrollRuns", "expenses"], hr: ["repFiles", "hiring", "iqama", "employees"], legal: ["cases", "contracts", "charter"],
   advisor: ["decisions", "payrollRuns", "boardCouncil"],
 };
 
