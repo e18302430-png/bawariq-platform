@@ -10024,11 +10024,15 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return setErr(Lx(lang, "اختر التاريخ.", "Pick the date."));
     const g = (k) => r2(+form[k] || 0);
     const m = commit(form.date, r, { fuel: g("fuel"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: form.note.trim() }, form.editId);
-    setErr(m); if (!m) setForm({ ...F0, date: form.date });
+    setErr(m); if (!m) { setLastSaved(dlId(form.date, r.id)); setForm({ ...F0, date: form.date }); }
   };
   const editEntry = (d) => setForm({ date: d.date, repId: d.repId, fuel: d.fuel ? String(d.fuel) : "", ordAdv: d.ordAdv ? String(d.ordAdv) : "", otherAdv: d.otherAdv ? String(d.otherAdv) : "", settled: d.settled ? String(d.settled) : "", collected: d.collected ? String(d.collected) : "", handed: d.handed ? String(d.handed) : "", viol: d.viol ? String(d.viol) : "", fine: d.fine ? String(d.fine) : "", bonus: d.bonus ? String(d.bonus) : "", note: d.note || "", editId: d.id });
+  const [lastSaved, setLastSaved] = useState(null);
+  const [delAsk, setDelAsk] = useState(null);
   const delEntry = (d) => {
     if (!isFin) return;
+    if (delAsk !== d.id) return setDelAsk(d.id);
+    setDelAsk(null); if (lastSaved === d.id) setLastSaved(null);
     if (closedMonth(d.date.slice(0, 7))) return setErr(Lx(lang, "هذا الشهر مُقفل.", "This month is closed."));
     extUpd(setExt, "daily", (a) => a.filter((z) => z.id !== d.id));
     logAudit(setAuditLog, role, "daily_ledger_delete", `${d.name} ${d.date}`, actingEmployee);
@@ -10167,7 +10171,10 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                       <td className={td} style={{ minWidth: 140 }}>{isFin && !closed ? <XIn value={drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (ent && ent.note) || ""} onChange={(v) => setD(r, "note", v)} cls="!px-2 !py-1.5 w-full" ph={Lx(lang, "اختياري", "optional")} /> : <span className="text-[11px]">{(ent && ent.note) || ""}</span>}</td>
                       <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td>
                       <td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td>
-                      <td className={td}>{isFin && dirty && <Btn variant="accent" accent={role.glow} onClick={() => saveRow(r)}>{Lx(lang, "حفظ", "Save")}</Btn>}</td>
+                      <td className={td}>{isFin && dirty ? <Btn variant="accent" accent={role.glow} onClick={() => saveRow(r)}>{Lx(lang, "حفظ", "Save")}</Btn>
+                        : isFin && ent && !closed ? <span className="inline-flex gap-2">
+                          <button onClick={() => { editEntry(ent); setTab("log"); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
+                          <button onClick={() => delEntry(ent)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{delAsk === ent.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span> : null}</td>
                     </tr>);
                 })}</tbody>
               </table>
@@ -10189,6 +10196,16 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                   <label key={k} className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, a, e)}</span><XIn type="number" value={form[k]} onChange={(v) => setF(k, v)} ph="0" cls="w-full" /></label>))}
                 <label className="block col-span-2"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "ملاحظة", "Note")}</span><XIn value={form.note} onChange={(v) => setF("note", v)} cls="w-full" /></label>
               </div>
+              {(() => { const ls = lastSaved && !form.editId ? E.daily.find((z) => z.id === lastSaved) : null; return ls ? (
+                <div className="rounded-xl p-3 flex items-center gap-3 flex-wrap" style={{ background: "rgba(11,92,70,.06)", border: "1px solid rgba(11,92,70,.25)" }}>
+                  <CheckCircle2 size={16} style={{ color: "#0B5C46" }} />
+                  <span className="text-[12px] font-bold">{Lx(lang, "اتحفظت الحركة:", "Saved:")} {ls.name} · <span className="num">{ls.date}</span></span>
+                  <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, `سلف ${fmt(dlAdv(ls))} · طلبات ${fmt(dlOrd(ls))} · كاش استلمه ${fmt(+ls.collected || 0)} · سلّم ${fmt(+ls.handed || 0)}`, `Adv ${fmt(dlAdv(ls))} · Orders ${fmt(dlOrd(ls))} · Collected ${fmt(+ls.collected || 0)} · Handed ${fmt(+ls.handed || 0)}`)}</span>
+                  {ls.status === "pending" && <Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip>}
+                  {!closedMonth(ls.date.slice(0, 7)) && <span className="inline-flex gap-3 ms-auto">
+                    <button onClick={() => { editEntry(ls); setLastSaved(null); }} className="text-[12px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
+                    <button onClick={() => delEntry(ls)} className="text-[12px] font-bold underline" style={{ color: "#C0443A" }}>{delAsk === ls.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span>}
+                </div>) : null; })()}
               {formClash && <Chip tone="warn">{Lx(lang, "يوجد سجل لهذا المندوب بنفس التاريخ — الحفظ سيستبدله (للتعديل استخدم زر تعديل من الجدول).", "An entry exists for this rider and date — saving replaces it.")}</Chip>}
               <div className="flex gap-2 flex-wrap"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveForm}>{form.editId ? Lx(lang, "حفظ التعديل", "Save changes") : formClash ? Lx(lang, "استبدال وحفظ", "Replace & save") : Lx(lang, "حفظ الحركة", "Save entry")}</Btn>
                 {form.editId && <Btn onClick={() => setForm(F0)}>{Lx(lang, "إلغاء التعديل", "Cancel edit")}</Btn>}
@@ -10209,7 +10226,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                   {["fuel", "ordAdv", "otherAdv", "settled", "collected", "handed", "viol", "fine", "bonus"].map((k) => <td key={k} className={td}>{k === "ordAdv" ? txCell(d.repId, d.date, d) : dlN(d[k] || 0)}</td>)}
                   <td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{d.note}</td>
                   <td className={td}>{isFin && <span className="inline-flex gap-2"><button onClick={() => { editEntry(d); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
-                    <button onClick={() => delEntry(d)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{Lx(lang, "حذف", "Delete")}</button></span>}</td>
+                    <button onClick={() => delEntry(d)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{delAsk === d.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span>}</td>
                 </tr>))}</tbody>
             </table></div>)}
         </Panel>
