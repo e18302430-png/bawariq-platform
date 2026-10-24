@@ -480,10 +480,10 @@ function computeSettlement(month, reps, reports, pricing, rawInputs, weekendFine
     const weekendAmt = fo.weekend != null ? +fo.weekend : c.weekendAuto;
     const appAmt = fo.app != null ? +fo.app : appAmtAuto;
     const manual = (inputs.manual || []).filter((m) => m.repId === r.id);
-    const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + (+m.amount || 0), 0);
-    const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
-    const totalDed = weekendAmt + appAmt + deds;
     const dl = dailyTotals(daily, r.id, month);
+    const adds = manual.filter((m) => m.type === "add").reduce((s, m) => s + (+m.amount || 0), 0) + dl.bonus;
+    const deds = manual.filter((m) => m.type === "deduct").reduce((s, m) => s + (+m.amount || 0), 0);
+    const totalDed = weekendAmt + appAmt + deds + dl.fines;
     const reimb = r2((receipts || []).filter((q) => q.repId === r.id && q.status === "approved" && (q.date || "").startsWith(month)).reduce((sum, q) => sum + (+q.amount || 0), 0));
     repLines.push({ repId: r.id, repApp: r.app, srcF: row ? 1 : f, riderId: rid, name: r.ar, en: r.en, empType: r.empType, app: c.main, byApp: c.byApp, source, unpriced: c.unpriced, baseOrders: (c.byApp[c.main] || {}).base || 0, baseFrom: (r.inherit && r.inherit.month === month) ? r.inherit.fromName : null,
       orders: c.orders, recOrders, invOrders: row ? row.orders : null, invNet: row ? row.net : null, hours: c.hours,
@@ -9907,9 +9907,9 @@ const dlId = (date, repId) => `DL-${date}-${repId}`;
 function dailyTotals(daily, repId, month, upTo) {
   const src = daily === undefined ? DAILY_CTX : daily || [];
   const list = src.filter((d) => d.repId === repId && (d.date || "").startsWith(month) && (!upTo || d.date <= upTo) && DL_LIVE(d));
-  const s = { adv: 0, settled: 0, collected: 0, handed: 0, days: list.length };
-  list.forEach((d) => { s.adv += dlAdv(d); s.settled += +d.settled || 0; s.collected += +d.collected || 0; s.handed += +d.handed || 0; });
-  return { adv: r2(s.adv), settled: r2(s.settled), collected: r2(s.collected), handed: r2(s.handed), advBal: r2(s.adv - s.settled), gap: r2(s.collected - s.handed), days: s.days };
+  const s = { adv: 0, settled: 0, collected: 0, handed: 0, viol: 0, fines: 0, bonus: 0, days: list.length };
+  list.forEach((d) => { s.adv += dlAdv(d); s.settled += +d.settled || 0; s.collected += +d.collected || 0; s.handed += +d.handed || 0; s.viol += +d.viol || 0; s.fines += +d.fine || 0; s.bonus += +d.bonus || 0; });
+  return { adv: r2(s.adv), settled: r2(s.settled), collected: r2(s.collected), handed: r2(s.handed), advBal: r2(s.adv - s.settled), gap: r2(s.collected - s.handed), viol: s.viol, fines: r2(s.fines), bonus: r2(s.bonus), days: s.days };
 }
 const DL_WD = { ar: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 const dlSar = (lang) => Lx(lang, "ر.س", "SAR");
@@ -9919,7 +9919,7 @@ const dlN = (v, col) => <span className="num font-bold" style={col ? { color: co
 function dailyStatementRows(repId, month, reports, daily, showAll) {
   const nd = monthDays(month), ordBy = {};
   reports.forEach((rp) => { if (!(rp.date || "").startsWith(month)) return; rp.entries.forEach((e) => { if (e.id === repId) ordBy[rp.date] = (ordBy[rp.date] || 0) + (e.orders || 0); }); });
-  let advBal = 0, gap = 0; const rows = [], T0 = { orders: 0, adv: 0, settled: 0, collected: 0, handed: 0 };
+  let advBal = 0, gap = 0; const rows = [], T0 = { orders: 0, adv: 0, settled: 0, collected: 0, handed: 0, viol: 0, fine: 0, bonus: 0 };
   for (let d = 1; d <= nd; d++) {
     const date = `${month}-${String(d).padStart(2, "0")}`;
     const ents = (daily || []).filter((z) => z.repId === repId && z.date === date);
@@ -9927,9 +9927,10 @@ function dailyStatementRows(repId, month, reports, daily, showAll) {
     const orders = ordBy[date] || 0;
     const adv = live.reduce((s, z) => s + dlAdv(z), 0), settled = live.reduce((s, z) => s + (+z.settled || 0), 0);
     const collected = live.reduce((s, z) => s + (+z.collected || 0), 0), handed = live.reduce((s, z) => s + (+z.handed || 0), 0);
+    const viol = live.reduce((s, z) => s + (+z.viol || 0), 0), fine = live.reduce((s, z) => s + (+z.fine || 0), 0), bonus = live.reduce((s, z) => s + (+z.bonus || 0), 0);
     advBal += adv - settled; gap += collected - handed;
-    T0.orders += orders; T0.adv += adv; T0.settled += settled; T0.collected += collected; T0.handed += handed;
-    if (showAll || orders || ents.length) rows.push({ date, wd: new Date(date + "T00:00:00Z").getUTCDay(), orders, adv, settled, collected, handed, advBal: r2(advBal), gap: r2(gap), note: ents.map((z) => z.note).filter(Boolean).join(" · "), pending: ents.some((z) => z.status === "pending"), rejected: ents.some((z) => z.status === "rejected"), fuel: live.reduce((s, z) => s + (+z.fuel || 0), 0) });
+    T0.viol += viol; T0.fine += fine; T0.bonus += bonus; T0.orders += orders; T0.adv += adv; T0.settled += settled; T0.collected += collected; T0.handed += handed;
+    if (showAll || orders || ents.length) rows.push({ viol, fine, bonus, date, wd: new Date(date + "T00:00:00Z").getUTCDay(), orders, adv, settled, collected, handed, advBal: r2(advBal), gap: r2(gap), note: ents.map((z) => z.note).filter(Boolean).join(" · "), pending: ents.some((z) => z.status === "pending"), rejected: ents.some((z) => z.status === "rejected"), fuel: live.reduce((s, z) => s + (+z.fuel || 0), 0) });
   }
   return { rows, tot: { ...T0, advBal: r2(advBal), gap: r2(gap) } };
 }
@@ -9941,10 +9942,10 @@ function RiderDayStatement({ lang, repId, month, reports, daily, showAll }) {
   if (!rows.length) return EMPTYT(lang);
   return (
     <div className="overflow-x-auto no-scrollbar">
-      <table className="w-full" style={{ minWidth: 820, borderCollapse: "collapse" }}>
+      <table className="w-full" style={{ minWidth: 1000, borderCollapse: "collapse" }}>
         <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
           {[Lx(lang, "التاريخ", "Date"), Lx(lang, "طلبات اليوم", "Orders"), Lx(lang, "خدّ سلفة", "Took (advance)"), Lx(lang, "سلّم من السلفة", "Returned of it"), Lx(lang, "رصيد السلفة عليه", "Advance balance"),
-            Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "كاش سلّمه", "Cash handed in"), Lx(lang, "عجز / فائض تراكمي", "Cash gap (cum.)"), Lx(lang, "ملاحظة", "Note")].map((h) => <th key={h} className={th}>{h}</th>)}
+            Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "كاش سلّمه", "Cash handed in"), Lx(lang, "عجز / فائض تراكمي", "Cash gap (cum.)"), Lx(lang, "مخالفات", "Violations"), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note")].map((h) => <th key={h} className={th}>{h}</th>)}
         </tr></thead>
         <tbody>{rows.map((r) => (
           <tr key={r.date} style={{ borderBottom: "1px solid var(--line)", background: r.pending ? "rgba(228,184,92,.08)" : r.rejected ? "rgba(232,131,122,.07)" : null }}>
@@ -9952,11 +9953,11 @@ function RiderDayStatement({ lang, repId, month, reports, daily, showAll }) {
               {r.pending && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار اعتماد المدير العام", "Awaiting GM")}</Chip></span>}{r.rejected && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
             <td className={td}>{dlN(r.orders)}</td><td className={td}>{dlN(r.adv)}</td><td className={td}>{dlN(r.settled)}</td>
             <td className={td}>{dlN(r.advBal, r.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(r.collected)}</td><td className={td}>{dlN(r.handed)}</td>
-            <td className={td}>{dlN(r.gap, dlColor(r.gap))}</td><td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{r.note}</td>
+            <td className={td}>{dlN(r.gap, dlColor(r.gap))}</td><td className={td}>{dlN(r.viol)}</td><td className={td}>{dlN(r.fine, r.fine ? "#C0443A" : null)}</td><td className={td}>{dlN(r.bonus, r.bonus ? "#0B5C46" : null)}</td><td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{r.note}</td>
           </tr>))}
           <tr style={{ background: "rgba(20,27,45,.05)" }}>
             <td className={td}><b>{Lx(lang, "الإجمالي", "Total")}</b></td><td className={td}>{dlN(tot.orders)}</td><td className={td}>{dlN(tot.adv)}</td><td className={td}>{dlN(tot.settled)}</td>
-            <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(tot.collected)}</td><td className={td}>{dlN(tot.handed)}</td><td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td><td className={td} />
+            <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(tot.collected)}</td><td className={td}>{dlN(tot.handed)}</td><td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td><td className={td}>{dlN(tot.viol)}</td><td className={td}>{dlN(tot.fine, tot.fine ? "#C0443A" : null)}</td><td className={td}>{dlN(tot.bonus, tot.bonus ? "#0B5C46" : null)}</td><td className={td} />
           </tr>
         </tbody>
       </table>
@@ -9982,25 +9983,48 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
   const byRep = {}; E.daily.filter((d) => d.date === date).forEach((d) => { byRep[d.repId] = d; });
   const ordersOn = (repId, dt) => reports.filter((rp) => rp.date === dt).reduce((s, rp) => s + rp.entries.filter((e) => e.id === repId).reduce((a, e) => a + (e.orders || 0), 0), 0);
   const riders = reps.filter((r) => r.status === "active" || byRep[r.id] || ordersOn(r.id, date) > 0).sort((a, b) => nm(a).localeCompare(nm(b)));
-  const KEYS = ["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled"];
   const val = (r, k) => (drafts[r.id] && drafts[r.id][k] !== undefined ? drafts[r.id][k] : byRep[r.id] && byRep[r.id][k] ? String(byRep[r.id][k]) : "");
   const setD = (r, k, v) => setDrafts((d) => ({ ...d, [r.id]: { ...(d[r.id] || {}), [k]: v } }));
+  const commit = (dt, r, e, oldId) => {
+    if (!isFin) return "";
+    const old = oldId ? E.daily.find((z) => z.id === oldId) : null;
+    if (closedMonth(dt.slice(0, 7)) || (old && closedMonth(old.date.slice(0, 7)))) return Lx(lang, "هذا الشهر مُقفل — افتح التسوية أولاً لتعديل اليومية.", "This month is closed — reopen the settlement first.");
+    const id = dlId(dt, r.id);
+    const empty = !(e.fuel || e.ordAdv || e.otherAdv || e.collected || e.handed || e.settled || e.viol || e.fine || e.bonus || e.note);
+    const needGm = dlAdv(e) > limit;
+    const entry = { id, date: dt, repId: r.id, name: r.ar, ...e, status: needGm ? "pending" : "approved", needGm, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
+    extUpd(setExt, "daily", (a) => { const n = a.filter((z) => z.id !== id && z.id !== oldId); return empty ? n : [entry, ...n]; });
+    logAudit(setAuditLog, role, oldId ? "daily_ledger_edit" : "daily_ledger_save", `${r.ar} ${dt}: adv ${dlAdv(e)} / collected ${e.collected} / handed ${e.handed} / fine ${e.fine || 0}${needGm ? " (GM approval)" : ""}`, actingEmployee);
+    return "";
+  };
   const saveRow = (r) => {
     if (!isFin) return;
-    if (closed) return setErr(Lx(lang, "هذا الشهر مُقفل — افتح التسوية أولاً لتعديل اليومية.", "This month is closed — reopen the settlement first."));
-    setErr("");
     const g = (k) => r2(+val(r, k) || 0);
-    const e = { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), note: String(drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (byRep[r.id] && byRep[r.id].note) || "").trim() };
-    const id = dlId(date, r.id);
-    const empty = !(e.fuel || e.ordAdv || e.otherAdv || e.collected || e.handed || e.settled || e.note);
-    if (empty) extUpd(setExt, "daily", (a) => a.filter((z) => z.id !== id));
-    else {
-      const needGm = dlAdv(e) > limit;
-      const entry = { id, date, repId: r.id, name: r.ar, ...e, status: needGm ? "pending" : "approved", needGm, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
-      extUpd(setExt, "daily", (a) => [entry, ...a.filter((z) => z.id !== id)]);
-      logAudit(setAuditLog, role, "daily_ledger_save", `${r.ar} ${date}: adv ${dlAdv(e)} / collected ${e.collected} / handed ${e.handed}${needGm ? " (GM approval)" : ""}`, actingEmployee);
-    }
-    setDrafts((d) => { const n = { ...d }; delete n[r.id]; return n; });
+    const e = { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: String(drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (byRep[r.id] && byRep[r.id].note) || "").trim() };
+    const m = commit(date, r, e, null);
+    setErr(m);
+    if (!m) setDrafts((d) => { const n = { ...d }; delete n[r.id]; return n; });
+  };
+  const F0 = { date: riyadhToday(), repId: "", fuel: "", ordAdv: "", otherAdv: "", settled: "", collected: "", handed: "", viol: "", fine: "", bonus: "", note: "", editId: null };
+  const [form, setForm] = useState(F0);
+  const [logRep, setLogRep] = useState("");
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const formClash = !form.editId && form.repId && E.daily.some((z) => z.id === dlId(form.date, form.repId));
+  const saveForm = () => {
+    const r = reps.find((z) => z.id === form.repId);
+    if (!r) return setErr(Lx(lang, "اختر المندوب أولاً.", "Pick a rider first."));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return setErr(Lx(lang, "اختر التاريخ.", "Pick the date."));
+    const g = (k) => r2(+form[k] || 0);
+    const m = commit(form.date, r, { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: form.note.trim() }, form.editId);
+    setErr(m); if (!m) setForm({ ...F0, date: form.date });
+  };
+  const editEntry = (d) => setForm({ date: d.date, repId: d.repId, fuel: d.fuel ? String(d.fuel) : "", ordAdv: d.ordAdv ? String(d.ordAdv) : "", otherAdv: d.otherAdv ? String(d.otherAdv) : "", settled: d.settled ? String(d.settled) : "", collected: d.collected ? String(d.collected) : "", handed: d.handed ? String(d.handed) : "", viol: d.viol ? String(d.viol) : "", fine: d.fine ? String(d.fine) : "", bonus: d.bonus ? String(d.bonus) : "", note: d.note || "", editId: d.id });
+  const delEntry = (d) => {
+    if (!isFin) return;
+    if (closedMonth(d.date.slice(0, 7))) return setErr(Lx(lang, "هذا الشهر مُقفل.", "This month is closed."));
+    extUpd(setExt, "daily", (a) => a.filter((z) => z.id !== d.id));
+    logAudit(setAuditLog, role, "daily_ledger_delete", `${d.name} ${d.date}`, actingEmployee);
+    if (form.editId === d.id) setForm(F0);
   };
   const saveAll = () => Object.keys(drafts).forEach((id) => { const r = reps.find((z) => z.id === id); if (r) saveRow(r); });
   const decide = (d, ok) => {
@@ -10019,9 +10043,10 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
     [Lx(lang, "المندوب", "Rider")]: nm(x.r), [Lx(lang, "المعرف", "ID")]: x.r.riderId || "", [Lx(lang, "الطلبات", "Orders")]: x.orders, [Lx(lang, "أجره قبل اليومية", "Earnings before ledger")]: x.net,
     [Lx(lang, "خدّ سلف", "Advances")]: x.d.adv, [Lx(lang, "سلّم منها", "Returned")]: x.d.settled, [Lx(lang, "رصيد السلف", "Advance balance")]: x.d.advBal,
     [Lx(lang, "كاش استلمه", "Cash collected")]: x.d.collected, [Lx(lang, "كاش سلّمه", "Cash handed")]: x.d.handed, [Lx(lang, "عجز(+)/فائض(−) الكاش", "Cash gap")]: x.d.gap,
-    [Lx(lang, "الصافي بعد اليومية", "Net after ledger")]: x.pay })), `daily-ledger-${month}`, month);
+    [Lx(lang, "مخالفات (عدد)", "Violations")]: x.d.viol, [Lx(lang, "غرامات اليومية", "Ledger fines")]: x.d.fines, [Lx(lang, "مكافآت اليومية", "Ledger bonus")]: x.d.bonus, [Lx(lang, "الصافي بعد اليومية", "Net after ledger")]: x.pay })), `daily-ledger-${month}`, month);
   const dayTot = riders.reduce((s, r) => { const d = byRep[r.id]; if (!d || !DL_LIVE(d)) return s; return { adv: s.adv + dlAdv(d), collected: s.collected + (+d.collected || 0), handed: s.handed + (+d.handed || 0), settled: s.settled + (+d.settled || 0) }; }, { adv: 0, collected: 0, handed: 0, settled: 0 });
   const dayOrders = riders.reduce((s, r) => s + ordersOn(r.id, date), 0);
+  const logRows = E.daily.filter((d) => (d.date || "").startsWith(month) && (!logRep || d.repId === logRep)).sort((p, q) => (p.date < q.date ? 1 : p.date > q.date ? -1 : 0));
   const pendingAll = E.daily.filter((d) => d.status === "pending");
   const th = "text-start text-[10.5px] font-bold px-2 py-2 whitespace-nowrap", td = "px-2 py-2 text-[12px] whitespace-nowrap";
   const Tile = ({ k, v, c }) => <div className="rounded-xl p-3" style={BOXS}><p className="text-[10.5px]" style={{ color: "var(--muted)" }}>{k}</p><p className="num text-[17px] font-extrabold" style={c ? { color: c } : null}>{fmt(r2(v))}</p></div>;
@@ -10032,12 +10057,12 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
         <div className="flex items-center gap-2.5 mb-1"><ClipboardList size={18} style={{ color: role.accent }} /><h2 className="text-[15px] font-extrabold">{Lx(lang, "يومية المناديب", "Riders' daily ledger")}</h2></div>
         <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "سجّل لكل مندوب كم خدّ (سلفة بنزين/طلبات) وكم سلّم (كاش وسلف). الطلبات تأتي تلقائياً من إدخال المشرف — لا تُدخل هنا. وفي نهاية الشهر يتجمع كل شيء ويُحسب تلقائياً في كشف التسوية.", "Record what each rider took (fuel/order advances) and returned (cash and advances). Orders come from the supervisor automatically. Everything rolls into the month-end settlement.")}</p>
       </div>
-      <XTabs tab={tab} setTab={setTab} tabs={[["day", Lx(lang, "اليوم", "Day sheet")], ["month", Lx(lang, "كشف الشهر", "Month statement")], ["pending", Lx(lang, "بانتظار المدير العام", "Awaiting GM"), pendingAll.length]]} />
+      <XTabs tab={tab} setTab={setTab} tabs={[["day", Lx(lang, "اليومية (بالتاريخ)", "Daily sheet")], ["log", Lx(lang, "سجل الحركات / تعديل", "Entries log / edit")], ["month", Lx(lang, "كشف الشهر", "Month statement")], ["pending", Lx(lang, "بانتظار المدير العام", "Awaiting GM"), pendingAll.length]]} />
       {err && <p className="text-[12px] font-bold" style={{ color: "#C0443A" }}>{err}</p>}
       {tab === "day" && (<>
         <div className="flex items-center gap-2 flex-wrap">
           <Btn onClick={() => shiftDay(-1)}>{Lx(lang, "اليوم السابق", "Prev")}</Btn>
-          <XIn type="date" value={date} onChange={(v) => { if (v) { setDate(v); setDrafts({}); } }} />
+          <span className="text-[12px] font-bold">{Lx(lang, "تاريخ اليومية:", "Ledger date:")}</span><XIn type="date" value={date} onChange={(v) => { if (v) { setDate(v); setDrafts({}); } }} />
           <Btn onClick={() => shiftDay(1)}>{Lx(lang, "اليوم التالي", "Next")}</Btn>
           {closed && <Chip tone="warn">{Lx(lang, "الشهر مُقفل", "Month closed")}</Chip>}
           {!isFin && <Chip tone="n">{Lx(lang, "عرض فقط — الإدخال للمحاسب", "View only — accountant enters")}</Chip>}
@@ -10051,10 +10076,10 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
         <Panel title={Lx(lang, `ورقة ${date}`, `Sheet ${date}`)}>
           {riders.length === 0 ? EMPTYT(lang) : (
             <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full" style={{ minWidth: 1180, borderCollapse: "collapse" }}>
+              <table className="w-full" style={{ minWidth: 1500, borderCollapse: "collapse" }}>
                 <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
                   {[Lx(lang, "المندوب", "Rider"), Lx(lang, "الطلبات", "Orders"), Lx(lang, "خدّ: بنزين", "Took: fuel"), Lx(lang, "خدّ: طلبات", "Took: orders"), Lx(lang, "خدّ: أخرى", "Took: other"),
-                    Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "سلّم كاش", "Cash handed"), Lx(lang, "سلّم من السلفة", "Returned of advance"), Lx(lang, "ملاحظة", "Note"), Lx(lang, "رصيد السلف", "Adv. balance"), Lx(lang, "فرق الكاش", "Cash gap"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}
+                    Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "سلّم كاش", "Cash handed"), Lx(lang, "سلّم من السلفة", "Returned of advance"), Lx(lang, "مخالفات (عدد)", "Violations #"), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note"), Lx(lang, "رصيد السلف", "Adv. balance"), Lx(lang, "فرق الكاش", "Cash gap"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}
                 </tr></thead>
                 <tbody>{riders.map((r) => {
                   const tot = dailyTotals(E.daily, r.id, mo, date);
@@ -10067,7 +10092,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                         {ent && ent.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip></span>}
                         {ent && ent.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
                       <td className={td}>{ord > 0 ? <Chip tone="ok" sm>{ord}</Chip> : <span style={{ color: "var(--muted)" }}>0</span>}</td>
-                      {["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled"].map((k) => <td key={k} className={td} style={{ minWidth: 92 }}>{inp(k)}</td>)}
+                      {["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled", "viol", "fine", "bonus"].map((k) => <td key={k} className={td} style={{ minWidth: 92 }}>{inp(k)}</td>)}
                       <td className={td} style={{ minWidth: 140 }}>{isFin && !closed ? <XIn value={drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (ent && ent.note) || ""} onChange={(v) => setD(r, "note", v)} cls="!px-2 !py-1.5 w-full" ph={Lx(lang, "اختياري", "optional")} /> : <span className="text-[11px]">{(ent && ent.note) || ""}</span>}</td>
                       <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td>
                       <td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td>
@@ -10077,6 +10102,44 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
               </table>
             </div>)}
           <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `السلف التي يتجاوز مجموعها ${fmt(limit)} ${sar} في اليوم لمندوب واحد تحتاج اعتماد المدير العام قبل أن تدخل الحساب. عمودا الرصيد والفرق تراكميان من أول الشهر حتى هذا اليوم.`, `Advances over ${fmt(limit)} ${sar} per rider per day need GM approval before they count. Balance and gap are cumulative from month start to this day.`)}</p>
+        </Panel>
+      </>)}
+      {tab === "log" && (<>
+        <Panel title={form.editId ? Lx(lang, "تعديل حركة", "Edit entry") : Lx(lang, "حركة جديدة (اختر التاريخ والمندوب)", "New entry (pick date & rider)")}>
+          {!isFin ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "الإدخال والتعديل للمحاسب فقط.", "Only the accountant enters and edits.")}</p> : (
+            <div className="space-y-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "التاريخ", "Date")}</span><XIn type="date" value={form.date} onChange={(v) => setF("date", v)} cls="w-full" /></label>
+                <label className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "المندوب", "Rider")}</span>
+                  <XSel value={form.repId} onChange={(v) => setF("repId", v)} cls="w-full"><option value="">{Lx(lang, "— اختر —", "— pick —")}</option>{reps.filter((r) => r.status === "active" || r.id === form.repId).map((r) => <option key={r.id} value={r.id}>{nm(r)}{r.riderId ? ` · ${r.riderId}` : ""}</option>)}</XSel></label>
+              </div>
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
+                {[["fuel", "خدّ: بنزين", "Took: fuel"], ["ordAdv", "خدّ: طلبات", "Took: orders"], ["otherAdv", "خدّ: أخرى", "Took: other"], ["settled", "سلّم من السلفة", "Returned of advance"], ["collected", "كاش استلمه", "Cash collected"], ["handed", "سلّم كاش", "Cash handed in"], ["viol", "مخالفات (عدد)", "Violations #"], ["fine", "غرامة (ريال)", "Fine"], ["bonus", "مكافأة (ريال)", "Bonus"]].map(([k, a, e]) => (
+                  <label key={k} className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, a, e)}</span><XIn type="number" value={form[k]} onChange={(v) => setF(k, v)} ph="0" cls="w-full" /></label>))}
+                <label className="block col-span-2"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "ملاحظة", "Note")}</span><XIn value={form.note} onChange={(v) => setF("note", v)} cls="w-full" /></label>
+              </div>
+              {formClash && <Chip tone="warn">{Lx(lang, "يوجد سجل لهذا المندوب بنفس التاريخ — الحفظ سيستبدله (للتعديل استخدم زر تعديل من الجدول).", "An entry exists for this rider and date — saving replaces it.")}</Chip>}
+              <div className="flex gap-2 flex-wrap"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveForm}>{form.editId ? Lx(lang, "حفظ التعديل", "Save changes") : formClash ? Lx(lang, "استبدال وحفظ", "Replace & save") : Lx(lang, "حفظ الحركة", "Save entry")}</Btn>
+                {form.editId && <Btn onClick={() => setForm(F0)}>{Lx(lang, "إلغاء التعديل", "Cancel edit")}</Btn>}</div>
+            </div>)}
+        </Panel>
+        <div className="flex items-center gap-2 flex-wrap"><XIn type="month" value={month} onChange={(v) => v && setMonth(v)} />
+          <XSel value={logRep} onChange={setLogRep}><option value="">{Lx(lang, "كل المناديب", "All riders")}</option>{reps.map((r) => <option key={r.id} value={r.id}>{nm(r)}</option>)}</XSel>
+          {closedMonth(month) && <Chip tone="warn">{Lx(lang, "الشهر مُقفل", "Month closed")}</Chip>}
+          <Btn icon={Download} onClick={() => exportToExcel(logRows.map((d) => ({ [Lx(lang, "التاريخ", "Date")]: d.date, [Lx(lang, "المندوب", "Rider")]: d.name, [Lx(lang, "بنزين", "Fuel")]: d.fuel || 0, [Lx(lang, "طلبات", "Orders adv")]: d.ordAdv || 0, [Lx(lang, "أخرى", "Other")]: d.otherAdv || 0, [Lx(lang, "سلّم من السلفة", "Returned")]: d.settled || 0, [Lx(lang, "كاش استلمه", "Cash collected")]: d.collected || 0, [Lx(lang, "كاش سلّمه", "Cash handed")]: d.handed || 0, [Lx(lang, "مخالفات", "Violations")]: d.viol || 0, [Lx(lang, "غرامة", "Fine")]: d.fine || 0, [Lx(lang, "مكافأة", "Bonus")]: d.bonus || 0, [Lx(lang, "ملاحظة", "Note")]: d.note || "", [Lx(lang, "الحالة", "Status")]: d.status })), `daily-entries-${month}`, month)}>{Lx(lang, "تصدير Excel", "Export Excel")}</Btn></div>
+        <Panel title={Lx(lang, `حركات ${month} (${logRows.length})`, `Entries ${month} (${logRows.length})`)}>
+          {logRows.length === 0 ? EMPTYT(lang) : (
+            <div className="overflow-x-auto no-scrollbar"><table className="w-full" style={{ minWidth: 1250, borderCollapse: "collapse" }}>
+              <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>{[Lx(lang, "التاريخ", "Date"), Lx(lang, "المندوب", "Rider"), Lx(lang, "بنزين", "Fuel"), Lx(lang, "طلبات", "Orders"), Lx(lang, "أخرى", "Other"), Lx(lang, "سلّم منها", "Returned"), Lx(lang, "كاش استلمه", "Cash in"), Lx(lang, "كاش سلّمه", "Cash out"), Lx(lang, "مخالفات", "Viol."), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}</tr></thead>
+              <tbody>{logRows.map((d) => (
+                <tr key={d.id} style={{ borderBottom: "1px solid var(--line)", background: form.editId === d.id ? "rgba(228,184,92,.10)" : null }}>
+                  <td className={td}><span className="num font-bold">{d.date}</span></td><td className={td}><b>{d.name}</b>{d.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM")}</Chip></span>}{d.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
+                  {["fuel", "ordAdv", "otherAdv", "settled", "collected", "handed", "viol", "fine", "bonus"].map((k) => <td key={k} className={td}>{dlN(d[k] || 0)}</td>)}
+                  <td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{d.note}</td>
+                  <td className={td}>{isFin && <span className="inline-flex gap-2"><button onClick={() => { editEntry(d); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
+                    <button onClick={() => delEntry(d)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{Lx(lang, "حذف", "Delete")}</button></span>}</td>
+                </tr>))}</tbody>
+            </table></div>)}
         </Panel>
       </>)}
       {tab === "month" && (<>
