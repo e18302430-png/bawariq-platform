@@ -9902,14 +9902,17 @@ Object.assign(T.ur.nav, { coach: "My Coach", myScore: "Score & Points", myWallet
    — كل شيء يتجمع تلقائياً في كشف نهاية الشهر
    ═══════════════════════════════════════════════════════════════ */
 const DL_LIVE = (d) => d.status !== "pending" && d.status !== "rejected";
-const dlAdv = (d) => (+d.fuel || 0) + (+d.ordAdv || 0) + (+d.otherAdv || 0);
+// «خدّ: طلبات» = تحويلات قيمة الطلبات للمندوب — مش سلفة: بتتقفل مع الكاش اللي يسلّمه، ومش داخلة في سقف السلفة ولا اعتماد المدير العام
+const dlTx = (d) => (Array.isArray(d.ordTx) ? d.ordTx : (+d.ordAdv || 0) > 0 ? [{ id: `${d.id}-L`, amount: +d.ordAdv, note: "", at: d.at || "", by: d.by || "" }] : []);
+const dlOrd = (d) => r2(dlTx(d).reduce((s, t) => s + (+t.amount || 0), 0));
+const dlAdv = (d) => (+d.fuel || 0) + (+d.otherAdv || 0);
 const dlId = (date, repId) => `DL-${date}-${repId}`;
 function dailyTotals(daily, repId, month, upTo) {
   const src = daily === undefined ? DAILY_CTX : daily || [];
   const list = src.filter((d) => d.repId === repId && (d.date || "").startsWith(month) && (!upTo || d.date <= upTo) && DL_LIVE(d));
-  const s = { adv: 0, settled: 0, collected: 0, handed: 0, viol: 0, fines: 0, bonus: 0, days: list.length };
-  list.forEach((d) => { s.adv += dlAdv(d); s.settled += +d.settled || 0; s.collected += +d.collected || 0; s.handed += +d.handed || 0; s.viol += +d.viol || 0; s.fines += +d.fine || 0; s.bonus += +d.bonus || 0; });
-  return { adv: r2(s.adv), settled: r2(s.settled), collected: r2(s.collected), handed: r2(s.handed), advBal: r2(s.adv - s.settled), gap: r2(s.collected - s.handed), viol: s.viol, fines: r2(s.fines), bonus: r2(s.bonus), days: s.days };
+  const s = { adv: 0, ord: 0, settled: 0, collected: 0, handed: 0, viol: 0, fines: 0, bonus: 0, days: list.length };
+  list.forEach((d) => { s.adv += dlAdv(d); s.ord += dlOrd(d); s.settled += +d.settled || 0; s.collected += +d.collected || 0; s.handed += +d.handed || 0; s.viol += +d.viol || 0; s.fines += +d.fine || 0; s.bonus += +d.bonus || 0; });
+  return { adv: r2(s.adv), settled: r2(s.settled), collected: r2(s.collected), handed: r2(s.handed), advBal: r2(s.adv - s.settled), ord: r2(s.ord), gap: r2(s.collected + s.ord - s.handed), viol: s.viol, fines: r2(s.fines), bonus: r2(s.bonus), days: s.days };
 }
 const DL_WD = { ar: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 const dlSar = (lang) => Lx(lang, "ر.س", "SAR");
@@ -9919,18 +9922,19 @@ const dlN = (v, col) => <span className="num font-bold" style={col ? { color: co
 function dailyStatementRows(repId, month, reports, daily, showAll) {
   const nd = monthDays(month), ordBy = {};
   reports.forEach((rp) => { if (!(rp.date || "").startsWith(month)) return; rp.entries.forEach((e) => { if (e.id === repId) ordBy[rp.date] = (ordBy[rp.date] || 0) + (e.orders || 0); }); });
-  let advBal = 0, gap = 0; const rows = [], T0 = { orders: 0, adv: 0, settled: 0, collected: 0, handed: 0, viol: 0, fine: 0, bonus: 0 };
+  let advBal = 0, gap = 0; const rows = [], T0 = { orders: 0, ord: 0, adv: 0, settled: 0, collected: 0, handed: 0, viol: 0, fine: 0, bonus: 0 };
   for (let d = 1; d <= nd; d++) {
     const date = `${month}-${String(d).padStart(2, "0")}`;
     const ents = (daily || []).filter((z) => z.repId === repId && z.date === date);
     const live = ents.filter(DL_LIVE);
     const orders = ordBy[date] || 0;
     const adv = live.reduce((s, z) => s + dlAdv(z), 0), settled = live.reduce((s, z) => s + (+z.settled || 0), 0);
+    const ord = r2(live.reduce((s, z) => s + dlOrd(z), 0));
     const collected = live.reduce((s, z) => s + (+z.collected || 0), 0), handed = live.reduce((s, z) => s + (+z.handed || 0), 0);
     const viol = live.reduce((s, z) => s + (+z.viol || 0), 0), fine = live.reduce((s, z) => s + (+z.fine || 0), 0), bonus = live.reduce((s, z) => s + (+z.bonus || 0), 0);
-    advBal += adv - settled; gap += collected - handed;
-    T0.viol += viol; T0.fine += fine; T0.bonus += bonus; T0.orders += orders; T0.adv += adv; T0.settled += settled; T0.collected += collected; T0.handed += handed;
-    if (showAll || orders || ents.length) rows.push({ viol, fine, bonus, date, wd: new Date(date + "T00:00:00Z").getUTCDay(), orders, adv, settled, collected, handed, advBal: r2(advBal), gap: r2(gap), note: ents.map((z) => z.note).filter(Boolean).join(" · "), pending: ents.some((z) => z.status === "pending"), rejected: ents.some((z) => z.status === "rejected"), fuel: live.reduce((s, z) => s + (+z.fuel || 0), 0) });
+    advBal += adv - settled; gap += collected + ord - handed;
+    T0.viol += viol; T0.fine += fine; T0.bonus += bonus; T0.orders += orders; T0.adv += adv; T0.ord += ord; T0.settled += settled; T0.collected += collected; T0.handed += handed;
+    if (showAll || orders || ents.length) rows.push({ viol, fine, bonus, date, wd: new Date(date + "T00:00:00Z").getUTCDay(), orders, adv, ord, settled, collected, handed, advBal: r2(advBal), gap: r2(gap), note: ents.map((z) => z.note).filter(Boolean).join(" · "), pending: ents.some((z) => z.status === "pending"), rejected: ents.some((z) => z.status === "rejected"), fuel: live.reduce((s, z) => s + (+z.fuel || 0), 0) });
   }
   return { rows, tot: { ...T0, advBal: r2(advBal), gap: r2(gap) } };
 }
@@ -9945,23 +9949,23 @@ function RiderDayStatement({ lang, repId, month, reports, daily, showAll }) {
       <table className="w-full" style={{ minWidth: 1000, borderCollapse: "collapse" }}>
         <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>
           {[Lx(lang, "التاريخ", "Date"), Lx(lang, "طلبات اليوم", "Orders"), Lx(lang, "خدّ سلفة", "Took (advance)"), Lx(lang, "سلّم من السلفة", "Returned of it"), Lx(lang, "رصيد السلفة عليه", "Advance balance"),
-            Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "كاش سلّمه", "Cash handed in"), Lx(lang, "عجز / فائض تراكمي", "Cash gap (cum.)"), Lx(lang, "مخالفات", "Violations"), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note")].map((h) => <th key={h} className={th}>{h}</th>)}
+            Lx(lang, "كاش استلمه", "Cash collected"), Lx(lang, "حُوّل له (قيمة طلبات)", "Order transfers"), Lx(lang, "كاش سلّمه", "Cash handed in"), Lx(lang, "عجز / فائض تراكمي", "Cash gap (cum.)"), Lx(lang, "مخالفات", "Violations"), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note")].map((h) => <th key={h} className={th}>{h}</th>)}
         </tr></thead>
         <tbody>{rows.map((r) => (
           <tr key={r.date} style={{ borderBottom: "1px solid var(--line)", background: r.pending ? "rgba(228,184,92,.08)" : r.rejected ? "rgba(232,131,122,.07)" : null }}>
             <td className={td}><span className="num font-bold">{r.date.slice(8)}</span> <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>{(DL_WD[lang === "en" ? "en" : "ar"])[r.wd]}</span>
               {r.pending && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار اعتماد المدير العام", "Awaiting GM")}</Chip></span>}{r.rejected && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
             <td className={td}>{dlN(r.orders)}</td><td className={td}>{dlN(r.adv)}</td><td className={td}>{dlN(r.settled)}</td>
-            <td className={td}>{dlN(r.advBal, r.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(r.collected)}</td><td className={td}>{dlN(r.handed)}</td>
+            <td className={td}>{dlN(r.advBal, r.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(r.collected)}</td><td className={td}>{dlN(r.ord, r.ord ? "#8A611E" : null)}</td><td className={td}>{dlN(r.handed)}</td>
             <td className={td}>{dlN(r.gap, dlColor(r.gap))}</td><td className={td}>{dlN(r.viol)}</td><td className={td}>{dlN(r.fine, r.fine ? "#C0443A" : null)}</td><td className={td}>{dlN(r.bonus, r.bonus ? "#0B5C46" : null)}</td><td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{r.note}</td>
           </tr>))}
           <tr style={{ background: "rgba(20,27,45,.05)" }}>
             <td className={td}><b>{Lx(lang, "الإجمالي", "Total")}</b></td><td className={td}>{dlN(tot.orders)}</td><td className={td}>{dlN(tot.adv)}</td><td className={td}>{dlN(tot.settled)}</td>
-            <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(tot.collected)}</td><td className={td}>{dlN(tot.handed)}</td><td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td><td className={td}>{dlN(tot.viol)}</td><td className={td}>{dlN(tot.fine, tot.fine ? "#C0443A" : null)}</td><td className={td}>{dlN(tot.bonus, tot.bonus ? "#0B5C46" : null)}</td><td className={td} />
+            <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td><td className={td}>{dlN(tot.collected)}</td><td className={td}>{dlN(tot.ord)}</td><td className={td}>{dlN(tot.handed)}</td><td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td><td className={td}>{dlN(tot.viol)}</td><td className={td}>{dlN(tot.fine, tot.fine ? "#C0443A" : null)}</td><td className={td}>{dlN(tot.bonus, tot.bonus ? "#0B5C46" : null)}</td><td className={td} />
           </tr>
         </tbody>
       </table>
-      <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `رصيد السلفة = ما خدّه − ما سلّمه منها. عجز الكاش = كاش استلمه من العملاء − كاش سلّمه للشركة (بالسالب = فائض له). كلها بـ ${sar} وتُخصم تلقائياً في كشف نهاية الشهر. الطلبات من إدخال المشرف.`, `Advance balance = took − returned of it. Cash gap = collected from customers − handed in (negative = surplus owed to him), in ${sar}. Deducted automatically in the month-end statement. Orders come from the supervisor.`)}</p>
+      <p className="text-[11px] mt-2" style={{ color: "var(--muted)" }}>{Lx(lang, `رصيد السلفة = ما خدّه − ما سلّمه منها. عجز الكاش = كاش استلمه من العملاء + تحويلات قيمة الطلبات − كاش سلّمه للشركة (بالسالب = فائض له). كلها بـ ${sar} وتُخصم تلقائياً في كشف نهاية الشهر. الطلبات من إدخال المشرف.`, `Advance balance = took − returned of it. Cash gap = collected from customers + order transfers − handed in (negative = surplus owed to him), in ${sar}. Deducted automatically in the month-end statement. Orders come from the supervisor.`)}</p>
     </div>
   );
 }
@@ -9985,22 +9989,26 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
   const riders = reps.filter((r) => r.status === "active" || byRep[r.id] || ordersOn(r.id, date) > 0).sort((a, b) => nm(a).localeCompare(nm(b)));
   const val = (r, k) => (drafts[r.id] && drafts[r.id][k] !== undefined ? drafts[r.id][k] : byRep[r.id] && byRep[r.id][k] ? String(byRep[r.id][k]) : "");
   const setD = (r, k, v) => setDrafts((d) => ({ ...d, [r.id]: { ...(d[r.id] || {}), [k]: v } }));
-  const commit = (dt, r, e, oldId) => {
+  const commit = (dt, r, e, oldId, keep, act) => {
     if (!isFin) return "";
     const old = oldId ? E.daily.find((z) => z.id === oldId) : null;
     if (closedMonth(dt.slice(0, 7)) || (old && closedMonth(old.date.slice(0, 7)))) return Lx(lang, "هذا الشهر مُقفل — افتح التسوية أولاً لتعديل اليومية.", "This month is closed — reopen the settlement first.");
     const id = dlId(dt, r.id);
-    const empty = !(e.fuel || e.ordAdv || e.otherAdv || e.collected || e.handed || e.settled || e.viol || e.fine || e.bonus || e.note);
+    const prev = old || E.daily.find((z) => z.id === id);
+    const ordTx = e.ordTx !== undefined ? e.ordTx : prev ? dlTx(prev) : [];
+    const ordAdv = r2(ordTx.reduce((s, t) => s + (+t.amount || 0), 0));
+    const empty = !(e.fuel || ordAdv || e.otherAdv || e.collected || e.handed || e.settled || e.viol || e.fine || e.bonus || e.note);
     const needGm = dlAdv(e) > limit;
-    const entry = { id, date: dt, repId: r.id, name: r.ar, ...e, status: needGm ? "pending" : "approved", needGm, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
+    const entry = keep && prev && prev.id === id ? { ...prev, ordTx, ordAdv, by: byName(role, actingEmployee), at: riyadhNow().toISOString() }
+      : { id, date: dt, repId: r.id, name: r.ar, ...e, ordTx, ordAdv, status: needGm ? "pending" : "approved", needGm, by: byName(role, actingEmployee), at: riyadhNow().toISOString() };
     extUpd(setExt, "daily", (a) => { const n = a.filter((z) => z.id !== id && z.id !== oldId); return empty ? n : [entry, ...n]; });
-    logAudit(setAuditLog, role, oldId ? "daily_ledger_edit" : "daily_ledger_save", `${r.ar} ${dt}: adv ${dlAdv(e)} / collected ${e.collected} / handed ${e.handed} / fine ${e.fine || 0}${needGm ? " (GM approval)" : ""}`, actingEmployee);
+    logAudit(setAuditLog, role, act || (oldId ? "daily_ledger_edit" : "daily_ledger_save"), `${r.ar} ${dt}: adv ${dlAdv(e)} / order transfers ${ordAdv} / collected ${e.collected} / handed ${e.handed} / fine ${e.fine || 0}${needGm ? " (GM approval)" : ""}`, actingEmployee);
     return "";
   };
   const saveRow = (r) => {
     if (!isFin) return;
     const g = (k) => r2(+val(r, k) || 0);
-    const e = { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: String(drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (byRep[r.id] && byRep[r.id].note) || "").trim() };
+    const e = { fuel: g("fuel"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: String(drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (byRep[r.id] && byRep[r.id].note) || "").trim() };
     const m = commit(date, r, e, null);
     setErr(m);
     if (!m) setDrafts((d) => { const n = { ...d }; delete n[r.id]; return n; });
@@ -10015,7 +10023,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
     if (!r) return setErr(Lx(lang, "اختر المندوب أولاً.", "Pick a rider first."));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) return setErr(Lx(lang, "اختر التاريخ.", "Pick the date."));
     const g = (k) => r2(+form[k] || 0);
-    const m = commit(form.date, r, { fuel: g("fuel"), ordAdv: g("ordAdv"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: form.note.trim() }, form.editId);
+    const m = commit(form.date, r, { fuel: g("fuel"), otherAdv: g("otherAdv"), collected: g("collected"), handed: g("handed"), settled: g("settled"), viol: g("viol"), fine: g("fine"), bonus: g("bonus"), note: form.note.trim() }, form.editId);
     setErr(m); if (!m) setForm({ ...F0, date: form.date });
   };
   const editEntry = (d) => setForm({ date: d.date, repId: d.repId, fuel: d.fuel ? String(d.fuel) : "", ordAdv: d.ordAdv ? String(d.ordAdv) : "", otherAdv: d.otherAdv ? String(d.otherAdv) : "", settled: d.settled ? String(d.settled) : "", collected: d.collected ? String(d.collected) : "", handed: d.handed ? String(d.handed) : "", viol: d.viol ? String(d.viol) : "", fine: d.fine ? String(d.fine) : "", bonus: d.bonus ? String(d.bonus) : "", note: d.note || "", editId: d.id });
@@ -10026,6 +10034,36 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
     logAudit(setAuditLog, role, "daily_ledger_delete", `${d.name} ${d.date}`, actingEmployee);
     if (form.editId === d.id) setForm(F0);
   };
+  // ===== تحويلات قيمة الطلبات (كل تحويل سطر مستقل — المحاسب يضيف ويعدّل ويحذف) =====
+  const TX0 = { amount: "", note: "", editId: null };
+  const [tx, setTx] = useState(null);
+  const [txF, setTxF] = useState(TX0);
+  const [txDel, setTxDel] = useState(null);
+  const txEnt = tx ? E.daily.find((z) => z.id === dlId(tx.date, tx.repId)) : null;
+  const txRep = tx ? reps.find((z) => z.id === tx.repId) : null;
+  const txList = txEnt ? dlTx(txEnt) : [];
+  const txLocked = tx ? closedMonth(tx.date.slice(0, 7)) : false;
+  const openTx = (repId, dt) => { setTx({ repId, date: dt }); setTxF(TX0); setTxDel(null); setErr(""); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const writeTx = (list, act) => {
+    if (!isFin || !tx || !txRep) return;
+    const b = txEnt || {};
+    const e = { fuel: +b.fuel || 0, otherAdv: +b.otherAdv || 0, collected: +b.collected || 0, handed: +b.handed || 0, settled: +b.settled || 0, viol: +b.viol || 0, fine: +b.fine || 0, bonus: +b.bonus || 0, note: b.note || "", ordTx: list };
+    const m = commit(tx.date, txRep, e, null, true, act);
+    setErr(m);
+    if (!m) { setTxF(TX0); setTxDel(null); }
+  };
+  const saveTx = () => {
+    const amt = r2(+txF.amount || 0);
+    if (!(amt > 0)) return setErr(Lx(lang, "اكتب مبلغ التحويل.", "Enter the transfer amount."));
+    const by = byName(role, actingEmployee), at = riyadhNow().toISOString();
+    const list = txF.editId ? txList.map((t) => (t.id === txF.editId ? { ...t, amount: amt, note: txF.note.trim(), editedBy: by, editedAt: at } : t))
+      : [...txList, { id: `TX-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, amount: amt, note: txF.note.trim(), by, at }];
+    writeTx(list, txF.editId ? "daily_order_transfer_edit" : "daily_order_transfer_add");
+  };
+  const delTx = (t) => { if (txDel !== t.id) return setTxDel(t.id); writeTx(txList.filter((z) => z.id !== t.id), "daily_order_transfer_delete"); };
+  const clearTx = () => { if (txDel !== "*") return setTxDel("*"); writeTx([], "daily_order_transfer_clear"); };
+  const txCell = (repId, dt, ent) => { const sum = ent ? dlOrd(ent) : 0, n = ent ? dlTx(ent).length : 0;
+    return <button onClick={() => openTx(repId, dt)} className="text-[12px] font-bold underline" style={{ color: sum ? "#8A611E" : "var(--muted)" }}>{sum ? <span className="num">{fmt(sum)}{n > 1 ? ` (${n})` : ""}</span> : isFin && !closedMonth(dt.slice(0, 7)) ? Lx(lang, "+ تحويل", "+ transfer") : "—"}</button>; };
   const saveAll = () => Object.keys(drafts).forEach((id) => { const r = reps.find((z) => z.id === id); if (r) saveRow(r); });
   const decide = (d, ok) => {
     if (!isGm) return;
@@ -10042,9 +10080,9 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
   const exportMonth = () => exportToExcel(mRows.map((x) => ({
     [Lx(lang, "المندوب", "Rider")]: nm(x.r), [Lx(lang, "المعرف", "ID")]: x.r.riderId || "", [Lx(lang, "الطلبات", "Orders")]: x.orders, [Lx(lang, "أجره قبل اليومية", "Earnings before ledger")]: x.net,
     [Lx(lang, "خدّ سلف", "Advances")]: x.d.adv, [Lx(lang, "سلّم منها", "Returned")]: x.d.settled, [Lx(lang, "رصيد السلف", "Advance balance")]: x.d.advBal,
-    [Lx(lang, "كاش استلمه", "Cash collected")]: x.d.collected, [Lx(lang, "كاش سلّمه", "Cash handed")]: x.d.handed, [Lx(lang, "عجز(+)/فائض(−) الكاش", "Cash gap")]: x.d.gap,
+    [Lx(lang, "تحويلات قيمة الطلبات", "Order transfers")]: x.d.ord, [Lx(lang, "كاش استلمه", "Cash collected")]: x.d.collected, [Lx(lang, "كاش سلّمه", "Cash handed")]: x.d.handed, [Lx(lang, "عجز(+)/فائض(−) الكاش", "Cash gap")]: x.d.gap,
     [Lx(lang, "مخالفات (عدد)", "Violations")]: x.d.viol, [Lx(lang, "غرامات اليومية", "Ledger fines")]: x.d.fines, [Lx(lang, "مكافآت اليومية", "Ledger bonus")]: x.d.bonus, [Lx(lang, "الصافي بعد اليومية", "Net after ledger")]: x.pay })), `daily-ledger-${month}`, month);
-  const dayTot = riders.reduce((s, r) => { const d = byRep[r.id]; if (!d || !DL_LIVE(d)) return s; return { adv: s.adv + dlAdv(d), collected: s.collected + (+d.collected || 0), handed: s.handed + (+d.handed || 0), settled: s.settled + (+d.settled || 0) }; }, { adv: 0, collected: 0, handed: 0, settled: 0 });
+  const dayTot = riders.reduce((s, r) => { const d = byRep[r.id]; if (!d || !DL_LIVE(d)) return s; return { adv: s.adv + dlAdv(d), ord: s.ord + dlOrd(d), collected: s.collected + (+d.collected || 0), handed: s.handed + (+d.handed || 0), settled: s.settled + (+d.settled || 0) }; }, { adv: 0, ord: 0, collected: 0, handed: 0, settled: 0 });
   const dayOrders = riders.reduce((s, r) => s + ordersOn(r.id, date), 0);
   const logRows = E.daily.filter((d) => (d.date || "").startsWith(month) && (!logRep || d.repId === logRep)).sort((p, q) => (p.date < q.date ? 1 : p.date > q.date ? -1 : 0));
   const pendingAll = E.daily.filter((d) => d.status === "pending");
@@ -10059,6 +10097,38 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
       </div>
       <XTabs tab={tab} setTab={setTab} tabs={[["day", Lx(lang, "اليومية (بالتاريخ)", "Daily sheet")], ["log", Lx(lang, "سجل الحركات / تعديل", "Entries log / edit")], ["month", Lx(lang, "كشف الشهر", "Month statement")], ["pending", Lx(lang, "بانتظار المدير العام", "Awaiting GM"), pendingAll.length]]} />
       {err && <p className="text-[12px] font-bold" style={{ color: "#C0443A" }}>{err}</p>}
+      {tx && txRep && (
+        <Panel title={Lx(lang, `تحويلات قيمة الطلبات — ${nm(txRep)} · ${tx.date}`, `Order-value transfers — ${nm(txRep)} · ${tx.date}`)}>
+          <div className="space-y-3">
+            <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, "المبالغ اللي اتحوّلت للمندوب عشان يدفع قيمة الطلبات. مش سلفة: بتتقفل مع الكاش اللي يسلّمه للشركة (تظهر في عمود فرق الكاش)، ومش داخلة في سقف السلفة ولا اعتماد المدير العام. لا تُدخل كاش هذه الطلبات مرة تانية في «كاش استلمه».", "Money transferred to the rider to pay for orders. Not an advance: it closes against the cash he hands in (shown in the cash gap), and is outside the advance cap and GM approval. Do not enter the cash of these orders again under \"Cash collected\".")}</p>
+            {txLocked && <Chip tone="warn">{Lx(lang, "الشهر مُقفل — افتح التسوية أولاً للتعديل.", "Month closed — reopen the settlement to edit.")}</Chip>}
+            {txList.length === 0 ? <p className="text-[12px]" style={{ color: "var(--muted)" }}>{Lx(lang, "لا توجد تحويلات لهذا اليوم.", "No transfers for this day.")}</p> : (
+              <div className="overflow-x-auto no-scrollbar"><table className="w-full" style={{ minWidth: 520, borderCollapse: "collapse" }}>
+                <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>{["#", Lx(lang, "المبلغ", "Amount"), Lx(lang, "ملاحظة", "Note"), Lx(lang, "أدخلها", "By"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}</tr></thead>
+                <tbody>{txList.map((t, i) => (
+                  <tr key={t.id} style={{ borderBottom: "1px solid var(--line)", background: txF.editId === t.id ? "rgba(228,184,92,.10)" : null }}>
+                    <td className={td}><span className="num">{i + 1}</span></td><td className={td}>{dlN(t.amount)}</td>
+                    <td className={td + " text-[11.5px]"} style={{ whiteSpace: "normal" }}>{t.note || "—"}</td>
+                    <td className={td + " text-[11px]"} style={{ color: "var(--muted)" }}>{t.by || ""}{t.at ? <span className="num"> · {String(t.at).slice(11, 16)}</span> : null}{t.editedBy ? ` · ${Lx(lang, "عُدّل", "edited")}` : ""}</td>
+                    <td className={td}>{isFin && !txLocked && <span className="inline-flex gap-2">
+                      <button onClick={() => { setTxF({ amount: String(t.amount), note: t.note || "", editId: t.id }); setTxDel(null); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
+                      <button onClick={() => delTx(t)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{txDel === t.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span>}</td>
+                  </tr>))}
+                  <tr style={{ background: "rgba(20,27,45,.05)" }}><td className={td}><b>{Lx(lang, "الإجمالي", "Total")}</b></td><td className={td}>{dlN(dlOrd(txEnt))}</td><td className={td} colSpan={3}></td></tr>
+                </tbody>
+              </table></div>)}
+            <div className="flex gap-2 flex-wrap items-end">
+              {isFin && !txLocked && (<>
+                <label className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "مبلغ التحويل", "Amount")}</span><XIn type="number" value={txF.amount} onChange={(v) => setTxF((f) => ({ ...f, amount: v }))} ph="0" /></label>
+                <label className="block flex-1 min-w-[160px]"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "ملاحظة (رقم الطلب / المطعم)", "Note (order # / restaurant)")}</span><XIn value={txF.note} onChange={(v) => setTxF((f) => ({ ...f, note: v }))} cls="w-full" ph={Lx(lang, "اختياري", "optional")} /></label>
+                <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveTx}>{txF.editId ? Lx(lang, "حفظ التعديل", "Save changes") : Lx(lang, "إضافة تحويل", "Add transfer")}</Btn>
+                {txF.editId && <Btn onClick={() => setTxF(TX0)}>{Lx(lang, "إلغاء التعديل", "Cancel edit")}</Btn>}
+                {txList.length > 0 && !txF.editId && <Btn variant="danger" onClick={clearTx}>{txDel === "*" ? Lx(lang, "تأكيد حذف الكل", "Confirm delete all") : Lx(lang, "حذف كل التحويلات", "Delete all")}</Btn>}
+              </>)}
+              <Btn onClick={() => { setTx(null); setTxDel(null); }}>{Lx(lang, "إغلاق", "Close")}</Btn>
+            </div>
+          </div>
+        </Panel>)}
       {tab === "day" && (<>
         <div className="flex items-center gap-2 flex-wrap">
           <Btn onClick={() => shiftDay(-1)}>{Lx(lang, "اليوم السابق", "Prev")}</Btn>
@@ -10068,10 +10138,11 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
           {!isFin && <Chip tone="n">{Lx(lang, "عرض فقط — الإدخال للمحاسب", "View only — accountant enters")}</Chip>}
           {isFin && Object.keys(drafts).length > 0 && <Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveAll}>{Lx(lang, `حفظ الكل (${Object.keys(drafts).length})`, `Save all (${Object.keys(drafts).length})`)}</Btn>}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
           <Tile k={Lx(lang, "طلبات اليوم (من المشرف)", "Orders (supervisor)")} v={dayOrders} /><Tile k={Lx(lang, "سلف اليوم", "Advances")} v={dayTot.adv} />
           <Tile k={Lx(lang, "كاش استلموه", "Cash collected")} v={dayTot.collected} /><Tile k={Lx(lang, "كاش سلّموه", "Cash handed in")} v={dayTot.handed} />
-          <Tile k={Lx(lang, "فرق الكاش اليوم", "Cash gap today")} v={dayTot.collected - dayTot.handed} c={dlColor(dayTot.collected - dayTot.handed)} />
+          <Tile k={Lx(lang, "تحويلات طلبات اليوم", "Order transfers")} v={dayTot.ord} />
+          <Tile k={Lx(lang, "فرق الكاش اليوم", "Cash gap today")} v={dayTot.collected + dayTot.ord - dayTot.handed} c={dlColor(dayTot.collected + dayTot.ord - dayTot.handed)} />
         </div>
         <Panel title={Lx(lang, `ورقة ${date}`, `Sheet ${date}`)}>
           {riders.length === 0 ? EMPTYT(lang) : (
@@ -10092,7 +10163,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                         {ent && ent.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip></span>}
                         {ent && ent.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
                       <td className={td}>{ord > 0 ? <Chip tone="ok" sm>{ord}</Chip> : <span style={{ color: "var(--muted)" }}>0</span>}</td>
-                      {["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled", "viol", "fine", "bonus"].map((k) => <td key={k} className={td} style={{ minWidth: 92 }}>{inp(k)}</td>)}
+                      {["fuel", "ordAdv", "otherAdv", "collected", "handed", "settled", "viol", "fine", "bonus"].map((k) => <td key={k} className={td} style={{ minWidth: 92 }}>{k === "ordAdv" ? txCell(r.id, date, ent) : inp(k)}</td>)}
                       <td className={td} style={{ minWidth: 140 }}>{isFin && !closed ? <XIn value={drafts[r.id] && drafts[r.id].note !== undefined ? drafts[r.id].note : (ent && ent.note) || ""} onChange={(v) => setD(r, "note", v)} cls="!px-2 !py-1.5 w-full" ph={Lx(lang, "اختياري", "optional")} /> : <span className="text-[11px]">{(ent && ent.note) || ""}</span>}</td>
                       <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td>
                       <td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td>
@@ -10114,13 +10185,14 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                   <XSel value={form.repId} onChange={(v) => setF("repId", v)} cls="w-full"><option value="">{Lx(lang, "— اختر —", "— pick —")}</option>{reps.filter((r) => r.status === "active" || r.id === form.repId).map((r) => <option key={r.id} value={r.id}>{nm(r)}{r.riderId ? ` · ${r.riderId}` : ""}</option>)}</XSel></label>
               </div>
               <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
-                {[["fuel", "خدّ: بنزين", "Took: fuel"], ["ordAdv", "خدّ: طلبات", "Took: orders"], ["otherAdv", "خدّ: أخرى", "Took: other"], ["settled", "سلّم من السلفة", "Returned of advance"], ["collected", "كاش استلمه", "Cash collected"], ["handed", "سلّم كاش", "Cash handed in"], ["viol", "مخالفات (عدد)", "Violations #"], ["fine", "غرامة (ريال)", "Fine"], ["bonus", "مكافأة (ريال)", "Bonus"]].map(([k, a, e]) => (
+                {[["fuel", "خدّ: بنزين", "Took: fuel"], ["otherAdv", "خدّ: أخرى", "Took: other"], ["settled", "سلّم من السلفة", "Returned of advance"], ["collected", "كاش استلمه", "Cash collected"], ["handed", "سلّم كاش", "Cash handed in"], ["viol", "مخالفات (عدد)", "Violations #"], ["fine", "غرامة (ريال)", "Fine"], ["bonus", "مكافأة (ريال)", "Bonus"]].map(([k, a, e]) => (
                   <label key={k} className="block"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, a, e)}</span><XIn type="number" value={form[k]} onChange={(v) => setF(k, v)} ph="0" cls="w-full" /></label>))}
                 <label className="block col-span-2"><span className="text-[11px] font-bold" style={{ color: "var(--muted)" }}>{Lx(lang, "ملاحظة", "Note")}</span><XIn value={form.note} onChange={(v) => setF("note", v)} cls="w-full" /></label>
               </div>
               {formClash && <Chip tone="warn">{Lx(lang, "يوجد سجل لهذا المندوب بنفس التاريخ — الحفظ سيستبدله (للتعديل استخدم زر تعديل من الجدول).", "An entry exists for this rider and date — saving replaces it.")}</Chip>}
               <div className="flex gap-2 flex-wrap"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={saveForm}>{form.editId ? Lx(lang, "حفظ التعديل", "Save changes") : formClash ? Lx(lang, "استبدال وحفظ", "Replace & save") : Lx(lang, "حفظ الحركة", "Save entry")}</Btn>
-                {form.editId && <Btn onClick={() => setForm(F0)}>{Lx(lang, "إلغاء التعديل", "Cancel edit")}</Btn>}</div>
+                {form.editId && <Btn onClick={() => setForm(F0)}>{Lx(lang, "إلغاء التعديل", "Cancel edit")}</Btn>}
+                {form.repId && /^\d{4}-\d{2}-\d{2}$/.test(form.date) && <Btn onClick={() => openTx(form.repId, form.date)}>{Lx(lang, "خدّ: طلبات (تحويلات قيمة الطلبات)", "Took: orders (order transfers)")}</Btn>}</div>
             </div>)}
         </Panel>
         <div className="flex items-center gap-2 flex-wrap"><XIn type="month" value={month} onChange={(v) => v && setMonth(v)} />
@@ -10134,7 +10206,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
               <tbody>{logRows.map((d) => (
                 <tr key={d.id} style={{ borderBottom: "1px solid var(--line)", background: form.editId === d.id ? "rgba(228,184,92,.10)" : null }}>
                   <td className={td}><span className="num font-bold">{d.date}</span></td><td className={td}><b>{d.name}</b>{d.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM")}</Chip></span>}{d.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
-                  {["fuel", "ordAdv", "otherAdv", "settled", "collected", "handed", "viol", "fine", "bonus"].map((k) => <td key={k} className={td}>{dlN(d[k] || 0)}</td>)}
+                  {["fuel", "ordAdv", "otherAdv", "settled", "collected", "handed", "viol", "fine", "bonus"].map((k) => <td key={k} className={td}>{k === "ordAdv" ? txCell(d.repId, d.date, d) : dlN(d[k] || 0)}</td>)}
                   <td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{d.note}</td>
                   <td className={td}>{isFin && <span className="inline-flex gap-2"><button onClick={() => { editEntry(d); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
                     <button onClick={() => delEntry(d)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{Lx(lang, "حذف", "Delete")}</button></span>}</td>
@@ -10181,7 +10253,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
           {pendingAll.length === 0 ? EMPTYT(lang) : <div className="space-y-3">{pendingAll.map((d) => (
             <div key={d.id} className="rounded-2xl p-3" style={BOXS}>
               <div className="flex items-center justify-between"><p className="text-[13.5px] font-extrabold">{d.name} · {d.date}</p><p className="num text-[18px] font-extrabold">{fmt(dlAdv(d))} {sar}</p></div>
-              <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, `بنزين ${fmt(d.fuel || 0)} · طلبات ${fmt(d.ordAdv || 0)} · أخرى ${fmt(d.otherAdv || 0)}`, `Fuel ${fmt(d.fuel || 0)} · Orders ${fmt(d.ordAdv || 0)} · Other ${fmt(d.otherAdv || 0)}`)}{d.note ? ` · ${d.note}` : ""} · {Lx(lang, "أدخلها", "entered by")} {d.by}</p>
+              <p className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, `بنزين ${fmt(d.fuel || 0)} · أخرى ${fmt(d.otherAdv || 0)}`, `Fuel ${fmt(d.fuel || 0)} · Other ${fmt(d.otherAdv || 0)}`)}{d.note ? ` · ${d.note}` : ""} · {Lx(lang, "أدخلها", "entered by")} {d.by}</p>
               {isGm ? <div className="flex gap-2 mt-2 flex-wrap items-center"><Btn variant="accent" accent={role.glow} icon={CheckCircle2} onClick={() => decide(d, true)}>{Lx(lang, "اعتماد", "Approve")}</Btn>
                 <input value={why[d.id] || ""} onChange={(e) => setWhy({ ...why, [d.id]: e.target.value })} placeholder={Lx(lang, "سبب الرفض", "Reason")} className="flex-1 min-w-[120px] rounded-lg px-2.5 py-2 text-[12px] outline-none" style={XINP} /><Btn variant="danger" onClick={() => decide(d, false)}>{Lx(lang, "رفض", "Reject")}</Btn></div>
                 : <p className="text-[11.5px] mt-1" style={{ color: "#8A611E" }}>{Lx(lang, "بانتظار المدير العام (لا تدخل الحساب قبل اعتماده).", "Awaiting GM — not counted until approved.")}</p>}
