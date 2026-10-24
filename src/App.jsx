@@ -9979,7 +9979,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
   const [open, setOpen] = useState(null);
   const [why, setWhy] = useState({});
   const [err, setErr] = useState("");
-  const isFin = role.id === "fin", isGm = role.id === "gm";
+  const isGm = role.id === "gm", isFin = role.id === "fin" || isGm;
   const mo = date.slice(0, 7);
   const closedMonth = (m) => (repSettlements || []).some((s) => s.month === m && s.closed);
   const closed = closedMonth(mo);
@@ -10068,6 +10068,11 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
   const clearTx = () => { if (txDel !== "*") return setTxDel("*"); writeTx([], "daily_order_transfer_clear"); };
   const txCell = (repId, dt, ent) => { const sum = ent ? dlOrd(ent) : 0, n = ent ? dlTx(ent).length : 0;
     return <button onClick={() => openTx(repId, dt)} className="text-[12px] font-bold underline" style={{ color: sum ? "#8A611E" : "var(--muted)" }}>{sum ? <span className="num">{fmt(sum)}{n > 1 ? ` (${n})` : ""}</span> : isFin && !closedMonth(dt.slice(0, 7)) ? Lx(lang, "+ تحويل", "+ transfer") : "—"}</button>; };
+  const rowActs = (d, big) => (
+    <span className="inline-flex gap-2 ms-1 align-middle">
+      <button onClick={() => { editEntry(d); setLastSaved(null); setTab("log"); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className={(big ? "text-[12px] px-2.5 py-1" : "text-[11px] px-2 py-0.5") + " rounded-lg font-bold"} style={{ color: "#8A611E", background: "rgba(228,184,92,.16)", border: "1px solid rgba(228,184,92,.45)" }}>{Lx(lang, "تعديل", "Edit")}</button>
+      <button onClick={() => delEntry(d)} className={(big ? "text-[12px] px-2.5 py-1" : "text-[11px] px-2 py-0.5") + " rounded-lg font-bold"} style={{ color: "#C0443A", background: "rgba(232,131,122,.12)", border: "1px solid rgba(232,131,122,.45)" }}>{delAsk === d.id ? Lx(lang, "تأكيد الحذف", "Confirm") : Lx(lang, "حذف", "Delete")}</button>
+    </span>);
   const saveAll = () => Object.keys(drafts).forEach((id) => { const r = reps.find((z) => z.id === id); if (r) saveRow(r); });
   const decide = (d, ok) => {
     if (!isGm) return;
@@ -10163,7 +10168,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                   const inp = (k, w = 84) => isFin && !closed ? <XIn type="number" value={val(r, k)} onChange={(v) => setD(r, k, v)} cls="!px-2 !py-1.5" ph="0" /> : <span className="num text-[12px]">{val(r, k) || "—"}</span>;
                   return (
                     <tr key={r.id} style={{ borderBottom: "1px solid var(--line)", background: dirty ? "rgba(228,184,92,.08)" : null }}>
-                      <td className={td}><b>{nm(r)}</b> {r.riderId ? <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.riderId}</span> : null}
+                      <td className={td}><b>{nm(r)}</b> {isFin && ent && !dirty && rowActs(ent)} {r.riderId ? <span className="num text-[10.5px]" style={{ color: "var(--muted)" }}>{r.riderId}</span> : null}
                         {ent && ent.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip></span>}
                         {ent && ent.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
                       <td className={td}>{ord > 0 ? <Chip tone="ok" sm>{ord}</Chip> : <span style={{ color: "var(--muted)" }}>0</span>}</td>
@@ -10172,7 +10177,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                       <td className={td}>{dlN(tot.advBal, tot.advBal > 0 ? "#8A611E" : null)}</td>
                       <td className={td}>{dlN(tot.gap, dlColor(tot.gap))}</td>
                       <td className={td}>{isFin && dirty ? <Btn variant="accent" accent={role.glow} onClick={() => saveRow(r)}>{Lx(lang, "حفظ", "Save")}</Btn>
-                        : isFin && ent && !closed ? <span className="inline-flex gap-2">
+                        : isFin && ent ? <span className="inline-flex gap-2">
                           <button onClick={() => { editEntry(ent); setTab("log"); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
                           <button onClick={() => delEntry(ent)} className="text-[11.5px] font-bold underline" style={{ color: "#C0443A" }}>{delAsk === ent.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span> : null}</td>
                     </tr>);
@@ -10202,7 +10207,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
                   <span className="text-[12px] font-bold">{Lx(lang, "اتحفظت الحركة:", "Saved:")} {ls.name} · <span className="num">{ls.date}</span></span>
                   <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{Lx(lang, `سلف ${fmt(dlAdv(ls))} · طلبات ${fmt(dlOrd(ls))} · كاش استلمه ${fmt(+ls.collected || 0)} · سلّم ${fmt(+ls.handed || 0)}`, `Adv ${fmt(dlAdv(ls))} · Orders ${fmt(dlOrd(ls))} · Collected ${fmt(+ls.collected || 0)} · Handed ${fmt(+ls.handed || 0)}`)}</span>
                   {ls.status === "pending" && <Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM approval")}</Chip>}
-                  {!closedMonth(ls.date.slice(0, 7)) && <span className="inline-flex gap-3 ms-auto">
+                  {<span className="inline-flex gap-3 ms-auto">
                     <button onClick={() => { editEntry(ls); setLastSaved(null); }} className="text-[12px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
                     <button onClick={() => delEntry(ls)} className="text-[12px] font-bold underline" style={{ color: "#C0443A" }}>{delAsk === ls.id ? Lx(lang, "تأكيد الحذف", "Confirm delete") : Lx(lang, "حذف", "Delete")}</button></span>}
                 </div>) : null; })()}
@@ -10222,7 +10227,7 @@ function DailyLedgerPage({ lang, role, reps, reports, ext, setExt, pricing, repS
               <thead><tr style={{ color: "var(--muted)", borderBottom: "1px solid var(--line)" }}>{[Lx(lang, "التاريخ", "Date"), Lx(lang, "المندوب", "Rider"), Lx(lang, "بنزين", "Fuel"), Lx(lang, "طلبات", "Orders"), Lx(lang, "أخرى", "Other"), Lx(lang, "سلّم منها", "Returned"), Lx(lang, "كاش استلمه", "Cash in"), Lx(lang, "كاش سلّمه", "Cash out"), Lx(lang, "مخالفات", "Viol."), Lx(lang, "غرامة", "Fine"), Lx(lang, "مكافأة", "Bonus"), Lx(lang, "ملاحظة", "Note"), ""].map((h, i) => <th key={i} className={th}>{h}</th>)}</tr></thead>
               <tbody>{logRows.map((d) => (
                 <tr key={d.id} style={{ borderBottom: "1px solid var(--line)", background: form.editId === d.id ? "rgba(228,184,92,.10)" : null }}>
-                  <td className={td}><span className="num font-bold">{d.date}</span></td><td className={td}><b>{d.name}</b>{d.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM")}</Chip></span>}{d.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
+                  <td className={td}><span className="num font-bold">{d.date}</span>{isFin && rowActs(d)}</td><td className={td}><b>{d.name}</b>{d.status === "pending" && <span className="ms-1"><Chip tone="warn" sm>{Lx(lang, "بانتظار المدير العام", "GM")}</Chip></span>}{d.status === "rejected" && <span className="ms-1"><Chip tone="bad" sm>{Lx(lang, "مرفوضة", "Rejected")}</Chip></span>}</td>
                   {["fuel", "ordAdv", "otherAdv", "settled", "collected", "handed", "viol", "fine", "bonus"].map((k) => <td key={k} className={td}>{k === "ordAdv" ? txCell(d.repId, d.date, d) : dlN(d[k] || 0)}</td>)}
                   <td className={td + " text-[11px]"} style={{ color: "var(--muted)", whiteSpace: "normal" }}>{d.note}</td>
                   <td className={td}>{isFin && <span className="inline-flex gap-2"><button onClick={() => { editEntry(d); window.scrollTo && window.scrollTo({ top: 0, behavior: "smooth" }); }} className="text-[11.5px] font-bold underline" style={{ color: "#8A611E" }}>{Lx(lang, "تعديل", "Edit")}</button>
