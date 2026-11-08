@@ -1,0 +1,33 @@
+{
+  "name": "munasabati",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev:web": "npm run dev -w @munasabati/web",
+    "dev:client": "npm run dev -w @munasabati/client",
+    "dev:vendors": "npm run dev -w @munasabati/vendors",
+    "dev:venues": "npm run dev -w @munasabati/venues",
+    "build": "npm run build -w @munasabati/web -w @munasabati/client -w @munasabati/vendors -w @munasabati/venues",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "bundle:artifact": "node scripts/bundle-artifact.mjs"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.5",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.1",
+    "typescript": "5.5.4",
+    "vite": "5.4.1",
+    "vitest": "2.0.5"
+  },
+  "dependencies": {
+    "framer-motion": "11.3.31",
+    "lucide-react": "0.383.0",
+    "qrcode": "1.5.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

@@ -1,0 +1,79 @@
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AppShell, Icon, ToastProvider, repo, useDB, type ShellTab } from "@munasabati/ui";
+import Onboarding from "./Onboarding";
+import { go } from "./nav";
+import Home from "./screens/Home";
+import { Explore, Detail } from "./screens/Explore";
+import { Guests, Invites, GuestInvite } from "./screens/Guests";
+import { Bookings, Budget, Door, Hosp, Tasks } from "./screens/Tools";
+
+
+function useHash() {
+  const read = () => location.hash.replace(/^#/, "") || "home";
+  const [h, setH] = useState(read);
+  useEffect(() => {
+    const on = () => { setH(read()); window.scrollTo({ top: 0 }); };
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+  return h;
+}
+
+function Main() {
+  const db = useDB();
+  const route = useHash();
+  if (route.startsWith("invite-")) return <GuestInvite code={route.slice(7)} />;
+  if (!db.client.event) return <Onboarding />;
+
+  const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;
+  const tabs: ShellTab[] = [
+    { id: "home", label: "الرئيسية", icon: "House" },
+    { id: "explore", label: "استكشف", icon: "Compass" },
+    { id: "guests", label: "الضيوف", icon: "Users" },
+    { id: "bookings", label: "حجوزاتي", icon: "CalendarCheck", count: quotes },
+    { id: "invites", label: "الدعوات", icon: "Send" },
+    { id: "budget", label: "الميزانية", icon: "Wallet" },
+    { id: "hosp", label: "حاسبة الضيافة", icon: "Coffee" },
+    { id: "tasks", label: "مهام العائلة", icon: "ListChecks" },
+    { id: "door", label: "يوم المناسبة", icon: "ScanLine" },
+  ];
+  const detail = route.match(/^(venue|supplier)-(.+)$/);
+  const active = detail ? "explore" : tabs.some((t) => t.id === route) ? route : "home";
+
+  return (
+    <AppShell
+      portal="لأصحاب المناسبات" tabs={tabs} active={active} onChange={go}
+      footer={<>
+        <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
+        <ResetButton />
+      </>}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div key={route} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+          {detail ? <Detail kind={detail[1] as "venue" | "supplier"} id={detail[2]} />
+            : active === "explore" ? <Explore />
+            : active === "guests" ? <Guests />
+            : active === "invites" ? <Invites />
+            : active === "budget" ? <Budget />
+            : active === "hosp" ? <Hosp />
+            : active === "tasks" ? <Tasks />
+            : active === "bookings" ? <Bookings />
+            : active === "door" ? <Door />
+            : <Home />}
+        </motion.div>
+      </AnimatePresence>
+    </AppShell>
+  );
+}
+
+function ResetButton() {
+  const [ask, setAsk] = useState(false);
+  return ask
+    ? <div className="row"><button className="btn sm grow" style={{ color: "var(--bad)" }} onClick={() => { repo.reset(); go("home"); }}>تأكيد البدء من جديد</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div>
+    : <button className="btn sm ghost" onClick={() => setAsk(true)}><Icon name="RotateCcw" size={15} /> ابدأ مناسبة جديدة</button>;
+}
+
+export default function App() {
+  return <ToastProvider><Main /></ToastProvider>;
+}
