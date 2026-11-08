@@ -20,6 +20,8 @@ const envDefine: Record<string, string> = SUPA_URL && SUPA_KEY ? {
 export function appConfig(port: number): UserConfig {
   return {
     base: "./",
+    // ملفات .env في جذر المشروع (مشتركة بين التطبيقات الخمسة)
+    envDir: r("./"),
     define: envDefine,
     plugins: [react()],
     css: { postcss: {} },

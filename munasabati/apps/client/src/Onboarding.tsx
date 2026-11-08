@@ -188,7 +188,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
 
         {needAuth && (
           <div className="card" style={{ color: "var(--ink)", marginBottom: 12 }}>
-            <PhoneAuth title="آخر خطوة: أكّد رقم جوالك عشان نحفظ مناسبتك" initialPhone={f.phone} onDone={() => { setNeedAuth(false); create(false); }} />
+            <PhoneAuth title="آخر خطوة: أكّد رقم جوالك عشان نحفظ مناسبتك" initialPhone={f.phone} initialName={f.name} onDone={() => { setNeedAuth(false); create(false); }} />
           </div>
         )}
         {step !== 7 && step !== 1 && !needAuth && (

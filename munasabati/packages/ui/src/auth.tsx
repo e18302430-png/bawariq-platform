@@ -4,7 +4,7 @@ import { normPhone, validPhone } from "@munasabati/core";
 import { repo } from "./data";
 
 /** دخول برقم الجوال ورمز SMS (يعمل في وضع قاعدة البيانات الحقيقية) */
-export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوالك", initialPhone = "" }: { onDone: () => void; title?: string; initialPhone?: string }) {
+export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوالك", initialPhone = "", initialName = "" }: { onDone: () => void; title?: string; initialPhone?: string; initialName?: string }) {
   const [phone, setPhone] = useState(initialPhone);
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -12,7 +12,7 @@ export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوا
   const [err, setErr] = useState("");
   const auth = repo.auth;
   if (!auth) return <p className="muted" style={{ textAlign: "center" }}>لحظة، جاري الاتصال…</p>;
-  if (auth.mode === "quick") return <QuickAuth onDone={onDone} title={title} initialPhone={initialPhone} />;
+  if (auth.mode === "quick") return <QuickAuth onDone={onDone} title={title} initialPhone={initialPhone} initialName={initialName} />;
   const send = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr("");
     try { await auth.sendOtp(phone); setSent(true); } catch (x) { setErr((x as Error).message || "تعذّر إرسال الرمز. تأكد من الرقم وحاول مرة ثانية."); } finally { setBusy(false); }
@@ -38,9 +38,9 @@ export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوا
 }
 
 /** دخول فوري بالاسم والجوال (بدون رمز SMS): جلسة آمنة محفوظة على الجهاز */
-function QuickAuth({ onDone, title, initialPhone }: { onDone: () => void; title: string; initialPhone: string }) {
+function QuickAuth({ onDone, title, initialPhone, initialName }: { onDone: () => void; title: string; initialPhone: string; initialName: string }) {
   const [phone, setPhone] = useState(initialPhone);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const ok = validPhone(phone);

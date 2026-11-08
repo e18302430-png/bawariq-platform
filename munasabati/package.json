@@ -16,7 +16,8 @@
     "dev:admin": "npm run dev -w @munasabati/admin",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "bundle:artifact": "node scripts/bundle-artifact.mjs"
+    "bundle:artifact": "node scripts/bundle-artifact.mjs",
+    "build:demo": "npm run build -w @munasabati/web -w @munasabati/client -w @munasabati/vendors -w @munasabati/venues -w @munasabati/admin -- --mode demo && node scripts/prerender-web.cjs"
   },
   "devDependencies": {
     "@types/qrcode": "1.5.5",
