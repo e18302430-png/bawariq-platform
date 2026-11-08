@@ -190,8 +190,9 @@ create or replace function public.door_load(k text) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
     'title', data->'event'->>'title', 'date', data->'event'->>'date',
+    'program', coalesce(data->'invite'->'program', '[]'::jsonb), 'live', coalesce((data->>'liveIndex')::int, 0),
     'guests', coalesce((select jsonb_agg(jsonb_build_object('id', g->>'id', 'name', g->>'name', 'section', g->>'section', 'side', g->>'side',
-      'count', (g->>'count')::int, 'code', g->>'code', 'status', g->>'status', 'checkedIn', coalesce((g->>'checkedIn')::boolean, false), 'phone', ''))
+      'count', (g->>'count')::int, 'code', g->>'code', 'status', g->>'status', 'checkedIn', coalesce((g->>'checkedIn')::boolean, false), 'vip', coalesce((g->>'vip')::boolean, false), 'phone', ''))
       from jsonb_array_elements(data->'guests') g), '[]'::jsonb))
   from client_spaces where length(k) >= 10 and data->>'doorKey' = k limit 1
 $$;
@@ -208,7 +209,7 @@ begin
     if upper(g->>'code') = code then
       if coalesce((g->>'checkedIn')::boolean, false) then return jsonb_build_object('ok', false, 'reason', 'already', 'guest', g); end if;
       if g->>'status' = 'no' then return jsonb_build_object('ok', false, 'reason', 'declined', 'guest', g); end if;
-      g := g || '{"checkedIn": true, "status": "yes"}'::jsonb;
+      g := g || jsonb_build_object('checkedIn', true, 'status', 'yes', 'checkedAt', (extract(epoch from now()) * 1000)::bigint);
       update client_spaces set data = jsonb_set(data, array['guests', i::text], g), updated_at = now() where user_id = uid;
       return jsonb_build_object('ok', true, 'guest', g);
     end if;

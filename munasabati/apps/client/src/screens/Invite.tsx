@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, patchClient, updateEvent, updateGuest, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
+import { OCCASIONS, greetingFor, patchClient, today, updateEvent, updateGuest, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
 import { Empty, Icon, QR, Segmented, apply, photoUrl, useDB, useToast } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
@@ -291,6 +291,7 @@ export function Invites() {
             </div>
           </div>
           <div className="field"><label htmlFor="i-m">سطر ختامي (اختياري)</label><input id="i-m" className="input" placeholder="مثال: وبحضوركم تكتمل فرحتنا" value={invite.message} onChange={(e) => setInv({ message: e.target.value })} /></div>
+          <div className="field"><span className="label">الأطفال</span><Segmented value={invite.kids == null ? "none" : invite.kids ? "yes" : "no"} onChange={(v) => setInv({ kids: v === "none" ? undefined : v === "yes" })} options={[["none", "بدون ذكر"], ["yes", "مرحّب فيهم"], ["no", "للكبار فقط"]]} /></div>
         </section>
       </div>
 
@@ -330,6 +331,7 @@ export function GuestInvite({ code }: { code: string }) {
   const [revealed, setRevealed] = useState(false);
   const [fire, setFire] = useState(0);
   const [count, setCount] = useState(g?.count ?? 1);
+  const [diet, setDiet] = useState(g?.diet ?? "");
   const ev = db.client.event;
   const [d, h, m, s] = useCountdown(ev?.date ?? "2030-01-01", db.client.invite.time ?? "20:30");
   const reveal = useCallback(() => { setRevealed(true); setFire((f) => f + 1); }, []);
@@ -342,6 +344,7 @@ export function GuestInvite({ code }: { code: string }) {
   const fmtCal = (x: Date) => x.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const cal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(info.couple)}&dates=${fmtCal(start)}/${fmtCal(new Date(start.getTime() + 4 * 36e5))}&location=${encodeURIComponent(info.place)}`;
   const map = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.place)}`;
+  const after = ev.date < today();
   const open = () => { if (stage !== "envelope") return; setStage("opening"); setTimeout(() => setStage("open"), 1150); };
 
   return (
@@ -359,7 +362,7 @@ export function GuestInvite({ code }: { code: string }) {
               <div className="gx-env-text">
                 <button className="gx-tap" onClick={open}>اضغط لفتح الدعوة</button>
                 <div className="gx-orn" aria-hidden="true">✦</div>
-                <div className="gx-to">إلى <b>{g.name}</b></div>
+                <div className="gx-to">إلى {greetingFor(g)} <b>{g.name}</b></div>
                 <div className="gx-tagline">وبدأت حكايتنا</div>
               </div>
             </div>
@@ -370,17 +373,19 @@ export function GuestInvite({ code }: { code: string }) {
       {stage === "open" && (
         <motion.main className="gx-page" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
           <Confetti fire={fire} />
-          <p className="gx-hi">حيّاك يا <b>{first}</b></p>
+          {ev.date === today() && info.program[db.client.liveIndex ?? 0] && <div className="gx-live"><span className="live-dot-c" /> الآن في الحفل: <b>{info.program[db.client.liveIndex ?? 0].title}</b></div>}
+          {after && g.checkedIn && <section className="gx-sec gx-thanks"><h2 className="gx-h">شكراً لحضوركم</h2><p>نوّرتوا ليلتنا يا {first}، وحضوركم كان أجمل هدية.</p></section>}
+          <p className="gx-hi">{greetingFor(g)} <b>{first}</b></p>
           <Tilt max={6}><InviteCard guest={g} showPass={g.status === "yes"} scratch={revealed ? undefined : (
             <Scratch onReveal={reveal} tint={wc.tint}>
               <div className="inv-date"><span>{info.day}</span><b className="num">{info.num}</b><span>{info.month}</span></div>
             </Scratch>
           )} /></Tilt>
 
-          <section className="gx-sec">
+          {!after && <section className="gx-sec">
             <h2 className="gx-h">باقي على الفرح</h2>
             <div className="gx-cd num">{[[d, "يوم"], [h, "ساعة"], [m, "دقيقة"], [s, "ثانية"]].map(([v, l]) => <div key={l as string}><b>{String(v).padStart(2, "0")}</b><small>{l}</small></div>)}</div>
-          </section>
+          </section>}
 
           <section className="gx-sec">
             <h2 className="gx-h">برنامج الحفل</h2>
@@ -394,6 +399,7 @@ export function GuestInvite({ code }: { code: string }) {
               ))}
             </div>
             <div className="gx-note"><Icon name="Users" size={16} /> {g.section === "men" ? "دعوتك لقسم الرجال" : "دعوتك لقسم النساء"}</div>
+            {db.client.invite.kids != null && <div className="gx-note"><Icon name="Baby" size={16} /> {db.client.invite.kids ? "أطفالكم يزيّنون فرحتنا" : "الدعوة للكبار فقط، ونسعد بتفهمكم"}</div>}
           </section>
 
           <section className="gx-sec">
@@ -403,7 +409,9 @@ export function GuestInvite({ code }: { code: string }) {
                 <div className="row between"><span>عدد الحضور</span>
                   <div className="stepper"><button onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="أقل">−</button><b className="num">{count}</b><button onClick={() => setCount((c) => Math.min(20, c + 1))} aria-label="أكثر">+</button></div>
                 </div>
-                <button className="btn lg block gx-yes" onClick={() => { apply(updateGuest(g.id, { status: "yes", count })); setFire((f) => f + 1); }}>بحضر إن شاء الله</button>
+                <label className="sr" htmlFor="gx-diet">ملاحظة أكل أو حساسية</label>
+                <input id="gx-diet" className="input" placeholder="عندك حساسية أو نظام أكل خاص؟ (اختياري)" value={diet} onChange={(e) => setDiet(e.target.value.slice(0, 120))} />
+                <button className="btn lg block gx-yes" onClick={() => { apply(updateGuest(g.id, { status: "yes", count, diet: diet.trim() || undefined })); setFire((f) => f + 1); }}>بحضر إن شاء الله</button>
                 <button className="btn block ghost" onClick={() => apply(updateGuest(g.id, { status: "no" }))}>أعتذر عن الحضور</button>
               </div>
             ) : (
@@ -412,6 +420,7 @@ export function GuestInvite({ code }: { code: string }) {
             <div className="row" style={{ marginTop: 12 }}><a className="btn grow" href={map} target="_blank" rel="noreferrer"><Icon name="MapPin" size={16} /> الموقع</a><a className="btn grow" href={cal} target="_blank" rel="noreferrer"><Icon name="CalendarPlus" size={16} /> أضف للتقويم</a></div>
           </section>
 
+          {g.status !== "pending" && <a className="gx-made" href={`${location.href.split("#")[0]}#start-${ev.occasion}`}><span>سوّيت دعوتي من <b>مناسبتي</b></span><span className="gx-made-cta">ابدأ مناسبتك <Icon name="ArrowLeft" size={14} /></span></a>}
           <img className="gx-foot-art" src={wc.img} alt="" loading="lazy" />
           <a className="g-back" href="#home">للتجربة: ارجع للوحة صاحب المناسبة</a>
         </motion.main>

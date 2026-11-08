@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, hospitality, removeBudget, removeTask, sar, setBookingStatus, setClientAmount, setTotalBudget, toggleTask, today, updateBudget,
   type CheckInResult, type DoorSnapshot,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -15,8 +15,8 @@ export function Bookings() {
   const nameOf = (kind: string, id: string) => (kind === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((s) => s.id === id)?.name) ?? "";
   return (
     <>
-      <div className="row between wrap"><div><h1 className="page-title">حجوزاتي</h1><p className="page-sub">طلباتك مع القاعات والموردين وردودهم.</p></div><button className="btn primary" onClick={() => go("explore")}><Icon name="Plus" size={16} /> طلب جديد</button></div>
-      {!mine.length && <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">اختر قاعة أو مورد، حدد اليوم، وأرسل الطلب.<button className="btn primary" style={{ marginTop: 6 }} onClick={() => go("explore")}>استكشف</button></Empty></section>}
+      <div className="row between wrap"><div><h1 className="page-title">حجوزاتي</h1><p className="page-sub">طلباتك مع القاعات والموردين وردودهم.</p></div><button className="btn primary" onClick={() => go("plan")}><Icon name="Sparkles" size={16} /> خطتي المقترحة</button></div>
+      {!mine.length && <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">جهّزنا لك خطة على ذوقك وميزانيتك. أرسل الطلبات كلها بضغطة.<button className="btn primary" style={{ marginTop: 6 }} onClick={() => go("plan")}>شوف خطتي</button></Empty></section>}
       <div className="stack">
         {mine.map((b) => (
           <motion.section key={b.id} layout className="card stack" style={{ ["--gap" as string]: "12px" }}>
@@ -26,6 +26,8 @@ export function Bookings() {
               <StatusPill status={b.status} />
             </div>
             {b.note && <div className="muted" style={{ fontSize: 13.5 }}>{b.note}</div>}
+            {b.cancelRequest && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>التاجر طلب إلغاء الحجز</b><div className="muted">الإدارة تراجع الطلب الآن، وحجزك قائم لين قرارها. لو تمت الموافقة نرشّح لك بديلاً مباشرة.</div></div>}
+            {b.status === "confirmed" && b.vendorStatus && <div className="vstat-view"><Icon name="Radio" size={15} /> حالة التاجر: <b>{VLABEL[b.vendorStatus]}</b></div>}
             <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
             {b.messages.filter((m) => m.from !== "client").map((m, i) => <div key={i} className={"card flat tight" + (m.from === "admin" ? " admin-note" : "")} style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: m.from === "admin" ? "var(--brand)" : "var(--muted)" }}>{m.from === "admin" ? "إدارة مناسبتي" : `رد ${nameOf(b.kind, b.targetId)}`}</b>{m.text}</div>)}
             {b.status === "quoted" && (
@@ -35,11 +37,28 @@ export function Bookings() {
                 <button className="btn sm primary" onClick={() => { apply(acceptQuote(b.id, nameOf(b.kind, b.targetId))); toast("تم تأكيد الحجز وإضافته للميزانية"); }}>اقبل العرض</button>
               </div>
             )}
+            {b.status === "confirmed" && <AgreedAmount id={b.id} value={b.clientAmount} />}
             {b.status === "new" && <div className="faint" style={{ fontSize: 13 }}>بانتظار الرد. للتجربة: افتح {b.kind === "venue" ? <a className="brand" href={import.meta.env.VITE_VENUES_URL ?? "../venues/index.html"}>بوابة القاعات</a> : <a className="brand" href={import.meta.env.VITE_VENDORS_URL ?? "../vendors/index.html"}>بوابة الموردين</a>} ورد على الطلب.</div>}
           </motion.section>
         ))}
       </div>
     </>
+  );
+}
+
+const VLABEL = { onway: "في الطريق", arrived: "وصل الموقع", setup: "يجهّز الآن", ready: "جاهز" } as const;
+/** العميل يذكر المبلغ النهائي المتفق عليه: يحميه من أي تغيير لاحق، ويساعد الإدارة في متابعة الالتزام */
+function AgreedAmount({ id, value }: { id: string; value?: number }) {
+  const toast = useToast();
+  const [v, setV] = useState(value ? fmt(value) : "");
+  return (
+    <form className="agreed" onSubmit={(e) => { e.preventDefault(); apply(setClientAmount(id, +v.replace(/\D/g, "") || undefined)); toast("حفظنا المبلغ المتفق عليه"); }}>
+      <label htmlFor={"ag" + id}>المبلغ النهائي اللي اتفقتوا عليه <span className="faint">(اختياري، يحفظ حقك)</span></label>
+      <div className="row" style={{ ["--gap" as string]: "8px" }}>
+        <input id={"ag" + id} className="input num grow" inputMode="numeric" placeholder="اكتب المبلغ" value={v} onChange={(e) => setV(e.target.value.replace(/\D/g, "") ? fmt(+e.target.value.replace(/\D/g, "").slice(0, 9)) : "")} />
+        <button className="btn sm" type="submit">حفظ</button>
+      </div>
+    </form>
   );
 }
 
@@ -199,6 +218,8 @@ export function Door() {
         </div>
       </section>
 
+      <NightOps />
+
       <section className="card stack">
         <div><h3 className="display" style={{ margin: 0 }}>روابط المنسقين</h3><p className="muted" style={{ margin: "4px 0 0", fontSize: 14 }}>أرسل الرابط للمنسق أو الحارس. يفتح عنده شاشة استقبال فيها مسح بالكاميرا وقائمة الضيوف فقط، بدون ميزانيتك أو طلباتك.</p></div>
         {!key ? <button className="btn primary lg block" onClick={() => { apply(enableDoor()); toast("جهّزنا روابط الاستقبال"); }}><Icon name="ScanLine" size={18} /> فعّل الاستقبال الذكي</button> : <>
@@ -229,6 +250,73 @@ export function Door() {
       <section className="card">
         <div className="section-title"><h3>آخر الواصلين</h3></div>
         {inside.length ? <div className="list">{[...inside].reverse().slice(0, 10).map((g) => <div key={g.id} className="list-row"><span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span><div className="t"><b>{g.name}</b><small>{g.section === "men" ? "رجال" : "نساء"}</small></div><span className="num faint">{g.count}</span></div>)}</div> : <p className="muted" style={{ margin: 0 }}>ما وصل أحد للحين. أول ما يمسح المنسق دعوة بتظهر هنا.</p>}
+      </section>
+    </>
+  );
+}
+
+/* ───── غرفة عمليات الليلة: البرنامج، الموردين، كبار الضيوف، الطوارئ، والتقرير ───── */
+function NightOps() {
+  const db = useDB();
+  const toast = useToast();
+  const e = db.client.event!;
+  const program = db.client.invite.program ?? [];
+  const li = Math.min(db.client.liveIndex ?? 0, Math.max(0, program.length - 1));
+  const vendors = db.bookings.filter((b) => b.fromClient && b.status === "confirmed");
+  const name = (kind: string, id: string) => (kind === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((s) => s.id === id)?.name) ?? "";
+  const vips = db.client.guests.filter((g) => g.vip);
+  const [sos, setSos] = useState(false);
+  const [sosText, setSosText] = useState("");
+  const past = e.date < today();
+  const yes = db.client.guests.filter((g) => g.status === "yes");
+  const came = db.client.guests.filter((g) => g.checkedIn);
+  const noShow = yes.filter((g) => !g.checkedIn);
+  const sum = (l: typeof yes) => l.reduce((a, g) => a + g.count, 0);
+  const diets = db.client.guests.filter((g) => g.diet);
+  return (
+    <>
+      {program.length > 0 && <section className="card stack">
+        <div className="row between"><h3 className="display" style={{ margin: 0 }}>برنامج الليلة</h3><span className="pill neutral">يظهر عند المنسقين والضيوف</span></div>
+        <div className="prog-now"><small>الآن</small><b className="display">{program[li].title}</b>{program[li + 1] && <span className="muted">التالي: {program[li + 1].title} · {program[li + 1].time}</span>}</div>
+        <div className="row" style={{ ["--gap" as string]: "8px" }}>
+          <button className="btn sm" disabled={li === 0} onClick={() => apply(setLiveIndex(li - 1))}><Icon name="ArrowRight" size={15} /> السابقة</button>
+          <button className="btn sm primary grow" disabled={li >= program.length - 1} onClick={() => { apply(setLiveIndex(li + 1)); toast(`بدأت: ${program[li + 1].title}`); }}>ابدأ الفقرة التالية <Icon name="ArrowLeft" size={15} /></button>
+        </div>
+      </section>}
+
+      {vendors.length > 0 && <section className="card">
+        <div className="section-title"><h3>الموردين الليلة</h3></div>
+        <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.vendorStatus ? VLABEL[b.vendorStatus] : "لم يحدّث حالته بعد"}</small></div><span className={"pill " + (b.vendorStatus === "ready" ? "ok" : b.vendorStatus ? "info" : "neutral")}>{b.vendorStatus === "ready" ? "جاهز" : b.vendorStatus ? "في الطريق للجاهزية" : "بانتظار"}</span></div>)}</div>
+      </section>}
+
+      {vips.length > 0 && <section className="card">
+        <div className="section-title"><h3>كبار الضيوف</h3><span className="faint" style={{ fontSize: 12.5 }}>ينبّهك المنسق أول ما يوصلون</span></div>
+        <div className="list">{vips.map((g) => <div key={g.id} className="list-row"><span className="avatar" style={{ background: "linear-gradient(135deg,#fff1c9,#e7c27a 45%,#b8863d)", color: "#3a2208" }}><Icon name="Star" size={15} /></span><div className="t"><b>{g.name}</b><small>{g.section === "men" ? "رجال" : "نساء"}</small></div><span className={"pill " + (g.checkedIn ? "ok" : "neutral")}>{g.checkedIn ? "وصل" : "لم يصل"}</span></div>)}</div>
+      </section>}
+
+      {diets.length > 0 && <section className="card">
+        <div className="section-title"><h3>ملاحظات الأكل من الضيوف</h3></div>
+        <div className="list">{diets.map((g) => <div key={g.id} className="list-row"><div className="t"><b>{g.name}</b><small>{g.diet}</small></div></div>)}</div>
+      </section>}
+
+      {past && <section className="card stack">
+        <h3 className="display" style={{ margin: 0 }}>تقرير ليلتك</h3>
+        <div className="la-split">
+          <div><small>حضروا</small><b className="num">{sum(came)}</b></div>
+          <div><small>أكدوا وما حضروا</small><b className="num">{sum(noShow)}</b></div>
+          <div><small>اعتذروا</small><b className="num">{sum(db.client.guests.filter((g) => g.status === "no"))}</b></div>
+          <div><small>كبار الضيوف الحاضرين</small><b className="num">{vips.filter((g) => g.checkedIn).length} / {vips.length}</b></div>
+        </div>
+      </section>}
+
+      <section className="card sos">
+        <div className="grow"><b className="display">صار شي طارئ؟</b><small className="muted">مورد ما وصل، أو مشكلة في القاعة. يوصل بلاغك للإدارة فوراً بأولوية قصوى.</small></div>
+        {!sos ? <button className="btn sos-btn" onClick={() => setSos(true)}><Icon name="ShieldAlert" size={17} /> بلاغ طارئ</button>
+          : <form className="row wrap" style={{ width: "100%" }} onSubmit={(ev) => { ev.preventDefault(); apply(openTicket({ from: "client", fromId: "me", fromName: db.client.profile?.name ?? "عميل", topic: "booking", subject: `بلاغ طارئ: ${e.title}`, text: sosText.trim() || "بلاغ طارئ من غرفة العمليات", urgent: true })); setSos(false); setSosText(""); toast("وصل بلاغك للإدارة الآن"); }}>
+            <label className="sr" htmlFor="sos-t">وش صار؟</label>
+            <input id="sos-t" className="input grow" style={{ minWidth: 180, width: "auto" }} placeholder="وش صار؟ (اختياري)" value={sosText} onChange={(ev) => setSosText(ev.target.value)} autoFocus />
+            <button className="btn sos-btn" type="submit">أرسل الآن</button>
+          </form>}
       </section>
     </>
   );
@@ -275,6 +363,8 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
   }
   const title = local ? db.client.event?.title ?? "المناسبة" : remote!.title;
   const guests = local ? db.client.guests : remote!.guests;
+  const program = local ? db.client.invite.program ?? [] : remote!.program ?? [];
+  const live = program[Math.min(local ? db.client.liveIndex ?? 0 : remote!.live ?? 0, Math.max(0, program.length - 1))];
   const mine = section ? guests.filter((g) => g.section === section) : guests;
   const inside = mine.filter((g) => g.checkedIn);
   const expected = mine.filter((g) => g.status === "yes");
@@ -299,6 +389,7 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
         <div><span className="st-eyebrow"><span className="live-dot-c" /> استقبال الضيوف{section ? ` · ${SEC[section]}` : ""}</span><h1 className="display">{title}</h1></div>
         <div className="st-count num"><b><Counter value={sum(inside)} /></b><small>من {sum(expected)}</small></div>
       </header>
+      {live && <div className="st-now"><Icon name="Radio" size={15} /> الآن: <b>{live.title}</b></div>}
 
       <section className="scanner">
         <div className="frame-box"><i /><i /><i /><i /><motion.span className="laser" animate={{ top: ["12%", "86%", "12%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
@@ -315,6 +406,7 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
               <Icon name={res.ok ? "CheckCircle2" : res.reason === "section" ? "ArrowLeftRight" : "XCircle"} size={30} style={{ color: res.ok ? "#3dd39b" : res.reason === "section" ? "#ffc35c" : "#ff6b62" }} />
               <div className="grow">
                 <b className="display">{res.ok ? `أهلاً ${res.guest.name}` : res.reason === "section" ? `${res.guest!.name}: ضيف ${SEC[res.guest!.section]}` : `${res.guest?.name ?? ""} ${REASON[res.reason]}`}</b>
+                {res.ok && res.guest.vip && <div className="st-vip"><Icon name="Star" size={13} /> ضيف كبير: رحّب فيه وبلّغ صاحب المناسبة</div>}
                 {res.guest && <div style={{ fontSize: 13, opacity: 0.8 }}>{!res.ok && res.reason === "section" ? `وجّهه لمدخل ${SEC[res.guest.section]}` : `${SEC[res.guest.section]} · ${res.guest.count} ${res.guest.count > 1 ? "أشخاص" : "شخص"}`}</div>}
               </div>
               {!res.ok && res.reason === "section" && <button className="btn sm white" onClick={() => void scan(res.guest!.code, true)}>دخّله هنا</button>}

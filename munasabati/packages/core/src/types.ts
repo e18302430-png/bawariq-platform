@@ -54,6 +54,8 @@ export interface Supplier {
   /** روابط صور حقيقية يرفعها المورد (الأولى غلاف) */
   photos?: string[];
   featured?: boolean;
+  /** ظهور مميز مدفوع تفعّله الإدارة */
+  promoted?: boolean;
   custom?: boolean;
 }
 
@@ -86,6 +88,8 @@ export interface Venue {
   /** روابط صور حقيقية يرفعها صاحب القاعة (الأولى غلاف) */
   photos?: string[];
   phone?: string;
+  /** ظهور مميز مدفوع تفعّله الإدارة */
+  promoted?: boolean;
   custom?: boolean;
 }
 
@@ -94,6 +98,8 @@ export interface Message {
   from: "client" | "provider" | "admin";
   text: string;
   at: number;
+  /** أُخفيت فيها أرقام أو حسابات تواصل خارجية */
+  masked?: boolean;
 }
 
 export interface Booking {
@@ -120,6 +126,20 @@ export interface Booking {
   seed?: boolean;
   /** ميزانية العميل المخصصة لهذا البند (يحددها العميل) */
   budget?: number;
+  /** فئة الخدمة المطلوبة (للاقتراح والإسناد البديل) */
+  cat?: string;
+  /** أُنشئ من الخطة المقترحة */
+  fromPlan?: boolean;
+  /** أُعيد إسناده من طلب سابق (الإدارة) */
+  reassignedFrom?: string;
+  /** التاجر طلب إلغاء حجز مؤكد: لا يُلغى إلا بقرار الإدارة */
+  cancelRequest?: { reason: string; at: number };
+  /** حالة التاجر يوم المناسبة */
+  vendorStatus?: VendorStatus;
+  /** المبلغ النهائي كما يذكره العميل (للتحقق من العمولة) */
+  clientAmount?: number;
+  /** عمولة المنصة على هذا الحجز */
+  commission?: { paid?: boolean; paidAt?: number; claimedAt?: number };
 }
 
 export interface ClientEvent {
@@ -133,7 +153,14 @@ export interface ClientEvent {
   title: string;
   /** الميزانية الكلية يحددها العميل بنفسه (فارغة = لم تحدد) */
   budget?: number;
+  /** طابع الإلهام الذي اختاره العميل (يوجّه الاقتراحات) */
+  style?: StyleId[];
+  /** من وين جاء العميل (مثلاً invite = من دعوة ضيف) */
+  source?: "invite" | "direct";
 }
+
+export type StyleId = "royal" | "najdi" | "modern" | "nature" | "cinema" | "cozy";
+export type VendorStatus = "onway" | "arrived" | "setup" | "ready";
 
 export interface Guest {
   id: string;
@@ -146,7 +173,17 @@ export interface Guest {
   code: string;
   checkedIn: boolean;
   sample?: boolean;
+  /** صلة القرابة: تغيّر عبارة الترحيب في الدعوة */
+  relation?: Relation;
+  /** ضيف كبير: ينبَّه صاحب المناسبة عند وصوله */
+  vip?: boolean;
+  /** ملاحظة أكل أو حساسية يكتبها الضيف */
+  diet?: string;
+  /** وقت الدخول */
+  checkedAt?: number;
 }
+
+export type Relation = "uncle" | "maternal-uncle" | "aunt" | "maternal-aunt" | "brother" | "sister" | "friend" | "colleague" | "relative";
 
 export interface BudgetLine {
   id: string;
@@ -177,7 +214,9 @@ export interface ClientSpace {
   doorKey?: string;
   tasks: Task[];
   favorites: string[];
-  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[] };
+  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean };
+  /** الفقرة الجارية الآن من برنامج الليلة (يتحكم بها العميل) */
+  liveIndex?: number;
 }
 
 /** تذكرة دعم: من العميل أو المورد أو صاحب القاعة إلى إدارة المنصة */
@@ -190,6 +229,8 @@ export interface Ticket {
   topic: "booking" | "payment" | "account" | "technical" | "other";
   subject: string;
   status: TicketStatus;
+  /** بلاغ طارئ ليلة المناسبة */
+  urgent?: boolean;
   messages: { from: "user" | "admin"; text: string; at: number }[];
   createdAt: number;
   updatedAt: number;
@@ -204,6 +245,8 @@ export interface ClientRecord {
 
 export interface DB {
   version: 2;
+  /** إعدادات عمولة المنصة (تحددها الإدارة، تُحسب على التجار فقط) */
+  commission?: { rate?: number; graceDays?: number; bank?: string };
   /** للإدارة فقط: مساحات كل العملاء (في الوضع المحلي تُشتق من db.client) */
   clients?: ClientRecord[];
   tickets: Ticket[];

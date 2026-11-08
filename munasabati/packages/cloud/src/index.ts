@@ -35,7 +35,7 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       user ? sb.from("client_spaces").select("data").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
-      sb.from("settings").select("key, value").eq("key", "announcement").maybeSingle(),
+      sb.from("settings").select("key, value").in("key", ["announcement", "commission"]),
     ]);
     // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
     const role = user ? (await sb.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role : null;
@@ -56,7 +56,8 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       bookings: [...real, ...blockedByOthers.filter((b) => !real.some((x) => x.targetId === b.targetId && x.date === b.date && x.status === "confirmed"))],
       sessions: { supplierId: owned(sup.data as Row<unknown>[]), venueId: owned(ven.data as Row<unknown>[]) },
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
-      announcement: (st.data as { value?: string } | null)?.value || undefined,
+      announcement: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "announcement")?.value || undefined,
+      commission: (() => { try { return JSON.parse(((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "commission")?.value ?? "null") ?? undefined; } catch { return undefined; } })(),
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
     lastError = sup.error?.message ?? ven.error?.message ?? null;
@@ -96,6 +97,7 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       for (const c of next.clients.filter((x) => prev.clients!.find((y) => y.id === x.id) !== x)) jobs.push(sb.from("client_spaces").update({ data: c.data, updated_at: new Date().toISOString() }).eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
       for (const c of prev.clients.filter((p) => !next.clients!.some((n) => n.id === p.id))) jobs.push(sb.from("client_spaces").delete().eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
     }
+    if (prev.commission !== next.commission) jobs.push(sb.from("settings").upsert({ key: "commission", value: JSON.stringify(next.commission ?? {}) }).then(({ error }) => { if (error) throw error; }));
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
   }

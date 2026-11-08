@@ -8,7 +8,7 @@ import { Icon } from "@munasabati/ui";
   محلياً: تتزامن التبويبات عبر حدث storage. سحابياً: قناة Supabase Realtime على bookings و tickets.
 */
 
-export type LiveKind = "booking" | "status" | "message" | "ticket" | "ticket-reply";
+export type LiveKind = "booking" | "status" | "message" | "ticket" | "ticket-reply" | "urgent";
 export interface LiveEvent { id: string; kind: LiveKind; title: string; sub: string; at: number; tab: string; focus: string }
 
 const SOUND_KEY = "mns.admin.sound";
@@ -20,7 +20,7 @@ const audio = () => {
 /** نغمة جرس ناعمة مرسومة بالكامل في المتصفح (بدون ملفات صوت) */
 function chime(kind: LiveKind) {
   const a = audio(); if (!a) return;
-  const notes = kind === "booking" ? [659.25, 987.77, 1318.5] : kind === "ticket" ? [880, 739.99, 880] : kind === "status" ? [523.25, 783.99] : [1174.66];
+  const notes = kind === "urgent" ? [987.77, 739.99, 987.77, 739.99, 987.77] : kind === "booking" ? [659.25, 987.77, 1318.5] : kind === "ticket" ? [880, 739.99, 880] : kind === "status" ? [523.25, 783.99] : [1174.66];
   const t0 = a.currentTime + 0.02;
   notes.forEach((f, i) => {
     const t = t0 + i * 0.13;
@@ -33,7 +33,7 @@ function chime(kind: LiveKind) {
   });
 }
 
-const ICON: Record<LiveKind, string> = { booking: "BellRing", status: "RefreshCw", message: "MessageCircle", ticket: "LifeBuoy", "ticket-reply": "MessagesSquare" };
+const ICON: Record<LiveKind, string> = { urgent: "ShieldAlert", booking: "BellRing", status: "RefreshCw", message: "MessageCircle", ticket: "LifeBuoy", "ticket-reply": "MessagesSquare" };
 
 function diff(prev: DB, db: DB): LiveEvent[] {
   const out: LiveEvent[] = [];
@@ -43,12 +43,15 @@ function diff(prev: DB, db: DB): LiveEvent[] {
     const p = before.get(b.id);
     if (!p) { out.push({ id: "b" + b.id, kind: "booking", title: `طلب جديد من ${b.clientName}`, sub: `إلى ${name(b.kind, b.targetId)} · ${b.city} · ${b.date}`, at: Date.now(), tab: "bookings", focus: b.id }); continue; }
     if (p.status !== b.status) out.push({ id: "s" + b.id + b.status, kind: "status", title: `${name(b.kind, b.targetId)}: ${b.status === "quoted" ? "أرسل عرض سعر" : b.status === "confirmed" ? "تم تأكيد الحجز" : b.status === "declined" ? "اعتذر عن الطلب" : "طلب جديد"}`, sub: `للعميل ${b.clientName}`, at: Date.now(), tab: "bookings", focus: b.id });
+    if (!p.cancelRequest && b.cancelRequest) out.push({ id: "c" + b.id + b.cancelRequest.at, kind: "status", title: `${name(b.kind, b.targetId)} يطلب إلغاء حجز مؤكد`, sub: b.cancelRequest.reason, at: Date.now(), tab: "bookings", focus: b.id });
+    if (!p.commission?.claimedAt && b.commission?.claimedAt) out.push({ id: "k" + b.id, kind: "status", title: `${name(b.kind, b.targetId)} حوّل العمولة`, sub: `حجز ${b.clientName} · تأكد من الحساب`, at: Date.now(), tab: "finance", focus: "" });
+    if (b.messages.length > p.messages.length && b.messages.at(-1)!.masked) out.push({ id: "x" + b.id + b.messages.length, kind: "status", title: "محاولة مشاركة رقم تواصل", sub: `في محادثة ${b.clientName} و${name(b.kind, b.targetId)} (أخفيناه تلقائياً)`, at: Date.now(), tab: "bookings", focus: b.id });
     if (b.messages.length > p.messages.length && b.messages.at(-1)!.from !== "admin") { const m = b.messages.at(-1)!; out.push({ id: "m" + b.id + b.messages.length, kind: "message", title: `رسالة من ${m.from === "client" ? b.clientName : name(b.kind, b.targetId)}`, sub: m.text.slice(0, 80), at: Date.now(), tab: "bookings", focus: b.id }); }
   }
   const tb = new Map((prev.tickets ?? []).map((t) => [t.id, t]));
   for (const t of db.tickets ?? []) {
     const p = tb.get(t.id);
-    if (!p) { out.push({ id: "t" + t.id, kind: "ticket", title: `تذكرة دعم من ${t.fromName}`, sub: t.subject, at: Date.now(), tab: "support", focus: t.id }); continue; }
+    if (!p) { out.push({ id: "t" + t.id, kind: t.urgent ? "urgent" : "ticket", title: t.urgent ? `بلاغ طارئ من ${t.fromName}` : `تذكرة دعم من ${t.fromName}`, sub: t.subject, at: Date.now(), tab: "support", focus: t.id }); continue; }
     const userMsgs = (x: typeof t) => x.messages.filter((m) => m.from === "user").length;
     if (userMsgs(t) > userMsgs(p)) out.push({ id: "r" + t.id + t.messages.length, kind: "ticket-reply", title: `رد جديد من ${t.fromName}`, sub: t.messages.at(-1)!.text.slice(0, 80), at: Date.now(), tab: "support", focus: t.id });
   }
@@ -72,7 +75,7 @@ export function useLive(db: DB) {
     setFeed((f) => [...ev.reverse(), ...f].slice(0, 60));
     setToasts((t) => [...ev, ...t].slice(0, 3));
     if (document.hidden) setUnseen((n) => n + ev.length);
-    const top = ev.find((e) => e.kind === "booking") ?? ev.find((e) => e.kind === "ticket") ?? ev[0];
+    const top = ev.find((e) => e.kind === "urgent") ?? ev.find((e) => e.kind === "booking") ?? ev.find((e) => e.kind === "ticket") ?? ev[0];
     if (soundRef.current) chime(top.kind);
     navigator.vibrate?.(top.kind === "booking" ? [80, 60, 80] : 50);
     try { if (document.hidden && "Notification" in window && Notification.permission === "granted") new Notification(top.title, { body: top.sub, tag: top.id, icon: "favicon.png" }); } catch { /* */ }

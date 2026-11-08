@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { OCCASIONS, fmt, isoDay, sar, setBookingStatus, type Booking } from "@munasabati/core";
+import { OCCASIONS, claimCommission, duesOf, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking, type Due } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
 import { photoUrl } from "./media";
 import { BookingChat } from "./support";
-import { apply, repo, resizeImage } from "./data";
+import { apply, repo, resizeImage, useDB } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
 
@@ -70,7 +70,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
           <motion.section key={b.id} layout className="card stack" style={{ ["--gap" as string]: "12px" }}>
             <div className="row">
               <span className="avatar">{b.clientName[0]}</span>
-              <div className="grow"><b className="display" style={{ display: "block" }}>{b.clientName}</b><small className="muted">{ago(b.createdAt)}{b.fromClient ? " · من تطبيق العميل" : ""}</small></div>
+              <div className="grow"><b className="display" style={{ display: "block" }}>{b.clientName}</b><small className="muted">{ago(b.createdAt)}{b.fromPlan ? " · من خطة العميل المقترحة" : b.fromClient ? " · من تطبيق العميل" : ""}{b.reassignedFrom ? " · محوّل من الإدارة" : ""}</small></div>
               <StatusPill status={b.status} />
             </div>
             <div className="row wrap muted num" style={{ fontSize: 13, ["--gap" as string]: "14px" }}>
@@ -90,6 +90,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
             </div>}
             {b.status === "quoted" && <div className="row wrap"><span className="grow muted">عرضك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? 0)}</b> · بانتظار العميل</span><button className="btn sm" onClick={() => { apply(setBookingStatus(b.id, "confirmed")); toast("تم تأكيد الحجز"); }}>العميل وافق هاتفياً</button></div>}
             {b.status === "confirmed" && <div className="muted">قيمة الحجز: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? b.estimate)}</b></div>}
+            {b.status === "confirmed" && <ConfirmedTools b={b} />}
           </motion.section>
         ))}
       </div>
@@ -146,25 +147,62 @@ export function MonthBoard({ bookings, blocked = [], onToggleBlock, label }: { b
   );
 }
 
-export function Plans({ venue }: { venue?: boolean }) {
+/** مستحقات المنصة: مناسبتي مجانية للعميل، وعمولتها على الحجوزات المؤكدة من التاجر فقط (بدون دفع إلكتروني: تحويل بنكي) */
+export function PlatformDues({ kind, id }: { kind: "supplier" | "venue"; id: string }) {
+  const db = useDB();
   const toast = useToast();
-  const plans: [string, number, string[], boolean?][] = venue
-    ? [["أساسي", 0, ["صفحة القاعة وظهور في البحث", "حتى 5 طلبات شهرياً", "عمولة 5% على الحجز"]], ["القاعات", 999, ["طلبات غير محدودة", "أكثر من قاعة وتسعير ويكند", "تأكيد أعداد الضيوف من العرسان", "عمولة 3% ومدير حساب"], true], ["القصور", 2490, ["كل مزايا القاعات", "شاشة بوابة QR لكل مدخل", "تقارير إشغال سنوية", "بدون عمولة"]]]
-    : [["أساسي", 0, ["ملف تعريفي وظهور في البحث", "حتى 10 طلبات شهرياً", "عمولة 8% على الحجز"]], ["احترافي", 299, ["طلبات غير محدودة", "باقات وتقويم وتقارير", "شارة مورد موثق", "عمولة 5%"], true], ["مؤسسات", 799, ["فريق متعدد المستخدمين", "أولوية في نتائج البحث", "عمولة 3%"]]];
+  const dues = duesOf(db, kind, id);
+  const rate = db.commission?.rate;
+  const open = dues.filter((d) => d.state === "due" || d.state === "overdue");
+  const total = (l: Due[]) => l.reduce((a, d) => a + (d.amount ?? 0), 0);
+  const LBL: Record<Due["state"], [string, string]> = { paid: ["ok", "مدفوعة"], claimed: ["info", "بانتظار تأكيد الإدارة"], overdue: ["bad", "متأخرة"], due: ["warn", "مستحقة الآن"], upcoming: ["neutral", "بعد المناسبة"] };
+  const copy = async () => { try { await navigator.clipboard.writeText(db.commission?.bank ?? ""); toast("تم نسخ بيانات الحساب"); } catch { toast(db.commission?.bank ?? ""); } };
   return (
     <>
-      <div><h1 className="page-title">الاشتراك</h1><p className="page-sub">بدون عمولة على أول 10 حجوزات لكل حساب جديد.</p></div>
-      <div className="grid-auto" style={{ ["--min" as string]: "240px" }}>
-        {plans.map(([n, p, items, hot]) => (
-          <section key={n} className="card stack" style={{ borderColor: hot ? "var(--ink)" : undefined, borderWidth: hot ? 1.5 : 1 }}>
-            <div className="row between"><b className="display" style={{ fontSize: 17 }}>{n}</b>{hot && <span className="pill brand">الأكثر اختياراً</span>}</div>
-            <div><span className="display num" style={{ fontSize: 34, fontWeight: 800 }}>{p ? fmt(p) : "مجاني"}</span>{p > 0 && <span className="muted"> ر.س / شهرياً</span>}</div>
-            <ul style={{ margin: 0, padding: "0 18px 0 0", display: "grid", gap: 6, color: "var(--muted)", fontSize: 14 }}>{items.map((i) => <li key={i}>{i}</li>)}</ul>
-            <button className={"btn block " + (hot ? "primary" : "")} disabled={!p} onClick={() => toast("الدفع الإلكتروني يتفعّل مع الإطلاق الرسمي")}>{p ? "ترقية" : "باقتك الحالية"}</button>
-          </section>
-        ))}
+      <div><h1 className="page-title">مستحقات المنصة</h1><p className="page-sub">مناسبتي مجانية لك وللعميل: ظهورك وطلباتك وأدواتك كلها بدون اشتراك. عمولتنا {rate ? <b className="num">{rate}%</b> : "تحددها الإدارة"} من قيمة الحجوزات المؤكدة عبر المنصة فقط.</p></div>
+      <div className="stats">
+        <div className="card"><div className="stat-label">مستحق الآن</div><div className="stat-value num">{open.length ? sar(total(open)) : "—"}</div><div className="stat-sub">{open.length} حجز</div></div>
+        <div className="card"><div className="stat-label">بعد المناسبات القادمة</div><div className="stat-value num">{total(dues.filter((d) => d.state === "upcoming")) ? sar(total(dues.filter((d) => d.state === "upcoming"))) : "—"}</div></div>
+        <div className="card"><div className="stat-label">تم سداده</div><div className="stat-value num">{total(dues.filter((d) => d.state === "paid")) ? sar(total(dues.filter((d) => d.state === "paid"))) : "—"}</div></div>
       </div>
+      {open.length > 0 && <section className="card stack">
+        <b className="display">طريقة السداد</b>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>حوّل المبلغ المستحق على حساب مناسبتي، ثم اضغط «تم التحويل». تتأكد الإدارة وتغلق المستحق.{db.commission?.graceDays ? ` مهلة السداد ${db.commission.graceDays} أيام بعد المناسبة.` : ""}</p>
+        {db.commission?.bank ? <div className="row" style={{ ["--gap" as string]: "8px" }}><code className="grow num" style={{ padding: "10px 12px", borderRadius: 12, background: "var(--surface-2)", direction: "ltr", textAlign: "right", overflowWrap: "anywhere" }}>{db.commission.bank}</code><button className="btn sm" onClick={() => void copy()}><Icon name="Copy" size={15} /> نسخ</button></div> : <p className="muted" style={{ margin: 0 }}>تضيف الإدارة بيانات الحساب قريباً.</p>}
+        <button className="btn primary" onClick={() => { apply(claimCommission(open.map((d) => d.booking.id))); toast("أبلغنا الإدارة بالتحويل"); }}>تم التحويل</button>
+      </section>}
+      <section className="card" style={{ paddingBlock: 6 }}>
+        {dues.length ? <div className="list">{dues.map((d) => (
+          <div key={d.booking.id} className="list-row">
+            <span className="avatar">{d.booking.clientName[0]}</span>
+            <div className="t"><b>{d.booking.clientName}</b><small className="num">{d.booking.date} · قيمة الحجز {d.value ? sar(d.value) : "لم تُحدد"}</small></div>
+            <div style={{ textAlign: "end" }}><b className="num display">{d.amount ? sar(d.amount) : "—"}</b><div><span className={"pill " + LBL[d.state][0]}>{LBL[d.state][1]}</span></div></div>
+          </div>
+        ))}</div> : <Empty icon="Receipt" title="ما عليك أي مستحقات">العمولة تُحسب فقط بعد تأكيد حجز عبر المنصة.</Empty>}
+      </section>
     </>
+  );
+}
+
+/** حالة التاجر يوم المناسبة وطلب الإلغاء (يمر بالإدارة) */
+const VSTEPS: [NonNullable<Booking["vendorStatus"]>, string, string][] = [["onway", "طلعنا", "Truck"], ["arrived", "وصلنا", "MapPin"], ["setup", "نركّب", "Wrench"], ["ready", "جاهز", "CheckCircle2"]];
+export function ConfirmedTools({ b }: { b: Booking }) {
+  const toast = useToast();
+  const [cancel, setCancel] = useState(false);
+  const [reason, setReason] = useState("");
+  return (
+    <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+      <div className="field"><span className="label">حالتك يوم المناسبة (يشوفها العميل لحظياً)</span>
+        <div className="vstat">{VSTEPS.map(([k, l, ic]) => <button key={k} className={b.vendorStatus === k ? "on" : ""} aria-pressed={b.vendorStatus === k} onClick={() => { apply(setVendorStatus(b.id, k)); toast(`تم: ${l}`); }}><Icon name={ic} size={16} />{l}</button>)}</div>
+      </div>
+      {b.cancelRequest ? <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>طلب الإلغاء عند الإدارة</b><div className="muted">الحجز قائم لين قرار الإدارة. السبب: {b.cancelRequest.reason}</div></div>
+        : cancel ? <form className="row wrap" onSubmit={(e) => { e.preventDefault(); if (reason.trim().length < 3) return; apply(requestCancel(b.id, reason.trim())); setCancel(false); toast("أرسلنا طلب الإلغاء للإدارة"); }}>
+          <label className="sr" htmlFor={"cr" + b.id}>سبب الإلغاء</label>
+          <input id={"cr" + b.id} className="input grow" style={{ minWidth: 180, width: "auto" }} placeholder="سبب الإلغاء (يصل للإدارة)" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <button className="btn sm" type="submit">إرسال</button><button className="btn sm ghost" type="button" onClick={() => setCancel(false)}>تراجع</button>
+        </form>
+        : <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setCancel(true)}>طلب إلغاء الحجز</button>}
+    </div>
   );
 }
 

@@ -28,7 +28,7 @@ export function Explore({ initialCat }: { initialCat?: string }) {
     if (favOnly) list = list.filter((i) => db.client.favorites.includes(i.v.id));
     const price = (i: Item) => (i.kind === "venue" ? venueFrom(i.v) : i.v.priceFrom);
     const by = { best: (a: Item, b: Item) => Number(!!(b.v as Supplier).featured) - Number(!!(a.v as Supplier).featured) || (b.v.rating ?? 0) - (a.v.rating ?? 0), price: (a: Item, b: Item) => (price(a) ?? Infinity) - (price(b) ?? Infinity), rating: (a: Item, b: Item) => (b.v.rating ?? 0) - (a.v.rating ?? 0) };
-    return list.sort(by[sort]);
+    return list.sort((a, b) => Number(!!b.v.promoted) - Number(!!a.v.promoted) || by[sort](a, b));
   }, [db.venues, db.suppliers, db.client.favorites, cat, city, q, sort, favOnly]);
 
   return (
@@ -68,7 +68,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
     <div className="vcard" role="link" tabIndex={0} onClick={() => go(`${item.kind}-${v.id}`)} onKeyDown={(e) => e.key === "Enter" && go(`${item.kind}-${v.id}`)}>
       <div className="art">
         <Media photos={v.photos} seed={v.id} hue={v.hue} kind={item.kind} alt={v.name} />
-        <div className="over">{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
+        <div className="over">{item.v.promoted && <span className="pill pl-promo" style={{ position: "static" }}><Icon name="Sparkles" size={12} /> مميز</span>}{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
       <div className="body">

@@ -63,7 +63,7 @@ export default function Home() {
         {next.checklist && (
           <div className="chips wrap">
             {next.checklist.map((c) => (
-              <button key={c.cat} className={"chip check-chip " + c.state} onClick={() => go("explore-" + c.cat)}>
+              <button key={c.cat} className={"chip check-chip " + c.state} onClick={() => go(c.state === "none" ? "plan" : "bookings")}>
                 <Icon name={c.state === "confirmed" ? "CheckCircle2" : c.state === "pending" ? "Clock" : "Circle"} size={15} />{c.label}
               </button>
             ))}

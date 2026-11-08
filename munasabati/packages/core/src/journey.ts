@@ -50,12 +50,12 @@ export function journey(db: DB, now = Date.now()): Stage[] {
     : vQuoted
       ? { id: "venue", n: 2, title: "القاعة", status: "active", progress: 0.66, summary: `وصلك عرض سعر من ${vName(vQuoted.targetId)}`, cta: { label: "راجع العرض واقبله", route: "bookings" } }
       : vNew
-        ? { id: "venue", n: 2, title: "القاعة", status: "waiting", progress: 0.33, summary: `طلبك عند ${vName(vNew.targetId)} بانتظار الرد`, cta: { label: "قارن قاعات أخرى", route: "explore-venues" } }
-        : { id: "venue", n: 2, title: "القاعة", status: "todo", progress: 0, summary: "اختر القاعة وحدد اليوم", cta: { label: "اختر القاعة", route: "explore-venues" } });
+        ? { id: "venue", n: 2, title: "القاعة", status: "waiting", progress: 0.33, summary: `طلبك عند ${vName(vNew.targetId)} بانتظار الرد`, cta: { label: "تابع طلباتك", route: "bookings" } }
+        : { id: "venue", n: 2, title: "القاعة", status: "todo", progress: 0, summary: "اقترحنا لك القاعة والتجهيز على ذوقك وميزانيتك", cta: { label: "شوف خطتك واطلب بضغطة", route: "plan" } });
 
   const supplierCats = (id: string) => db.suppliers.find((s) => s.id === id)?.cats ?? [];
   const checklist = ESSENTIALS.map(({ cat, label }) => {
-    const rel = sup.filter((b) => supplierCats(b.targetId).includes(cat));
+    const rel = sup.filter((b) => (b.cat ? b.cat === cat : supplierCats(b.targetId).includes(cat)));
     const state = rel.some((b) => b.status === "confirmed") ? "confirmed" : rel.some((b) => b.status !== "declined") ? "pending" : "none";
     return { cat, label, state } as const;
   });
@@ -66,7 +66,7 @@ export function journey(db: DB, now = Date.now()): Stage[] {
     id: "prep", n: 3, title: "التجهيزات", checklist, progress: prepDone / ESSENTIALS.length,
     status: prepDone === ESSENTIALS.length ? "done" : prepQuote ? "active" : missing ? (checklist.some((c) => c.state !== "none") ? "active" : "todo") : "waiting",
     summary: prepDone === ESSENTIALS.length ? "الكوشة والتصوير والضيافة مؤكدة" : prepQuote ? "وصلك عرض سعر من مورد" : `${prepDone} من ${ESSENTIALS.length} خدمات أساسية مؤكدة`,
-    cta: prepQuote ? { label: "راجع عرض المورد", route: "bookings" } : missing ? { label: `احجز ${missing.label}`, route: `explore-${missing.cat}` } : undefined,
+    cta: prepQuote ? { label: "راجع عرض المورد", route: "bookings" } : missing ? { label: `اطلب ${missing.label} من خطتك`, route: "plan" } : undefined,
   });
 
   const total = guests.length;
@@ -84,7 +84,7 @@ export function journey(db: DB, now = Date.now()): Stage[] {
     id: "day", n: 5, title: "يوم المناسبة", progress: total ? inside / Math.max(1, guests.filter((g) => g.status === "yes").length) : 0,
     status: e && days === 0 && inside > 0 ? "active" : "todo",
     summary: days === 0 ? "اليوم يومك! افتح شاشة الاستقبال" : days <= 7 ? `باقي ${days} أيام · جهّز شاشة الاستقبال` : `باقي ${days} يوم`,
-    cta: { label: "شاشة استقبال الضيوف", route: "door" },
+    cta: { label: "روابط المنسقين والحضور", route: "door" },
   });
 
   return stages;

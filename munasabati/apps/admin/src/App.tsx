@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, duesOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, apply, isCloud, useDB, useToast,
 } from "@munasabati/ui";
 import { BookingAdmin, Clients } from "./clients";
+import { Finance } from "./finance";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 
 /*
@@ -42,6 +43,18 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
   const stale = db.bookings.filter((b) => b.status === "new" && Date.now() - b.createdAt > 24 * 36e5);
   const openT = tickets.filter((t) => t.status === "open");
   const unverified = [...db.suppliers, ...db.venues].filter((x) => !x.verified && x.status !== "suspended");
+  const urgent = tickets.filter((t) => t.urgent && t.status !== "closed");
+  const cancels = db.bookings.filter((b) => b.cancelRequest);
+  const overdue = duesOf(db).filter((d) => d.state === "overdue");
+  const claimed = duesOf(db).filter((d) => d.state === "claimed");
+  const maskedB = db.bookings.filter((b) => b.messages.some((m) => m.masked && Date.now() - m.at < 7 * 864e5));
+  const day = Date.now() - 864e5;
+  const morning: [string, number, string, string][] = [
+    ["طلبات جديدة", db.bookings.filter((b) => !b.seed && b.createdAt > day).length, "CalendarPlus", "bookings"],
+    ["من الخطة المقترحة", db.bookings.filter((b) => b.fromPlan && b.createdAt > day).length, "Sparkles", "bookings"],
+    ["حجوزات مؤكدة", db.bookings.filter((b) => b.status === "confirmed" && !b.seed).length, "CheckCircle2", "bookings"],
+    ["عملاء من الدعوات", adminClients(db).filter((c) => c.event?.source === "invite").length, "Send", "clients"],
+  ];
   const feed = [
     ...db.bookings.map((b) => ({ at: b.createdAt, icon: "CalendarCheck", text: `طلب ${b.kind === "venue" ? "قاعة" : "مورد"} من ${b.clientName}`, go: () => go("bookings", b.id) })),
     ...tickets.map((t) => ({ at: t.updatedAt, icon: "LifeBuoy", text: `تذكرة: ${t.subject} · ${t.fromName}`, go: () => go("support", t.id) })),
@@ -56,15 +69,24 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
   return (
     <>
       <div><span className="eyebrow">مركز التحكم</span><h1 className="page-title">نظرة عامة</h1></div>
+      <section className="card">
+        <div className="section-title"><h3>ملخص آخر ٢٤ ساعة</h3></div>
+        <div className="adm-morning">{morning.map(([l, n, ic, t]) => <button key={l} onClick={() => go(t)}><Icon name={ic} size={16} /><b className="num">{n}</b><small>{l}</small></button>)}</div>
+      </section>
       <LiveFeed feed={live} onOpen={(e) => go(e.tab, e.focus)} />
       <div className="stats">{tiles.map(([l, n, ic, t]) => <button key={l} className="card adm-tile" onClick={() => go(t)}><div className="stat-label"><Icon name={ic} size={15} /> {l}</div><div className="stat-value num">{n}</div></button>)}</div>
       <section className="card">
         <div className="section-title"><h3>يحتاج انتباهك</h3></div>
         <div className="list">
+          {urgent.length > 0 && <button className="list-row adm-row adm-urgent" onClick={() => go("support", urgent[0].id)}><span className="avatar"><Icon name="ShieldAlert" size={18} /></span><div className="t"><b>{urgent.length} بلاغ طارئ من ليلة مناسبة</b><small>{urgent[0].subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
+          {cancels.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings", cancels[0].id)}><span className="avatar"><Icon name="CalendarX" size={18} /></span><div className="t"><b>{cancels.length} طلب إلغاء حجز مؤكد ينتظر قرارك</b><small>الحجز قائم لين توافق أو ترفض</small></div><Icon name="ChevronLeft" size={18} /></button>}
+          {claimed.length > 0 && <button className="list-row adm-row" onClick={() => go("finance")}><span className="avatar"><Icon name="Receipt" size={18} /></span><div className="t"><b>{claimed.length} عمولة حوّلها التجار</b><small>تأكد من الحساب وأغلق المستحق</small></div><Icon name="ChevronLeft" size={18} /></button>}
+          {overdue.length > 0 && <button className="list-row adm-row" onClick={() => go("finance")}><span className="avatar"><Icon name="Hourglass" size={18} /></span><div className="t"><b>{overdue.length} عمولة متأخرة عن المهلة</b><small>ذكّر التاجر أو علّق حسابه لحين السداد</small></div><Icon name="ChevronLeft" size={18} /></button>}
+          {maskedB.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings", maskedB[0].id)}><span className="avatar"><Icon name="ShieldCheck" size={18} /></span><div className="t"><b>{maskedB.length} محادثة فيها محاولة مشاركة رقم</b><small>أخفينا الرقم تلقائياً. راجع إذا تكررت</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {openT.length > 0 && <button className="list-row adm-row" onClick={() => go("support")}><span className="avatar"><Icon name="LifeBuoy" size={18} /></span><div className="t"><b>{openT.length} تذكرة دعم بانتظار ردك</b><small>أقدمها: {openT.at(-1)?.subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {stale.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings")}><span className="avatar"><Icon name="Hourglass" size={18} /></span><div className="t"><b>{stale.length} طلب بدون رد من التاجر لأكثر من 24 ساعة</b><small>تواصل مع التجار أو أعد توجيه العملاء</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {unverified.length > 0 && <button className="list-row adm-row" onClick={() => go("suppliers")}><span className="avatar"><Icon name="BadgeCheck" size={18} /></span><div className="t"><b>{unverified.length} حساب بانتظار التوثيق</b><small>راجع السجل التجاري ثم وثّق الحساب</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {!openT.length && !stale.length && !unverified.length && <p className="muted">كل شي تحت السيطرة.</p>}
+          {!openT.length && !stale.length && !unverified.length && !urgent.length && !cancels.length && !overdue.length && !claimed.length && !maskedB.length && <p className="muted">كل شي تحت السيطرة.</p>}
         </div>
       </section>
       <section className="card">
@@ -182,7 +204,9 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
               <button className="btn" onClick={() => { apply(adminSetVerified(kind, cur.id, !cur.verified)); toast(cur.verified ? "تم إلغاء التوثيق" : "تم توثيق الحساب"); }}><Icon name="BadgeCheck" size={16} /> {cur.verified ? "إلغاء التوثيق" : "توثيق الحساب"}</button>
               <button className="btn" onClick={() => { apply(adminSetStatus(kind, cur.id, cur.status === "suspended" ? "active" : "suspended")); toast(cur.status === "suspended" ? "تم تفعيل الحساب" : "تم تعليق الحساب"); }}><Icon name={cur.status === "suspended" ? "PlayCircle" : "PauseCircle"} size={16} /> {cur.status === "suspended" ? "تفعيل الحساب" : "تعليق الحساب"}</button>
               <button className="btn" onClick={() => setEdit({ name: cur.name, city: cur.city, about: cur.about })}><Icon name="Pencil" size={16} /> تعديل البيانات</button>
+              <button className={"btn" + (cur.promoted ? " primary" : "")} onClick={() => { apply(setPromoted(kind, cur.id, !cur.promoted)); toast(cur.promoted ? "أوقفنا الظهور المميز" : "فعّلنا الظهور المميز"); }}><Icon name="Sparkles" size={16} /> {cur.promoted ? "إيقاف الظهور المميز" : "تفعيل ظهور مميز (مدفوع)"}</button>
             </div>
+            {(() => { const t = trustOf(db, kind, cur.id); return <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>{t.fast && <span className="pill ok">يرد بسرعة</span>}{t.committed && <span className="pill ok">ملتزم</span>}{t.cancels > 0 && <span className="pill warn">{t.cancels} طلب إلغاء</span>}{t.masked > 0 && <span className="pill bad">{t.masked} محاولة مشاركة رقم</span>}</div>; })()}
             <Confirm label="حذف الحساب وطلباته" onYes={() => { apply(adminDelete(kind, cur.id)); setSel(null); toast("تم حذف الحساب"); }} />
           </div>
         ))}
@@ -302,6 +326,7 @@ function Panel() {
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "new").length },
     { id: "clients", label: "العملاء", icon: "Users" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open").length },
+    { id: "finance", label: "المالية", icon: "Receipt", count: duesOf(db).filter((d) => d.state === "claimed" || d.state === "overdue").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
     { id: "settings", label: "الإعدادات", icon: "Settings" },
@@ -315,6 +340,7 @@ function Panel() {
           {tab === "overview" && <Overview go={go} live={live.feed} />}
           {tab === "bookings" && <Bookings focus={focus} go={go} />}
           {tab === "clients" && <Clients focus={focus} go={go} />}
+          {tab === "finance" && <Finance go={go} />}
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, maskContacts, suggestPlan, requestPlan, duesOf, setCommission, markCommissionPaid, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -157,5 +157,64 @@ describe("المنسق عند الباب", () => {
     expect(!r1.result.ok && r1.result.reason).toBe("section");
     const r2 = checkIn(repo.get(), "https://x.com/client/#invite-" + w.code.toLowerCase(), "women");
     expect(r2.result.ok).toBe(true);
+  });
+});
+
+describe("الخطة المقترحة والدخل والحماية", () => {
+  const setup = () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 200000, samples: false }));
+    return repo;
+  };
+  it("يقترح لكل بند حسب المدينة والطابع، ويرسل الطلبات دفعة واحدة", () => {
+    const repo = setup();
+    repo.apply(updateEvent({ style: ["najdi"] }));
+    const plan = suggestPlan(repo.get());
+    const venue = plan.find((l) => l.cat === "venue")!;
+    expect(venue.picks[0].city).toBe("الرياض");
+    expect(venue.budget).toBe(70000);
+    const hosp = plan.find((l) => l.cat === "hosp")!;
+    expect(hosp.picks.length).toBeGreaterThan(0);
+    const chosen = plan.filter((l) => l.picks[0]).map((l) => ({ line: l, pick: l.picks[0] }));
+    repo.apply(requestPlan(chosen, { name: "سارة", phone: "0551112222" }));
+    const mine = repo.get().bookings.filter((b) => b.fromPlan);
+    expect(mine.length).toBe(chosen.length);
+    expect(mine.every((b) => b.budget && b.cat)).toBe(true);
+  });
+  it("يخفي الأرقام والحسابات من المحادثة", () => {
+    expect(maskContacts("كلمني على 0551234567").masked).toBe(true);
+    expect(maskContacts("رقمي +966 55 123 4567").text).not.toMatch(/123/);
+    expect(maskContacts("سناب: party_riyadh").masked).toBe(true);
+    expect(maskContacts("السعر 15000 ريال للباقة").masked).toBe(false);
+  });
+  it("العمولة على التاجر فقط، وتُحسب من الحجوزات المؤكدة", () => {
+    const repo = setup();
+    repo.apply(setCommission({ rate: 5, graceDays: 7 }));
+    repo.apply(createBooking({ kind: "supplier", targetId: "s3", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
+    const id = repo.get().bookings[0].id;
+    repo.apply(setBookingStatus(id, "confirmed", { quote: 20000 }));
+    let d = duesOf(repo.get(), "supplier", "s3", new Date("2027-03-01").getTime());
+    expect(d[0].amount).toBe(1000);
+    expect(d[0].state).toBe("overdue");
+    repo.apply(markCommissionPaid([id]));
+    d = duesOf(repo.get(), "supplier", "s3");
+    expect(d[0].state).toBe("paid");
+  });
+  it("إلغاء الحجز المؤكد يمر بالإدارة، والإسناد البديل ينشئ طلباً جديداً", () => {
+    const repo = setup();
+    repo.apply(createBooking({ kind: "supplier", targetId: "s3", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true, cat: "hosp" }));
+    const id = repo.get().bookings[0].id;
+    repo.apply(setBookingStatus(id, "confirmed"));
+    repo.apply(requestCancel(id, "ظرف طارئ"));
+    expect(repo.get().bookings[0].status).toBe("confirmed");
+    repo.apply(resolveCancel(id, false));
+    expect(repo.get().bookings[0].cancelRequest).toBeUndefined();
+    const alt = alternativesFor(repo.get(), repo.get().bookings[0]);
+    expect(alt.every((a) => a.id !== "s3")).toBe(true);
+    if (alt[0]) {
+      repo.apply(reassignBooking(id, { kind: "supplier", id: alt[0].id, name: alt[0].name }));
+      expect(repo.get().bookings[0].reassignedFrom).toBe(id);
+      expect(repo.get().bookings.find((b) => b.id === id)!.status).toBe("declined");
+    }
   });
 });

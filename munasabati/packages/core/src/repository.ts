@@ -17,7 +17,7 @@ export interface AuthAdapter {
   signOut(): Promise<void>;
 }
 
-export interface DoorSnapshot { title: string; date: string; guests: Guest[] }
+export interface DoorSnapshot { title: string; date: string; guests: Guest[]; program?: { title: string; time: string }[]; live?: number }
 export interface DoorAdapter {
   load(key: string): Promise<DoorSnapshot | null>;
   checkIn(key: string, code: string): Promise<CheckInResult>;

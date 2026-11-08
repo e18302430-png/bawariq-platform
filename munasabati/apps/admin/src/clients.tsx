@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, bookingMessage, fmt, normPhone, sar,
+  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, reassignBooking, resolveCancel, fmt, normPhone, sar,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
 import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, useDB, useToast } from "@munasabati/ui";
@@ -129,9 +129,34 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
 const QUICK = ["تم استلام طلبك، ونتابعه مع التاجر الآن.", "نرجو من التاجر إرسال عرض السعر خلال 24 ساعة.", "تم تعديل موعد الحجز بالاتفاق بين الطرفين.", "تم تأكيد الحجز من الإدارة."];
 export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: string; onClient?: () => void }) {
   const toast = useToast();
+  const db = useDB();
+  const [alt, setAlt] = useState(false);
+  const alts = alt ? alternativesFor(db, b) : [];
   const [f, setF] = useState<null | { clientName: string; phone: string; date: string; guests: string; budget: string; quote: string; note: string }>(null);
   return (
     <div className="stack">
+      <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>
+        {b.fromPlan && <span className="pill brand">من الخطة المقترحة</span>}
+        {b.reassignedFrom && <span className="pill info">محوّل من الإدارة</span>}
+        {b.vendorStatus && <span className="pill ok">التاجر: {({ onway: "في الطريق", arrived: "وصل", setup: "يجهّز", ready: "جاهز" } as const)[b.vendorStatus]}</span>}
+        {b.messages.some((m) => m.masked) && <span className="pill bad">محاولة مشاركة رقم</span>}
+      </div>
+      {b.cancelRequest && <div className="card flat stack" style={{ background: "var(--surface-2)", borderColor: "var(--warn)" }}>
+        <b><Icon name="CalendarX" size={16} /> التاجر يطلب إلغاء الحجز</b>
+        <span className="muted" style={{ fontSize: 14 }}>السبب: {b.cancelRequest.reason}</span>
+        <div className="row wrap">
+          <button className="btn sm" onClick={() => { apply(resolveCancel(b.id, false)); toast("رفضنا الإلغاء وأبلغنا الطرفين"); }}>رفض: الحجز قائم</button>
+          <button className="btn sm primary" onClick={() => { apply(resolveCancel(b.id, true)); setAlt(true); toast("وافقنا. اختر بديلاً للعميل"); }}>موافقة وترشيح بديل</button>
+        </div>
+      </div>}
+      {(b.status === "new" || b.status === "declined" || b.cancelRequest) && <div className="stack" style={{ ["--gap" as string]: "8px" }}>
+        {!alt ? <button className="btn sm" style={{ justifySelf: "start" }} onClick={() => setAlt(true)}><Icon name="RefreshCw" size={15} /> إسناد لتاجر بديل</button> : <>
+          <span className="label">بدائل مناسبة لنفس البند والمدينة والتاريخ</span>
+          {alts.length ? <div className="list">{alts.map((a) => (
+            <div key={a.id} className="list-row"><div className="t"><b>{a.name}</b><small>{a.reasons.slice(0, 3).join(" · ")}</small></div><button className="btn sm primary" onClick={() => { apply(reassignBooking(b.id, { kind: a.kind, id: a.id, hallId: a.hallId, name: a.name })); setAlt(false); toast(`حوّلنا الطلب إلى ${a.name}`); }}>حوّل له</button></div>
+          ))}</div> : <p className="muted" style={{ margin: 0 }}>ما فيه بديل متاح حالياً بنفس المواصفات.</p>}
+        </>}
+      </div>}
       <div className="row wrap">
         <button className="btn sm" onClick={() => setF({ clientName: b.clientName, phone: b.phone, date: b.date, guests: String(b.guests), budget: String(b.budget ?? ""), quote: String(b.quote ?? ""), note: b.note })}><Icon name="Pencil" size={15} /> تعديل الطلب</button>
         {onClient && <button className="btn sm" onClick={onClient}><Icon name="UserCheck" size={15} /> ملف العميل</button>}
@@ -155,7 +180,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
       </form>}
       <div className="field">
         <span className="label">المحادثة (أنت وسيط فيها: رسالتك تظهر للعميل و{provider})</span>
-        <Thread items={b.messages.map((m) => ({ mine: m.from === "admin", text: m.text, at: m.at, who: m.from === "provider" ? provider : m.from === "client" ? b.clientName : "الإدارة" }))} mine="لا توجد رسائل بعد" />
+        <Thread items={b.messages.map((m) => ({ mine: m.from === "admin", masked: m.masked, text: m.text, at: m.at, who: m.from === "provider" ? provider : m.from === "client" ? b.clientName : "الإدارة" }))} mine="لا توجد رسائل بعد" />
         <div className="chips wrap" style={{ margin: "6px 0" }}>{QUICK.map((t) => <button key={t} type="button" className="chip" onClick={() => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }}>{t}</button>)}</div>
         <Composer onSend={(t) => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }} placeholder="رسالة من الإدارة للطرفين" />
       </div>

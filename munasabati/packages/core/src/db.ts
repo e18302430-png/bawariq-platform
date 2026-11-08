@@ -1,6 +1,6 @@
 import { SAMPLE_GUESTS, SAMPLE_TASKS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
 import { splitBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
-import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, Supplier, Task, Ticket, Venue } from "./types";
+import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, Relation, Supplier, Task, Ticket, Venue } from "./types";
 
 /* ───────────────── البيانات الأولية ───────────────── */
 
@@ -64,7 +64,7 @@ export const patchClient = (patch: Partial<DB["client"]>): Mutation => (db) => (
 export const updateEvent = (patch: Partial<ClientEvent>): Mutation => (db) =>
   db.client.event ? { ...db, client: { ...db.client, event: { ...db.client.event, ...patch } } } : db;
 
-export const addGuest = (g: Pick<Guest, "name" | "phone" | "section" | "side" | "count">): Mutation => (db) => ({
+export const addGuest = (g: Pick<Guest, "name" | "phone" | "section" | "side" | "count"> & Partial<Pick<Guest, "relation" | "vip">>): Mutation => (db) => ({
   ...db, client: { ...db.client, guests: [{ id: uid("g"), code: inviteCode(), status: "pending", checkedIn: false, ...g }, ...db.client.guests] },
 });
 
@@ -85,8 +85,8 @@ export function checkIn(db: DB, raw: string, section?: Guest["section"]): { db: 
   if (section && g.section !== section && !g.checkedIn) return { db, result: { ok: false, reason: "section", guest: g } };
   if (g.checkedIn) return { db, result: { ok: false, reason: "already", guest: g } };
   if (g.status === "no") return { db, result: { ok: false, reason: "declined", guest: g } };
-  const next = updateGuest(g.id, { checkedIn: true, status: "yes" })(db);
-  return { db: next, result: { ok: true, guest: { ...g, checkedIn: true, status: "yes" } } };
+  const next = updateGuest(g.id, { checkedIn: true, status: "yes", checkedAt: Date.now() })(db);
+  return { db: next, result: { ok: true, guest: { ...g, checkedIn: true, status: "yes", checkedAt: Date.now() } } };
 }
 
 /** رابط المنسق: يُنشأ مرة، ويمكن إلغاؤه وتجديده (الرابط القديم يتوقف فوراً) */
@@ -106,7 +106,7 @@ export const setBookingStatus = (id: string, status: BookingStatus, extra: { quo
   ...db,
   bookings: db.bookings.map((b) => b.id !== id ? b : {
     ...b, status, quote: extra.quote ?? b.quote,
-    messages: extra.message ? [...b.messages, { ...extra.message, at: Date.now() }] : b.messages,
+    messages: extra.message ? [...b.messages, { ...extra.message, ...(extra.message.from === "admin" ? {} : maskContacts(extra.message.text)), at: Date.now() }] : b.messages,
   }),
 });
 
@@ -149,7 +149,7 @@ export const removeBudget = (id: string): Mutation => (db) => ({ ...db, client: 
 export const clearSampleGuests: Mutation = (db) => ({ ...db, client: { ...db.client, guests: db.client.guests.filter((g) => !g.sample) } });
 
 /* ───── الدعم الفني ───── */
-export const openTicket = (t: Pick<Ticket, "from" | "fromId" | "fromName" | "topic" | "subject"> & { text: string }): Mutation => (db) => {
+export const openTicket = (t: Pick<Ticket, "from" | "fromId" | "fromName" | "topic" | "subject"> & { text: string; urgent?: boolean }): Mutation => (db) => {
   const now = Date.now();
   const { text, ...rest } = t;
   return { ...db, tickets: [{ ...rest, id: uid("tk"), status: "open", messages: [{ from: "user", text, at: now }], createdAt: now, updatedAt: now }, ...(db.tickets ?? [])] };
@@ -160,9 +160,73 @@ export const replyTicket = (id: string, from: "user" | "admin", text: string): M
 export const setTicketStatus = (id: string, status: Ticket["status"]): Mutation => (db) => ({ ...db, tickets: (db.tickets ?? []).map((t) => (t.id === id ? { ...t, status, updatedAt: Date.now() } : t)) });
 
 /* ───── محادثة الطلب بين العميل والتاجر ───── */
-export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => ({
-  ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, messages: [...b.messages, { from, text, at: Date.now() }] } : b)),
+/** حماية الصفقة: إخفاء أرقام الجوال والحسابات والروابط الخارجية من محادثات العميل والتاجر */
+export function maskContacts(raw: string): { text: string; masked: boolean } {
+  let masked = false;
+  const hide = () => { masked = true; return "•••"; };
+  const text = raw
+    .replace(/(?:\+|00)?(?:9\s*6\s*6|٩\s*٦\s*٦)?[\s-]*[0٠]?[5٥](?:[\s.-]*[\d٠-٩]){8}/g, hide)
+    .replace(/[\d٠-٩](?:[\s.-]*[\d٠-٩]){8,}/g, hide)
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, hide)
+    .replace(/(?:https?:\/\/)?(?:www\.)?(?:wa\.me|api\.whatsapp\.com|t\.me|instagram\.com|snapchat\.com|tiktok\.com)\S*/gi, hide)
+    .replace(/(?:^|\s)@[A-Za-z0-9_.]{3,}/g, (m) => (m.startsWith(" ") ? " " : "") + hide())
+    .replace(/(?:سناب|انستا|انستقرام|واتس|واتساب|تلقرام)\s*[:：]?\s*[A-Za-z0-9_.]{3,}/g, hide);
+  return { text, masked };
+}
+export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => {
+  const m = from === "admin" ? { text, masked: false } : maskContacts(text);
+  return { ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, messages: [...b.messages, { from, text: m.text, at: Date.now(), ...(m.masked ? { masked: true } : {}) }] } : b)) };
+};
+
+/* ───── حماية الالتزام: إلغاء الحجز المؤكد يمر بالإدارة، والإسناد لتاجر بديل ───── */
+export const requestCancel = (id: string, reason: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, cancelRequest: { reason, at: Date.now() }, messages: [...b.messages, { from: "provider" as const, text: `طلب إلغاء الحجز: ${reason}`, at: Date.now() }] } : b)),
 });
+export const resolveCancel = (id: string, approve: boolean, note?: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : {
+    ...b, cancelRequest: undefined, status: approve ? ("declined" as const) : b.status,
+    messages: [...b.messages, { from: "admin" as const, text: note || (approve ? "وافقت الإدارة على إلغاء الحجز، ونرشّح لك بديلاً مناسباً." : "رفضت الإدارة طلب الإلغاء. الحجز قائم ونتابع التزام التاجر."), at: Date.now() }],
+  })),
+});
+export const reassignBooking = (id: string, to: { kind: "venue" | "supplier"; id: string; hallId?: string; name: string }): Mutation => (db) => {
+  const b = db.bookings.find((x) => x.id === id);
+  if (!b) return db;
+  const now = Date.now();
+  const copy: Booking = { ...b, id: uid("bk"), kind: to.kind, targetId: to.id, hallId: to.hallId, status: "new", quote: undefined, cancelRequest: undefined, vendorStatus: undefined, commission: undefined, reassignedFrom: b.id, createdAt: now,
+    messages: [{ from: "admin", text: "طلب محوّل من إدارة مناسبتي نيابة عن العميل. نرجو الرد بعرضك.", at: now }] };
+  return { ...db, bookings: [copy, ...db.bookings.map((x) => (x.id !== id ? x : { ...x, status: "declined" as const, cancelRequest: undefined, messages: [...x.messages, { from: "admin" as const, text: `حوّلت الإدارة طلبك إلى ${to.name} لضمان خدمتك في موعدك.`, at: now }] }))] };
+};
+export const setVendorStatus = (id: string, vendorStatus: Booking["vendorStatus"]): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, vendorStatus } : b)) });
+export const setClientAmount = (id: string, clientAmount?: number): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, clientAmount } : b)) });
+
+/* ───── دخل المنصة: مجانية للعميل، وعمولة على التاجر من الحجوزات المؤكدة ───── */
+export const setCommission = (c: DB["commission"]): Mutation => (db) => ({ ...db, commission: { ...db.commission, ...c } });
+/** قيمة الحجز المعتمدة للعمولة: عرض التاجر، أو المبلغ الذي ذكره العميل إن كان أعلى */
+export const bookingValue = (b: Booking) => Math.max(b.quote ?? 0, b.clientAmount ?? 0, b.quote == null ? b.estimate ?? 0 : 0) || undefined;
+export const commissionOf = (db: DB, b: Booking) => { const v = bookingValue(b), r = db.commission?.rate; return v && r ? Math.round((v * r) / 100) : undefined; };
+export interface Due { booking: Booking; value?: number; amount?: number; dueAt: number; state: "paid" | "claimed" | "overdue" | "due" | "upcoming" }
+export function duesOf(db: DB, kind?: "venue" | "supplier", id?: string, now = Date.now()): Due[] {
+  const grace = (db.commission?.graceDays ?? 7) * DAY;
+  return db.bookings.filter((b) => b.status === "confirmed" && !b.seed && b.fromClient && (!kind || (b.kind === kind && b.targetId === id))).map((b) => {
+    const dueAt = new Date(b.date + "T23:59:00").getTime() + grace;
+    const state = b.commission?.paid ? "paid" : b.commission?.claimedAt ? "claimed" : now > dueAt ? "overdue" : now > dueAt - grace ? "due" : "upcoming";
+    return { booking: b, value: bookingValue(b), amount: commissionOf(db, b), dueAt, state } as Due;
+  }).sort((a, b) => a.dueAt - b.dueAt);
+}
+export const claimCommission = (ids: string[]): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (ids.includes(b.id) ? { ...b, commission: { ...b.commission, claimedAt: Date.now() } } : b)) });
+export const markCommissionPaid = (ids: string[], paid = true): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (ids.includes(b.id) ? { ...b, commission: paid ? { ...b.commission, paid: true, paidAt: Date.now() } : { claimedAt: undefined, paid: false } } : b)) });
+export const setPromoted = (kind: "supplier" | "venue", id: string, promoted: boolean): Mutation => (db) => kind === "supplier"
+  ? { ...db, suppliers: db.suppliers.map((x) => (x.id === id ? { ...x, promoted } : x)) }
+  : { ...db, venues: db.venues.map((x) => (x.id === id ? { ...x, promoted } : x)) };
+
+/* ───── الضيوف وليلة المناسبة ───── */
+/** عبارة الترحيب في الدعوة حسب صلة القرابة */
+export const RELATIONS: [Relation, string, string][] = [
+  ["uncle", "عم", "عمّي الغالي"], ["maternal-uncle", "خال", "خالي الغالي"], ["aunt", "عمّة", "عمّتي الغالية"], ["maternal-aunt", "خالة", "خالتي الغالية"],
+  ["brother", "أخ", "أخوي الغالي"], ["sister", "أخت", "أختي الغالية"], ["friend", "صديق", "صديقي العزيز"], ["colleague", "زميل", "الزميل العزيز"], ["relative", "قريب", "قريبنا الغالي"],
+];
+export const greetingFor = (g: Pick<Guest, "relation" | "section">) => RELATIONS.find((r) => r[0] === g.relation)?.[2] ?? (g.section === "women" ? "ضيفتنا الغالية" : "ضيفنا الغالي");
+export const setLiveIndex = (i: number): Mutation => (db) => ({ ...db, client: { ...db.client, liveIndex: Math.max(0, i) } });
 
 /* ───── صلاحيات الإدارة ───── */
 export const adminSetStatus = (kind: "supplier" | "venue", id: string, status: AccountStatus): Mutation => (db) => kind === "supplier"
