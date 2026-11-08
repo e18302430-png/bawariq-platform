@@ -99,7 +99,8 @@ export const toggleFavorite = (id: string): Mutation => (db) => {
 };
 
 export const createBooking = (b: Omit<Booking, "id" | "createdAt" | "messages" | "status">): Mutation => (db) => ({
-  ...db, bookings: [{ ...b, id: uid("bk"), createdAt: Date.now(), messages: [], status: "new" }, ...db.bookings],
+  // طلب العميل يروح للإدارة أولاً للمراجعة، والإدارة ترسله للتاجر يطلب عرض سعر
+  ...db, bookings: [{ ...b, id: uid("bk"), createdAt: Date.now(), messages: [], status: b.fromClient ? "review" : "new" }, ...db.bookings],
 });
 
 export const setBookingStatus = (id: string, status: BookingStatus, extra: { quote?: number; message?: Omit<Message, "at"> } = {}): Mutation => (db) => ({
@@ -155,7 +156,15 @@ export const openTicket = (t: Pick<Ticket, "from" | "fromId" | "fromName" | "top
   return { ...db, tickets: [{ ...rest, id: uid("tk"), status: "open", messages: [{ from: "user", text, at: now }], createdAt: now, updatedAt: now }, ...(db.tickets ?? [])] };
 };
 export const replyTicket = (id: string, from: "user" | "admin", text: string): Mutation => (db) => ({
-  ...db, tickets: (db.tickets ?? []).map((t) => t.id !== id ? t : { ...t, status: from === "admin" ? "answered" : "open", updatedAt: Date.now(), messages: [...t.messages, { from, text, at: Date.now() }] }),
+  ...db, tickets: (db.tickets ?? []).map((t) => t.id !== id ? t : { ...t, status: from === "admin" ? "answered" : t.status === "closed" || t.status === "answered" ? "reopened" : t.status, closedReason: from === "user" ? undefined : t.closedReason, updatedAt: Date.now(), messages: [...t.messages, { from, text, at: Date.now() }] }),
+});
+/** إغلاق التذكرة: من الإدارة فقط، ومع رد وسبب */
+export const closeTicket = (id: string, reason: string, reply: string): Mutation => (db) => ({
+  ...db, tickets: (db.tickets ?? []).map((t) => t.id !== id ? t : { ...t, status: "closed", closedReason: reason.trim(), updatedAt: Date.now(), messages: [...t.messages, { from: "admin" as const, text: reply.trim(), at: Date.now() }] }),
+});
+/** إعادة فتح تذكرة مغلقة (للمستخدم برسالة، أو للإدارة) */
+export const reopenTicket = (id: string, from: "user" | "admin", text: string): Mutation => (db) => ({
+  ...db, tickets: (db.tickets ?? []).map((t) => t.id !== id ? t : { ...t, status: "reopened", closedReason: undefined, updatedAt: Date.now(), messages: text.trim() ? [...t.messages, { from, text: text.trim(), at: Date.now() }] : t.messages }),
 });
 export const setTicketStatus = (id: string, status: Ticket["status"]): Mutation => (db) => ({ ...db, tickets: (db.tickets ?? []).map((t) => (t.id === id ? { ...t, status, updatedAt: Date.now() } : t)) });
 
@@ -178,11 +187,26 @@ export const reassignBooking = (id: string, to: { kind: "venue" | "supplier"; id
   const b = db.bookings.find((x) => x.id === id);
   if (!b) return db;
   const now = Date.now();
-  const copy: Booking = { ...b, id: uid("bk"), kind: to.kind, targetId: to.id, hallId: to.hallId, status: "new", quote: undefined, cancelRequest: undefined, vendorStatus: undefined, reassignedFrom: b.id, createdAt: now,
+  const copy: Booking = { ...b, id: uid("bk"), kind: to.kind, targetId: to.id, hallId: to.hallId, status: "new" as const, quote: undefined, cancelRequest: undefined, vendorStatus: undefined, reassignedFrom: b.id, createdAt: now,
     messages: [{ from: "admin", text: "طلب محوّل من إدارة مناسبتي نيابة عن العميل. نرجو الرد بعرضك.", at: now }] };
   return { ...db, bookings: [copy, ...db.bookings.map((x) => (x.id !== id ? x : { ...x, status: "declined" as const, cancelRequest: undefined, messages: [...x.messages, { from: "admin" as const, text: `حوّلت الإدارة طلبك إلى ${to.name} لضمان خدمتك في موعدك.`, at: now }] }))] };
 };
 export const markNotified = (id: string): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, notifiedAt: Date.now() } : b)) });
+/** الإدارة توافق على طلب العميل وترسله للتاجر يطلب عرض سعر */
+export const forwardToVendor = (id: string, note?: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, status: "new" as const, messages: [...b.messages, { from: "admin" as const, text: note?.trim() || "طلب من إدارة مناسبتي: نرجو إرسال عرض سعر لهذا الطلب.", at: Date.now() }] })),
+});
+/** الإدارة ترفض الطلب قبل إرساله (مثلاً بيانات ناقصة أو التاريخ غير متاح) مع سبب يوصل للعميل */
+export const rejectRequest = (id: string, reason: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, status: "declined" as const, messages: [...b.messages, { from: "admin" as const, text: reason.trim() || "اعتذرت الإدارة عن هذا الطلب.", at: Date.now() }] })),
+});
+/** يتعلم من العميل: اختار (يعجبني) أو رفض (مو مناسب) */
+export const learnPref = (id: string, kind: "like" | "dismiss" | "clear"): Mutation => (db) => {
+  const p = db.client.prefs ?? { liked: [], dismissed: [] };
+  const liked = p.liked.filter((x) => x !== id), dismissed = p.dismissed.filter((x) => x !== id);
+  if (kind === "like") liked.push(id); if (kind === "dismiss") dismissed.push(id);
+  return { ...db, client: { ...db.client, prefs: { liked, dismissed } } };
+};
 export const setVendorStatus = (id: string, vendorStatus: Booking["vendorStatus"]): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, vendorStatus } : b)) });
 /** حساب مختار من الإدارة: يظهر أولاً بشارة «مختار من مناسبتي» (بدون أي رسوم) */
 export const setPromoted = (kind: "supplier" | "venue", id: string, promoted: boolean): Mutation => (db) => kind === "supplier"

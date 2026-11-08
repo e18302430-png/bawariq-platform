@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, markNotified, reassignBooking, resolveCancel, fmt, normPhone, sar,
+  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, forwardToVendor, markNotified, reassignBooking, rejectRequest, resolveCancel, fmt, normPhone, sar,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
 import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -46,7 +46,7 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
       </div>
       {shown.length ? <div className="cl-grid">{shown.map((c) => {
         const occ = OCCASIONS.find((o) => o.id === (c.event?.occasion ?? c.bookings[0]?.occasion));
-        const pending = c.bookings.filter((b) => b.status === "new").length;
+        const pending = c.bookings.filter((b) => b.status === "review" || b.status === "new").length;
         return (
           <button key={c.key} className="card cl-card" onClick={() => { setSel(c.key); setEdit(null); }}>
             <div className="row" style={{ ["--gap" as string]: "12px" }}>
@@ -126,6 +126,32 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
   );
 }
 
+/* ───── مراجعة طلب العميل قبل إرساله للتاجر ───── */
+function ReviewBox({ b, provider }: { b: Booking; provider: string }) {
+  const toast = useToast();
+  const [note, setNote] = useState("");
+  const [reject, setReject] = useState(false);
+  const [reason, setReason] = useState("");
+  return (
+    <div className="card flat stack review-box">
+      <b><Icon name="ShieldCheck" size={16} /> طلب جديد من العميل بانتظار مراجعتك</b>
+      <span className="muted" style={{ fontSize: 13.5 }}>التاجر ما يشوف الطلب لين ترسله له. بعدها يرسل عرض سعره، والعرض يوصل للعميل تلقائياً.</span>
+      {!reject ? <>
+        <label className="sr" htmlFor={"rv-n" + b.id}>ملاحظة للتاجر</label>
+        <textarea id={"rv-n" + b.id} className="input" rows={2} placeholder={`ملاحظة لـ ${provider} (اختياري)`} value={note} onChange={(e) => setNote(e.target.value)} />
+        <div className="row wrap">
+          <button className="btn primary grow" onClick={() => { apply(forwardToVendor(b.id, note)); toast(`أرسلنا الطلب لـ ${provider} يطلب عرض سعر`); }}><Icon name="Send" size={16} /> أرسله للتاجر واطلب عرض سعر</button>
+          <button className="btn ghost" onClick={() => setReject(true)}>اعتذار للعميل</button>
+        </div>
+      </> : <>
+        <label className="sr" htmlFor={"rv-r" + b.id}>سبب الاعتذار</label>
+        <textarea id={"rv-r" + b.id} className="input" rows={2} placeholder="سبب الاعتذار (يوصل للعميل)" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <div className="row"><button className="btn grow" style={{ color: "var(--bad)" }} disabled={reason.trim().length < 3} onClick={() => { apply(rejectRequest(b.id, reason)); toast("أبلغنا العميل بالاعتذار"); }}>تأكيد الاعتذار</button><button className="btn ghost" onClick={() => setReject(false)}>تراجع</button></div>
+      </>}
+    </div>
+  );
+}
+
 /* ───── أدوات الحساب: كلمة مرور جديدة لمن نسيها، وربط القاعة أو المورد بحساب صاحبه ───── */
 export function AccountTools({ kind, id, phone }: { kind?: "supplier" | "venue"; id?: string; phone: string }) {
   const toast = useToast();
@@ -186,6 +212,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
         {b.reassignedFrom && <span className="pill info">محوّل من الإدارة</span>}
         {b.vendorStatus && <span className="pill ok">التاجر: {({ onway: "في الطريق", arrived: "وصل", setup: "يجهّز", ready: "جاهز" } as const)[b.vendorStatus]}</span>}
       </div>
+      {b.status === "review" && <ReviewBox b={b} provider={provider} />}
       {b.cancelRequest && <div className="card flat stack" style={{ background: "var(--surface-2)", borderColor: "var(--warn)" }}>
         <b><Icon name="CalendarX" size={16} /> التاجر يطلب إلغاء الحجز</b>
         <span className="muted" style={{ fontSize: 14 }}>السبب: {b.cancelRequest.reason}</span>
@@ -230,7 +257,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
         <div className="chips wrap" style={{ margin: "6px 0" }}>{QUICK.map((t) => <button key={t} type="button" className="chip" onClick={() => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }}>{t}</button>)}</div>
         <Composer onSend={(t) => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }} placeholder="رسالة من الإدارة للطرفين" />
       </div>
-      <div className="field"><span className="label">تغيير الحالة</span><Segmented value={b.status} onChange={(v: BookingStatus) => { apply(adminUpdateBooking(b.id, { status: v })); toast("تم تحديث الحالة"); }} options={[["new", "جديد"], ["quoted", "عرض"], ["confirmed", "مؤكد"], ["declined", "مرفوض"]]} /></div>
+      <div className="field"><span className="label">تغيير الحالة</span><Segmented value={b.status} onChange={(v: BookingStatus) => { apply(adminUpdateBooking(b.id, { status: v })); toast("تم تحديث الحالة"); }} options={[["review", "للمراجعة"], ["new", "عند التاجر"], ["quoted", "عرض"], ["confirmed", "مؤكد"], ["declined", "مرفوض"]]} /></div>
     </div>
   );
 }

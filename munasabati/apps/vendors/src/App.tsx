@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount } from "@munasabati/ui";
+import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -56,7 +56,7 @@ function Login() {
 
 function Overview({ s, go }: { s: Supplier; go: (t: string) => void }) {
   const db = useDB();
-  const mine = db.bookings.filter((b) => b.kind === "supplier" && b.targetId === s.id);
+  const mine = db.bookings.filter((b) => b.kind === "supplier" && b.targetId === s.id && b.status !== "review");
   const upcoming = mine.filter((b) => b.status === "confirmed" && b.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date));
   return (
     <>
@@ -141,7 +141,8 @@ function Profile({ s }: { s: Supplier }) {
 function Portal({ s }: { s: Supplier }) {
   const db = useDB();
   const [tab, setTab] = useState("overview");
-  const mine = db.bookings.filter((b) => b.kind === "supplier" && b.targetId === s.id);
+  const mine = db.bookings.filter((b) => b.kind === "supplier" && b.targetId === s.id && b.status !== "review");
+  const openRequests = useCallback(() => setTab("requests"), []);
   const tabs = [
     { id: "overview", label: "اللوحة", icon: "LayoutDashboard" },
     { id: "requests", label: "الطلبات", icon: "Inbox", count: mine.filter((b) => b.status === "new").length },
@@ -152,6 +153,7 @@ function Portal({ s }: { s: Supplier }) {
   ];
   return (
     <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<><button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button><a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a></>}>
+      <RequestAlerts bookings={mine} onOpen={openRequests} />
       <AnimatePresence initial={false}>
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {s.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}

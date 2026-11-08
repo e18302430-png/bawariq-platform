@@ -28,13 +28,27 @@ if (typeof window !== "undefined") {
 const Support = lazy(() => import("@munasabati/ui").then((m) => ({ default: () => <m.SupportCenter from="client" fromId="me" fromName={m.repo.get().client.profile?.name ?? "عميل"} /> })));
 
 
+/** التنقل بين الشاشات: صفحة جديدة تبدأ من فوق، والرجوع (زر الرجوع) يرجّعك لنفس مكانك فيها */
+const scrollMemory = new Map<string, number>();
 function useHash() {
   const read = () => location.hash.replace(/^#/, "") || "home";
   const [h, setH] = useState(read);
   useEffect(() => {
-    const on = () => { setH(read()); window.scrollTo({ top: 0 }); };
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    let back = false, current = read();
+    const onPop = () => { back = true; };
+    const on = () => {
+      scrollMemory.set(current, window.scrollY);
+      const next = read(); current = next;
+      const y = back ? scrollMemory.get(next) ?? 0 : 0;
+      back = false;
+      setH(next);
+      // ننتظر رسم الشاشة الجديدة ثم نضبط مكان التمرير بدون حركة
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior })));
+    };
+    window.addEventListener("popstate", onPop);
     window.addEventListener("hashchange", on);
-    return () => window.removeEventListener("hashchange", on);
+    return () => { window.removeEventListener("popstate", onPop); window.removeEventListener("hashchange", on); };
   }, []);
   return h;
 }
@@ -55,7 +69,7 @@ function Main() {
   const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;
   const tabs: ShellTab[] = [
     { id: "home", label: "رحلتي", icon: "Route", group: "رحلتي" },
-    { id: "plan", label: "خطتي", icon: "Sparkles", group: "رحلتي" },
+    { id: "plan", label: "اقتراحاتي", icon: "Sparkles", group: "رحلتي" },
     { id: "bookings", label: "حجوزاتي", icon: "CalendarCheck", count: quotes, group: "رحلتي" },
     { id: "guests", label: "الضيوف", icon: "Users", group: "الضيوف والدعوات" },
     { id: "invites", label: "الدعوات", icon: "Send", group: "الضيوف والدعوات" },

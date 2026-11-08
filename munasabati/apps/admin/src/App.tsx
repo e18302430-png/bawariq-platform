@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
@@ -50,9 +50,10 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
   const db = useDB();
   const tickets = db.tickets ?? [];
   const stale = db.bookings.filter((b) => b.status === "new" && Date.now() - b.createdAt > 24 * 36e5);
-  const openT = tickets.filter((t) => t.status === "open");
+  const openT = tickets.filter((t) => t.status === "open" || t.status === "reopened");
   const unverified = [...db.suppliers, ...db.venues].filter((x) => !x.verified && x.status !== "suspended");
   const urgent = tickets.filter((t) => t.urgent && t.status !== "closed");
+  const review = db.bookings.filter((b) => b.status === "review");
   const cancels = db.bookings.filter((b) => b.cancelRequest);
   const day = Date.now() - 864e5;
   const morning: [string, number, string, string][] = [
@@ -84,12 +85,13 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
       <section className="card">
         <div className="section-title"><h3>يحتاج انتباهك</h3></div>
         <div className="list">
+          {review.length > 0 && <button className="list-row adm-row adm-urgent" onClick={() => go("bookings", review[0].id)}><span className="avatar"><Icon name="Inbox" size={18} /></span><div className="t"><b>{review.length} طلب من العملاء بانتظار مراجعتك</b><small>راجعه وأرسله للتاجر يطلب عرض سعر</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {urgent.length > 0 && <button className="list-row adm-row adm-urgent" onClick={() => go("support", urgent[0].id)}><span className="avatar"><Icon name="ShieldAlert" size={18} /></span><div className="t"><b>{urgent.length} بلاغ طارئ من ليلة مناسبة</b><small>{urgent[0].subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {cancels.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings", cancels[0].id)}><span className="avatar"><Icon name="CalendarX" size={18} /></span><div className="t"><b>{cancels.length} طلب إلغاء حجز مؤكد ينتظر قرارك</b><small>الحجز قائم لين توافق أو ترفض</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {openT.length > 0 && <button className="list-row adm-row" onClick={() => go("support")}><span className="avatar"><Icon name="LifeBuoy" size={18} /></span><div className="t"><b>{openT.length} تذكرة دعم بانتظار ردك</b><small>أقدمها: {openT.at(-1)?.subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {stale.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings")}><span className="avatar"><Icon name="Hourglass" size={18} /></span><div className="t"><b>{stale.length} طلب بدون رد من التاجر لأكثر من 24 ساعة</b><small>تواصل مع التجار أو أعد توجيه العملاء</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {unverified.length > 0 && <button className="list-row adm-row" onClick={() => go("suppliers")}><span className="avatar"><Icon name="BadgeCheck" size={18} /></span><div className="t"><b>{unverified.length} حساب بانتظار التوثيق</b><small>راجع السجل التجاري ثم وثّق الحساب</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {!openT.length && !stale.length && !unverified.length && !urgent.length && !cancels.length && <p className="muted">كل شي تحت السيطرة.</p>}
+          {!openT.length && !stale.length && !unverified.length && !urgent.length && !cancels.length && !review.length && <p className="muted">كل شي تحت السيطرة.</p>}
         </div>
       </section>
       <section className="card">
@@ -113,7 +115,7 @@ function Bookings({ focus, go }: { focus?: string; go: (t: string, id?: string) 
   return (
     <>
       <div><span className="eyebrow">كل الطلبات على المنصة</span><h1 className="page-title">الطلبات</h1></div>
-      <div className="row wrap"><Segmented value={status} onChange={setStatus} options={[["all", "الكل"], ["new", "جديدة"], ["quoted", "عروض"], ["confirmed", "مؤكدة"], ["declined", "مرفوضة"]]} /><input className="input grow" style={{ minWidth: 200, width: "auto" }} placeholder="بحث: عميل، تاجر، جوال، مدينة" value={q} onChange={(e) => setQ(e.target.value)} aria-label="بحث" /></div>
+      <div className="row wrap"><Segmented value={status} onChange={setStatus} options={[["all", "الكل"], ["review", "للمراجعة"], ["new", "عند التاجر"], ["quoted", "عروض"], ["confirmed", "مؤكدة"], ["declined", "مرفوضة"]]} /><input className="input grow" style={{ minWidth: 200, width: "auto" }} placeholder="بحث: عميل، تاجر، جوال، مدينة" value={q} onChange={(e) => setQ(e.target.value)} aria-label="بحث" /></div>
       <section className="card" style={{ paddingBlock: 6 }}>
         {list.length ? <div className="list">{list.map((b) => (
           <button key={b.id} className="list-row adm-row" onClick={() => setSel(b.id)}>
@@ -229,7 +231,7 @@ function Support({ focus }: { focus?: string }) {
   const [from, setFrom] = useState<"all" | Ticket["from"]>("all");
   const [sel, setSel] = useState<string | null>(focus ?? null);
   const [reply, setReply] = useState("");
-  const list = tickets.filter((t) => (status === "all" || t.status === status) && (from === "all" || t.from === from)).sort((a, b) => b.updatedAt - a.updatedAt);
+  const list = tickets.filter((t) => (status === "all" || t.status === status || (status === "open" && t.status === "reopened")) && (from === "all" || t.from === from)).sort((a, b) => b.updatedAt - a.updatedAt);
   const cur = tickets.find((t) => t.id === sel);
   const FROM: Record<Ticket["from"], string> = { client: "عميل", supplier: "مورد", venue: "قاعة" };
   return (
@@ -258,10 +260,33 @@ function Support({ focus }: { focus?: string }) {
             <input id="rp" className="input" placeholder="اكتب ردك" value={reply} onChange={(e) => setReply(e.target.value)} />
             <button className="icon-btn send" type="submit" aria-label="إرسال" disabled={!reply.trim()}><Icon name="SendHorizontal" size={18} /></button>
           </form>
-          <button className="btn ghost" onClick={() => apply(setTicketStatus(cur.id, cur.status === "closed" ? "open" : "closed"))}>{cur.status === "closed" ? "إعادة فتح" : "إغلاق التذكرة"}</button>
+          {cur.status === "closed"
+            ? <div className="stack" style={{ ["--gap" as string]: "8px" }}>{cur.closedReason && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5 }}><b>سبب الإغلاق:</b> {cur.closedReason}</div>}<button className="btn ghost" onClick={() => apply(reopenTicket(cur.id, "admin", ""))}><Icon name="RotateCcw" size={15} /> إعادة فتح التذكرة</button></div>
+            : <CloseTicket id={cur.id} />}
         </div>}
       </Sheet>
     </>
+  );
+}
+
+/** إغلاق التذكرة: لازم رد للعميل وسبب الإغلاق */
+function CloseTicket({ id }: { id: string }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [reply, setReply] = useState("");
+  const [reason, setReason] = useState("");
+  const REASONS = ["تم حل المشكلة", "تم الرد على الاستفسار", "مكررة", "لا يوجد رد من المستخدم"];
+  if (!open) return <button className="btn ghost" onClick={() => setOpen(true)}><Icon name="CheckCircle2" size={15} /> إغلاق التذكرة</button>;
+  return (
+    <div className="card flat stack" style={{ background: "var(--surface-2)" }}>
+      <b>إغلاق التذكرة</b>
+      <div className="chips wrap">{REASONS.map((r) => <button key={r} type="button" className={"chip" + (reason === r ? " on" : "")} onClick={() => setReason(r)}>{r}</button>)}</div>
+      <label className="sr" htmlFor={"cr-" + id}>سبب الإغلاق</label>
+      <input id={"cr-" + id} className="input" placeholder="سبب الإغلاق" value={reason} onChange={(e) => setReason(e.target.value)} />
+      <label className="sr" htmlFor={"cm-" + id}>الرد الأخير</label>
+      <textarea id={"cm-" + id} className="input" rows={2} placeholder="الرد الأخير للمستخدم (إلزامي)" value={reply} onChange={(e) => setReply(e.target.value)} />
+      <div className="row"><button className="btn primary grow" disabled={reason.trim().length < 3 || reply.trim().length < 3} onClick={() => { apply(closeTicket(id, reason, reply)); setOpen(false); toast("أغلقنا التذكرة بعد الرد"); }}>إرسال الرد وإغلاق</button><button className="btn ghost" onClick={() => setOpen(false)}>تراجع</button></div>
+    </div>
   );
 }
 
@@ -335,9 +360,9 @@ function Panel() {
   const live = useLive(db);
   const tabs = [
     { id: "overview", label: "نظرة عامة", icon: "LayoutDashboard" },
-    { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "new").length },
+    { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "review").length },
     { id: "clients", label: "العملاء", icon: "Users" },
-    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open").length },
+    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open" || t.status === "reopened").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
     { id: "settings", label: "الإعدادات", icon: "Settings" },

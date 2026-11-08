@@ -43,15 +43,15 @@ export function journey(db: DB, now = Date.now()): Stage[] {
 
   const vConfirmed = venue.find((b) => b.status === "confirmed");
   const vQuoted = venue.find((b) => b.status === "quoted");
-  const vNew = venue.find((b) => b.status === "new");
+  const vNew = venue.find((b) => b.status === "new" || b.status === "review");
   const vName = (id: string) => db.venues.find((v) => v.id === id)?.name ?? "القاعة";
   stages.push(vConfirmed
     ? { id: "venue", n: 2, title: "القاعة", status: "done", progress: 1, summary: `${vName(vConfirmed.targetId)} · محجوزة` }
     : vQuoted
       ? { id: "venue", n: 2, title: "القاعة", status: "active", progress: 0.66, summary: `وصلك عرض سعر من ${vName(vQuoted.targetId)}`, cta: { label: "راجع العرض واقبله", route: "bookings" } }
       : vNew
-        ? { id: "venue", n: 2, title: "القاعة", status: "waiting", progress: 0.33, summary: `طلبك عند ${vName(vNew.targetId)} بانتظار الرد`, cta: { label: "تابع طلباتك", route: "bookings" } }
-        : { id: "venue", n: 2, title: "القاعة", status: "todo", progress: 0, summary: "اقترحنا لك القاعة والتجهيز على ذوقك وميزانيتك", cta: { label: "شوف خطتك واطلب بضغطة", route: "plan" } });
+        ? { id: "venue", n: 2, title: "القاعة", status: "waiting", progress: 0.33, summary: vNew.status === "review" ? `طلبك لـ ${vName(vNew.targetId)} عند الإدارة، وبنطلب لك عرض السعر` : `طلبنا عرض سعر من ${vName(vNew.targetId)}، وبيوصلك هنا`, cta: { label: "تابع طلباتك", route: "bookings" } }
+        : { id: "venue", n: 2, title: "القاعة", status: "todo", progress: 0, summary: "اقترحنا لك قاعات على ذوقك وميزانيتك، اختر اللي يعجبك", cta: { label: "اختر من اقتراحاتك", route: "plan" } });
 
   const supplierCats = (id: string) => db.suppliers.find((s) => s.id === id)?.cats ?? [];
   const checklist = ESSENTIALS.map(({ cat, label }) => {

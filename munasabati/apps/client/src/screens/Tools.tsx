@@ -15,8 +15,8 @@ export function Bookings() {
   const nameOf = (kind: string, id: string) => (kind === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((s) => s.id === id)?.name) ?? "";
   return (
     <>
-      <div className="row between wrap"><div><h1 className="page-title">حجوزاتي</h1><p className="page-sub">طلباتك مع القاعات والموردين وردودهم.</p></div><button className="btn primary" onClick={() => go("plan")}><Icon name="Sparkles" size={16} /> خطتي المقترحة</button></div>
-      {!mine.length && <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">جهّزنا لك خطة على ذوقك وميزانيتك. أرسل الطلبات كلها بضغطة.<button className="btn primary" style={{ marginTop: 6 }} onClick={() => go("plan")}>شوف خطتي</button></Empty></section>}
+      <div className="row between wrap"><div><h1 className="page-title">حجوزاتي</h1><p className="page-sub">طلباتك مع القاعات والموردين وردودهم.</p></div><button className="btn primary" onClick={() => go("plan")}><Icon name="Sparkles" size={16} /> اقتراحاتي</button></div>
+      {!mine.length && <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">جهّزنا لك اقتراحات على ذوقك وميزانيتك. اختر اللي يعجبك وأرسله للإدارة.<button className="btn primary" style={{ marginTop: 6 }} onClick={() => go("plan")}>شوف اقتراحاتي</button></Empty></section>}
       <div className="stack">
         {mine.map((b) => (
           <motion.section key={b.id} layout className="card stack" style={{ ["--gap" as string]: "12px" }}>
@@ -37,7 +37,8 @@ export function Bookings() {
                 <button className="btn sm primary" onClick={() => { apply(acceptQuote(b.id, nameOf(b.kind, b.targetId))); toast("تم تأكيد الحجز وإضافته للميزانية"); }}>اقبل العرض</button>
               </div>
             )}
-            {b.status === "new" && <div className="faint" style={{ fontSize: 13 }}>بانتظار الرد. للتجربة: افتح {b.kind === "venue" ? <a className="brand" href={import.meta.env.VITE_VENUES_URL ?? "../venues/index.html"}>بوابة القاعات</a> : <a className="brand" href={import.meta.env.VITE_VENDORS_URL ?? "../vendors/index.html"}>بوابة الموردين</a>} ورد على الطلب.</div>}
+            {b.status === "review" && <div className="req-step"><Icon name="ShieldCheck" size={15} /> طلبك عند الإدارة. بنراجعه ونطلب لك عرض السعر من التاجر.</div>}
+            {b.status === "new" && <div className="req-step"><Icon name="Hourglass" size={15} /> طلبنا عرض السعر من التاجر، وبيوصلك هنا أول ما يرد.</div>}
           </motion.section>
         ))}
       </div>

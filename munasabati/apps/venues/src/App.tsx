@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount } from "@munasabati/ui";
+import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -57,7 +57,7 @@ function Login() {
 
 function Overview({ v, go }: { v: Venue; go: (t: string) => void }) {
   const db = useDB();
-  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id);
+  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id && b.status !== "review");
   const occupancy = useMemo(() => {
     const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
     const days = new Date(y, m + 1, 0).getDate();
@@ -145,7 +145,7 @@ function Halls({ v }: { v: Venue }) {
 function Calendar({ v }: { v: Venue }) {
   const db = useDB();
   const [hall, setHall] = useState(v.halls[0]?.id ?? "a");
-  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id && (b.hallId ?? "a") === hall);
+  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id && b.status !== "review" && (b.hallId ?? "a") === hall);
   const toggle = (iso: string) => apply(upsertVenue({ ...v, blocked: v.blocked.includes(iso) ? v.blocked.filter((d) => d !== iso) : [...v.blocked, iso] }));
   return (
     <>
@@ -180,7 +180,8 @@ function Profile({ v }: { v: Venue }) {
 function Portal({ v }: { v: Venue }) {
   const db = useDB();
   const [tab, setTab] = useState("overview");
-  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id);
+  const mine = db.bookings.filter((b) => b.kind === "venue" && b.targetId === v.id && b.status !== "review");
+  const openRequests = useCallback(() => setTab("bookings"), []);
   const tabs = [
     { id: "overview", label: "اللوحة", icon: "LayoutDashboard" },
     { id: "bookings", label: "الحجوزات", icon: "Inbox", count: mine.filter((b) => b.status === "new").length },
@@ -192,6 +193,7 @@ function Portal({ v }: { v: Venue }) {
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
   return (
     <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<><button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ venueId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button><a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a></>}>
+      <RequestAlerts bookings={mine} onOpen={openRequests} />
       <AnimatePresence initial={false}>
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {v.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}

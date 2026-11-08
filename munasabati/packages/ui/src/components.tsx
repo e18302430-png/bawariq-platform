@@ -52,6 +52,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export const useToast = () => useContext(ToastCtx);
 
 /* ───── نافذة سفلية (تُسحب للإغلاق على الجوال) ───── */
+/** قفل تمرير الصفحة خلف النوافذ المنبثقة بعدّاد: نافذتان فوق بعض ما تتركان الصفحة مقفلة بالغلط */
+let scrollLocks = 0;
+function lockScroll() { if (scrollLocks++ === 0) document.documentElement.classList.add("scroll-locked"); }
+function unlockScroll() { scrollLocks = Math.max(0, scrollLocks - 1); if (scrollLocks === 0) document.documentElement.classList.remove("scroll-locked"); }
+
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const wide = typeof window !== "undefined" && window.matchMedia("(min-width: 720px)").matches;
   // السحب للإغلاق من المقبض والعنوان فقط، حتى يبقى المحتوى قابلاً للتمرير على الجوال
@@ -60,9 +65,8 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     if (!open) return;
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = prev; };
+    lockScroll();
+    return () => { window.removeEventListener("keydown", k); unlockScroll(); };
   }, [open, onClose]);
   return (
     <AnimatePresence>
@@ -106,7 +110,7 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
 }
 
 const STATUS: Record<BookingStatus, [string, string]> = {
-  new: ["warn", "بانتظار الرد"], quoted: ["info", "عرض سعر"], confirmed: ["ok", "مؤكد"], declined: ["bad", "معتذر"],
+  review: ["neutral", "عند الإدارة"], new: ["warn", "بانتظار عرض السعر"], quoted: ["info", "عرض سعر"], confirmed: ["ok", "مؤكد"], declined: ["bad", "معتذر"],
 };
 export function StatusPill({ status, labels }: { status: BookingStatus; labels?: Partial<Record<BookingStatus, string>> }) {
   const [c, l] = STATUS[status];
@@ -259,12 +263,23 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [more, setMore] = useState(false);
+  const prog = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 6);
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
+      const el = document.scrollingElement ?? document.documentElement;
+      const max = el.scrollHeight - innerHeight;
+      setScrolled(el.scrollTop > 6);
+      if (prog.current) prog.current.style.transform = `scaleX(${max > 40 ? Math.min(1, el.scrollTop / max) : 0})`;
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(paint); };
+    paint();
     window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
+    window.addEventListener("resize", on);
+    return () => { window.removeEventListener("scroll", on); window.removeEventListener("resize", on); if (raf) cancelAnimationFrame(raf); };
   }, []);
-  const go = (id: string) => { onChange(id); setMore(false); window.scrollTo({ top: 0 }); };
+  const go = (id: string) => { onChange(id); setMore(false); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); };
   const primary = tabs.length > 5 ? tabs.slice(0, 4) : tabs;
   const rest = tabs.length > 5 ? tabs.slice(4) : [];
   const moreActive = rest.some((t) => t.id === active);
@@ -291,6 +306,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
       </aside>
       <div className="shell-main">
         <header className={"appbar" + (scrolled ? " scrolled" : "")}>
+          <span ref={prog} className="scroll-prog" aria-hidden="true" />
           <div className="container appbar-in">
             <div className="logo mobile-only"><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
             <div className="grow" />

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { bookingMessage, openTicket, replyTicket, setTicketStatus, type Booking, type Message, type Ticket } from "@munasabati/core";
+import { bookingMessage, openTicket, reopenTicket, replyTicket, type Booking, type Message, type Ticket } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Empty, Segmented, Sheet, useToast } from "./components";
 import { apply, useDB } from "./data";
@@ -12,7 +12,7 @@ export const TOPICS: [Ticket["topic"], string, string][] = [
   ["technical", "مشكلة تقنية", "Bug"],
   ["other", "شي ثاني", "MessageCircle"],
 ];
-const STATUS: Record<Ticket["status"], [string, string]> = { open: ["warn", "بانتظار الرد"], answered: ["ok", "تم الرد"], closed: ["neutral", "مغلقة"] };
+const STATUS: Record<Ticket["status"], [string, string]> = { open: ["warn", "بانتظار الرد"], answered: ["ok", "تم الرد"], reopened: ["info", "أُعيد فتحها"], closed: ["neutral", "مغلقة"] };
 export const TicketStatusPill = ({ s }: { s: Ticket["status"] }) => <span className={"pill " + STATUS[s][0]}>{STATUS[s][1]}</span>;
 const when = (t: number) => new Date(t).toLocaleString("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -112,9 +112,10 @@ export function SupportCenter({ from, fromId, fromName }: { from: Ticket["from"]
 
       <Sheet open={!!cur} onClose={() => setOpenId(null)} title={cur?.subject ?? ""}>
         {cur && <div className="chat-wrap">
-          <div className="row between"><TicketStatusPill s={cur.status} />{cur.status !== "closed" ? <button className="btn sm ghost" onClick={() => apply(setTicketStatus(cur.id, "closed"))}>تم حل المشكلة</button> : null}</div>
+          <div className="row between"><TicketStatusPill s={cur.status} /><small className="muted">تُغلق التذكرة من فريق مناسبتي بعد الرد</small></div>
+          {cur.status === "closed" && cur.closedReason && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5 }}><b>أُغلقت التذكرة:</b> {cur.closedReason}</div>}
           <Thread items={cur.messages.map((m) => ({ mine: m.from === "user", text: m.text, at: m.at, who: m.from === "admin" ? "فريق مناسبتي" : undefined }))} />
-          {cur.status !== "closed" ? <Composer onSend={(t) => apply(replyTicket(cur.id, "user", t))} /> : <button className="btn" onClick={() => apply(setTicketStatus(cur.id, "open"))}>إعادة فتح التذكرة</button>}
+          <Composer onSend={(t) => apply(cur.status === "closed" ? reopenTicket(cur.id, "user", t) : replyTicket(cur.id, "user", t))} placeholder={cur.status === "closed" ? "اكتب رسالة لإعادة فتح التذكرة" : "اكتب رسالتك"} />
         </div>}
       </Sheet>
     </>

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { OCCASIONS, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
 import { Icon } from "./icons";
@@ -249,4 +249,43 @@ export function NextAction({ items }: { items: ActionItem[] }) {
       <button className="btn primary" onClick={a.go}>{a.cta} <Icon name="ArrowLeft" size={16} /></button>
     </motion.section>
   );
+}
+
+/* ───── تنبيه التاجر وصاحب القاعة لحظياً: طلب جديد من الإدارة أو رسالة جديدة (صوت + إشعار + عدّاد على التبويب) ───── */
+let alertCtx: AudioContext | null = null;
+function ding() {
+  try {
+    const W = window as unknown as { webkitAudioContext?: typeof AudioContext };
+    alertCtx ??= new (window.AudioContext || W.webkitAudioContext!)();
+    if (alertCtx.state === "suspended") void alertCtx.resume();
+    const t = alertCtx.currentTime + 0.02;
+    [659.25, 987.77, 1318.5].forEach((f, i) => {
+      const o = alertCtx!.createOscillator(), g = alertCtx!.createGain();
+      o.frequency.value = f; g.gain.setValueAtTime(0, t + i * 0.12); g.gain.linearRampToValueAtTime(0.16, t + i * 0.12 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 1);
+      o.connect(g).connect(alertCtx!.destination); o.start(t + i * 0.12); o.stop(t + i * 0.12 + 1.1);
+    });
+  } catch { /* الصوت غير متاح */ }
+}
+export function RequestAlerts({ bookings, onOpen }: { bookings: Booking[]; onOpen: () => void }) {
+  const toast = useToast();
+  const seen = useRef<Map<string, number> | null>(null);
+  const [unseen, setUnseen] = useState(0);
+  useEffect(() => { const on = () => { try { alertCtx ??= new AudioContext(); void alertCtx.resume(); } catch { /* */ } }; window.addEventListener("pointerdown", on, { once: true }); return () => window.removeEventListener("pointerdown", on); }, []);
+  useEffect(() => {
+    const now = new Map(bookings.map((b) => [b.id, b.messages.length]));
+    if (!seen.current) { seen.current = now; return; }
+    const fresh = bookings.filter((b) => !seen.current!.has(b.id) && b.status === "new");
+    const msgs = bookings.filter((b) => seen.current!.has(b.id) && (now.get(b.id) ?? 0) > (seen.current!.get(b.id) ?? 0) && b.messages.at(-1)?.from !== "provider");
+    seen.current = now;
+    if (!fresh.length && !msgs.length) return;
+    ding();
+    try { navigator.vibrate?.([70, 50, 70]); } catch { /* */ }
+    toast(fresh.length ? `وصلك طلب جديد من ${fresh[0].clientName} يطلب عرض سعر` : `رسالة جديدة في طلب ${msgs[0].clientName}`);
+    if (document.hidden) setUnseen((n) => n + fresh.length + msgs.length);
+    try { if (document.hidden && "Notification" in window && Notification.permission === "granted") new Notification("مناسبتي: طلب جديد", { body: fresh[0]?.clientName ?? msgs[0]?.clientName }); } catch { /* */ }
+    if (fresh.length) onOpen();
+  }, [bookings, toast, onOpen]);
+  useEffect(() => { const v = () => { if (!document.hidden) setUnseen(0); }; document.addEventListener("visibilitychange", v); return () => document.removeEventListener("visibilitychange", v); }, []);
+  useEffect(() => { const base = document.title.replace(/^\(\d+\)\s*/, ""); document.title = (unseen ? `(${unseen}) ` : "") + base; }, [unseen]);
+  return null;
 }

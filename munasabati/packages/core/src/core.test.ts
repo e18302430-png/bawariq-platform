@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -197,5 +197,42 @@ describe("الخطة المقترحة وحماية العميل", () => {
       expect(repo.get().bookings[0].reassignedFrom).toBe(id);
       expect(repo.get().bookings.find((b) => b.id === id)!.status).toBe("declined");
     }
+  });
+});
+
+describe("الإدارة وسيط الطلبات، ودعم بحالات واضحة، وتعلّم من العميل", () => {
+  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
+  it("طلب العميل يبدأ عند الإدارة، ثم يُرسل للتاجر أو يُعتذر عنه بسبب", () => {
+    const r = base();
+    r.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
+    const id = r.get().bookings[0].id;
+    expect(r.get().bookings[0].status).toBe("review");
+    r.apply(forwardToVendor(id, "نرجو العرض"));
+    expect(r.get().bookings[0].status).toBe("new");
+    expect(r.get().bookings[0].messages.at(-1)!.from).toBe("admin");
+    r.apply(rejectRequest(id, "التاريخ غير متاح"));
+    expect(r.get().bookings[0].status).toBe("declined");
+  });
+  it("التذكرة ما تُغلق إلا من الإدارة برد وسبب، والمستخدم يعيد فتحها برسالة", () => {
+    const r = base();
+    r.apply(openTicket({ from: "client", fromId: "me", fromName: "سارة", topic: "other", subject: "سؤال", text: "مرحبا" }));
+    const id = r.get().tickets[0].id;
+    r.apply(replyTicket(id, "admin", "أهلاً"));
+    expect(r.get().tickets[0].status).toBe("answered");
+    r.apply(closeTicket(id, "تم الرد على الاستفسار", "سعدنا بخدمتك"));
+    expect(r.get().tickets[0].status).toBe("closed");
+    expect(r.get().tickets[0].closedReason).toBe("تم الرد على الاستفسار");
+    r.apply(reopenTicket(id, "user", "عندي سؤال ثاني"));
+    expect(r.get().tickets[0].status).toBe("reopened");
+  });
+  it("يتعلم من الاختيار والرفض", () => {
+    const r = base();
+    const before = suggestPlan(r.get()).find((l) => l.cat === "venue")!.picks.map((p) => p.id);
+    r.apply(learnPref(before[0], "dismiss"));
+    const after = suggestPlan(r.get()).find((l) => l.cat === "venue")!.picks.map((p) => p.id);
+    expect(after).not.toContain(before[0]);
+    const last = after[after.length - 1];
+    r.apply(learnPref(last, "like"));
+    expect(suggestPlan(r.get()).find((l) => l.cat === "venue")!.picks[0].id).toBe(last);
   });
 });

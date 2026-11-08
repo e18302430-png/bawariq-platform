@@ -4,7 +4,8 @@ export type OccasionId = "wedding" | "milka" | "grad" | "aqiqa" | "family" | "co
 export type CategoryId = "kosha" | "tents" | "photo" | "av" | "live" | "hosp" | "power" | "stage";
 export type Section = "men" | "women";
 export type TierId = "eco" | "mid" | "lux";
-export type BookingStatus = "new" | "quoted" | "confirmed" | "declined";
+/** review = عند الإدارة للمراجعة (التاجر ما يشوفه) · new = أرسلته الإدارة للتاجر يطلب عرض سعر */
+export type BookingStatus = "review" | "new" | "quoted" | "confirmed" | "declined";
 export type RSVP = "pending" | "yes" | "no";
 
 export interface Occasion {
@@ -211,12 +212,15 @@ export interface ClientSpace {
   tasks: Task[];
   favorites: string[];
   invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean };
+  /** تفضيلات يتعلمها النظام من اختيارات العميل: اللي اختاره واللي رفضه */
+  prefs?: { liked: string[]; dismissed: string[] };
   /** الفقرة الجارية الآن من برنامج الليلة (يتحكم بها العميل) */
   liveIndex?: number;
 }
 
 /** تذكرة دعم: من العميل أو المورد أو صاحب القاعة إلى إدارة المنصة */
-export type TicketStatus = "open" | "answered" | "closed";
+/** مفتوحة · تم الرد · أُعيد فتحها · مغلقة (الإغلاق من الإدارة فقط وبسبب) */
+export type TicketStatus = "open" | "answered" | "reopened" | "closed";
 export interface Ticket {
   id: string;
   from: "client" | "supplier" | "venue";
@@ -227,6 +231,8 @@ export interface Ticket {
   status: TicketStatus;
   /** بلاغ طارئ ليلة المناسبة */
   urgent?: boolean;
+  /** سبب الإغلاق (تكتبه الإدارة) */
+  closedReason?: string;
   messages: { from: "user" | "admin"; text: string; at: number }[];
   createdAt: number;
   updatedAt: number;

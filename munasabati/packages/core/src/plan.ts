@@ -62,9 +62,27 @@ export function trustBadges(db: DB, kind: "venue" | "supplier", id: string, veri
   return [verified && "موثّق", t.fast && "يرد بسرعة", t.committed && "ملتزم بالمواعيد"].filter(Boolean) as string[];
 }
 
+/** التعلّم من العميل: الأوسمة والخدمات المشتركة مع اللي اختاره ترفع الترتيب، واللي رفضه يختفي */
+function learned(db: DB) {
+  const p = db.client.prefs ?? { liked: [], dismissed: [] };
+  const words = new Set<string>();
+  for (const id of p.liked) {
+    const x = db.venues.find((v) => v.id === id) ?? db.suppliers.find((s) => s.id === id);
+    if (x) x.tags.forEach((t) => words.add(t));
+  }
+  return { liked: new Set(p.liked), dismissed: new Set(p.dismissed), words };
+}
+function learnBoost(L: ReturnType<typeof learned>, x: { id: string; tags: string[] }, reasons: string[]) {
+  if (L.liked.has(x.id)) { reasons.unshift("أعجبك قبل"); return 30; }
+  const hits = x.tags.filter((t) => L.words.has(t)).length;
+  if (hits) { reasons.push("يشبه اللي اخترته"); return 8 * hits; }
+  return 0;
+}
+
 function rankVenues(db: DB, city: string, guests: number, date: string, styles: StyleId[], budget?: number, exclude: string[] = []): Pick[] {
-  return db.venues.filter((v) => v.status !== "suspended" && !exclude.includes(v.id)).map((v: Venue) => {
-    const reasons: string[] = []; let s = 50;
+  const L = learned(db);
+  return db.venues.filter((v) => v.status !== "suspended" && !exclude.includes(v.id) && !L.dismissed.has(v.id)).map((v: Venue) => {
+    const reasons: string[] = []; let s = 50 + learnBoost(L, v, []);
     if (v.city === city) { s += 30; reasons.push("في مدينتك"); } else s -= 40;
     const fit = v.halls.find((h) => (hallCapacity(h) || Infinity) >= guests && !busyDays(v.id, db.bookings, v.blocked, h.id, true).has(date)) ?? v.halls.find((h) => !busyDays(v.id, db.bookings, v.blocked, h.id, true).has(date));
     if (!fit) s -= 60; else if (date) reasons.push("متاحة في تاريخك");
@@ -76,14 +94,16 @@ function rankVenues(db: DB, city: string, guests: number, date: string, styles: 
     if (price && budget) { if (price <= budget) { s += 18; reasons.push("ضمن ميزانيتك"); } else if (price > budget * 1.15) { s -= 25; over = true; } }
     if (v.verified) { s += 6; reasons.push("موثّقة"); }
     if (v.promoted) s += 10;
+    if (L.liked.has(v.id)) reasons.unshift("أعجبك قبل"); else if (v.tags.some((t) => L.words.has(t))) reasons.splice(1, 0, "يشبه اللي اخترته");
     s += trustOf(db, "venue", v.id).score;
     return { kind: "venue" as const, id: v.id, name: v.name, city: v.city, photos: v.photos, hue: v.hue, score: s, reasons, price, over, hallId: fit?.id, promoted: v.promoted };
-  }).filter((p) => p.score > 0).sort((a, b) => b.score - a.score);
+  }).filter((p) => p.score > 0 || L.liked.has(p.id)).sort((a, b) => +L.liked.has(b.id) - +L.liked.has(a.id) || b.score - a.score);
 }
 
 function rankSuppliers(db: DB, cat: string, city: string, styles: StyleId[], budget?: number, exclude: string[] = []): Pick[] {
-  return db.suppliers.filter((x) => x.status !== "suspended" && x.cats.includes(cat as CategoryId) && !exclude.includes(x.id)).map((x: Supplier) => {
-    const reasons: string[] = []; let s = 50;
+  const L = learned(db);
+  return db.suppliers.filter((x) => x.status !== "suspended" && x.cats.includes(cat as CategoryId) && !exclude.includes(x.id) && !L.dismissed.has(x.id)).map((x: Supplier) => {
+    const reasons: string[] = []; let s = 50 + learnBoost(L, x, []);
     if (x.city === city) { s += 26; reasons.push("في مدينتك"); } else if (x.area.includes("المملكة") || x.area.includes(city)) { s += 14; reasons.push("يغطي مدينتك"); } else s -= 30;
     const hits = styleHits(text(x), styles); if (hits.length) { s += 12 * hits.length; reasons.push(`يشبه طابع ${hits[0].name}`); }
     const price = x.priceFrom;
@@ -92,9 +112,10 @@ function rankSuppliers(db: DB, cat: string, city: string, styles: StyleId[], bud
     if (x.cats.length <= 2) { s += 12; reasons.push("متخصص"); }
     if (x.verified) { s += 6; reasons.push("موثّق"); }
     if (x.promoted) s += 10;
+    if (L.liked.has(x.id)) reasons.unshift("أعجبك قبل"); else if (x.tags.some((t) => L.words.has(t))) reasons.splice(1, 0, "يشبه اللي اخترته");
     s += trustOf(db, "supplier", x.id).score;
     return { kind: "supplier" as const, id: x.id, name: x.name, city: x.city, photos: x.photos, hue: x.hue, score: s, reasons, price, over, promoted: x.promoted };
-  }).filter((p) => p.score > 0).sort((a, b) => b.score - a.score);
+  }).filter((p) => p.score > 0 || L.liked.has(p.id)).sort((a, b) => +L.liked.has(b.id) - +L.liked.has(a.id) || b.score - a.score);
 }
 
 /** الخطة الكاملة حسب طابع العميل وميزانيته */
@@ -125,7 +146,7 @@ export function alternativesFor(db: DB, b: Booking, exclude: string[] = []): Pic
   return rankSuppliers(db, cat, b.city, db.client.event?.style ?? [], b.budget, ex).slice(0, 4);
 }
 
-/** إرسال كل طلبات الخطة دفعة واحدة، كل طلب بميزانيته وطابع العميل */
+/** إرسال الطلبات اللي اختارها العميل (للإدارة أولاً)، كل طلب بميزانيته وطابع العميل */
 export const requestPlan = (chosen: { line: PlanLine; pick: Pick }[], who: { name: string; phone: string }): Mutation => (db) => {
   const e = db.client.event!;
   const styles = (e.style ?? []).map((id) => STYLES.find((s) => s.id === id)?.name).filter(Boolean).join("، ");

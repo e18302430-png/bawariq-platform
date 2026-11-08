@@ -451,3 +451,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .auth-wa { background: #25d366; color: #fff; border-color: transparent; }
 .auth-note { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
 .auth-note a { color: inherit; }
+
+/* ═══════ تمرير مريح ═══════ */
+html.scroll-locked, html.scroll-locked body { overflow: hidden !important; }
+.appbar { position: sticky; }
+.scroll-prog { position: absolute; inset-inline: 0; bottom: -1px; height: 2px; transform-origin: right; transform: scaleX(0); background: linear-gradient(270deg, #e7c27a, var(--brand)); pointer-events: none; transition: transform .08s linear; }
+:root[dir="ltr"] .scroll-prog { transform-origin: left; }
+html { scroll-padding-top: 76px; }
+body { overflow-x: clip; }
+@media (prefers-reduced-motion: reduce) { .scroll-prog { transition: none; } }

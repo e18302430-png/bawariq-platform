@@ -200,8 +200,8 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
         {step !== 7 && step !== 1 && !needAuth && !login && (
           <div className="onb-foot">
             {step === 8
-              ? <button className="btn white lg" onClick={() => { finish(); location.hash = "plan"; }}>شوف خطتي واطلب بضغطة <Icon name="ArrowLeft" size={18} /></button>
-              : <button className="btn white lg" onClick={next} disabled={!canNext}>{step === 0 ? "يلا نبدأ" : step === 6 ? "جهّز خطتي" : step === 5 && !f.style.length ? "تخطّ" : "التالي"} <Icon name="ArrowLeft" size={18} /></button>}
+              ? <button className="btn white lg" onClick={() => { finish(); location.hash = "plan"; }}>شوف اقتراحاتي <Icon name="ArrowLeft" size={18} /></button>
+              : <button className="btn white lg" onClick={next} disabled={!canNext}>{step === 0 ? "يلا نبدأ" : step === 6 ? "جهّز اقتراحاتي" : step === 5 && !f.style.length ? "تخطّ" : "التالي"} <Icon name="ArrowLeft" size={18} /></button>}
           </div>
         )}
         {step === 0 && isCloud && !login && !needAuth && (

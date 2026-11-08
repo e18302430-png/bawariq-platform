@@ -61,3 +61,12 @@
 .lf-urgent { background: rgba(229,72,77,.14) !important; color: #e5484d !important; }
 .wa-notify { background: #25d366; color: #fff !important; border-color: transparent; }
 .wa-notify:hover { background: #1fb457; }
+.review-box { background: color-mix(in oklab, var(--brand) 7%, var(--surface)); border: 1.5px solid color-mix(in oklab, var(--brand) 35%, transparent); }
+/* الجوال: أزرار المراجعة تلتف، والشريط العلوي ما يتجاوز عرض الشاشة */
+.review-box .btn { white-space: normal; text-align: center; line-height: 1.35; height: auto; min-height: 44px; }
+@media (max-width: 560px) {
+  .kbd { display: none; }
+  .appbar .btn.sm.ghost { padding-inline: 8px; }
+  .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .seg > * { flex: none; }
+}

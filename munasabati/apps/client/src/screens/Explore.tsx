@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
+  CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, toggleFavorite,
   venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
 import { Calendar, Empty, Icon, Media, Segmented, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
@@ -49,7 +49,7 @@ export function Explore({ initialCat }: { initialCat?: string }) {
         <select id="x-city" className="select" style={{ width: "auto", minHeight: 40, borderRadius: 999, fontSize: 14 }} value={city} onChange={(ev) => setCity(ev.target.value)}>
           <option value="all">كل المدن</option>{CITIES.map((c) => <option key={c}>{c}</option>)}
         </select>
-        <Segmented value={sort} onChange={setSort} label="الترتيب" options={[["best", "الأنسب"], ["price", "الأقل سعراً"], ["rating", "الأعلى تقييماً"]]} />
+        <Segmented value={sort} onChange={setSort} label="الترتيب" options={[["best", "الأنسب"], ["rating", "الأعلى تقييماً"]]} />
         <button className={"chip" + (favOnly ? " on" : "")} onClick={() => setFavOnly((x) => !x)}><Icon name="Heart" size={15} />المفضلة</button>
       </div>
       {items.length ? (
@@ -78,7 +78,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
           {item.kind === "venue" ? <span><Icon name="Users" size={13} />{venueCapacity(item.v) ? `حتى ${fmt(venueCapacity(item.v))}` : `${item.v.halls.length} ${item.v.halls.length > 1 ? "قاعات" : "قاعة"}`}</span> : <span><Icon name="Layers" size={13} />{item.v.cats.length} خدمات</span>}
         </div>
         <div className="row between" style={{ marginTop: 4 }}>
-          <span className="num" style={{ fontWeight: 700, fontFamily: "var(--f-display)" }}><span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>يبدأ من </span>{sar(item.kind === "venue" ? venueFrom(item.v) : item.v.priceFrom)}</span>
+          <span className="faint" style={{ fontSize: 12.5 }}>السعر يوصلك في عرض خاص</span>
           <Icon name="ArrowLeft" size={17} className="faint" />
         </div>
       </div>
@@ -120,7 +120,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
     // نحفظ اسم العميل وجواله في ملفه حتى تصل بياناته كاملة للإدارة
     if (!db.client.profile?.phone || !db.client.profile?.name) apply(patchClient({ profile: { name: db.client.profile?.name || form.name.trim(), phone: db.client.profile?.phone || normPhone(form.phone) } }));
     setOpen(false);
-    toast("وصل طلبك. تابعه من رحلتك");
+    toast("وصل طلبك للإدارة، وبنطلب لك عرض السعر");
     setTimeout(() => go("home"), 700);
   };
 
@@ -152,7 +152,6 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
                 <button key={h.id} className={"hall-opt" + (hallId === h.id ? " on" : "")} onClick={() => setHallId(h.id)} aria-pressed={hallId === h.id}>
                   <span className="avatar"><Icon name="DoorOpen" size={18} /></span>
                   <span className="grow"><b className="display" style={{ display: "block" }}>{h.name}</b><small className="muted num">{hallCapacity(h) ? <>رجال {fmt(h.menCap)} · نساء {fmt(h.womenCap)}{hallCapacity(h) < e.guests ? " · أصغر من عدد ضيوفك" : ""}</> : "قسم رجال وقسم نساء"}</small></span>
-                  <span className="num" style={{ textAlign: "end", fontSize: 13 }}><b style={{ display: "block", fontFamily: "var(--f-display)" }}>{sar(h.weekdayPrice)}</b>{h.weekendPrice ? <span className="faint">ويكند {fmt(h.weekendPrice)}</span> : null}</span>
                 </button>
               ))}
             </div>
@@ -165,7 +164,6 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
               {supplier.packages.map((p) => (
                 <button key={p.id} className={"pkg" + (pkgId === p.id ? " on" : "")} onClick={() => setPkgId(p.id)} aria-pressed={pkgId === p.id}>
                   <div className="row between"><b className="display">{p.name}</b>{pkgId === p.id && <Icon name="CheckCircle2" size={19} />}</div>
-                  <b className="num display" style={{ fontSize: 22 }}>{sar(p.price)}</b>
                   <ul>{p.items.map((it) => <li key={it}>{it}</li>)}</ul>
                 </button>
               ))}
@@ -174,17 +172,17 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
         </div>
 
         <aside className="card book-card stack">
-          <div><div className="stat-label">{hall ? `${hall.name}${date && isWeekend(date) ? " · سعر الويكند" : ""}` : pkg?.name ?? "يبدأ من"}</div><div className="stat-value num" style={{ fontSize: 30 }}>{sar(price)}</div></div>
+          <div><div className="stat-label">{hall?.name ?? pkg?.name ?? "اطلب عرض سعر"}</div><div className="display" style={{ fontSize: 17, fontWeight: 700 }}>السعر الحقيقي يوصلك في عرض خاص</div></div>
           <Calendar busy={busy} value={date} onPick={setDate} />
-          <button className="btn primary lg block" disabled={!date} onClick={() => setOpen(true)}>{date ? `اطلب الحجز · ${date}` : "اختر يوماً متاحاً"}</button>
-          <div className="row faint" style={{ fontSize: 12.5, ["--gap" as string]: "6px" }}><Icon name="ShieldCheck" size={15} /> ما يُخصم أي مبلغ قبل موافقتك على عرض السعر.</div>
+          <button className="btn primary lg block" disabled={!date} onClick={() => setOpen(true)}>{date ? `اطلب عرض سعر · ${date}` : "اختر يوماً متاحاً"}</button>
+          <div className="row faint" style={{ fontSize: 12.5, ["--gap" as string]: "6px" }}><Icon name="ShieldCheck" size={15} /> طلبك يروح للإدارة، ونطلب لك عرض السعر من صاحب القاعة. بدون أي دفع.</div>
           {mine.length > 0 && <div className="list">{mine.map((b) => <div key={b.id} className="list-row"><div className="t"><b className="num">{b.date}</b><small>{fmt(b.guests)} ضيف</small></div><StatusPill status={b.status} /></div>)}</div>}
         </aside>
       </div>
 
       <Sheet open={open} onClose={() => setOpen(false)} title={`طلب حجز: ${v.name}`}>
         <form className="form" onSubmit={submit} noValidate>
-          <div className="card flat tight row" style={{ background: "var(--surface-2)" }}><span className="avatar"><Icon name="CalendarDays" size={18} /></span><div className="grow"><b className="num display">{date}</b><div className="muted" style={{ fontSize: 13 }}>{hall?.name ?? pkg?.name} · {sar(price)}</div></div></div>
+          <div className="card flat tight row" style={{ background: "var(--surface-2)" }}><span className="avatar"><Icon name="CalendarDays" size={18} /></span><div className="grow"><b className="num display">{date}</b><div className="muted" style={{ fontSize: 13 }}>{hall?.name ?? pkg?.name ?? v.name}</div></div></div>
           <div className="form-2">
             <div className="field"><label htmlFor="b-n">الاسم</label><input id="b-n" className={"input" + (tried && errs.name ? " bad" : "")} autoComplete="name" value={form.name} onChange={(ev) => setForm({ ...form, name: ev.target.value })} />{tried && errs.name && <span className="field-err">{errs.name}</span>}</div>
             <div className="field"><label htmlFor="b-p">الجوال</label><input id="b-p" dir="ltr" style={{ textAlign: "right" }} className={"input num" + (tried && errs.phone ? " bad" : "")} inputMode="tel" autoComplete="tel" placeholder="05xxxxxxxx" value={form.phone} onChange={(ev) => setForm({ ...form, phone: ev.target.value.replace(/[^\d+٠-٩]/g, "").slice(0, 15) })} />{tried && errs.phone && <span className="field-err">{errs.phone}</span>}</div>
