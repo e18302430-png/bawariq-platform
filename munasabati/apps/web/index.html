@@ -19,8 +19,162 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap" media="print" onload="this.media='all'" />
+    <style id="gate-css">
+      /* بوابة الدخول: باب نجدي ذهبي يُفتح بالضغط المطوّل على الختم (بدون أي مكتبة، تظهر فوراً) */
+      html.gating, html.gating body { overflow: hidden; }
+      #gate { --p: 0; position: fixed; inset: 0; z-index: 1000; background: #060409; perspective: 1700px; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: pointer; font-family: Alexandria, "IBM Plex Sans Arabic", system-ui, sans-serif; color: #f4e3c3; transition: opacity .7s ease; }
+      #gate.gone { opacity: 0; pointer-events: none; }
+      #gate-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+      .g-door { position: absolute; top: 0; bottom: 0; width: 50.2%; z-index: 2; overflow: hidden; backface-visibility: hidden;
+        background: radial-gradient(120% 70% at var(--hx) 50%, #2a1b12 0%, #160d09 45%, #0b0605 100%);
+        transition: transform 1.25s cubic-bezier(.75,0,.2,1), filter 1.25s; will-change: transform; }
+      .g-door svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .g-door::before { content: ""; position: absolute; inset: 16px; border: 1px solid rgba(222,178,108,.38); border-radius: 4px; box-shadow: inset 0 0 0 6px rgba(0,0,0,.25), inset 0 0 0 7px rgba(222,178,108,.18); pointer-events: none; }
+      .g-door::after { content: ""; position: absolute; top: 0; bottom: 0; width: 7px; background: linear-gradient(180deg, #6b4a22, #e6c27a 30%, #8c642c 55%, #f3d79a 75%, #6b4a22); opacity: .85; }
+      .g-l { left: 0; --hx: 100%; transform: translateX(calc(var(--p) * -14px)); transform-origin: left center; }
+      .g-r { right: 0; --hx: 0%; transform: translateX(calc(var(--p) * 14px)); transform-origin: right center; }
+      .g-l::after { right: 0; } .g-r::after { left: 0; }
+      .g-seam { position: absolute; top: 0; bottom: 0; left: 50%; z-index: 1; width: calc(2px + var(--p) * 30px); transform: translateX(-50%);
+        background: linear-gradient(180deg, rgba(255,214,150,.2), #fff3dc 50%, rgba(255,214,150,.2)); box-shadow: 0 0 calc(20px + var(--p) * 160px) calc(4px + var(--p) * 50px) rgba(255,190,110,calc(.25 + var(--p) * .6)); }
+      .g-vig { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(70% 60% at 50% 50%, transparent 40%, rgba(0,0,0,.65)); }
+      .g-center { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 26px; pointer-events: none; transform: scale(calc(1 + var(--p) * .06)); transition: opacity .5s, transform .9s cubic-bezier(.2,.8,.2,1); }
+      .g-eyebrow { font-size: 12px; letter-spacing: .32em; opacity: .62; text-transform: uppercase; }
+      #gate-seal { pointer-events: auto; position: relative; width: 150px; height: 150px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; color: #2a1606; display: grid; place-items: center; outline: none;
+        background: radial-gradient(circle at 34% 28%, #fff4d6 0%, #f0cf8a 22%, #c99a4c 52%, #8a5f26 80%, #5e3d14 100%);
+        box-shadow: 0 0 0 7px rgba(10,6,4,.6), 0 0 0 8px rgba(230,190,120,.45), 0 22px 60px -10px rgba(0,0,0,.9), 0 0 calc(30px + var(--p) * 90px) rgba(255,200,120,calc(.25 + var(--p) * .55)), inset 0 -8px 18px rgba(80,45,10,.55), inset 0 6px 14px rgba(255,250,230,.55);
+        animation: gBreath 2.6s ease-in-out infinite; }
+      #gate-seal:focus-visible { box-shadow: 0 0 0 7px rgba(10,6,4,.6), 0 0 0 10px #fff; }
+      #gate-seal::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1.5px dashed rgba(70,40,10,.45); }
+      .g-word { position: relative; font-weight: 800; font-size: 27px; letter-spacing: -.01em; text-shadow: 0 1px 0 rgba(255,240,200,.7), 0 -1px 0 rgba(60,30,5,.35); }
+      .g-ring { position: absolute; left: -22px; top: -22px; width: 194px; height: 194px; max-width: none; max-height: none; transform: rotate(-90deg); overflow: visible; }
+      .g-ring circle { fill: none; stroke-width: 2.4; }
+      .g-ring .trk { stroke: rgba(230,190,120,.18); }
+      .g-ring .fill { stroke: #ffe2a8; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p)); filter: drop-shadow(0 0 6px #ffcf86); }
+      .g-hint { font-size: 15px; font-weight: 600; opacity: calc(.9 - var(--p) * .9); display: flex; align-items: center; gap: 8px; }
+      .g-hint i { width: 6px; height: 6px; border-radius: 50%; background: #ffd796; box-shadow: 0 0 10px #ffd796; animation: gBlink 1.4s infinite; }
+      .g-sub { font-size: 12.5px; opacity: calc(.5 - var(--p) * .5); margin-top: -16px; }
+      .g-skip { position: absolute; z-index: 6; top: max(18px, env(safe-area-inset-top)); left: 18px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); color: #e8d8bc; font: inherit; font-size: 12.5px; padding: 7px 14px; border-radius: 99px; cursor: pointer; backdrop-filter: blur(8px); }
+      .g-flash { position: absolute; inset: 0; z-index: 7; pointer-events: none; opacity: 0; background: radial-gradient(60% 55% at 50% 50%, #fff8ea 0%, rgba(255,214,150,.75) 35%, rgba(255,170,90,0) 75%); }
+      #gate.open .g-l { transform: rotateY(-86deg); filter: brightness(1.6); }
+      #gate.open .g-r { transform: rotateY(86deg); filter: brightness(1.6); }
+      #gate.open .g-center { opacity: 0; transform: scale(1.5); }
+      #gate.open .g-skip { opacity: 0; }
+      #gate.open .g-flash { animation: gFlash 1.3s ease-out forwards; }
+      #gate.open .g-seam { width: 100%; transition: width 1s cubic-bezier(.75,0,.2,1); }
+      #gate.open { background: transparent; transition: background .9s .25s, opacity .7s; }
+      @keyframes gBreath { 50% { transform: scale(1.035); } }
+      @keyframes gBlink { 50% { opacity: .25; } }
+      @keyframes gFlash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+      html.gate-opened .hero-video-box, html.gate-opened .hero-body { animation: gHeroIn 1.8s cubic-bezier(.16,.84,.24,1) both; }
+      html.gate-opened .hero-body { animation-name: gBodyIn; }
+      @keyframes gHeroIn { from { transform: scale(1.14); filter: brightness(1.7) saturate(1.2); } to { transform: none; filter: none; } }
+      @keyframes gBodyIn { 0%, 30% { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        #gate-seal, .g-hint i { animation: none; }
+        #gate.open .g-l, #gate.open .g-r { transform: none; opacity: 0; transition: opacity .6s; }
+        html.gate-opened .hero-video-box, html.gate-opened .hero-body { animation: none; }
+      }
+    </style>
   </head>
   <body>
+    <!-- بوابة الدخول -->
+    <div id="gate" role="dialog" aria-label="افتح مناسبتي">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+        <pattern id="g-star" width="60" height="60" patternUnits="userSpaceOnUse"><g fill="none" stroke="#dcb06a" stroke-width=".8" stroke-opacity=".34"><path d="M30.0 6.0 L35.0 18.0 L47.0 13.0 L42.0 25.0 L54.0 30.0 L42.0 35.0 L47.0 47.0 L35.0 42.0 L30.0 54.0 L25.0 42.0 L13.0 47.0 L18.0 35.0 L6.0 30.0 L18.0 25.0 L13.0 13.0 L25.0 18.0Z"/><path d="M30 0V6M30 54V60M0 30H6M54 30H60M0 0L13 13M60 0L47 13M0 60L13 47M60 60L47 47"/><circle cx="30" cy="30" r="5"/></g></pattern>
+      </defs></svg>
+      <div class="g-seam"></div>
+      <div class="g-door g-l"><svg aria-hidden="true"><rect width="100%" height="100%" fill="url(#g-star)"/></svg></div>
+      <div class="g-door g-r"><svg aria-hidden="true"><rect width="100%" height="100%" fill="url(#g-star)"/></svg></div>
+      <canvas id="gate-dust" aria-hidden="true"></canvas>
+      <div class="g-vig"></div>
+      <div class="g-center">
+        <span class="g-eyebrow">منصة المناسبات السعودية</span>
+        <button id="gate-seal" type="button" aria-label="اضغط مطولاً على الختم لفتح مناسبتي">
+          <svg class="g-ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="trk" cx="60" cy="60" r="58"/><circle class="fill" cx="60" cy="60" r="58" pathLength="1"/></svg>
+          <span class="g-word">مناسبتي</span>
+        </button>
+        <span class="g-hint"><i></i>اضغط مطولاً على الختم</span>
+        <span class="g-sub">وافتح باب مناسبتك</span>
+      </div>
+      <button class="g-skip" type="button">تخطي</button>
+      <div class="g-flash"></div>
+    </div>
+    <script>
+      (function () {
+        var g = document.getElementById("gate"); if (!g) return;
+        var seen = false; try { seen = sessionStorage.getItem("mns.gate") === "1"; } catch (e) {}
+        if (seen || /[?&]nogate/.test(location.search) || (location.hash && location.hash.length > 1)) { g.parentNode.removeChild(g); return; }
+        var root = document.documentElement; root.classList.add("gating");
+        var HOLD = 1500, p = 0, holding = false, done = false, last = 0, tick = 0, raf = 0;
+        var cv = document.getElementById("gate-dust"), cx = cv.getContext("2d"), W = 0, H = 0, dpr = 1, dust = [];
+        function size() { dpr = Math.min(window.devicePixelRatio || 1, 2); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+        size(); window.addEventListener("resize", size);
+        var N = Math.min(W, H) < 700 ? 60 : 110;
+        for (var i = 0; i < N; i++) dust.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.6 + .4, s: Math.random() * 14 + 6, ph: Math.random() * 6.28 });
+        // صوت فخم خفيف: نغمة تتصاعد مع الضغط، وجرس عند الفتح (يعمل بعد لمسة المستخدم فقط)
+        var ac = null, drone = null;
+        function audio() {
+          if (ac) return; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+          var gain = ac.createGain(); gain.gain.value = 0; var lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 600;
+          var o1 = ac.createOscillator(), o2 = ac.createOscillator(), o3 = ac.createOscillator();
+          o1.frequency.value = 110; o2.frequency.value = 164.8; o3.frequency.value = 220.5; o3.type = "triangle";
+          [o1, o2, o3].forEach(function (o) { o.connect(lp); o.start(); }); lp.connect(gain).connect(ac.destination);
+          drone = { gain: gain, lp: lp, o: [o1, o2, o3] };
+        }
+        function bell() {
+          if (!ac) return; var t0 = ac.currentTime + .02;
+          [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(function (f, i) {
+            [[1, .09], [2.01, .025]].forEach(function (h) {
+              var o = ac.createOscillator(), gg = ac.createGain(), t = t0 + i * .07;
+              o.frequency.value = f * h[0]; gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(h[1], t + .015); gg.gain.exponentialRampToValueAtTime(.0001, t + 2.4);
+              o.connect(gg).connect(ac.destination); o.start(t); o.stop(t + 2.5);
+            });
+          });
+          if (drone) { drone.gain.gain.setTargetAtTime(0, ac.currentTime, .5); setTimeout(function () { drone.o.forEach(function (o) { try { o.stop(); } catch (e) {} }); }, 2500); }
+        }
+        function press(e) { if (done) return; if (e && e.target && e.target.closest && e.target.closest(".g-skip")) return; holding = true; audio(); if (ac && ac.state === "suspended") ac.resume(); }
+        function release() { holding = false; }
+        g.addEventListener("pointerdown", function (e) { press(e); try { g.setPointerCapture(e.pointerId); } catch (x) {} });
+        g.addEventListener("pointerup", release); g.addEventListener("pointercancel", release); g.addEventListener("lostpointercapture", release);
+        g.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+        var seal = document.getElementById("gate-seal"); seal.focus({ preventScroll: true });
+        seal.addEventListener("keydown", function (e) { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); press(); } });
+        seal.addEventListener("keyup", function (e) { if (e.key === " " || e.key === "Enter") release(); });
+        g.querySelector(".g-skip").addEventListener("click", function () { audio(); open(); });
+        function open() {
+          if (done) return; done = true; holding = false; p = 1; g.style.setProperty("--p", "1");
+          try { sessionStorage.setItem("mns.gate", "1"); } catch (e) {}
+          try { navigator.vibrate && navigator.vibrate([25, 40, 70]); } catch (e) {}
+          bell(); g.classList.add("open"); root.classList.remove("gating"); root.classList.add("gate-opened");
+          setTimeout(function () { g.classList.add("gone"); }, 1150);
+          setTimeout(function () { cancelAnimationFrame(raf); window.removeEventListener("resize", size); if (g.parentNode) g.parentNode.removeChild(g); }, 1900);
+        }
+        function frame(t) {
+          raf = requestAnimationFrame(frame);
+          var dt = last ? Math.min(50, t - last) : 16; last = t;
+          if (!done) {
+            p = Math.max(0, Math.min(1, p + (holding ? dt / HOLD : -dt / 450)));
+            g.style.setProperty("--p", p.toFixed(4));
+            var k = Math.floor(p * 6); if (holding && k > tick) { try { navigator.vibrate && navigator.vibrate(6 + k * 3); } catch (e) {} } tick = k;
+            if (drone) { var now = ac.currentTime; drone.gain.gain.setTargetAtTime(p * .07, now, .08); drone.lp.frequency.setTargetAtTime(500 + p * 2200, now, .1); drone.o[0].frequency.setTargetAtTime(110 + p * 30, now, .1); drone.o[1].frequency.setTargetAtTime(164.8 + p * 45, now, .1); }
+            if (p >= 1) open();
+          }
+          cx.clearRect(0, 0, W, H); cx.globalCompositeOperation = "lighter";
+          var mx = W / 2, my = H / 2, pull = done ? 0 : p * p;
+          for (var i = 0; i < dust.length; i++) {
+            var d = dust[i];
+            d.y -= d.s * dt / 1000 * (1 + p * 3); d.x += Math.sin(t / 900 + d.ph) * .25;
+            d.x += (mx - d.x) * pull * .045; d.y += (my - d.y) * pull * .045;
+            if (done) { d.x += (d.x - mx) * .06; d.y += (d.y - my) * .06; }
+            if (d.y < -10) { d.y = H + 10; d.x = Math.random() * W; }
+            var a = (.35 + .45 * Math.sin(t / 400 + d.ph)) * (.6 + p * .8), r = d.r * (1 + p * 1.4);
+            cx.fillStyle = "rgba(255,210,140," + Math.max(0, Math.min(1, a)).toFixed(3) + ")";
+            cx.beginPath(); cx.arc(d.x, d.y, r, 0, 6.283); cx.fill();
+          }
+        }
+        raf = requestAnimationFrame(frame);
+      })();
+    </script>
     <div id="root" dir="rtl"></div>
     <!-- أول صورة تظهر فوراً قبل تحميل التطبيق، ثم يحل محلها الفيلم الحي -->
     <div id="boot-hero" aria-hidden="true" style="position:fixed;inset:10px;border-radius:34px;overflow:hidden;background:#1a0a2b url(./media/hero-first.webp) center/cover;z-index:0;pointer-events:none"></div>
