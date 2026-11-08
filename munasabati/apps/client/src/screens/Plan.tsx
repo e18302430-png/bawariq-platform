@@ -67,7 +67,7 @@ export default function Plan() {
                 <p className="muted" style={{ margin: 0, fontSize: 14 }}>أرسلت طلبك. تابع الرد من <a href="#bookings">حجوزاتي</a>.</p>
               ) : p ? (
                 <div className="pl-pick">
-                  <div className="pl-ph"><Media photos={p.photos} seed={p.id} hue={p.hue} kind={p.kind} alt={p.name} />{p.promoted && <span className="pill pl-promo">مميز</span>}</div>
+                  <div className="pl-ph"><Media photos={p.photos} seed={p.id} hue={p.hue} kind={p.kind} alt={p.name} />{p.promoted && <span className="pill pl-promo">مختار من مناسبتي</span>}</div>
                   <div className="pl-body">
                     <b className="display">{p.name}</b>
                     <div className="pl-why">{p.reasons.slice(0, 3).map((r) => <span key={r}><Icon name="Check" size={12} />{r}</span>)}</div>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, PlatformDues, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -187,7 +187,6 @@ function Portal({ v }: { v: Venue }) {
     { id: "halls", label: "القاعات", icon: "DoorOpen" },
     { id: "profile", label: "الملف التعريفي", icon: "Building2" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "venue" && t.fromId === v.id && t.status === "answered").length },
-    { id: "plan", label: "مستحقات المنصة", icon: "Receipt" },
   ];
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
   return (
@@ -204,7 +203,6 @@ function Portal({ v }: { v: Venue }) {
           {tab === "halls" && <Halls v={v} />}
           {tab === "profile" && <Profile v={v} />}
           {tab === "support" && <SupportCenter from="venue" fromId={v.id} fromName={v.name} />}
-          {tab === "plan" && v && <PlatformDues kind="venue" id={v.id} />}
         </motion.div>
       </AnimatePresence>
     </AppShell>

@@ -1,7 +1,7 @@
 /*
   الخطة المقترحة: العميل يختار طابع الإلهام ويكتب ميزانيته فقط، ونحن نقترح له كل شيء.
   لكل بند في الميزانية نرتّب القاعات والموردين حسب: المدينة، والطابع، والميزانية المخصصة (إن أدخل التاجر سعره)،
-  والتوثيق، والثقة، والظهور المميز المدفوع. السعر غير المعروف لا يستبعد التاجر.
+  والتوثيق، والثقة، واختيار الإدارة. السعر غير المعروف لا يستبعد التاجر.
 */
 import { busyDays, hallCapacity, hallPrice, isWeekend, splitBudget } from "./calc";
 import { createBooking, type Mutation } from "./db";
@@ -53,9 +53,8 @@ export function trustOf(db: DB, kind: "venue" | "supplier", id: string) {
   const firstReply = answered.map((b) => (b.messages.find((m) => m.from === "provider")!.at - b.createdAt) / 36e5);
   const fast = firstReply.length >= 2 && firstReply.filter((h) => h <= 3).length / firstReply.length >= 0.7;
   const cancels = mine.filter((b) => b.cancelRequest).length;
-  const masked = mine.reduce((a, b) => a + b.messages.filter((m) => m.from === "provider" && m.masked).length, 0);
   const committed = mine.filter((b) => b.status === "confirmed").length >= 2 && cancels === 0;
-  return { fast, committed, cancels, masked, score: (fast ? 8 : 0) + (committed ? 8 : 0) - cancels * 15 - masked * 6 };
+  return { fast, committed, cancels, score: (fast ? 8 : 0) + (committed ? 8 : 0) - cancels * 15 };
 }
 
 export function trustBadges(db: DB, kind: "venue" | "supplier", id: string, verified?: boolean) {

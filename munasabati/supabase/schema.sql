@@ -173,8 +173,8 @@ create policy "read settings" on public.settings for select using (true);
 drop policy if exists "admin settings" on public.settings;
 create policy "admin settings" on public.settings for all using (public.is_admin()) with check (public.is_admin());
 
--- لتعيين نفسك مديراً بعد أول دخول برقم جوالك:
--- update public.profiles set role = 'admin' where phone = '9665XXXXXXXX';
+-- لتعيين نفسك مديراً: أنشئ حسابك من Authentication ← Users ← Add user (بريد وكلمة مرور، وفعّل Auto Confirm)، ثم شغّل:
+-- update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'بريدك@example.com');
 
 -- ═══════════════ الإدارة وسيط فعلي: ترى وتعدّل وتحذف بيانات كل العملاء ═══════════════
 drop policy if exists "admin manage spaces" on public.client_spaces;

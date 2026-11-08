@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, duesOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
-  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, apply, isCloud, useDB, useToast,
+  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useToast,
 } from "@munasabati/ui";
 import { BookingAdmin, Clients } from "./clients";
-import { Finance } from "./finance";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 
 /*
@@ -22,6 +21,16 @@ const ago = (t: number) => { const m = Math.round((Date.now() - t) / 6e4); retur
 function Gate({ onOk }: { onOk: () => void }) {
   const [c, setC] = useState("");
   const [err, setErr] = useState(false);
+  // قاعدة البيانات الحقيقية: دخول بحساب الإدارة (صلاحية admin في جدول profiles)
+  if (isCloud) return (
+    <div className="adm-gate">
+      <div className="card stack adm-gate-card">
+        <span className="avatar" style={{ width: 52, height: 52 }}><Icon name="ShieldCheck" size={24} /></span>
+        <div><h1 style={{ fontSize: 24, fontWeight: 800 }}>إدارة مناسبتي</h1><p className="muted">منطقة خاصة بإدارة المنصة.</p></div>
+        <AdminLogin onDone={onOk} />
+      </div>
+    </div>
+  );
   return (
     <div className="adm-gate">
       <form className="card stack adm-gate-card" onSubmit={(e) => { e.preventDefault(); if (c === CODE) { try { sessionStorage.setItem(KEY, "1"); } catch { /* */ } onOk(); } else setErr(true); }}>
@@ -45,9 +54,6 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
   const unverified = [...db.suppliers, ...db.venues].filter((x) => !x.verified && x.status !== "suspended");
   const urgent = tickets.filter((t) => t.urgent && t.status !== "closed");
   const cancels = db.bookings.filter((b) => b.cancelRequest);
-  const overdue = duesOf(db).filter((d) => d.state === "overdue");
-  const claimed = duesOf(db).filter((d) => d.state === "claimed");
-  const maskedB = db.bookings.filter((b) => b.messages.some((m) => m.masked && Date.now() - m.at < 7 * 864e5));
   const day = Date.now() - 864e5;
   const morning: [string, number, string, string][] = [
     ["طلبات جديدة", db.bookings.filter((b) => !b.seed && b.createdAt > day).length, "CalendarPlus", "bookings"],
@@ -80,13 +86,10 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
         <div className="list">
           {urgent.length > 0 && <button className="list-row adm-row adm-urgent" onClick={() => go("support", urgent[0].id)}><span className="avatar"><Icon name="ShieldAlert" size={18} /></span><div className="t"><b>{urgent.length} بلاغ طارئ من ليلة مناسبة</b><small>{urgent[0].subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {cancels.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings", cancels[0].id)}><span className="avatar"><Icon name="CalendarX" size={18} /></span><div className="t"><b>{cancels.length} طلب إلغاء حجز مؤكد ينتظر قرارك</b><small>الحجز قائم لين توافق أو ترفض</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {claimed.length > 0 && <button className="list-row adm-row" onClick={() => go("finance")}><span className="avatar"><Icon name="Receipt" size={18} /></span><div className="t"><b>{claimed.length} عمولة حوّلها التجار</b><small>تأكد من الحساب وأغلق المستحق</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {overdue.length > 0 && <button className="list-row adm-row" onClick={() => go("finance")}><span className="avatar"><Icon name="Hourglass" size={18} /></span><div className="t"><b>{overdue.length} عمولة متأخرة عن المهلة</b><small>ذكّر التاجر أو علّق حسابه لحين السداد</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {maskedB.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings", maskedB[0].id)}><span className="avatar"><Icon name="ShieldCheck" size={18} /></span><div className="t"><b>{maskedB.length} محادثة فيها محاولة مشاركة رقم</b><small>أخفينا الرقم تلقائياً. راجع إذا تكررت</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {openT.length > 0 && <button className="list-row adm-row" onClick={() => go("support")}><span className="avatar"><Icon name="LifeBuoy" size={18} /></span><div className="t"><b>{openT.length} تذكرة دعم بانتظار ردك</b><small>أقدمها: {openT.at(-1)?.subject}</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {stale.length > 0 && <button className="list-row adm-row" onClick={() => go("bookings")}><span className="avatar"><Icon name="Hourglass" size={18} /></span><div className="t"><b>{stale.length} طلب بدون رد من التاجر لأكثر من 24 ساعة</b><small>تواصل مع التجار أو أعد توجيه العملاء</small></div><Icon name="ChevronLeft" size={18} /></button>}
           {unverified.length > 0 && <button className="list-row adm-row" onClick={() => go("suppliers")}><span className="avatar"><Icon name="BadgeCheck" size={18} /></span><div className="t"><b>{unverified.length} حساب بانتظار التوثيق</b><small>راجع السجل التجاري ثم وثّق الحساب</small></div><Icon name="ChevronLeft" size={18} /></button>}
-          {!openT.length && !stale.length && !unverified.length && !urgent.length && !cancels.length && !overdue.length && !claimed.length && !maskedB.length && <p className="muted">كل شي تحت السيطرة.</p>}
+          {!openT.length && !stale.length && !unverified.length && !urgent.length && !cancels.length && <p className="muted">كل شي تحت السيطرة.</p>}
         </div>
       </section>
       <section className="card">
@@ -204,9 +207,9 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
               <button className="btn" onClick={() => { apply(adminSetVerified(kind, cur.id, !cur.verified)); toast(cur.verified ? "تم إلغاء التوثيق" : "تم توثيق الحساب"); }}><Icon name="BadgeCheck" size={16} /> {cur.verified ? "إلغاء التوثيق" : "توثيق الحساب"}</button>
               <button className="btn" onClick={() => { apply(adminSetStatus(kind, cur.id, cur.status === "suspended" ? "active" : "suspended")); toast(cur.status === "suspended" ? "تم تفعيل الحساب" : "تم تعليق الحساب"); }}><Icon name={cur.status === "suspended" ? "PlayCircle" : "PauseCircle"} size={16} /> {cur.status === "suspended" ? "تفعيل الحساب" : "تعليق الحساب"}</button>
               <button className="btn" onClick={() => setEdit({ name: cur.name, city: cur.city, about: cur.about })}><Icon name="Pencil" size={16} /> تعديل البيانات</button>
-              <button className={"btn" + (cur.promoted ? " primary" : "")} onClick={() => { apply(setPromoted(kind, cur.id, !cur.promoted)); toast(cur.promoted ? "أوقفنا الظهور المميز" : "فعّلنا الظهور المميز"); }}><Icon name="Sparkles" size={16} /> {cur.promoted ? "إيقاف الظهور المميز" : "تفعيل ظهور مميز (مدفوع)"}</button>
+              <button className={"btn" + (cur.promoted ? " primary" : "")} onClick={() => { apply(setPromoted(kind, cur.id, !cur.promoted)); toast(cur.promoted ? "ألغينا الاختيار" : "صار الحساب مختاراً من مناسبتي"); }}><Icon name="Sparkles" size={16} /> {cur.promoted ? "إلغاء «مختار من مناسبتي»" : "اختيار «مختار من مناسبتي»"}</button>
             </div>
-            {(() => { const t = trustOf(db, kind, cur.id); return <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>{t.fast && <span className="pill ok">يرد بسرعة</span>}{t.committed && <span className="pill ok">ملتزم</span>}{t.cancels > 0 && <span className="pill warn">{t.cancels} طلب إلغاء</span>}{t.masked > 0 && <span className="pill bad">{t.masked} محاولة مشاركة رقم</span>}</div>; })()}
+            {(() => { const t = trustOf(db, kind, cur.id); return <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>{t.fast && <span className="pill ok">يرد بسرعة</span>}{t.committed && <span className="pill ok">ملتزم</span>}{t.cancels > 0 && <span className="pill warn">{t.cancels} طلب إلغاء</span>}</div>; })()}
             <Confirm label="حذف الحساب وطلباته" onYes={() => { apply(adminDelete(kind, cur.id)); setSel(null); toast("تم حذف الحساب"); }} />
           </div>
         ))}
@@ -326,7 +329,6 @@ function Panel() {
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "new").length },
     { id: "clients", label: "العملاء", icon: "Users" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open").length },
-    { id: "finance", label: "المالية", icon: "Receipt", count: duesOf(db).filter((d) => d.state === "claimed" || d.state === "overdue").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
     { id: "settings", label: "الإعدادات", icon: "Settings" },
@@ -334,13 +336,12 @@ function Panel() {
   return (
     <AppShell portal="الإدارة" tabs={tabs} active={tab} onChange={(t) => go(t)}
       actions={<><LiveBadge sound={live.sound} setSound={live.setSound} /><button className="btn sm ghost" onClick={() => setPal(true)}><Icon name="Search" size={15} /> بحث <kbd className="kbd">Ctrl K</kbd></button></>}
-      footer={<button className="btn sm ghost" onClick={() => { try { sessionStorage.removeItem(KEY); } catch { /* */ } location.reload(); }}><Icon name="LogOut" size={15} /> خروج</button>}>
+      footer={<button className="btn sm ghost" onClick={() => { try { sessionStorage.removeItem(KEY); } catch { /* */ } if (isCloud) void repo.auth?.signOut().then(() => location.reload()); else location.reload(); }}><Icon name="LogOut" size={15} /> خروج</button>}>
       <AnimatePresence mode="wait">
         <motion.div key={tab + (focus ?? "")} className="page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
           {tab === "overview" && <Overview go={go} live={live.feed} />}
           {tab === "bookings" && <Bookings focus={focus} go={go} />}
           {tab === "clients" && <Clients focus={focus} go={go} />}
-          {tab === "finance" && <Finance go={go} />}
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}
@@ -354,8 +355,10 @@ function Panel() {
 }
 
 function Main() {
+  useDB();
   const [ok, setOk] = useState(() => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } });
-  return ok ? <Panel /> : <Gate onOk={() => setOk(true)} />;
+  const allowed = isCloud ? repo.auth?.user()?.role === "admin" : ok;
+  return allowed ? <Panel /> : <Gate onOk={() => setOk(true)} />;
 }
 
 export default function App() { return <ErrorBoundary><ToastProvider><Main /></ToastProvider></ErrorBoundary>; }

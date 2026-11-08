@@ -139,7 +139,6 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
         {b.fromPlan && <span className="pill brand">من الخطة المقترحة</span>}
         {b.reassignedFrom && <span className="pill info">محوّل من الإدارة</span>}
         {b.vendorStatus && <span className="pill ok">التاجر: {({ onway: "في الطريق", arrived: "وصل", setup: "يجهّز", ready: "جاهز" } as const)[b.vendorStatus]}</span>}
-        {b.messages.some((m) => m.masked) && <span className="pill bad">محاولة مشاركة رقم</span>}
       </div>
       {b.cancelRequest && <div className="card flat stack" style={{ background: "var(--surface-2)", borderColor: "var(--warn)" }}>
         <b><Icon name="CalendarX" size={16} /> التاجر يطلب إلغاء الحجز</b>
@@ -180,7 +179,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
       </form>}
       <div className="field">
         <span className="label">المحادثة (أنت وسيط فيها: رسالتك تظهر للعميل و{provider})</span>
-        <Thread items={b.messages.map((m) => ({ mine: m.from === "admin", masked: m.masked, text: m.text, at: m.at, who: m.from === "provider" ? provider : m.from === "client" ? b.clientName : "الإدارة" }))} mine="لا توجد رسائل بعد" />
+        <Thread items={b.messages.map((m) => ({ mine: m.from === "admin", text: m.text, at: m.at, who: m.from === "provider" ? provider : m.from === "client" ? b.clientName : "الإدارة" }))} mine="لا توجد رسائل بعد" />
         <div className="chips wrap" style={{ margin: "6px 0" }}>{QUICK.map((t) => <button key={t} type="button" className="chip" onClick={() => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }}>{t}</button>)}</div>
         <Composer onSend={(t) => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }} placeholder="رسالة من الإدارة للطرفين" />
       </div>

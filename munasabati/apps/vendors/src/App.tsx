@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, PlatformDues, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -148,7 +148,6 @@ function Portal({ s }: { s: Supplier }) {
     { id: "packages", label: "الباقات", icon: "Package" },
     { id: "profile", label: "الملف التعريفي", icon: "Store" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "supplier" && t.fromId === s.id && t.status === "answered").length },
-    { id: "plan", label: "مستحقات المنصة", icon: "Receipt" },
   ];
   return (
     <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
@@ -162,7 +161,6 @@ function Portal({ s }: { s: Supplier }) {
           {tab === "packages" && <Packages s={s} />}
           {tab === "profile" && <Profile s={s} />}
           {tab === "support" && <SupportCenter from="supplier" fromId={s.id} fromName={s.name} />}
-          {tab === "plan" && s && <PlatformDues kind="supplier" id={s.id} />}
         </motion.div>
       </AnimatePresence>
     </AppShell>

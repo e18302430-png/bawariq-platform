@@ -14,7 +14,7 @@ type Row<T> = { id: string; owner_id?: string | null; data: T };
 
 const toIntl = (p: string) => "+966" + p.replace(/\D/g, "").replace(/^0/, "");
 
-export function createSupabaseRepository(url: string, anonKey: string): Repository {
+export function createSupabaseRepository(url: string, anonKey: string, authMode: "phone" | "quick" = "quick"): Repository {
   const sb: SupabaseClient = createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
@@ -27,7 +27,7 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
 
   async function load() {
     const { data: s } = await sb.auth.getSession();
-    user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone ?? "" } : null;
+    user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "" } : null;
     const [sup, ven, bk, space, busy, tk, st] = await Promise.all([
       sb.from("suppliers").select("id, owner_id, data"),
       sb.from("venues").select("id, owner_id, data"),
@@ -35,10 +35,11 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       user ? sb.from("client_spaces").select("data").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
-      sb.from("settings").select("key, value").in("key", ["announcement", "commission"]),
+      sb.from("settings").select("key, value").in("key", ["announcement"]),
     ]);
     // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
     const role = user ? (await sb.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role : null;
+    if (user) user.role = role === "admin" ? "admin" : "user";
     const allSpaces = role === "admin" ? (await sb.from("client_spaces").select("user_id, data, updated_at")).data ?? [] : null;
     const suppliers = ((sup.data ?? []) as Row<Supplier>[]).map((r) => ({ ...r.data, id: r.id }));
     const venues = ((ven.data ?? []) as Row<Venue>[]).map((r) => ({ ...r.data, id: r.id }));
@@ -57,7 +58,6 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       sessions: { supplierId: owned(sup.data as Row<unknown>[]), venueId: owned(ven.data as Row<unknown>[]) },
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
       announcement: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "announcement")?.value || undefined,
-      commission: (() => { try { return JSON.parse(((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "commission")?.value ?? "null") ?? undefined; } catch { return undefined; } })(),
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
     lastError = sup.error?.message ?? ven.error?.message ?? null;
@@ -97,7 +97,6 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       for (const c of next.clients.filter((x) => prev.clients!.find((y) => y.id === x.id) !== x)) jobs.push(sb.from("client_spaces").update({ data: c.data, updated_at: new Date().toISOString() }).eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
       for (const c of prev.clients.filter((p) => !next.clients!.some((n) => n.id === p.id))) jobs.push(sb.from("client_spaces").delete().eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
     }
-    if (prev.commission !== next.commission) jobs.push(sb.from("settings").upsert({ key: "commission", value: JSON.stringify(next.commission ?? {}) }).then(({ error }) => { if (error) throw error; }));
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
   }
@@ -110,7 +109,24 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
   void load().catch(fail("تعذّر الاتصال"));
 
   const auth: AuthAdapter = {
+    mode: authMode,
     user: () => user,
+    async quickSignIn(phone, name) {
+      const local = phone.replace(/\D/g, "");
+      const { data, error } = await sb.auth.signInAnonymously({ options: { data: { phone: local, name } } });
+      if (error || !data.user) throw new Error(error?.message ?? "تعذّر الدخول");
+      await sb.from("profiles").upsert({ id: data.user.id, phone: local, ...(name ? { name } : {}) });
+      user = { id: data.user.id, phone: local };
+      await load();
+      return user;
+    },
+    async signInWithPassword(email, password) {
+      const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.user) throw new Error("البريد أو كلمة المرور غير صحيحة");
+      user = { id: data.user.id, phone: "" };
+      await load();
+      return user!;
+    },
     async sendOtp(phone) {
       const { error } = await sb.auth.signInWithOtp({ phone: toIntl(phone) });
       if (error) throw new Error(error.message);

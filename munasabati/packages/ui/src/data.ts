@@ -2,12 +2,14 @@ import { useSyncExternalStore } from "react";
 import { createInitialDB, createLocalRepository, type DB, type Mutation, type Repository } from "@munasabati/core";
 
 /** مستودع مؤجل: يحمّل مكتبة Supabase فقط عند تفعيل وضع الإنتاج (لا تُحمَّل في وضع التجربة) */
-function deferredCloud(url: string, key: string): Repository {
+function deferredCloud(url: string, key: string, authMode: "phone" | "quick"): Repository {
   let inner: Repository | null = null;
+  let resolveReady: (r: Repository) => void = () => {};
+  const ready = new Promise<Repository>((r) => { resolveReady = r; });
   const listeners = new Set<() => void>();
   const empty: DB = { ...createInitialDB(), suppliers: [], venues: [], bookings: [] };
   const emit = () => listeners.forEach((l) => l());
-  void import("@munasabati/cloud").then(({ createSupabaseRepository }) => { inner = createSupabaseRepository(url, key); inner.subscribe(emit); emit(); });
+  void import("@munasabati/cloud").then(({ createSupabaseRepository }) => { inner = createSupabaseRepository(url, key, authMode); inner.subscribe(emit); emit(); resolveReady(inner); });
   return {
     mode: "cloud",
     get: () => inner?.get() ?? empty,
@@ -16,6 +18,11 @@ function deferredCloud(url: string, key: string): Repository {
     reset: () => inner?.reset(),
     uploadPhoto: (b) => (inner ? inner.uploadPhoto(b) : Promise.reject(new Error("لحظة، جاري الاتصال"))),
     get auth() { return inner?.auth; },
+    // شاشة المنسق تعمل حتى قبل اكتمال تحميل مكتبة السحابة
+    door: {
+      load: async (k) => (await ready).door!.load(k),
+      checkIn: async (k, c) => (await ready).door!.checkIn(k, c),
+    },
     error: () => inner?.error() ?? null,
   };
 }
@@ -27,8 +34,10 @@ function deferredCloud(url: string, key: string): Repository {
  */
 const URL_ = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY_ = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/** quick (افتراضي): دخول فوري بالاسم والجوال. phone: رمز SMS بعد ربط مزود رسائل في Supabase */
+const AUTH_MODE = (import.meta.env.VITE_AUTH_MODE as string | undefined) === "phone" ? "phone" : "quick";
 
-export const repo: Repository = URL_ && KEY_ ? deferredCloud(URL_, KEY_) : createLocalRepository();
+export const repo: Repository = URL_ && KEY_ ? deferredCloud(URL_, KEY_, AUTH_MODE) : createLocalRepository();
 export const isCloud = repo.mode === "cloud";
 
 export function useDB(): DB {

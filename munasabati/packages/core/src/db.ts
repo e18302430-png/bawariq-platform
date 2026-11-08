@@ -106,7 +106,7 @@ export const setBookingStatus = (id: string, status: BookingStatus, extra: { quo
   ...db,
   bookings: db.bookings.map((b) => b.id !== id ? b : {
     ...b, status, quote: extra.quote ?? b.quote,
-    messages: extra.message ? [...b.messages, { ...extra.message, ...(extra.message.from === "admin" ? {} : maskContacts(extra.message.text)), at: Date.now() }] : b.messages,
+    messages: extra.message ? [...b.messages, { ...extra.message, at: Date.now() }] : b.messages,
   }),
 });
 
@@ -160,23 +160,9 @@ export const replyTicket = (id: string, from: "user" | "admin", text: string): M
 export const setTicketStatus = (id: string, status: Ticket["status"]): Mutation => (db) => ({ ...db, tickets: (db.tickets ?? []).map((t) => (t.id === id ? { ...t, status, updatedAt: Date.now() } : t)) });
 
 /* ───── محادثة الطلب بين العميل والتاجر ───── */
-/** حماية الصفقة: إخفاء أرقام الجوال والحسابات والروابط الخارجية من محادثات العميل والتاجر */
-export function maskContacts(raw: string): { text: string; masked: boolean } {
-  let masked = false;
-  const hide = () => { masked = true; return "•••"; };
-  const text = raw
-    .replace(/(?:\+|00)?(?:9\s*6\s*6|٩\s*٦\s*٦)?[\s-]*[0٠]?[5٥](?:[\s.-]*[\d٠-٩]){8}/g, hide)
-    .replace(/[\d٠-٩](?:[\s.-]*[\d٠-٩]){8,}/g, hide)
-    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, hide)
-    .replace(/(?:https?:\/\/)?(?:www\.)?(?:wa\.me|api\.whatsapp\.com|t\.me|instagram\.com|snapchat\.com|tiktok\.com)\S*/gi, hide)
-    .replace(/(?:^|\s)@[A-Za-z0-9_.]{3,}/g, (m) => (m.startsWith(" ") ? " " : "") + hide())
-    .replace(/(?:سناب|انستا|انستقرام|واتس|واتساب|تلقرام)\s*[:：]?\s*[A-Za-z0-9_.]{3,}/g, hide);
-  return { text, masked };
-}
-export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => {
-  const m = from === "admin" ? { text, masked: false } : maskContacts(text);
-  return { ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, messages: [...b.messages, { from, text: m.text, at: Date.now(), ...(m.masked ? { masked: true } : {}) }] } : b)) };
-};
+export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, messages: [...b.messages, { from, text, at: Date.now() }] } : b)),
+});
 
 /* ───── حماية الالتزام: إلغاء الحجز المؤكد يمر بالإدارة، والإسناد لتاجر بديل ───── */
 export const requestCancel = (id: string, reason: string): Mutation => (db) => ({
@@ -192,29 +178,12 @@ export const reassignBooking = (id: string, to: { kind: "venue" | "supplier"; id
   const b = db.bookings.find((x) => x.id === id);
   if (!b) return db;
   const now = Date.now();
-  const copy: Booking = { ...b, id: uid("bk"), kind: to.kind, targetId: to.id, hallId: to.hallId, status: "new", quote: undefined, cancelRequest: undefined, vendorStatus: undefined, commission: undefined, reassignedFrom: b.id, createdAt: now,
+  const copy: Booking = { ...b, id: uid("bk"), kind: to.kind, targetId: to.id, hallId: to.hallId, status: "new", quote: undefined, cancelRequest: undefined, vendorStatus: undefined, reassignedFrom: b.id, createdAt: now,
     messages: [{ from: "admin", text: "طلب محوّل من إدارة مناسبتي نيابة عن العميل. نرجو الرد بعرضك.", at: now }] };
   return { ...db, bookings: [copy, ...db.bookings.map((x) => (x.id !== id ? x : { ...x, status: "declined" as const, cancelRequest: undefined, messages: [...x.messages, { from: "admin" as const, text: `حوّلت الإدارة طلبك إلى ${to.name} لضمان خدمتك في موعدك.`, at: now }] }))] };
 };
 export const setVendorStatus = (id: string, vendorStatus: Booking["vendorStatus"]): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, vendorStatus } : b)) });
-export const setClientAmount = (id: string, clientAmount?: number): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, clientAmount } : b)) });
-
-/* ───── دخل المنصة: مجانية للعميل، وعمولة على التاجر من الحجوزات المؤكدة ───── */
-export const setCommission = (c: DB["commission"]): Mutation => (db) => ({ ...db, commission: { ...db.commission, ...c } });
-/** قيمة الحجز المعتمدة للعمولة: عرض التاجر، أو المبلغ الذي ذكره العميل إن كان أعلى */
-export const bookingValue = (b: Booking) => Math.max(b.quote ?? 0, b.clientAmount ?? 0, b.quote == null ? b.estimate ?? 0 : 0) || undefined;
-export const commissionOf = (db: DB, b: Booking) => { const v = bookingValue(b), r = db.commission?.rate; return v && r ? Math.round((v * r) / 100) : undefined; };
-export interface Due { booking: Booking; value?: number; amount?: number; dueAt: number; state: "paid" | "claimed" | "overdue" | "due" | "upcoming" }
-export function duesOf(db: DB, kind?: "venue" | "supplier", id?: string, now = Date.now()): Due[] {
-  const grace = (db.commission?.graceDays ?? 7) * DAY;
-  return db.bookings.filter((b) => b.status === "confirmed" && !b.seed && b.fromClient && (!kind || (b.kind === kind && b.targetId === id))).map((b) => {
-    const dueAt = new Date(b.date + "T23:59:00").getTime() + grace;
-    const state = b.commission?.paid ? "paid" : b.commission?.claimedAt ? "claimed" : now > dueAt ? "overdue" : now > dueAt - grace ? "due" : "upcoming";
-    return { booking: b, value: bookingValue(b), amount: commissionOf(db, b), dueAt, state } as Due;
-  }).sort((a, b) => a.dueAt - b.dueAt);
-}
-export const claimCommission = (ids: string[]): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (ids.includes(b.id) ? { ...b, commission: { ...b.commission, claimedAt: Date.now() } } : b)) });
-export const markCommissionPaid = (ids: string[], paid = true): Mutation => (db) => ({ ...db, bookings: db.bookings.map((b) => (ids.includes(b.id) ? { ...b, commission: paid ? { ...b.commission, paid: true, paidAt: Date.now() } : { claimedAt: undefined, paid: false } } : b)) });
+/** حساب مختار من الإدارة: يظهر أولاً بشارة «مختار من مناسبتي» (بدون أي رسوم) */
 export const setPromoted = (kind: "supplier" | "venue", id: string, promoted: boolean): Mutation => (db) => kind === "supplier"
   ? { ...db, suppliers: db.suppliers.map((x) => (x.id === id ? { ...x, promoted } : x)) }
   : { ...db, venues: db.venues.map((x) => (x.id === id ? { ...x, promoted } : x)) };

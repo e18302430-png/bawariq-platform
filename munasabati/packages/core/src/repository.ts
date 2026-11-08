@@ -7,10 +7,16 @@ import type { DB, Guest } from "./types";
  * - LocalRepository: للعرض والتجربة (التخزين في المتصفح، ومزامنة لحظية بين التطبيقات المفتوحة).
  * - لاحقاً: SupabaseRepository أو API خاص بنفس الواجهة، بدون تغيير أي شاشة.
  */
-export interface AuthUser { id: string; phone: string }
+export interface AuthUser { id: string; phone: string; role?: "user" | "admin" }
 
 export interface AuthAdapter {
+  /** phone: رمز SMS (يحتاج مزود رسائل) · quick: دخول فوري بالاسم والجوال بدون رمز */
+  mode: "phone" | "quick";
   user(): AuthUser | null;
+  /** دخول فوري: جلسة آمنة على الجهاز مربوطة برقم الجوال */
+  quickSignIn(phone: string, name?: string): Promise<AuthUser>;
+  /** دخول الإدارة بالبريد وكلمة المرور */
+  signInWithPassword(email: string, password: string): Promise<AuthUser>;
   /** يرسل رمز تحقق SMS للرقم السعودي (05xxxxxxxx) */
   sendOtp(phone: string): Promise<void>;
   verifyOtp(phone: string, code: string): Promise<AuthUser>;

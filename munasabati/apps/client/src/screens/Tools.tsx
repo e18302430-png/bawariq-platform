@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, hospitality, removeBudget, removeTask, sar, setBookingStatus, setClientAmount, setTotalBudget, toggleTask, today, updateBudget,
+  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
   type CheckInResult, type DoorSnapshot,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -37,7 +37,6 @@ export function Bookings() {
                 <button className="btn sm primary" onClick={() => { apply(acceptQuote(b.id, nameOf(b.kind, b.targetId))); toast("تم تأكيد الحجز وإضافته للميزانية"); }}>اقبل العرض</button>
               </div>
             )}
-            {b.status === "confirmed" && <AgreedAmount id={b.id} value={b.clientAmount} />}
             {b.status === "new" && <div className="faint" style={{ fontSize: 13 }}>بانتظار الرد. للتجربة: افتح {b.kind === "venue" ? <a className="brand" href={import.meta.env.VITE_VENUES_URL ?? "../venues/index.html"}>بوابة القاعات</a> : <a className="brand" href={import.meta.env.VITE_VENDORS_URL ?? "../vendors/index.html"}>بوابة الموردين</a>} ورد على الطلب.</div>}
           </motion.section>
         ))}
@@ -47,21 +46,6 @@ export function Bookings() {
 }
 
 const VLABEL = { onway: "في الطريق", arrived: "وصل الموقع", setup: "يجهّز الآن", ready: "جاهز" } as const;
-/** العميل يذكر المبلغ النهائي المتفق عليه: يحميه من أي تغيير لاحق، ويساعد الإدارة في متابعة الالتزام */
-function AgreedAmount({ id, value }: { id: string; value?: number }) {
-  const toast = useToast();
-  const [v, setV] = useState(value ? fmt(value) : "");
-  return (
-    <form className="agreed" onSubmit={(e) => { e.preventDefault(); apply(setClientAmount(id, +v.replace(/\D/g, "") || undefined)); toast("حفظنا المبلغ المتفق عليه"); }}>
-      <label htmlFor={"ag" + id}>المبلغ النهائي اللي اتفقتوا عليه <span className="faint">(اختياري، يحفظ حقك)</span></label>
-      <div className="row" style={{ ["--gap" as string]: "8px" }}>
-        <input id={"ag" + id} className="input num grow" inputMode="numeric" placeholder="اكتب المبلغ" value={v} onChange={(e) => setV(e.target.value.replace(/\D/g, "") ? fmt(+e.target.value.replace(/\D/g, "").slice(0, 9)) : "")} />
-        <button className="btn sm" type="submit">حفظ</button>
-      </div>
-    </form>
-  );
-}
-
 /* ───── الميزانية ───── */
 export function Budget() {
   const db = useDB();

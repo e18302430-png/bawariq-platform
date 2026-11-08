@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { OCCASIONS, claimCommission, duesOf, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking, type Due } from "@munasabati/core";
+import { OCCASIONS, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
 import { photoUrl } from "./media";
 import { BookingChat } from "./support";
-import { apply, repo, resizeImage, useDB } from "./data";
+import { apply, repo, resizeImage } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
 
@@ -144,43 +144,6 @@ export function MonthBoard({ bookings, blocked = [], onToggleBlock, label }: { b
         {onToggleBlock && <span className="row" style={{ ["--gap" as string]: "5px" }}><i className="lg-dot" style={{ background: "var(--faint)" }} />مغلق (اضغط اليوم للإغلاق أو الفتح)</span>}
       </div>
     </section>
-  );
-}
-
-/** مستحقات المنصة: مناسبتي مجانية للعميل، وعمولتها على الحجوزات المؤكدة من التاجر فقط (بدون دفع إلكتروني: تحويل بنكي) */
-export function PlatformDues({ kind, id }: { kind: "supplier" | "venue"; id: string }) {
-  const db = useDB();
-  const toast = useToast();
-  const dues = duesOf(db, kind, id);
-  const rate = db.commission?.rate;
-  const open = dues.filter((d) => d.state === "due" || d.state === "overdue");
-  const total = (l: Due[]) => l.reduce((a, d) => a + (d.amount ?? 0), 0);
-  const LBL: Record<Due["state"], [string, string]> = { paid: ["ok", "مدفوعة"], claimed: ["info", "بانتظار تأكيد الإدارة"], overdue: ["bad", "متأخرة"], due: ["warn", "مستحقة الآن"], upcoming: ["neutral", "بعد المناسبة"] };
-  const copy = async () => { try { await navigator.clipboard.writeText(db.commission?.bank ?? ""); toast("تم نسخ بيانات الحساب"); } catch { toast(db.commission?.bank ?? ""); } };
-  return (
-    <>
-      <div><h1 className="page-title">مستحقات المنصة</h1><p className="page-sub">مناسبتي مجانية لك وللعميل: ظهورك وطلباتك وأدواتك كلها بدون اشتراك. عمولتنا {rate ? <b className="num">{rate}%</b> : "تحددها الإدارة"} من قيمة الحجوزات المؤكدة عبر المنصة فقط.</p></div>
-      <div className="stats">
-        <div className="card"><div className="stat-label">مستحق الآن</div><div className="stat-value num">{open.length ? sar(total(open)) : "—"}</div><div className="stat-sub">{open.length} حجز</div></div>
-        <div className="card"><div className="stat-label">بعد المناسبات القادمة</div><div className="stat-value num">{total(dues.filter((d) => d.state === "upcoming")) ? sar(total(dues.filter((d) => d.state === "upcoming"))) : "—"}</div></div>
-        <div className="card"><div className="stat-label">تم سداده</div><div className="stat-value num">{total(dues.filter((d) => d.state === "paid")) ? sar(total(dues.filter((d) => d.state === "paid"))) : "—"}</div></div>
-      </div>
-      {open.length > 0 && <section className="card stack">
-        <b className="display">طريقة السداد</b>
-        <p className="muted" style={{ margin: 0, fontSize: 14 }}>حوّل المبلغ المستحق على حساب مناسبتي، ثم اضغط «تم التحويل». تتأكد الإدارة وتغلق المستحق.{db.commission?.graceDays ? ` مهلة السداد ${db.commission.graceDays} أيام بعد المناسبة.` : ""}</p>
-        {db.commission?.bank ? <div className="row" style={{ ["--gap" as string]: "8px" }}><code className="grow num" style={{ padding: "10px 12px", borderRadius: 12, background: "var(--surface-2)", direction: "ltr", textAlign: "right", overflowWrap: "anywhere" }}>{db.commission.bank}</code><button className="btn sm" onClick={() => void copy()}><Icon name="Copy" size={15} /> نسخ</button></div> : <p className="muted" style={{ margin: 0 }}>تضيف الإدارة بيانات الحساب قريباً.</p>}
-        <button className="btn primary" onClick={() => { apply(claimCommission(open.map((d) => d.booking.id))); toast("أبلغنا الإدارة بالتحويل"); }}>تم التحويل</button>
-      </section>}
-      <section className="card" style={{ paddingBlock: 6 }}>
-        {dues.length ? <div className="list">{dues.map((d) => (
-          <div key={d.booking.id} className="list-row">
-            <span className="avatar">{d.booking.clientName[0]}</span>
-            <div className="t"><b>{d.booking.clientName}</b><small className="num">{d.booking.date} · قيمة الحجز {d.value ? sar(d.value) : "لم تُحدد"}</small></div>
-            <div style={{ textAlign: "end" }}><b className="num display">{d.amount ? sar(d.amount) : "—"}</b><div><span className={"pill " + LBL[d.state][0]}>{LBL[d.state][1]}</span></div></div>
-          </div>
-        ))}</div> : <Empty icon="Receipt" title="ما عليك أي مستحقات">العمولة تُحسب فقط بعد تأكيد حجز عبر المنصة.</Empty>}
-      </section>
-    </>
   );
 }
 

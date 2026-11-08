@@ -54,7 +54,7 @@ export interface Supplier {
   /** روابط صور حقيقية يرفعها المورد (الأولى غلاف) */
   photos?: string[];
   featured?: boolean;
-  /** ظهور مميز مدفوع تفعّله الإدارة */
+  /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;
   custom?: boolean;
 }
@@ -88,7 +88,7 @@ export interface Venue {
   /** روابط صور حقيقية يرفعها صاحب القاعة (الأولى غلاف) */
   photos?: string[];
   phone?: string;
-  /** ظهور مميز مدفوع تفعّله الإدارة */
+  /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;
   custom?: boolean;
 }
@@ -98,8 +98,6 @@ export interface Message {
   from: "client" | "provider" | "admin";
   text: string;
   at: number;
-  /** أُخفيت فيها أرقام أو حسابات تواصل خارجية */
-  masked?: boolean;
 }
 
 export interface Booking {
@@ -136,10 +134,6 @@ export interface Booking {
   cancelRequest?: { reason: string; at: number };
   /** حالة التاجر يوم المناسبة */
   vendorStatus?: VendorStatus;
-  /** المبلغ النهائي كما يذكره العميل (للتحقق من العمولة) */
-  clientAmount?: number;
-  /** عمولة المنصة على هذا الحجز */
-  commission?: { paid?: boolean; paidAt?: number; claimedAt?: number };
 }
 
 export interface ClientEvent {
@@ -245,8 +239,6 @@ export interface ClientRecord {
 
 export interface DB {
   version: 2;
-  /** إعدادات عمولة المنصة (تحددها الإدارة، تُحسب على التجار فقط) */
-  commission?: { rate?: number; graceDays?: number; bank?: string };
   /** للإدارة فقط: مساحات كل العملاء (في الوضع المحلي تُشتق من db.client) */
   clients?: ClientRecord[];
   tickets: Ticket[];

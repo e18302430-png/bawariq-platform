@@ -68,7 +68,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
     <div className="vcard" role="link" tabIndex={0} onClick={() => go(`${item.kind}-${v.id}`)} onKeyDown={(e) => e.key === "Enter" && go(`${item.kind}-${v.id}`)}>
       <div className="art">
         <Media photos={v.photos} seed={v.id} hue={v.hue} kind={item.kind} alt={v.name} />
-        <div className="over">{item.v.promoted && <span className="pill pl-promo" style={{ position: "static" }}><Icon name="Sparkles" size={12} /> مميز</span>}{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
+        <div className="over">{item.v.promoted && <span className="pill pl-promo" style={{ position: "static" }}><Icon name="Sparkles" size={12} /> مختار</span>}{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
       <div className="body">

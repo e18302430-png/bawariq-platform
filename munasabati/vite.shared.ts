@@ -4,10 +4,23 @@ import type { UserConfig } from "vite";
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
+/**
+ * مفاتيح Supabase: تُقرأ من VITE_* أو من الأسماء التي يضيفها ربط Supabase داخل Vercel تلقائياً
+ * (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_URL ...). المفتاح العام (anon) آمن للمتصفح، وكل الحماية بسياسات RLS.
+ */
+const pick = (...names: string[]) => names.map((n) => process.env[n]).find((v) => v && v.trim());
+const SUPA_URL = pick("VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL");
+const SUPA_KEY = pick("VITE_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+const envDefine: Record<string, string> = SUPA_URL && SUPA_KEY ? {
+  "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(SUPA_URL),
+  "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(SUPA_KEY),
+} : {};
+
 /** إعداد مشترك لكل التطبيقات: كل تطبيق يُبنى وينشر مستقلاً */
 export function appConfig(port: number): UserConfig {
   return {
     base: "./",
+    define: envDefine,
     plugins: [react()],
     css: { postcss: {} },
     resolve: {

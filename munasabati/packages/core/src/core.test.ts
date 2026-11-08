@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, maskContacts, suggestPlan, requestPlan, duesOf, setCommission, markCommissionPaid, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -160,7 +160,7 @@ describe("المنسق عند الباب", () => {
   });
 });
 
-describe("الخطة المقترحة والدخل والحماية", () => {
+describe("الخطة المقترحة وحماية العميل", () => {
   const setup = () => {
     const repo = createMemoryRepository();
     repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 200000, samples: false }));
@@ -180,25 +180,6 @@ describe("الخطة المقترحة والدخل والحماية", () => {
     const mine = repo.get().bookings.filter((b) => b.fromPlan);
     expect(mine.length).toBe(chosen.length);
     expect(mine.every((b) => b.budget && b.cat)).toBe(true);
-  });
-  it("يخفي الأرقام والحسابات من المحادثة", () => {
-    expect(maskContacts("كلمني على 0551234567").masked).toBe(true);
-    expect(maskContacts("رقمي +966 55 123 4567").text).not.toMatch(/123/);
-    expect(maskContacts("سناب: party_riyadh").masked).toBe(true);
-    expect(maskContacts("السعر 15000 ريال للباقة").masked).toBe(false);
-  });
-  it("العمولة على التاجر فقط، وتُحسب من الحجوزات المؤكدة", () => {
-    const repo = setup();
-    repo.apply(setCommission({ rate: 5, graceDays: 7 }));
-    repo.apply(createBooking({ kind: "supplier", targetId: "s3", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
-    const id = repo.get().bookings[0].id;
-    repo.apply(setBookingStatus(id, "confirmed", { quote: 20000 }));
-    let d = duesOf(repo.get(), "supplier", "s3", new Date("2027-03-01").getTime());
-    expect(d[0].amount).toBe(1000);
-    expect(d[0].state).toBe("overdue");
-    repo.apply(markCommissionPaid([id]));
-    d = duesOf(repo.get(), "supplier", "s3");
-    expect(d[0].state).toBe("paid");
   });
   it("إلغاء الحجز المؤكد يمر بالإدارة، والإسناد البديل ينشئ طلباً جديداً", () => {
     const repo = setup();
