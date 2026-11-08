@@ -18,8 +18,22 @@ const toIntl = (p: string) => "+966" + p.replace(/\D/g, "").replace(/^0/, "");
 const phoneLocal = (p: string) => { let d = p.replace(/\D/g, ""); if (d.startsWith("966")) d = "0" + d.slice(3); if (d.length === 9 && d.startsWith("5")) d = "0" + d; return d; };
 const phoneEmail = (p: string) => `966${phoneLocal(p).replace(/^0/, "")}@munasabati.app`;
 
+/** مفتاح تخزين الجلسة حسب التطبيق (من مسار الصفحة)، مع نقل الجلسة القديمة المشتركة لأول تطبيق يفتح فقط */
+function authStorageKey(url: string) {
+  const app = (typeof location !== "undefined" ? location.pathname.match(/\/(client|vendors|venues|admin)\//)?.[1] : undefined) ?? "web";
+  const key = `mns-auth-${app}`;
+  try {
+    const legacy = `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
+    const old = localStorage.getItem(legacy);
+    if (old && !localStorage.getItem(key) && app !== "web") { localStorage.setItem(key, old); localStorage.removeItem(legacy); }
+  } catch { /* التخزين غير متاح */ }
+  return key;
+}
+
 export function createSupabaseRepository(url: string, anonKey: string, authMode: "phone" | "quick" = "quick"): Repository {
-  const sb: SupabaseClient = createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
+  // كل تطبيق (العميل، الموردين، القاعات، الإدارة) يحتفظ بدخوله مستقلاً: الدخول أو الخروج في واحد ما يأثر على الباقي
+  const storageKey = authStorageKey(url);
+  const sb: SupabaseClient = createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey } });
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
   const empty = createInitialDB();
@@ -184,7 +198,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       await load();
       return user;
     },
-    async signOut() { await sb.auth.signOut(); user = null; await load(); },
+    // خروج من هذا التطبيق وهذا الجهاز فقط (بدون إنهاء جلسات الأجهزة الأخرى)
+    async signOut() { await sb.auth.signOut({ scope: "local" }); user = null; await load(); },
   };
 
   // شاشة المنسق: تقرأ وتسجل الدخول بمفتاح الرابط فقط (دوال security definer، بدون كشف بقية بيانات العميل)
