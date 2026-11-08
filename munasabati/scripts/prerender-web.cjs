@@ -35,7 +35,8 @@ const server = http.createServer((req, res) => {
       root.querySelectorAll(".film-modal").forEach((x) => x.remove());
       return root.innerHTML;
     });
-    let out = html.replace(/<div id="root"([^>]*)><\/div>/, `<div id="root"$1>${inner}</div><!--ssg-end-->`);
+    const local = new RegExp(`https?://localhost:${port}/`, "g");
+    let out = html.replace(/<div id="root"([^>]*)><\/div>/, `<div id="root"$1>${inner.replace(local, "./")}</div><!--ssg-end-->`);
     // الصورة الاحتياطية لم تعد لازمة: الواجهة نفسها مطبوعة
     out = out.replace(/\s*<!-- أول صورة[^>]*-->\s*<div id="boot-hero"[^>]*><\/div>/, "");
     fs.writeFileSync(file, out);
