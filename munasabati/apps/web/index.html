@@ -43,15 +43,12 @@
       .g-l .g-knock { right: 26px; } .g-r .g-knock { left: 26px; }
       .g-knock::before { content: ""; position: absolute; top: 0; left: 50%; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1c8, #c99a4c 55%, #5e3d14); box-shadow: 0 2px 4px rgba(0,0,0,.7); }
       .g-knock::after { content: ""; position: absolute; top: 9px; left: 50%; width: 38px; height: 42px; margin-left: -19px; border-radius: 50%; border: 3.5px solid #d6ab62; border-top-color: #f7dfa3; border-bottom-color: #8a6228; box-shadow: 0 4px 10px rgba(0,0,0,.65), inset 0 0 0 1px rgba(0,0,0,.25); transform-origin: 50% 0; transform: rotate(calc(var(--tx, 0) * 6deg)); transition: transform .4s; }
-      .g-orbit { position: absolute; left: -48px; top: -48px; width: 246px; height: 246px; max-width: none; pointer-events: none; animation: gSpin 46s linear infinite; opacity: calc(.75 - var(--p) * .4); }
-      .g-orbit text { font-size: 10.5px; letter-spacing: .14em; fill: #e9cf98; font-weight: 600; }
-      @keyframes gSpin { to { transform: rotate(-360deg); } }
       .g-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 28%; z-index: 4; pointer-events: none; background: radial-gradient(50% 60% at 50% 100%, rgba(255,190,110,calc(.08 + var(--p) * .35)), transparent 70%); }
       .g-l::after { right: 0; } .g-r::after { left: 0; }
       .g-seam { position: absolute; top: 0; bottom: 0; left: 50%; z-index: 1; width: calc(2px + var(--p) * 30px); transform: translateX(-50%);
         background: linear-gradient(180deg, rgba(255,214,150,.2), #fff3dc 50%, rgba(255,214,150,.2)); box-shadow: 0 0 calc(20px + var(--p) * 160px) calc(4px + var(--p) * 50px) rgba(255,190,110,calc(.25 + var(--p) * .6)); }
       .g-vig { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(70% 60% at 50% 50%, transparent 40%, rgba(0,0,0,.65)); }
-      .g-center { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 60px; pointer-events: none; transform: scale(calc(1 + var(--p) * .06)); transition: opacity .5s, transform .9s cubic-bezier(.2,.8,.2,1); }
+      .g-center { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 34px; pointer-events: none; transform: scale(calc(1 + var(--p) * .06)); transition: opacity .5s, transform .9s cubic-bezier(.2,.8,.2,1); }
       .g-eyebrow { font-size: 12px; letter-spacing: .32em; opacity: .62; text-transform: uppercase; }
       #gate-seal { pointer-events: auto; position: relative; width: 150px; height: 150px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; color: #2a1606; display: grid; place-items: center; outline: none;
         background: radial-gradient(circle at 34% 28%, #fff4d6 0%, #f0cf8a 22%, #c99a4c 52%, #8a5f26 80%, #5e3d14 100%);
@@ -66,7 +63,7 @@
       .g-ring .fill { stroke: #ffe2a8; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p)); filter: drop-shadow(0 0 6px #ffcf86); }
       .g-hint { font-size: 15px; font-weight: 600; opacity: calc(.9 - var(--p) * .9); display: flex; align-items: center; gap: 8px; }
       .g-hint i { width: 6px; height: 6px; border-radius: 50%; background: #ffd796; box-shadow: 0 0 10px #ffd796; animation: gBlink 1.4s infinite; }
-      .g-sub { font-size: 12.5px; opacity: calc(.5 - var(--p) * .5); margin-top: -50px; }
+      .g-sub { font-size: 12.5px; opacity: calc(.5 - var(--p) * .5); margin-top: -24px; }
       .g-skip { position: absolute; z-index: 6; top: max(18px, env(safe-area-inset-top)); left: 18px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); color: #e8d8bc; font: inherit; font-size: 12.5px; padding: 7px 14px; border-radius: 99px; cursor: pointer; backdrop-filter: blur(8px); }
       .g-flash { position: absolute; inset: 0; z-index: 7; pointer-events: none; opacity: 0; background: radial-gradient(60% 55% at 50% 50%, #fff8ea 0%, rgba(255,214,150,.75) 35%, rgba(255,170,90,0) 75%); }
       #gate.open .g-l { transform: rotateY(-86deg); filter: brightness(1.6); }
@@ -106,7 +103,6 @@
         <span class="g-eyebrow">أهلاً بك في</span>
         <button id="gate-seal" type="button" aria-label="اضغط مطولاً على الختم لفتح مناسبتي">
           <svg class="g-ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="trk" cx="60" cy="60" r="58"/><circle class="fill" cx="60" cy="60" r="58" pathLength="1"/></svg>
-          <svg class="g-orbit" viewBox="0 0 246 246" aria-hidden="true"><defs><path id="g-arc" d="M123 123 m-104 0 a104 104 0 1 1 208 0 a104 104 0 1 1 -208 0"/></defs><text text-anchor="middle"><textPath href="#g-arc" startOffset="50%">منصة المناسبات السعودية ✦ من الفكرة لآخر ضيف ✦ منصة المناسبات السعودية ✦ من الفكرة لآخر ضيف ✦</textPath></text></svg>
           <span class="g-word">مناسبتي</span>
         </button>
         <span class="g-hint"><i></i>اضغط مطولاً على الختم</span>
