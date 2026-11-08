@@ -1,39 +1,39 @@
 import { useId } from "react";
 
 /**
- * شعار مناسبتي: باب مقوّس نجدي (مدخل المناسبة) تعلوه نجمة الفرح،
- * على مربع بزوايا ناعمة بتدرج الهوية (مرجاني ← وردي ← بنفسجي).
+ * شعار مناسبتي: "البوابة النجدية".
+ * شرفات نجدية مثلثة، شريط سدو، فتحات التهوية المثلثة، وباب مقوّس تتوهج فيه نجمة الفرح.
+ * ألوان غروب الصحراء: زعفران ← مرجاني ← وردي ← بنفسجي.
  */
-export function LogoMark({ size = 30, mono = false }: { size?: number; mono?: boolean }) {
-  const id = useId().replace(/:/g, "");
+const BODY = "M14 92V24L21 10L28 24L35 10L42 24L50 8L58 24L65 10L72 24L79 10L86 24V92ZM38 92V60C38 48 43.5 41 50 37C56.5 41 62 48 62 60V92ZM22 31L26 28L30 31L26 34ZM34 31L38 28L42 31L38 34ZM46 31L50 28L54 31L50 34ZM58 31L62 28L66 31L62 34ZM70 31L74 28L78 31L74 34ZM23 56L28 47L33 56ZM67 56L72 47L77 56Z";
+const STAR = "M50 59L52.6 66.4L60 69L52.6 71.6L50 79L47.4 71.6L40 69L47.4 66.4Z";
+const STOPS: [string, string][] = [["0", "#FFB547"], [".35", "#FF5A3C"], [".7", "#E5195E"], ["1", "#6A1B9A"]];
+
+export function LogoMark({ size = 30, mono }: { size?: number; mono?: string }) {
+  const id = "lg" + useId().replace(/:/g, "");
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="شعار مناسبتي" style={{ flex: "none", display: "block" }}>
-      <defs>
-        <linearGradient id={`g${id}`} x1="8" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#FF8A4C" />
-          <stop offset=".5" stopColor="#E5195E" />
-          <stop offset="1" stopColor="#7A1FA2" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="18" fill={mono ? "currentColor" : `url(#g${id})`} />
-      <path d="M19 52V31.5C19 24.04 24.82 18 32 18s13 6.04 13 13.5V52" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
-      <path d="M27 52V36a5 5 0 0 1 10 0v16" fill="none" stroke="#fff" strokeOpacity=".55" strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M32 5.5l2.1 4.4 4.4 2.1-4.4 2.1L32 18.5l-2.1-4.4-4.4-2.1 4.4-2.1z" fill="#fff" />
+    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="شعار مناسبتي" style={{ flex: "none", display: "block" }}>
+      <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1">{STOPS.map(([o, c]) => <stop key={o} offset={o} stopColor={c} />)}</linearGradient></defs>
+      <path d={BODY} fill={mono ?? `url(#${id})`} fillRule="evenodd" />
+      <path d={STAR} fill={mono ? mono : "#FFD27A"} />
     </svg>
   );
 }
 
 export function Logo({ size = 30, sub }: { size?: number; sub?: string }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: size * 0.32 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: size * 0.3 }}>
       <LogoMark size={size} />
-      <span style={{ display: "grid", lineHeight: 1.1 }}>
-        <span style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: size * 0.68, letterSpacing: "-0.02em" }}>مناسبتي</span>
-        {sub && <span style={{ fontSize: Math.max(10.5, size * 0.38), opacity: 0.7, fontWeight: 500 }}>{sub}</span>}
+      <span style={{ display: "grid", lineHeight: 1.05 }}>
+        <span style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: size * 0.72, letterSpacing: "-0.02em" }}>مناسبتي</span>
+        {sub && <span style={{ fontSize: Math.max(10.5, size * 0.36), opacity: 0.7, fontWeight: 500 }}>{sub}</span>}
       </span>
     </span>
   );
 }
 
-/** نفس الشعار كنص SVG (للأيقونة والـ favicon وصورة المشاركة) */
-export const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="8" y1="4" x2="58" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF8A4C"/><stop offset=".5" stop-color="#E5195E"/><stop offset="1" stop-color="#7A1FA2"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#g)"/><path d="M19 52V31.5C19 24.04 24.82 18 32 18s13 6.04 13 13.5V52" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M27 52V36a5 5 0 0 1 10 0v16" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="3.5" stroke-linecap="round"/><path d="M32 5.5l2.1 4.4 4.4 2.1-4.4 2.1L32 18.5l-2.1-4.4-4.4-2.1 4.4-2.1z" fill="#fff"/></svg>`;
+const grad = `<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">${STOPS.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient>`;
+/** الشعار وحده (شفاف) */
+export const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${grad}</defs><path d="${BODY}" fill="url(#g)" fill-rule="evenodd"/><path d="${STAR}" fill="#FFD27A"/></svg>`;
+/** أيقونة التطبيق: الشعار على خلفية ليلية */
+export const APP_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${grad}<radialGradient id="r" cx=".5" cy=".75" r=".6"><stop offset="0" stop-color="#3a1240"/><stop offset="1" stop-color="#140a1f"/></radialGradient></defs><rect width="100" height="100" rx="22" fill="url(#r)"/><g transform="translate(15 13) scale(.7)"><path d="${BODY}" fill="url(#g)" fill-rule="evenodd"/><path d="${STAR}" fill="#FFD27A"/></g></svg>`;

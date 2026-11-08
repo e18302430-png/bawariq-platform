@@ -111,6 +111,9 @@ function Phone({ children, tilt = true }: { children: ReactNode; tilt?: boolean 
 /* ───── الواجهة الرئيسية ───── */
 function Hero({ occ }: { occ: Occasion }) {
   const vid = useRef<HTMLVideoElement>(null);
+  const [film, setFilm] = useState(false);
+  // نسخة عمودية للجوال ونسخة عريضة للشاشات الكبيرة: يُحمَّل ملف واحد فقط
+  const portrait = typeof window !== "undefined" && window.matchMedia("(max-aspect-ratio: 1/1)").matches;
   useEffect(() => { const v = vid.current; if (v) { v.muted = true; void v.play().catch(() => {}); } }, []);
   const doors: [string, string, string, string][] = [
     [LINKS.client, "Heart", "عندي مناسبة", "خطط واحجز وأرسل الدعوات"],
@@ -120,11 +123,7 @@ function Hero({ occ }: { occ: Occasion }) {
   return (
     <div className="hero-frame">
       <section className="hero">
-        <video ref={vid} className="hero-video" autoPlay muted loop playsInline preload="auto" poster="./media/hero-poster.webp" aria-hidden="true">
-          <source src="./media/hero.webm" type="video/webm" />
-          <source src="./media/hero.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-tint"><MeshGradient palette={occ.palette} /></div>
+        <video ref={vid} className="hero-video" autoPlay muted loop playsInline preload="auto" poster={portrait ? "./media/hero-poster-m.webp" : "./media/hero-poster.webp"} src={portrait ? "./media/hero-m.mp4" : "./media/hero.mp4"} aria-hidden="true" />
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
           <div className="logo"><LogoMark />مناسبتي</div>
@@ -143,6 +142,7 @@ function Hero({ occ }: { occ: Occasion }) {
             <br />من الفكرة لآخر ضيف.
           </h1>
           <p className="lead">خطوة بخطوة: القاعة، ثم التجهيزات، ثم الدعوات، حتى يوم المناسبة. كل شيء في تطبيق واحد.</p>
+          <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد فيلم مناسبتي</button>
           <div className="doors">
             {doors.map(([href, ic, t, d], i) => (
               <motion.a key={t} href={href} className={"door" + (i === 0 ? " main" : "")} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
@@ -154,6 +154,14 @@ function Hero({ occ }: { occ: Occasion }) {
           </div>
         </div>
       </section>
+      <AnimatePresence>
+        {film && (
+          <motion.div className="film-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFilm(false)} role="dialog" aria-label="فيلم مناسبتي">
+            <motion.video initial={{ scale: 0.92 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 28 }} src="./media/film.mp4" poster="./media/film-poster.webp" autoPlay controls playsInline onClick={(e) => e.stopPropagation()} />
+            <button className="btn glass sm film-close" onClick={() => setFilm(false)} aria-label="إغلاق"><Icon name="X" size={16} /> إغلاق</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
