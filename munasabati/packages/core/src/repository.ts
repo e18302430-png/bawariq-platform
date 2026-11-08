@@ -13,8 +13,16 @@ export interface AuthAdapter {
   /** phone: رمز SMS (يحتاج مزود رسائل) · quick: دخول فوري بالاسم والجوال بدون رمز */
   mode: "phone" | "quick";
   user(): AuthUser | null;
-  /** دخول فوري: جلسة آمنة على الجهاز مربوطة برقم الجوال */
+  /** دخول فوري: جلسة آمنة على الجهاز مربوطة برقم الجوال (قديم، للتوافق) */
   quickSignIn(phone: string, name?: string): Promise<AuthUser>;
+  /** حساب جديد بالجوال وكلمة مرور (يدخل به من أي جهاز) */
+  signUpPhone(phone: string, password: string, name?: string): Promise<AuthUser>;
+  /** دخول بالجوال وكلمة المرور */
+  signInPhone(phone: string, password: string): Promise<AuthUser>;
+  /** الإدارة: تعيين كلمة مرور جديدة لصاحب جوال (لمن نسيها) */
+  adminSetPassword(phone: string, password: string): Promise<void>;
+  /** الإدارة: ربط قاعة أو مورد بحساب صاحبه (بالجوال) */
+  adminLinkOwner(kind: "supplier" | "venue", id: string, phone: string): Promise<void>;
   /** دخول الإدارة بالبريد وكلمة المرور */
   signInWithPassword(email: string, password: string): Promise<AuthUser>;
   /** رابط تعيين كلمة مرور جديدة على البريد */

@@ -14,6 +14,10 @@ type Row<T> = { id: string; owner_id?: string | null; data: T };
 
 const toIntl = (p: string) => "+966" + p.replace(/\D/g, "").replace(/^0/, "");
 
+/** الحساب بالجوال وكلمة المرور: بريد داخلي ثابت لكل رقم (ما يُرسل له أي بريد) */
+const phoneLocal = (p: string) => { let d = p.replace(/\D/g, ""); if (d.startsWith("966")) d = "0" + d.slice(3); if (d.length === 9 && d.startsWith("5")) d = "0" + d; return d; };
+const phoneEmail = (p: string) => `966${phoneLocal(p).replace(/^0/, "")}@munasabati.app`;
+
 export function createSupabaseRepository(url: string, anonKey: string, authMode: "phone" | "quick" = "quick"): Repository {
   const sb: SupabaseClient = createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
   const listeners = new Set<() => void>();
@@ -35,7 +39,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       user ? sb.from("client_spaces").select("data").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
-      sb.from("settings").select("key, value").in("key", ["announcement"]),
+      sb.from("settings").select("key, value").in("key", ["announcement", "support_phone"]),
     ]);
     // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
     const role = user ? (await sb.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role : null;
@@ -58,6 +62,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       sessions: { supplierId: owned(sup.data as Row<unknown>[]), venueId: owned(ven.data as Row<unknown>[]) },
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
       announcement: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "announcement")?.value || undefined,
+      supportPhone: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "support_phone")?.value || undefined,
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
     lastError = sup.error?.message ?? ven.error?.message ?? null;
@@ -97,6 +102,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       for (const c of next.clients.filter((x) => prev.clients!.find((y) => y.id === x.id) !== x)) jobs.push(sb.from("client_spaces").update({ data: c.data, updated_at: new Date().toISOString() }).eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
       for (const c of prev.clients.filter((p) => !next.clients!.some((n) => n.id === p.id))) jobs.push(sb.from("client_spaces").delete().eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
     }
+    if (prev.supportPhone !== next.supportPhone) jobs.push(sb.from("settings").upsert({ key: "support_phone", value: next.supportPhone ?? "" }).then(({ error }) => { if (error) throw error; }));
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
   }
@@ -130,6 +136,32 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       const { error } = await sb.auth.updateUser({ password });
       if (error) throw new Error(error.message);
       recovering = false;
+      await load();
+    },
+    async signUpPhone(phone, password, name) {
+      const local = phoneLocal(phone);
+      const { data, error } = await sb.auth.signUp({ email: phoneEmail(phone), password, options: { data: { phone: local, name } } });
+      if (error) throw new Error(/registered|exists/i.test(error.message) ? "هذا الرقم مسجّل من قبل. اختر «دخول» واكتب كلمة المرور." : /password/i.test(error.message) ? "كلمة المرور لازم تكون ٦ أحرف أو أكثر." : "تعذّر إنشاء الحساب. حاول مرة ثانية.");
+      if (!data.session) throw new Error("تم إنشاء الحساب. اختر «دخول» واكتب كلمة المرور.");
+      await sb.from("profiles").upsert({ id: data.user!.id, phone: local, ...(name ? { name } : {}) });
+      await load();
+      return user!;
+    },
+    async signInPhone(phone, password) {
+      const { error } = await sb.auth.signInWithPassword({ email: phoneEmail(phone), password });
+      if (error) throw new Error("الرقم أو كلمة المرور غير صحيحة.");
+      await load();
+      return user!;
+    },
+    async adminSetPassword(phone, password) {
+      const { data, error } = await sb.rpc("admin_set_password", { p_phone: phone, p_password: password });
+      if (error) throw new Error(error.message.includes("short") ? "كلمة المرور لازم تكون ٦ أحرف أو أكثر." : "تعذّر تعيين كلمة المرور.");
+      if (!data) throw new Error("ما لقينا حساباً بهذا الرقم. صاحب الرقم لازم يسوي حساب بكلمة مرور أولاً.");
+    },
+    async adminLinkOwner(kind, id, phone) {
+      const { data, error } = await sb.rpc("admin_link_owner", { p_kind: kind, p_id: id, p_phone: phone });
+      if (error) throw new Error("تعذّر الربط.");
+      if (!data) throw new Error("ما لقينا حساباً بهذا الرقم. صاحب الرقم لازم يسوي حساب بكلمة مرور أولاً.");
       await load();
     },
     async signInWithPassword(email, password) {

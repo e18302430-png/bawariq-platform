@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
+import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
 import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
@@ -16,7 +16,7 @@ function Login() {
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
-    const s: Supplier = { id: uid("s"), name: f.name, city: f.city, area: f.city, cats: [f.cat], hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العملاء بخدماتك من صفحة الملف التعريفي.", packages: [], phone: f.phone, custom: true };
+    const s: Supplier = { id: uid("s"), name: f.name, city: f.city, area: f.city, cats: [f.cat], hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العملاء بخدماتك من صفحة الملف التعريفي.", packages: [], phone: normPhone(f.phone || repo.auth?.user()?.phone || "") || undefined, custom: true };
     apply(upsertSupplier(s)); apply(setSession({ supplierId: s.id })); toast("تم إنشاء حسابك");
   };
   return (

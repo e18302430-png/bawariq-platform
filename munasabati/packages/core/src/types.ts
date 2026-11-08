@@ -241,6 +241,8 @@ export interface ClientRecord {
 
 export interface DB {
   version: 2;
+  /** رقم واتساب الإدارة (لمن نسي كلمة المرور أو يحتاج مساعدة) */
+  supportPhone?: string;
   /** للإدارة فقط: مساحات كل العملاء (في الوضع المحلي تُشتق من db.client) */
   clients?: ClientRecord[];
   tickets: Ticket[];

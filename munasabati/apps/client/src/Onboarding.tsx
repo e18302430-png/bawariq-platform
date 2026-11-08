@@ -35,6 +35,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
   const db = useDB();
   const [step, setStep] = useState(0);
   const [needAuth, setNeedAuth] = useState(false);
+  const [login, setLogin] = useState(false);
   const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, style: [] as StyleId[], city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
@@ -185,17 +186,26 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
         </AnimatePresence>
 
         <ScrollHint step={step} />
-        {needAuth && (
+        {login && !needAuth && (
           <div className="card" style={{ color: "var(--ink)", marginBottom: 12 }}>
-            <PhoneAuth title="آخر خطوة: أكّد رقم جوالك عشان نحفظ مناسبتك" initialPhone={f.phone} initialName={f.name} onDone={() => { setNeedAuth(false); create(false); }} />
+            <PhoneAuth title="أهلاً بعودتك" initialMode="login" onDone={() => setLogin(false)} />
+            <button className="btn ghost sm" style={{ marginTop: 6 }} onClick={() => setLogin(false)}>رجوع</button>
           </div>
         )}
-        {step !== 7 && step !== 1 && !needAuth && (
+        {needAuth && (
+          <div className="card" style={{ color: "var(--ink)", marginBottom: 12 }}>
+            <PhoneAuth title="آخر خطوة: سوّ حسابك عشان نحفظ مناسبتك" initialPhone={f.phone} initialName={f.name} onDone={() => { setNeedAuth(false); if (!repo.get().client.event) create(false); }} />
+          </div>
+        )}
+        {step !== 7 && step !== 1 && !needAuth && !login && (
           <div className="onb-foot">
             {step === 8
               ? <button className="btn white lg" onClick={() => { finish(); location.hash = "plan"; }}>شوف خطتي واطلب بضغطة <Icon name="ArrowLeft" size={18} /></button>
               : <button className="btn white lg" onClick={next} disabled={!canNext}>{step === 0 ? "يلا نبدأ" : step === 6 ? "جهّز خطتي" : step === 5 && !f.style.length ? "تخطّ" : "التالي"} <Icon name="ArrowLeft" size={18} /></button>}
           </div>
+        )}
+        {step === 0 && isCloud && !login && !needAuth && (
+          <button className="btn glass sm" style={{ alignSelf: "center", marginTop: 4 }} onClick={() => setLogin(true)}>عندي حساب · تسجيل الدخول</button>
         )}
       </div>
     </div>

@@ -3,7 +3,7 @@ import {
   CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, markNotified, reassignBooking, resolveCancel, fmt, normPhone, sar,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
-import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, useDB, useToast } from "@munasabati/ui";
+import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
 
 const ago = (t: number) => { if (!t) return "—"; const m = Math.round((Date.now() - t) / 6e4); return m < 60 ? `قبل ${Math.max(1, m)} د` : m < 1440 ? `قبل ${Math.round(m / 60)} س` : `قبل ${Math.round(m / 1440)} يوم`; };
 const wa = (phone: string) => `https://wa.me/966${normPhone(phone).replace(/^0/, "")}`;
@@ -78,6 +78,7 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
           </div>}
           {!cur.phone && <button className="btn sm" onClick={() => setEdit({ name: cur.name, phone: "", date: cur.event?.date ?? "", city: cur.event?.city ?? "", guests: String(cur.event?.guests ?? ""), budget: String(cur.event?.budget ?? "") })}><Icon name="Pencil" size={15} /> تعديل</button>}
 
+          {cur.source === "space" && cur.phone && <AccountTools phone={cur.phone} />}
           {edit && <form className="card flat stack" style={{ background: "var(--surface-2)" }} onSubmit={(e) => { e.preventDefault(); save(cur); }}>
             <div className="form-2">
               <div className="field"><label htmlFor="ce-n">الاسم</label><input id="ce-n" className="input" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
@@ -122,6 +123,35 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
         </div>}
       </Sheet>
     </>
+  );
+}
+
+/* ───── أدوات الحساب: كلمة مرور جديدة لمن نسيها، وربط القاعة أو المورد بحساب صاحبه ───── */
+export function AccountTools({ kind, id, phone }: { kind?: "supplier" | "venue"; id?: string; phone: string }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [ph, setPh] = useState(phone);
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const auth = repo.auth;
+  if (!auth) return null;
+  const run = async (fn: () => Promise<void>, ok: string) => { setBusy(true); try { await fn(); toast(ok); } catch (x) { toast((x as Error).message); } finally { setBusy(false); } };
+  const genPw = () => setPw(String(Math.floor(100000 + Math.random() * 900000)));
+  if (!open) return <button className="btn sm" style={{ justifySelf: "start" }} onClick={() => setOpen(true)}><Icon name="Lock" size={15} /> الدخول وكلمة المرور</button>;
+  return (
+    <div className="card flat stack" style={{ background: "var(--surface-2)" }}>
+      <b>حساب صاحب {kind === "venue" ? "القاعة" : kind === "supplier" ? "النشاط" : "الحساب"}</b>
+      <div className="field"><label htmlFor={"at-p" + (id ?? "")}>جواله</label><input id={"at-p" + (id ?? "")} className="input num" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={ph} onChange={(e) => setPh(e.target.value)} /></div>
+      <div className="field"><label htmlFor={"at-w" + (id ?? "")}>كلمة مرور جديدة (لمن نسيها)</label>
+        <div className="row" style={{ ["--gap" as string]: "6px" }}><input id={"at-w" + (id ?? "")} className="input num grow" dir="ltr" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="٦ أحرف أو أكثر" /><button type="button" className="btn sm ghost" onClick={genPw}>اقترح</button></div>
+      </div>
+      <div className="row wrap">
+        <button className="btn sm primary" disabled={busy || !normPhone(ph) || pw.length < 6} onClick={() => void run(() => auth.adminSetPassword(normPhone(ph), pw), "تم تعيين كلمة المرور. أرسلها لصاحب الحساب")}>تعيين كلمة المرور</button>
+        {pw.length >= 6 && normPhone(ph) && <a className="btn sm wa-notify" href={`${wa(ph)}?text=${encodeURIComponent(`كلمة مرورك الجديدة في مناسبتي: ${pw}\nادخل برقم جوالك وهذي الكلمة، وتقدر تغيّرها بعدين.`)}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> أرسلها بواتساب</a>}
+        {kind && id && <button className="btn sm" disabled={busy || !normPhone(ph)} onClick={() => void run(() => auth.adminLinkOwner(kind, id, normPhone(ph)), "ربطنا الحساب بصاحبه")}><Icon name="Link" size={15} /> اربط {kind === "venue" ? "القاعة" : "النشاط"} بحساب هذا الجوال</button>}
+      </div>
+      <small className="muted">الربط يرجّع {kind === "venue" ? "القاعة" : "النشاط"} لصاحبها لو سجّل بحساب جديد. صاحب الجوال لازم يكون مسوّي حساب بكلمة مرور.</small>
+    </div>
   );
 }
 

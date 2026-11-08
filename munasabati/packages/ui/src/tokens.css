@@ -413,3 +413,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 }
 .side-legal { font-size: 12px; color: var(--muted); text-align: center; text-decoration: none; padding: 2px; }
 .side-legal:hover { text-decoration: underline; }
+.seg-auth { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg-2); }
+.seg-auth button { min-height: 38px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+.seg-auth button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }

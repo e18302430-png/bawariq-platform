@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, setTicketStatus,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useToast,
 } from "@munasabati/ui";
-import { BookingAdmin, Clients } from "./clients";
+import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 
 /*
@@ -211,6 +211,7 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
               <button className="btn" onClick={() => setEdit({ name: cur.name, city: cur.city, about: cur.about, phone: cur.phone ?? "" })}><Icon name="Pencil" size={16} /> تعديل البيانات</button>
               <button className={"btn" + (cur.promoted ? " primary" : "")} onClick={() => { apply(setPromoted(kind, cur.id, !cur.promoted)); toast(cur.promoted ? "ألغينا الاختيار" : "صار الحساب مختاراً من مناسبتي"); }}><Icon name="Sparkles" size={16} /> {cur.promoted ? "إلغاء «مختار من مناسبتي»" : "اختيار «مختار من مناسبتي»"}</button>
             </div>
+            <AccountTools kind={kind} id={cur.id} phone={cur.phone ?? ""} />
             {(() => { const t = trustOf(db, kind, cur.id); return <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>{t.fast && <span className="pill ok">يرد بسرعة</span>}{t.committed && <span className="pill ok">ملتزم</span>}{t.cancels > 0 && <span className="pill warn">{t.cancels} طلب إلغاء</span>}</div>; })()}
             <Confirm label="حذف الحساب وطلباته" onYes={() => { apply(adminDelete(kind, cur.id)); setSel(null); toast("تم حذف الحساب"); }} />
           </div>
@@ -269,9 +270,15 @@ function Settings() {
   const db = useDB();
   const toast = useToast();
   const [text, setText] = useState(db.announcement ?? "");
+  const [sp, setSp] = useState(db.supportPhone ?? "");
   return (
     <>
       <div><span className="eyebrow">التحكم بالمنصة</span><h1 className="page-title">الإعدادات</h1></div>
+      <section className="card form">
+        <h3 className="card-title">واتساب الإدارة</h3>
+        <p className="muted" style={{ fontSize: 14 }}>يظهر لأي مستخدم يضغط «نسيت كلمة المرور»، فيراسلك وتعيّن له كلمة مرور جديدة من ملفه.</p>
+        <div className="row"><label className="sr" htmlFor="sp">رقم واتساب الإدارة</label><input id="sp" className="input num grow" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={sp} onChange={(e) => setSp(e.target.value)} /><button className="btn primary" onClick={() => { apply(setSupportPhone(normPhone(sp))); toast("حفظنا رقم الإدارة"); }}>حفظ</button></div>
+      </section>
       <section className="card form">
         <h3 className="card-title">إعلان عام</h3>
         <p className="muted" style={{ fontSize: 14 }}>يظهر أعلى تطبيق العميل وبوابتي الموردين والقاعات.</p>

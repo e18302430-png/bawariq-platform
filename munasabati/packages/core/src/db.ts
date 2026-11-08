@@ -216,5 +216,6 @@ export const adminDelete = (kind: "supplier" | "venue" | "booking", id: string):
     ? { ...db, venues: db.venues.filter((x) => x.id !== id), bookings: db.bookings.filter((b) => !(b.kind === "venue" && b.targetId === id)) }
     : { ...db, bookings: db.bookings.filter((b) => b.id !== id) };
 export const setAnnouncement = (text: string): Mutation => (db) => ({ ...db, announcement: text.trim() || undefined });
+export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, supportPhone: phone.replace(/\D/g, "") || undefined });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */
 export const isActive = (x: { status?: AccountStatus }) => x.status !== "suspended";

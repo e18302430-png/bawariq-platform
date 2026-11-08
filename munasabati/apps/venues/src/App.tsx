@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
+import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
 import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
@@ -16,7 +16,7 @@ function Login() {
   const demos = db.venues.filter((v) => ["v1", "v3"].includes(v.id) || v.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
-    const v: Venue = { id: uid("v"), name: f.name, city: f.city, district: f.district || f.city, hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العرسان بقاعتك من صفحة الملف التعريفي.", halls: [{ id: "a", name: "القاعة الرئيسية", menCap: f.men || undefined, womenCap: f.women || undefined, weekdayPrice: f.wd || undefined, weekendPrice: f.we || undefined }], blocked: [], custom: true };
+    const v: Venue = { id: uid("v"), name: f.name, city: f.city, district: f.district || f.city, hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العرسان بقاعتك من صفحة الملف التعريفي.", halls: [{ id: "a", name: "القاعة الرئيسية", menCap: f.men || undefined, womenCap: f.women || undefined, weekdayPrice: f.wd || undefined, weekendPrice: f.we || undefined }], blocked: [], custom: true, phone: normPhone(f.phone || repo.auth?.user()?.phone || "") || undefined };
     apply(upsertVenue(v)); apply(setSession({ venueId: v.id })); toast("تم تسجيل قاعتك");
   };
   return (

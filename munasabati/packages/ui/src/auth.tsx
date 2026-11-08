@@ -4,7 +4,7 @@ import { normPhone, validPhone } from "@munasabati/core";
 import { repo } from "./data";
 
 /** دخول برقم الجوال ورمز SMS (يعمل في وضع قاعدة البيانات الحقيقية) */
-export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوالك", initialPhone = "", initialName = "" }: { onDone: () => void; title?: string; initialPhone?: string; initialName?: string }) {
+export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوالك", initialPhone = "", initialName = "", initialMode = "signup" }: { onDone: () => void; title?: string; initialPhone?: string; initialName?: string; initialMode?: "signup" | "login" }) {
   const [phone, setPhone] = useState(initialPhone);
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -12,7 +12,7 @@ export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوا
   const [err, setErr] = useState("");
   const auth = repo.auth;
   if (!auth) return <p className="muted" style={{ textAlign: "center" }}>لحظة، جاري الاتصال…</p>;
-  if (auth.mode === "quick") return <QuickAuth onDone={onDone} title={title} initialPhone={initialPhone} initialName={initialName} />;
+  if (auth.mode === "quick") return <QuickAuth onDone={onDone} title={title} initialPhone={initialPhone} initialName={initialName} initialMode={initialMode} />;
   const send = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr("");
     try { await auth.sendOtp(phone); setSent(true); } catch (x) { setErr((x as Error).message || "تعذّر إرسال الرمز. تأكد من الرقم وحاول مرة ثانية."); } finally { setBusy(false); }
@@ -37,26 +37,48 @@ export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوا
   );
 }
 
-/** دخول فوري بالاسم والجوال (بدون رمز SMS): جلسة آمنة محفوظة على الجهاز */
-function QuickAuth({ onDone, title, initialPhone, initialName }: { onDone: () => void; title: string; initialPhone: string; initialName: string }) {
+/** حساب بالجوال وكلمة مرور: يدخل به صاحبه من أي جهاز. نسيان كلمة المرور يُحل عبر الإدارة */
+function QuickAuth({ onDone, title, initialPhone, initialName, initialMode }: { onDone: () => void; title: string; initialPhone: string; initialName: string; initialMode: "signup" | "login" }) {
+  const [mode, setMode] = useState<"signup" | "login">(initialMode);
   const [phone, setPhone] = useState(initialPhone);
   const [name, setName] = useState(initialName);
+  const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const ok = validPhone(phone);
+  const [forgot, setForgot] = useState(false);
+  const auth = repo.auth!;
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ok) { setErr("اكتب رقم جوال سعودي مثل 05xxxxxxxx"); return; }
+    if (!validPhone(phone)) { setErr("اكتب رقم جوال سعودي مثل 05xxxxxxxx"); return; }
+    if (pass.length < 6) { setErr("كلمة المرور لازم تكون ٦ أحرف أو أكثر."); return; }
     setBusy(true); setErr("");
-    try { await repo.auth!.quickSignIn(normPhone(phone), name.trim() || undefined); onDone(); } catch (x) { setErr((x as Error).message || "تعذّر الدخول. حاول مرة ثانية."); } finally { setBusy(false); }
+    try {
+      if (mode === "signup") await auth.signUpPhone(normPhone(phone), pass, name.trim() || undefined);
+      else await auth.signInPhone(normPhone(phone), pass);
+      onDone();
+    } catch (x) { const m = (x as Error).message; setErr(m); if (m.includes("مسجّل من قبل")) setMode("login"); } finally { setBusy(false); }
   };
+  const support = repo.get().supportPhone;
+  const waMsg = encodeURIComponent(`السلام عليكم، نسيت كلمة المرور في مناسبتي. رقمي المسجّل: ${normPhone(phone) || "05"}`);
   return (
     <form className="form" onSubmit={go} noValidate>
       <b className="display" style={{ fontSize: 18 }}>{title}</b>
-      <div className="field"><label htmlFor="qa-n">الاسم</label><input id="qa-n" className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>
-      <div className="field"><label htmlFor="qa-p">رقم الجوال</label><input id="qa-p" dir="ltr" style={{ textAlign: "right" }} className="input num" inputMode="tel" autoComplete="tel" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+      <div className="seg-auth" role="tablist">
+        <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "on" : ""} onClick={() => { setMode("signup"); setErr(""); }}>حساب جديد</button>
+        <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "on" : ""} onClick={() => { setMode("login"); setErr(""); }}>عندي حساب</button>
+      </div>
+      {mode === "signup" && <div className="field"><label htmlFor="qa-n">الاسم</label><input id="qa-n" className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>}
+      <div className="field"><label htmlFor="qa-p">رقم الجوال</label><input id="qa-p" dir="ltr" style={{ textAlign: "right" }} className="input num" inputMode="tel" autoComplete="username" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+      <div className="field"><label htmlFor="qa-w">{mode === "signup" ? "اختر كلمة مرور (٦ أحرف أو أكثر)" : "كلمة المرور"}</label><input id="qa-w" dir="ltr" type="password" className="input" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={pass} onChange={(e) => setPass(e.target.value)} /></div>
       {err && <div className="card flat tight" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderColor: "transparent", fontSize: 13.5 }}>{err}</div>}
-      <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : "دخول"}</button>
+      <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : mode === "signup" ? "إنشاء الحساب" : "دخول"}</button>
+      {mode === "login" && (!forgot
+        ? <button type="button" className="btn ghost sm" onClick={() => setForgot(true)}>نسيت كلمة المرور؟</button>
+        : <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5, display: "grid", gap: 8 }}>
+            <span>تواصل مع إدارة مناسبتي، ويعيّنون لك كلمة مرور جديدة خلال دقائق.</span>
+            {support ? <a className="btn sm" style={{ background: "#25d366", color: "#fff", borderColor: "transparent" }} href={`https://wa.me/966${support.replace(/^0/, "").replace(/^966/, "")}?text=${waMsg}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> راسل الإدارة على واتساب</a>
+              : <span className="muted">رقم الإدارة يُضاف قريباً.</span>}
+          </div>)}
       <span className="faint" style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><Icon name="Lock" size={13} /> نستخدم رقمك للتواصل بخصوص حجوزاتك فقط. <a href="../privacy.html" target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>الخصوصية والشروط</a></span>
     </form>
   );
