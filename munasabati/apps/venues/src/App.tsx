@@ -12,7 +12,7 @@ function Login() {
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
   const signedIn = !isCloud || hasAccount();
-  const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: "", men: 0, women: 0, wd: 0, we: 0 });
+  const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: repo.auth?.user()?.phone ?? "", men: 0, women: 0, wd: 0, we: 0 });
   const demos = db.venues.filter((v) => ["v1", "v3"].includes(v.id) || v.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ function Login() {
   return (
     <Gate palette={PALETTE} eyebrow="بوابة أصحاب القاعات" title={<>قاعتك محجوزة<br />طول الموسم.</>} lead="أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند، واستقبل طلبات الحجز من العرسان مباشرة."
       features={[["Building2", "أكثر من قاعة", "لكل قاعة قسم رجال وقسم نساء وسعة وسعر"], ["CalendarRange", "تقويم إشغال", "أغلق أيام الصيانة والحجوزات الخارجية بضغطة"], ["TrendingUp", "تسعير الويكند", "سعر مختلف للخميس والجمعة والسبت تلقائياً"]]}>
-      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة قاعتك." : "ادخل بحساب تجريبي أو سجّل قاعتك."}</p></div>
+      {signedIn && <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة قاعتك." : "ادخل بحساب تجريبي أو سجّل قاعتك."}</p></div>}
       {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>
       {isCloud && <SignedInBar />}
       {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل قاعتك"]]} />}
@@ -45,7 +45,7 @@ function Login() {
             <div className="field"><label htmlFor="j-m">سعة قسم الرجال</label><input id="j-m" type="number" min={0} className="input num" value={f.men || ""} placeholder="أدخل السعة" onChange={(e) => setF({ ...f, men: +e.target.value })} /></div>
             <div className="field"><label htmlFor="j-w">سعة قسم النساء</label><input id="j-w" type="number" min={0} className="input num" value={f.women || ""} placeholder="أدخل السعة" onChange={(e) => setF({ ...f, women: +e.target.value })} /></div>
           </div>
-          <div className="field"><label htmlFor="j-p">الجوال</label><input id="j-p" className="input num" inputMode="tel" required pattern="05\d{8}" title="رقم يبدأ بـ 05 ومكون من 10 أرقام" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
+          <div className="field"><label htmlFor="j-p">الجوال</label><input id="j-p" className="input num" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <button className="btn primary lg block" type="submit">سجّل قاعتي</button>
         </form>
       )}

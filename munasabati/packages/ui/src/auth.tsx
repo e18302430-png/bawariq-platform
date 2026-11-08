@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "./icons";
 import { normPhone, validPhone } from "@munasabati/core";
 import { repo } from "./data";
 
 /** دخول برقم الجوال ورمز SMS (يعمل في وضع قاعدة البيانات الحقيقية) */
-export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوالك", initialPhone = "", initialName = "", initialMode = "signup" }: { onDone: () => void; title?: string; initialPhone?: string; initialName?: string; initialMode?: "signup" | "login" }) {
+export function PhoneAuth({ onDone, title = "سجّل بجوالك وكلمة مرور، وادخل من أي جهاز", initialPhone = "", initialName = "", initialMode = "signup" }: { onDone: () => void; title?: string; initialPhone?: string; initialName?: string; initialMode?: "signup" | "login" }) {
   const [phone, setPhone] = useState(initialPhone);
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -40,46 +41,73 @@ export function PhoneAuth({ onDone, title = "سجّل دخولك برقم جوا
 /** حساب بالجوال وكلمة مرور: يدخل به صاحبه من أي جهاز. نسيان كلمة المرور يُحل عبر الإدارة */
 function QuickAuth({ onDone, title, initialPhone, initialName, initialMode }: { onDone: () => void; title: string; initialPhone: string; initialName: string; initialMode: "signup" | "login" }) {
   const [mode, setMode] = useState<"signup" | "login">(initialMode);
-  const [phone, setPhone] = useState(initialPhone);
+  const [phone, setPhone] = useState(normPhone(initialPhone).replace(/^0/, ""));
   const [name, setName] = useState(initialName);
   const [pass, setPass] = useState("");
+  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [forgot, setForgot] = useState(false);
   const auth = repo.auth!;
+  const full = "0" + phone.replace(/\D/g, "").replace(/^0+/, "").slice(0, 9);
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validPhone(phone)) { setErr("اكتب رقم جوال سعودي مثل 05xxxxxxxx"); return; }
+    if (!validPhone(full)) { setErr("اكتب رقم جوال سعودي صحيح يبدأ بـ 5"); return; }
     if (pass.length < 6) { setErr("كلمة المرور لازم تكون ٦ أحرف أو أكثر."); return; }
     setBusy(true); setErr("");
     try {
-      if (mode === "signup") await auth.signUpPhone(normPhone(phone), pass, name.trim() || undefined);
-      else await auth.signInPhone(normPhone(phone), pass);
+      if (mode === "signup") await auth.signUpPhone(full, pass, name.trim() || undefined);
+      else await auth.signInPhone(full, pass);
       onDone();
     } catch (x) { const m = (x as Error).message; setErr(m); if (m.includes("مسجّل من قبل")) setMode("login"); } finally { setBusy(false); }
   };
   const support = repo.get().supportPhone;
-  const waMsg = encodeURIComponent(`السلام عليكم، نسيت كلمة المرور في مناسبتي. رقمي المسجّل: ${normPhone(phone) || "05"}`);
+  const waMsg = encodeURIComponent(`السلام عليكم، نسيت كلمة المرور في مناسبتي. رقمي المسجّل: ${full}`);
   return (
-    <form className="form" onSubmit={go} noValidate>
-      <b className="display" style={{ fontSize: 18 }}>{title}</b>
-      <div className="seg-auth" role="tablist">
-        <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "on" : ""} onClick={() => { setMode("signup"); setErr(""); }}>حساب جديد</button>
-        <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "on" : ""} onClick={() => { setMode("login"); setErr(""); }}>عندي حساب</button>
+    <form className="auth" onSubmit={go} noValidate>
+      <div className="auth-head">
+        <span className="auth-ico"><Icon name={mode === "signup" ? "UserPlus" : "Lock"} size={20} /></span>
+        <div><b>{mode === "signup" ? "حساب جديد" : "أهلاً بعودتك"}</b><small>{mode === "signup" ? title : "ادخل برقم جوالك وكلمة المرور"}</small></div>
       </div>
-      {mode === "signup" && <div className="field"><label htmlFor="qa-n">الاسم</label><input id="qa-n" className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></div>}
-      <div className="field"><label htmlFor="qa-p">رقم الجوال</label><input id="qa-p" dir="ltr" style={{ textAlign: "right" }} className="input num" inputMode="tel" autoComplete="username" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-      <div className="field"><label htmlFor="qa-w">{mode === "signup" ? "اختر كلمة مرور (٦ أحرف أو أكثر)" : "كلمة المرور"}</label><input id="qa-w" dir="ltr" type="password" className="input" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={pass} onChange={(e) => setPass(e.target.value)} /></div>
-      {err && <div className="card flat tight" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderColor: "transparent", fontSize: 13.5 }}>{err}</div>}
-      <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : mode === "signup" ? "إنشاء الحساب" : "دخول"}</button>
+      <div className="auth-tabs" role="tablist">
+        {(["login", "signup"] as const).map((m) => (
+          <button key={m} type="button" role="tab" aria-selected={mode === m} className={mode === m ? "on" : ""} onClick={() => { setMode(m); setErr(""); setForgot(false); }}>
+            {mode === m && <motion.span layoutId="auth-thumb" className="auth-thumb" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+            <span>{m === "login" ? "عندي حساب" : "حساب جديد"}</span>
+          </button>
+        ))}
+      </div>
+      <AnimatePresence initial={false}>
+        {mode === "signup" && (
+          <motion.label key="n" className="auth-field" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+            <span className="sr">الاسم</span>
+            <Icon name="User" size={18} />
+            <input id="qa-n" autoComplete="name" placeholder="اسمك أو اسم نشاطك" value={name} onChange={(e) => setName(e.target.value)} />
+          </motion.label>
+        )}
+      </AnimatePresence>
+      <label className="auth-field phone">
+        <span className="sr">رقم الجوال</span>
+        <span className="auth-cc" dir="ltr">+966</span>
+        <input id="qa-p" dir="ltr" inputMode="tel" autoComplete="username" placeholder="5X XXX XXXX" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d٠-٩]/g, "").replace(/^0+/, "").slice(0, 9))} />
+        <Icon name="Phone" size={18} />
+      </label>
+      <label className="auth-field">
+        <span className="sr">كلمة المرور</span>
+        <Icon name="Lock" size={18} />
+        <input id="qa-w" dir="ltr" type={show ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder={mode === "signup" ? "اختر كلمة مرور (٦ أحرف أو أكثر)" : "كلمة المرور"} value={pass} onChange={(e) => setPass(e.target.value)} />
+        <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label={show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}><Icon name={show ? "EyeOff" : "Eye"} size={18} /></button>
+      </label>
+      {err && <div className="auth-err" role="alert"><Icon name="Info" size={15} /> {err}</div>}
+      <button className="btn primary lg block auth-go" type="submit" disabled={busy}>{busy ? "لحظة…" : mode === "signup" ? "إنشاء الحساب" : "دخول"} {!busy && <Icon name="ArrowLeft" size={18} />}</button>
       {mode === "login" && (!forgot
-        ? <button type="button" className="btn ghost sm" onClick={() => setForgot(true)}>نسيت كلمة المرور؟</button>
-        : <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5, display: "grid", gap: 8 }}>
+        ? <button type="button" className="auth-link" onClick={() => setForgot(true)}>نسيت كلمة المرور؟</button>
+        : <div className="auth-forgot">
             <span>تواصل مع إدارة مناسبتي، ويعيّنون لك كلمة مرور جديدة خلال دقائق.</span>
-            {support ? <a className="btn sm" style={{ background: "#25d366", color: "#fff", borderColor: "transparent" }} href={`https://wa.me/966${support.replace(/^0/, "").replace(/^966/, "")}?text=${waMsg}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> راسل الإدارة على واتساب</a>
+            {support ? <a className="btn sm auth-wa" href={`https://wa.me/966${support.replace(/^0/, "").replace(/^966/, "")}?text=${waMsg}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> راسل الإدارة على واتساب</a>
               : <span className="muted">رقم الإدارة يُضاف قريباً.</span>}
           </div>)}
-      <span className="faint" style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><Icon name="Lock" size={13} /> نستخدم رقمك للتواصل بخصوص حجوزاتك فقط. <a href="../privacy.html" target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>الخصوصية والشروط</a></span>
+      <span className="auth-note"><Icon name="ShieldCheck" size={13} /> رقمك للتواصل بخصوص حجوزاتك فقط · <a href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a></span>
     </form>
   );
 }

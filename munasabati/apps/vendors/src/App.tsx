@@ -12,7 +12,7 @@ function Login() {
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
   const signedIn = !isCloud || hasAccount();
-  const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الرياض", phone: "", cr: "" });
+  const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الرياض", phone: repo.auth?.user()?.phone ?? "", cr: "" });
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ function Login() {
   return (
     <Gate palette={PALETTE} eyebrow="بوابة الموردين" title={<>طلبات جاهزة،<br />تصلك مباشرة.</>} lead="لمزودي الكوشة والتصوير والصوت والإضاءة والبث المباشر والضيافة والخيام والمولدات والاستيدج."
       features={[["Inbox", "صندوق طلبات", "التاريخ وعدد الضيوف ونوع المناسبة في كل طلب"], ["Package", "باقاتك بأسعارك", "عدّلها متى ما تبي وتظهر للعميل فوراً"], ["TrendingUp", "تقارير الإيرادات", "معدل التحويل ومتوسط قيمة الحجز"]]}>
-      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة نشاطك." : "ادخل بحساب تجريبي أو سجّل نشاطك."}</p></div>
+      {signedIn && <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة نشاطك." : "ادخل بحساب تجريبي أو سجّل نشاطك."}</p></div>}
       {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>
       {isCloud && <SignedInBar />}
       {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل نشاطك"]]} />}
@@ -43,7 +43,7 @@ function Login() {
             <div className="field"><label htmlFor="j-c">الخدمة الرئيسية</label><select id="j-c" className="select" value={f.cat} onChange={(e) => setF({ ...f, cat: e.target.value as CategoryId })}>{CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
             <div className="field"><label htmlFor="j-city">المدينة</label><select id="j-city" className="select" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
           </div>
-          <div className="field"><label htmlFor="j-p">الجوال</label><input id="j-p" className="input num" inputMode="tel" required pattern="05\d{8}" title="رقم يبدأ بـ 05 ومكون من 10 أرقام" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
+          <div className="field"><label htmlFor="j-p">الجوال</label><input id="j-p" className="input num" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <div className="field"><label htmlFor="j-cr">السجل التجاري أو وثيقة العمل الحر</label><input id="j-cr" className="input num" placeholder="10 أرقام" value={f.cr} onChange={(e) => setF({ ...f, cr: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
           <button className="btn primary lg block" type="submit">أنشئ حسابي</button>
         </form>
