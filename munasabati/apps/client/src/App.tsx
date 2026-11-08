@@ -28,10 +28,10 @@ function Main() {
 
   const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;
   const tabs: ShellTab[] = [
-    { id: "home", label: "الرئيسية", icon: "House" },
+    { id: "home", label: "رحلتي", icon: "Route" },
     { id: "explore", label: "استكشف", icon: "Compass" },
-    { id: "guests", label: "الضيوف", icon: "Users" },
     { id: "bookings", label: "حجوزاتي", icon: "CalendarCheck", count: quotes },
+    { id: "guests", label: "الضيوف", icon: "Users" },
     { id: "invites", label: "الدعوات", icon: "Send" },
     { id: "budget", label: "الميزانية", icon: "Wallet" },
     { id: "hosp", label: "حاسبة الضيافة", icon: "Coffee" },
@@ -39,7 +39,8 @@ function Main() {
     { id: "door", label: "يوم المناسبة", icon: "ScanLine" },
   ];
   const detail = route.match(/^(venue|supplier)-(.+)$/);
-  const active = detail ? "explore" : tabs.some((t) => t.id === route) ? route : "home";
+  const exploreCat = route.startsWith("explore-") ? route.slice(8) : undefined;
+  const active = detail || exploreCat ? "explore" : tabs.some((t) => t.id === route) ? route : "home";
 
   return (
     <AppShell
@@ -52,7 +53,7 @@ function Main() {
       <AnimatePresence mode="wait">
         <motion.div key={route} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
           {detail ? <Detail kind={detail[1] as "venue" | "supplier"} id={detail[2]} />
-            : active === "explore" ? <Explore />
+            : active === "explore" ? <Explore initialCat={exploreCat} />
             : active === "guests" ? <Guests />
             : active === "invites" ? <Invites />
             : active === "budget" ? <Budget />

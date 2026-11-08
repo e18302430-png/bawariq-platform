@@ -8,10 +8,12 @@ import { go } from "../nav";
 
 type Item = { kind: "venue"; v: Venue } | { kind: "supplier"; v: Supplier };
 
-export function Explore() {
+const CAT_TITLE: Record<string, string> = { venues: "اختر القاعة", kosha: "الكوشة", photo: "التصوير", hosp: "الضيافة", av: "الصوت والإضاءة", live: "البث المباشر", tents: "الخيام", power: "المولدات", stage: "الاستيدج" };
+
+export function Explore({ initialCat }: { initialCat?: string }) {
   const db = useDB();
   const e = db.client.event!;
-  const [cat, setCat] = useState<"venues" | CategoryId | "all">("all");
+  const [cat, setCat] = useState<"venues" | CategoryId | "all">((initialCat as CategoryId | "venues") ?? "all");
   const [city, setCity] = useState(e.city);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"best" | "price" | "rating">("best");
@@ -31,7 +33,11 @@ export function Explore() {
 
   return (
     <>
-      <div><h1 className="page-title">استكشف</h1><p className="page-sub">قاعات وموردين لمناسبتك في {e.city} وغيرها.</p></div>
+      <div>
+        {initialCat && <button className="btn ghost sm" style={{ marginInlineStart: -10 }} onClick={() => go("home")}><Icon name="ArrowRight" size={15} /> رجوع للرحلة</button>}
+        <h1 className="page-title">{initialCat ? CAT_TITLE[initialCat] ?? "استكشف" : "استكشف"}</h1>
+        <p className="page-sub">{initialCat === "venues" ? `قاعات تتسع لـ ${e.guests} ضيف في ${e.city}، مرتبة حسب الأنسب لك.` : `اختيارات لمناسبتك في ${e.city}.`}</p>
+      </div>
       <div className="search"><Icon name="Search" size={18} /><label className="sr" htmlFor="x-q">بحث</label><input id="x-q" className="input" placeholder="ابحث: كوشة، بث مباشر، إطلالة بحرية…" value={q} onChange={(ev) => setQ(ev.target.value)} /></div>
       <div className="chips" role="group" aria-label="الفئة">
         {([["all", "الكل", "LayoutGrid"], ["venues", "قاعات", "Building2"], ...CATEGORIES.map((c) => [c.id, c.short, c.icon])] as [string, string, string][]).map(([id, l, ic]) => (
@@ -108,7 +114,8 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
       note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price, fromClient: true,
     }));
     setOpen(false);
-    toast("وصل طلبك. بنبلغك أول ما يرد");
+    toast("وصل طلبك. تابعه من رحلتك");
+    setTimeout(() => go("home"), 700);
   };
 
   return (

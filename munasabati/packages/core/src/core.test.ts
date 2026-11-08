@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, estimateBudget,
-  hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice,
+  hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
 describe("الحسابات", () => {
@@ -63,5 +63,36 @@ describe("بوابة الدخول", () => {
     expect(checkIn(first.db, yes.code).result).toMatchObject({ ok: false, reason: "already" });
     expect(checkIn(first.db, no.code).result).toMatchObject({ ok: false, reason: "declined" });
     expect(checkIn(first.db, "ZZZZZ").result).toMatchObject({ ok: false, reason: "unknown" });
+  });
+});
+
+describe("رحلة العميل", () => {
+  const ev = { occasion: "wedding" as const, city: "الرياض", date: "2027-03-10", guests: 400, menRatio: 0.5, tier: "mid" as const, title: "زواج", hostName: "عبدالله" };
+  it("بعد الخطة، الخطوة التالية هي اختيار القاعة", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent(ev));
+    const st = journey(repo.get(), Date.parse("2026-11-08"));
+    expect(st.map((s) => s.id)).toEqual(["plan", "venue", "prep", "invite", "day"]);
+    expect(st[0].status).toBe("done");
+    expect(nextStage(st, repo.get(), Date.parse("2026-11-08")).id).toBe("venue");
+  });
+  it("عرض سعر من القاعة يجعلها الخطوة النشطة، وقبوله يكملها", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent(ev));
+    repo.apply(createBooking({ kind: "venue", targetId: "v1", hallId: "a", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الرياض", date: "2027-03-10", guests: 400, note: "", estimate: 50000, fromClient: true }));
+    const id = repo.get().bookings[0].id;
+    repo.apply(setBookingStatus(id, "quoted", { quote: 48000 }));
+    expect(journey(repo.get())[1]).toMatchObject({ status: "active", cta: { route: "bookings" } });
+    repo.apply(acceptQuote(id, "قصر الندى"));
+    expect(journey(repo.get())[1].status).toBe("done");
+  });
+  it("مورد متكامل مؤكد يغطي كل الخدمات الأساسية", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent(ev));
+    repo.apply(createBooking({ kind: "supplier", targetId: "s1", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الرياض", date: "2027-03-10", guests: 400, note: "", estimate: 24000, fromClient: true }));
+    repo.apply(setBookingStatus(repo.get().bookings[0].id, "confirmed"));
+    const prep = journey(repo.get())[2];
+    expect(prep.status).toBe("done");
+    expect(prep.checklist?.every((c) => c.state === "confirmed")).toBe(true);
   });
 });
