@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, NextAction, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -70,7 +70,13 @@ function Overview({ v, go }: { v: Venue; go: (t: string) => void }) {
   const upcoming = mine.filter((b) => b.status === "confirmed" && b.date >= isoDay(new Date())).sort((a, b) => a.date.localeCompare(b.date));
   return (
     <>
-      <div className="row between wrap"><div><span className="eyebrow">حياك</span><h1 className="page-title">{v.name}</h1></div><button className="btn primary" onClick={() => go("bookings")}><Icon name="Inbox" size={16} /> طلبات جديدة ({mine.filter((b) => b.status === "new").length})</button></div>
+      <div className="row between wrap"><div><span className="eyebrow">حياك</span><h1 className="page-title">{v.name}</h1></div></div>
+      <NextAction items={[
+        { when: mine.some((b) => b.status === "new"), icon: "Inbox", title: `عندك ${mine.filter((b) => b.status === "new").length} طلب حجز جديد`, sub: "العرسان يحجزون أول قاعة ترد عليهم.", cta: "رد على الطلبات", go: () => go("bookings") },
+        { when: !(v.photos?.length), icon: "ImagePlus", title: "أضف صور قاعتك", sub: "الصور الحقيقية أول شي يقارنه العرسان.", cta: "أضف الصور", go: () => go("profile"), tone: "info" },
+        { when: upcoming.some((b) => (new Date(b.date).getTime() - Date.now()) / 864e5 <= 7), icon: "CalendarClock", title: `حفلة قادمة بتاريخ ${upcoming[0]?.date ?? ""}`, sub: `${upcoming[0]?.clientName ?? ""} · ${fmt(upcoming[0]?.guests ?? 0)} ضيف.`, cta: "التقويم", go: () => go("calendar"), tone: "info" },
+        { when: occupancy.some((o) => o.pct < 50), icon: "TrendingUp", title: "ليالي ويكند فاضية هالشهر", sub: `${occupancy.filter((o) => o.pct < 50).map((o) => o.h.name).join("، ")} · جرّب سعر ويكند أنسب.`, cta: "الأسعار", go: () => go("halls"), tone: "info" },
+      ]} />
       <KPIs bookings={mine} />
       <section className="card">
         <div className="section-title"><h3>إشغال ليالي الويكند هذا الشهر</h3><button className="btn sm ghost" onClick={() => go("halls")}>إدارة القاعات</button></div>

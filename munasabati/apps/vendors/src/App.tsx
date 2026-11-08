@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -59,7 +59,13 @@ function Overview({ s, go }: { s: Supplier; go: (t: string) => void }) {
   const upcoming = mine.filter((b) => b.status === "confirmed" && b.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date));
   return (
     <>
-      <div className="row between wrap"><div><span className="eyebrow">حياك</span><h1 className="page-title">{s.name}</h1></div><button className="btn primary" onClick={() => go("requests")}><Icon name="Inbox" size={16} /> الطلبات الجديدة ({mine.filter((b) => b.status === "new").length})</button></div>
+      <div className="row between wrap"><div><span className="eyebrow">حياك</span><h1 className="page-title">{s.name}</h1></div></div>
+      <NextAction items={[
+        { when: mine.some((b) => b.status === "new"), icon: "Inbox", title: `عندك ${mine.filter((b) => b.status === "new").length} طلب جديد`, sub: "الرد خلال ساعتين يرفع ترتيبك في نتائج البحث.", cta: "رد على الطلبات", go: () => go("requests") },
+        { when: !(s.photos?.length), icon: "ImagePlus", title: "أضف صور أعمالك", sub: "النشاطات اللي فيها صور حقيقية تستقبل طلبات أكثر.", cta: "أضف الصور", go: () => go("profile"), tone: "info" },
+        { when: !s.packages.length, icon: "Package", title: "أضف باقاتك وأسعارك", sub: "العميل يحجز أسرع لما يشوف سعراً واضحاً.", cta: "أضف باقة", go: () => go("packages"), tone: "info" },
+        { when: upcoming.some((b) => (new Date(b.date).getTime() - Date.now()) / 864e5 <= 7), icon: "CalendarClock", title: `عندك مناسبة بتاريخ ${upcoming[0]?.date ?? ""}`, sub: `${upcoming[0]?.clientName ?? ""} · جهّز الفريق والمعدات.`, cta: "التقويم", go: () => go("calendar"), tone: "info" },
+      ]} />
       <KPIs bookings={mine} />
       <div className="grid-auto" style={{ ["--min" as string]: "320px" }}>
         <section className="card"><div className="section-title"><h3>الإيرادات المؤكدة</h3><span className="faint" style={{ fontSize: 12 }}>حسب شهر المناسبة</span></div><RevenueChart bookings={mine} /></section>

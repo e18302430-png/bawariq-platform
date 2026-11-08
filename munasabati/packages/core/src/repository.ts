@@ -50,7 +50,8 @@ export function createLocalRepository(key = KEY): Repository {
       parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });
       // ترحيل قوالب الدعوة القديمة
       if (!["balad", "diriyah", "ula", "night", "ivory", "photo"].includes(parsed.client.invite.template)) parsed.client.invite = { ...parsed.client.invite, template: "diriyah" };
-      if (!parsed.client.invite.program) parsed.client.invite = { ...parsed.client.invite, program: [{ title: "الاستقبال", time: "20:30" }, { title: "السامر", time: "21:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }] };
+      if (parsed.client.invite.program?.some((x) => x.title === "السامر" && x.time === "21:30")) parsed.client.invite = { ...parsed.client.invite, program: parsed.client.invite.program.filter((x) => !(x.title === "السامر" && x.time === "21:30")) };
+      if (!parsed.client.invite.program) parsed.client.invite = { ...parsed.client.invite, program: [{ title: "الاستقبال", time: "20:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }] };
       if (parsed.client.invite.message.startsWith("يتشرفون")) parsed.client.invite = { ...parsed.client.invite, message: "وبحضوركم تكتمل فرحتنا" };
       return parsed;
     } catch {

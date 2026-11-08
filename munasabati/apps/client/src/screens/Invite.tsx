@@ -30,7 +30,7 @@ const TEMPLATES: { id: InviteTemplate; name: string; desc: string }[] = [
   { id: "photo", name: "صورة القاعة", desc: "من حجزك" },
 ];
 const OCC_LINE: Record<string, string> = { wedding: "يتشرفون بدعوتكم لحضور حفل زواج", milka: "يتشرفون بدعوتكم لحضور حفل ملكة", grad: "يسعدنا حضوركم حفل تخرّج", aqiqa: "يسعدنا حضوركم عقيقة", family: "يسعدنا حضوركم", corp: "يسعدنا حضوركم حفل" };
-const DEFAULT_PROGRAM: ProgramItem[] = [{ title: "الاستقبال", time: "20:30" }, { title: "السامر", time: "21:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }];
+const DEFAULT_PROGRAM: ProgramItem[] = [{ title: "الاستقبال", time: "20:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }];
 const PROGRAM_ICON: Record<string, string> = { "الاستقبال": "DoorOpen", "السامر": "Drum", "العرضة": "Drum", "الزفّة": "Music", "العشاء": "UtensilsCrossed", "الملكة": "Heart" };
 
 const time12 = (t: string) => { const [h, m] = t.split(":").map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h >= 12 ? "مساءً" : h < 4 ? "بعد منتصف الليل" : "صباحاً"}`; };

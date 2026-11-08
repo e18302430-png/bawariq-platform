@@ -227,3 +227,22 @@ export function PhotoManager({ photos = [], onChange, max = 8 }: { photos?: stri
     </div>
   );
 }
+
+/** الخطوة التالية للتاجر: إجراء واحد واضح أعلى اللوحة (أول شرط متحقق بالترتيب) */
+export interface ActionItem { when: boolean; icon: string; title: string; sub: string; cta: string; go: () => void; tone?: "brand" | "info" | "ok" }
+export function NextAction({ items }: { items: ActionItem[] }) {
+  const a = items.find((x) => x.when);
+  if (!a) return (
+    <section className="next-action ok">
+      <span className="na-ico"><Icon name="CheckCircle2" size={22} /></span>
+      <div className="grow"><span className="eyebrow">كل شي تمام</span><b>ما عندك شي يحتاج تصرّف الآن</b><small>بنبلغك أول ما يوصلك طلب جديد.</small></div>
+    </section>
+  );
+  return (
+    <motion.section key={a.title} className={"next-action " + (a.tone ?? "brand")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <span className="na-ico"><Icon name={a.icon} size={22} /></span>
+      <div className="grow"><span className="eyebrow">الخطوة التالية</span><b>{a.title}</b><small>{a.sub}</small></div>
+      <button className="btn primary" onClick={a.go}>{a.cta} <Icon name="ArrowLeft" size={16} /></button>
+    </motion.section>
+  );
+}
