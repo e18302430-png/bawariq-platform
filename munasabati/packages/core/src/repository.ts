@@ -17,6 +17,11 @@ export interface AuthAdapter {
   quickSignIn(phone: string, name?: string): Promise<AuthUser>;
   /** دخول الإدارة بالبريد وكلمة المرور */
   signInWithPassword(email: string, password: string): Promise<AuthUser>;
+  /** رابط تعيين كلمة مرور جديدة على البريد */
+  resetPassword(email: string, redirectTo: string): Promise<void>;
+  /** فتح رابط الاستعادة من البريد: يطلب كلمة مرور جديدة */
+  needsNewPassword(): boolean;
+  updatePassword(password: string): Promise<void>;
   /** يرسل رمز تحقق SMS للرقم السعودي (05xxxxxxxx) */
   sendOtp(phone: string): Promise<void>;
   verifyOtp(phone: string, code: string): Promise<AuthUser>;

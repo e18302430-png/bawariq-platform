@@ -105,7 +105,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   sb.channel("live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); }).subscribe();
-  sb.auth.onAuthStateChange(() => { void load(); });
+  let recovering = false;
+  sb.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") recovering = true; void load(); });
   void load().catch(fail("تعذّر الاتصال"));
 
   const auth: AuthAdapter = {
@@ -119,6 +120,17 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       user = { id: data.user.id, phone: local };
       await load();
       return user;
+    },
+    async resetPassword(email, redirectTo) {
+      const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error) throw new Error("تعذّر إرسال الرابط. حاول بعد دقيقة.");
+    },
+    needsNewPassword: () => recovering,
+    async updatePassword(password) {
+      const { error } = await sb.auth.updateUser({ password });
+      if (error) throw new Error(error.message);
+      recovering = false;
+      await load();
     },
     async signInWithPassword(email, password) {
       const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });

@@ -70,6 +70,13 @@ export function AdminLogin({ onDone }: { onDone: () => void }) {
   const [err, setErr] = useState("");
   const auth = repo.auth;
   if (!auth) return <p className="muted" style={{ textAlign: "center" }}>لحظة، جاري الاتصال…</p>;
+  const [sentReset, setSentReset] = useState(false);
+  if (auth.needsNewPassword()) return <NewPassword onDone={onDone} />;
+  const forgot = async () => {
+    if (!email.includes("@")) { setErr("اكتب بريدك أولاً، ثم اضغط «نسيت كلمة المرور»."); return; }
+    setBusy(true); setErr("");
+    try { await auth.resetPassword(email, location.href.split("#")[0]); setSentReset(true); } catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
+  };
   const go = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr("");
     try { const u = await auth.signInWithPassword(email, pass); if (repo.auth?.user()?.role !== "admin" && u.role !== "admin") { setErr("هذا الحساب ليس حساب إدارة."); await auth.signOut(); return; } onDone(); }
@@ -81,6 +88,28 @@ export function AdminLogin({ onDone }: { onDone: () => void }) {
       <div className="field"><label htmlFor="al-p">كلمة المرور</label><input id="al-p" className="input" dir="ltr" type="password" autoComplete="current-password" required value={pass} onChange={(e) => setPass(e.target.value)} /></div>
       {err && <div className="card flat tight" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderColor: "transparent", fontSize: 13.5 }}>{err}</div>}
       <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : "دخول الإدارة"}</button>
+      {sentReset ? <p className="muted" style={{ fontSize: 13.5, margin: 0 }}>أرسلنا رابط تعيين كلمة المرور إلى بريدك. افتحه من نفس الجهاز.</p>
+        : <button type="button" className="btn ghost sm" onClick={() => void forgot()}>نسيت كلمة المرور؟</button>}
+    </form>
+  );
+}
+
+/** بعد فتح رابط الاستعادة من البريد: تعيين كلمة مرور جديدة */
+function NewPassword({ onDone }: { onDone: () => void }) {
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  return (
+    <form className="form" onSubmit={async (e) => {
+      e.preventDefault();
+      if (pw.length < 8) { setErr("كلمة المرور لازم تكون ٨ أحرف أو أكثر."); return; }
+      setBusy(true); setErr("");
+      try { await repo.auth!.updatePassword(pw); onDone(); } catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
+    }}>
+      <b className="display" style={{ fontSize: 18 }}>اختر كلمة مرور جديدة</b>
+      <div className="field"><label htmlFor="np-p">كلمة المرور الجديدة</label><input id="np-p" className="input" dir="ltr" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus /></div>
+      {err && <div className="card flat tight" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderColor: "transparent", fontSize: 13.5 }}>{err}</div>}
+      <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : "حفظ والدخول"}</button>
     </form>
   );
 }

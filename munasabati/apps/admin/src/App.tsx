@@ -357,7 +357,7 @@ function Panel() {
 function Main() {
   useDB();
   const [ok, setOk] = useState(() => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } });
-  const allowed = isCloud ? repo.auth?.user()?.role === "admin" : ok;
+  const allowed = isCloud ? repo.auth?.user()?.role === "admin" && !repo.auth?.needsNewPassword() : ok;
   return allowed ? <Panel /> : <Gate onOk={() => setOk(true)} />;
 }
 
