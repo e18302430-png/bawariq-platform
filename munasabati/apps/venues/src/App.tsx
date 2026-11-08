@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady } from "@munasabati/ui";
+import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -11,7 +11,7 @@ function Login() {
   const toast = useToast();
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
-  const signedIn = !isCloud || !!repo.auth?.user();
+  const signedIn = !isCloud || hasAccount();
   const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: "", men: 0, women: 0, wd: 0, we: 0 });
   const demos = db.venues.filter((v) => ["v1", "v3"].includes(v.id) || v.custom);
   const join = (e: React.FormEvent) => {
@@ -23,7 +23,8 @@ function Login() {
     <Gate palette={PALETTE} eyebrow="بوابة أصحاب القاعات" title={<>قاعتك محجوزة<br />طول الموسم.</>} lead="أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند، واستقبل طلبات الحجز من العرسان مباشرة."
       features={[["Building2", "أكثر من قاعة", "لكل قاعة قسم رجال وقسم نساء وسعة وسعر"], ["CalendarRange", "تقويم إشغال", "أغلق أيام الصيانة والحجوزات الخارجية بضغطة"], ["TrendingUp", "تسعير الويكند", "سعر مختلف للخميس والجمعة والسبت تلقائياً"]]}>
       <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة قاعتك." : "ادخل بحساب تجريبي أو سجّل قاعتك."}</p></div>
-      {!signedIn ? <PhoneAuth onDone={() => force((x) => x + 1)} /> : <>
+      {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>
+      {isCloud && <SignedInBar />}
       {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل قاعتك"]]} />}
       {mode === "demo" ? (
         <div className="stack" style={{ ["--gap" as string]: "10px" }}>

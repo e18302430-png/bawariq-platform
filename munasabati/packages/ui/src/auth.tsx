@@ -135,3 +135,19 @@ function NewPassword({ onDone }: { onDone: () => void }) {
     </form>
   );
 }
+
+/** حساب حقيقي (بالجوال وكلمة المرور)؟ الجلسات القديمة بدون كلمة مرور لا تُحسب دخولاً */
+export const hasAccount = () => { const u = repo.auth?.user(); return !!u && !u.anon; };
+
+/** شريط «داخل برقم ...» مع تسجيل الخروج أو الدخول بحساب ثاني */
+export function SignedInBar() {
+  const u = repo.auth?.user();
+  if (!u) return null;
+  return (
+    <div className="signed-bar">
+      <Icon name="UserCheck" size={16} />
+      <span className="grow">داخل برقم <b className="num" dir="ltr">{u.phone || "—"}</b></span>
+      <button type="button" className="btn sm ghost" onClick={() => void repo.auth!.signOut()}>تسجيل خروج / حساب ثاني</button>
+    </div>
+  );
+}

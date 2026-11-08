@@ -4,7 +4,7 @@ import {
   CITIES, OCCASIONS, TIERS, BUDGET_SPLIT, STYLES, createEvent, daysUntil, fmt, suggestPlan, shiftDate, today,
   type OccasionId, type StyleId, type TierId,
 } from "@munasabati/core";
-import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
+import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, hasAccount, isCloud, repo, useDB } from "@munasabati/ui";
 
 const OCC_ICON: Record<OccasionId, string> = { wedding: "Gem", milka: "Heart", grad: "GraduationCap", aqiqa: "Baby", family: "Users", corp: "Briefcase" };
 const greeting = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "صباح الخير" : h < 17 ? "نهارك سعيد" : "مساء الخير"; };
@@ -52,7 +52,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
   const finish = (demo = false) => {
-    if (isCloud && !repo.auth?.user()) { setNeedAuth(true); return; }
+    if (isCloud && !hasAccount()) { setNeedAuth(true); return; }
     create(demo);
   };
   const create = (demo: boolean) => apply(createEvent({ samples: !isCloud,

@@ -7,7 +7,7 @@ import type { DB, Guest } from "./types";
  * - LocalRepository: للعرض والتجربة (التخزين في المتصفح، ومزامنة لحظية بين التطبيقات المفتوحة).
  * - لاحقاً: SupabaseRepository أو API خاص بنفس الواجهة، بدون تغيير أي شاشة.
  */
-export interface AuthUser { id: string; phone: string; role?: "user" | "admin" }
+export interface AuthUser { id: string; phone: string; role?: "user" | "admin"; /** جلسة قديمة بدون كلمة مرور (الدخول السريع السابق) */ anon?: boolean }
 
 export interface AuthAdapter {
   /** phone: رمز SMS (يحتاج مزود رسائل) · quick: دخول فوري بالاسم والجوال بدون رمز */

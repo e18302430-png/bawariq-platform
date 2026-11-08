@@ -32,7 +32,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   let loaded = false;
   async function load() {
     const { data: s } = await sb.auth.getSession();
-    user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "" } : null;
+    user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "", anon: !!s.session.user.is_anonymous } : null;
     const [sup, ven, bk, space, busy, tk, st] = await Promise.all([
       sb.from("suppliers").select("id, owner_id, data"),
       sb.from("venues").select("id, owner_id, data"),

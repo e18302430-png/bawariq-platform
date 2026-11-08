@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady } from "@munasabati/ui";
+import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -11,7 +11,7 @@ function Login() {
   const toast = useToast();
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
-  const signedIn = !isCloud || !!repo.auth?.user();
+  const signedIn = !isCloud || hasAccount();
   const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الرياض", phone: "", cr: "" });
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
@@ -23,7 +23,8 @@ function Login() {
     <Gate palette={PALETTE} eyebrow="بوابة الموردين" title={<>طلبات جاهزة،<br />تصلك مباشرة.</>} lead="لمزودي الكوشة والتصوير والصوت والإضاءة والبث المباشر والضيافة والخيام والمولدات والاستيدج."
       features={[["Inbox", "صندوق طلبات", "التاريخ وعدد الضيوف ونوع المناسبة في كل طلب"], ["Package", "باقاتك بأسعارك", "عدّلها متى ما تبي وتظهر للعميل فوراً"], ["TrendingUp", "تقارير الإيرادات", "معدل التحويل ومتوسط قيمة الحجز"]]}>
       <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة نشاطك." : "ادخل بحساب تجريبي أو سجّل نشاطك."}</p></div>
-      {!signedIn ? <PhoneAuth onDone={() => force((x) => x + 1)} /> : <>
+      {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>
+      {isCloud && <SignedInBar />}
       {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل نشاطك"]]} />}
       {mode === "demo" ? (
         <div className="stack" style={{ ["--gap" as string]: "10px" }}>
