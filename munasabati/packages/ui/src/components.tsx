@@ -1,8 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion";
-import QRCode from "qrcode";
 import { Icon } from "./icons";
-import { LogoMark } from "./Logo";
 import { photoUrl } from "./media";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
 
@@ -151,7 +149,12 @@ export function Calendar({ busy, value, onPick, maxMonths = 6 }: { busy: Set<str
 /* ───── رمز QR ───── */
 export function QR({ text, size = 240 }: { text: string; size?: number }) {
   const [src, setSrc] = useState("");
-  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: size, color: { dark: "#121016", light: "#ffffff" } }).then(setSrc).catch(() => setSrc("")); }, [text, size]);
+  useEffect(() => {
+    let live = true;
+    // تحميل مكتبة QR عند الحاجة فقط
+    import("qrcode").then((Q) => Q.toDataURL(text, { margin: 1, width: size, color: { dark: "#121016", light: "#ffffff" } })).then((u) => live && setSrc(u)).catch(() => live && setSrc(""));
+    return () => { live = false; };
+  }, [text, size]);
   return src ? <img src={src} alt={`رمز الدخول ${text}`} style={{ width: "100%", height: "100%", display: "block" }} /> : null;
 }
 
@@ -220,7 +223,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
   return (
     <div className="shell">
       <aside className="shell-side" aria-label="القائمة">
-        <div className="logo"><LogoMark /><span>مناسبتي<span className="portal">{portal}</span></span></div>
+        <div className="logo"><span>مناسبتي<span className="portal">{portal}</span></span></div>
         {tabs.map((t) => (
           <button key={t.id} className={"side-link" + (active === t.id ? " on" : "")} onClick={() => go(t.id)} aria-current={active === t.id ? "page" : undefined}>
             {active === t.id && <motion.span layoutId="side-thumb" className="nav-thumb" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
@@ -232,7 +235,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
       <div className="shell-main">
         <header className={"appbar" + (scrolled ? " scrolled" : "")}>
           <div className="container appbar-in">
-            <div className="logo mobile-only"><LogoMark /><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
+            <div className="logo mobile-only"><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
             <div className="grow" />
             {actions}
             <ThemeToggle />

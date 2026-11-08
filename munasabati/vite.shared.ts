@@ -19,6 +19,20 @@ export function appConfig(port: number): UserConfig {
       ],
     },
     server: { port },
-    build: { outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 900 },
+    build: {
+      outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 900, target: "es2020", cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          // مكتبات ثابتة في ملفات مستقلة: تُخزَّن في المتصفح ولا تُحمَّل من جديد مع كل تحديث للتطبيق
+          manualChunks(id) {
+            if (id.includes("node_modules/react") || id.includes("node_modules/scheduler")) return "react";
+            if (id.includes("node_modules/framer-motion")) return "motion";
+            if (id.includes("node_modules/@supabase")) return "supabase";
+            if (id.includes("node_modules/qrcode")) return "qrcode";
+            if (id.includes("node_modules/lucide-react")) return "icons";
+          },
+        },
+      },
+    },
   };
 }

@@ -329,3 +329,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .gallery { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 100%; }
 .gallery::-webkit-scrollbar { display: none; }
 .gallery > * { flex: 0 0 100%; scroll-snap-align: center; height: 100%; }
+
+.sk { border-radius: 18px; background: linear-gradient(90deg, var(--bg-2) 0%, var(--surface-2) 50%, var(--bg-2) 100%); background-size: 200% 100%; animation: sk 1.2s ease-in-out infinite; }
+@keyframes sk { to { background-position: -200% 0; } }

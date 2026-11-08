@@ -150,6 +150,8 @@ export interface Task {
   done: boolean;
 }
 
+export type InviteTemplate = "night" | "ivory" | "photo";
+
 export interface ClientSpace {
   profile: { name: string; phone: string } | null;
   event: ClientEvent | null;
@@ -157,7 +159,7 @@ export interface ClientSpace {
   budget: BudgetLine[];
   tasks: Task[];
   favorites: string[];
-  invite: { template: "silk" | "henna" | "oasis"; message: string };
+  invite: { template: InviteTemplate; message: string; time?: string };
 }
 
 export interface DB {

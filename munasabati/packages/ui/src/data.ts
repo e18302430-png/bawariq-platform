@@ -1,6 +1,24 @@
 import { useSyncExternalStore } from "react";
-import { createLocalRepository, type DB, type Mutation, type Repository } from "@munasabati/core";
-import { createSupabaseRepository } from "@munasabati/cloud";
+import { createInitialDB, createLocalRepository, type DB, type Mutation, type Repository } from "@munasabati/core";
+
+/** مستودع مؤجل: يحمّل مكتبة Supabase فقط عند تفعيل وضع الإنتاج (لا تُحمَّل في وضع التجربة) */
+function deferredCloud(url: string, key: string): Repository {
+  let inner: Repository | null = null;
+  const listeners = new Set<() => void>();
+  const empty: DB = { ...createInitialDB(), suppliers: [], venues: [], bookings: [] };
+  const emit = () => listeners.forEach((l) => l());
+  void import("@munasabati/cloud").then(({ createSupabaseRepository }) => { inner = createSupabaseRepository(url, key); inner.subscribe(emit); emit(); });
+  return {
+    mode: "cloud",
+    get: () => inner?.get() ?? empty,
+    apply: (m) => inner?.apply(m),
+    subscribe: (l) => { listeners.add(l); return () => listeners.delete(l); },
+    reset: () => inner?.reset(),
+    uploadPhoto: (b) => (inner ? inner.uploadPhoto(b) : Promise.reject(new Error("لحظة، جاري الاتصال"))),
+    get auth() { return inner?.auth; },
+    error: () => inner?.error() ?? null,
+  };
+}
 
 /**
  * اختيار مصدر البيانات:
@@ -10,7 +28,7 @@ import { createSupabaseRepository } from "@munasabati/cloud";
 const URL_ = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY_ = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const repo: Repository = URL_ && KEY_ ? createSupabaseRepository(URL_, KEY_) : createLocalRepository();
+export const repo: Repository = URL_ && KEY_ ? deferredCloud(URL_, KEY_) : createLocalRepository();
 export const isCloud = repo.mode === "cloud";
 
 export function useDB(): DB {

@@ -4,7 +4,7 @@ import {
   CITIES, OCCASIONS, TIERS, createEvent, daysUntil, estimateBudget, fmt, hospitality, matchVenues, shiftDate, today,
   type OccasionId, type TierId,
 } from "@munasabati/core";
-import { Counter, Icon, LogoMark, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
+import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
 
 const OCC_ICON: Record<OccasionId, string> = { wedding: "Gem", milka: "Heart", grad: "GraduationCap", aqiqa: "Baby", family: "Users", corp: "Briefcase" };
 const greeting = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "صباح الخير" : h < 17 ? "نهارك سعيد" : "مساء الخير"; };
@@ -70,7 +70,7 @@ export default function Onboarding() {
           {Array.from({ length: STEPS }, (_, i) => <i key={i}><motion.b initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} /></i>)}
         </div>
         <div className="onb-top">
-          {step > 0 && step !== 6 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo"><LogoMark />مناسبتي</div>}
+          {step > 0 && step !== 6 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo">مناسبتي</div>}
           <div className="grow" />
           {step < 6 && !isCloud && <button className="btn glass sm" onClick={() => finish(true)}>جرّب لوحة تجريبية</button>}
         </div>

@@ -4,7 +4,6 @@ import { OCCASIONS, fmt, isoDay, sar, setBookingStatus, type Booking } from "@mu
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
-import { LogoMark } from "./Logo";
 import { photoUrl } from "./media";
 import { apply, repo, resizeImage } from "./data";
 
@@ -173,7 +172,7 @@ export function Gate({ palette, eyebrow, title, lead, features, children }: { pa
       <div className="gate-art">
         <MeshGradient palette={palette} />
         <div className="gate-art-in">
-          <div className="row" style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: 20 }}><LogoMark />مناسبتي</div>
+          <div className="row" style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: 20 }}>مناسبتي</div>
           <div className="stack" style={{ ["--gap" as string]: "16px" }}>
             <span className="live-pill">{eyebrow}</span>
             <h1 className="gate-title">{title}</h1>

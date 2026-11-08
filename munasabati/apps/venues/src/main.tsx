@@ -5,5 +5,8 @@ document.documentElement.setAttribute("dir", "rtl");
 document.documentElement.setAttribute("lang", "ar");
 import "@munasabati/ui/tokens.css";
 import App from "./App";
+import { registerServiceWorker } from "@munasabati/ui";
+
+registerServiceWorker();
 
 createRoot(document.getElementById("root")!).render(<App />);

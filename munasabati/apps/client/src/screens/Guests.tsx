@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { OCCASIONS, addGuest, clearSampleGuests, patchClient, removeGuest, updateEvent, updateGuest, type ClientSpace, type Guest, type RSVP } from "@munasabati/core";
-import { Empty, Icon, MeshGradient, QR, Segmented, Sheet, apply, useDB, useToast } from "@munasabati/ui";
+import { addGuest, clearSampleGuests, removeGuest, updateGuest, type Guest, type RSVP } from "@munasabati/core";
+import { Empty, Icon, Segmented, Sheet, apply, useDB, useToast } from "@munasabati/ui";
+import { waLink } from "./Invite";
 
-const inviteUrl = (code: string) => `${location.href.split("#")[0]}#invite-${code}`;
 const RSVP_LABEL: Record<RSVP, [string, string]> = { yes: ["ok", "مؤكد"], pending: ["warn", "بانتظار الرد"], no: ["bad", "معتذر"] };
 
 export function Guests() {
@@ -77,103 +77,12 @@ export function Guests() {
           <div className="field"><span className="label">حالة الحضور</span><Segmented value={edit.status} onChange={(v) => { apply(updateGuest(edit.id, { status: v })); setEdit({ ...edit, status: v }); }} options={[["pending", "بانتظار"], ["yes", "مؤكد"], ["no", "معتذر"]]} /></div>
           <div className="row"><span className="muted grow">رمز الدخول</span><b className="num" style={{ letterSpacing: ".25em" }}>{edit.code}</b></div>
           <div className="row">
-            <a className="btn grow" href={`https://wa.me/${edit.phone ? "966" + edit.phone.replace(/^0/, "") : ""}?text=${encodeURIComponent(`السلام عليكم ${edit.name}\n${db.client.invite.message}\nأكد حضورك من الرابط:\n${inviteUrl(edit.code)}`)}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={16} /> إرسال واتساب</a>
+            <a className="btn grow" href={waLink(edit)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={16} /> إرسال واتساب</a>
             <a className="btn grow" href={"#invite-" + edit.code}><Icon name="Eye" size={16} /> صفحة الضيف</a>
           </div>
           <button className="btn ghost" style={{ color: "var(--bad)" }} onClick={() => { apply(removeGuest(edit.id)); setEdit(null); }}><Icon name="Trash2" size={16} /> حذف الضيف</button>
         </div>}
       </Sheet>
     </>
-  );
-}
-
-const TPL: Record<ClientSpace["invite"]["template"], { name: string; palette: [string, string, string, string] }> = {
-  silk: { name: "حرير", palette: ["#FF7A4D", "#E5195E", "#7A1FA2", "#1A0A2B"] },
-  henna: { name: "حنّاء", palette: ["#FFF1EC", "#FFD9CC", "#F5B8A6", "#E89A88"] },
-  oasis: { name: "واحة", palette: ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"] },
-};
-
-function InviteCard({ guest, live = false }: { guest?: Guest | null; live?: boolean }) {
-  const db = useDB();
-  const e = db.client.event!;
-  const t = db.client.invite.template;
-  const occ = OCCASIONS.find((o) => o.id === e.occasion)!;
-  return (
-    <div className={"invite-card " + t} style={live ? undefined : { background: `linear-gradient(160deg, ${TPL[t].palette.join(", ")})` }}>
-      {live && <MeshGradient palette={TPL[t].palette} style={{ position: "absolute", inset: 0, zIndex: -1 }} />}
-      <div className="frame" />
-      <div style={{ fontSize: 12.5, opacity: 0.85 }}>بسم الله الرحمن الرحيم</div>
-      <div style={{ fontSize: 13.5, opacity: 0.9, margin: "14px 0 6px", maxWidth: "26ch" }}>{db.client.invite.message}</div>
-      <div className="names">{e.title || occ.name}</div>
-      <div className="num" style={{ fontSize: 14, marginTop: 10 }}>{new Date(e.date).toLocaleDateString("ar-SA-u-ca-gregory-nu-latn", { weekday: "long", day: "numeric", month: "long" })} · 8:30 مساءً</div>
-      <div style={{ fontSize: 13, opacity: 0.85 }}>{e.city}</div>
-      {guest && <><div className="qr"><QR text={"MNS-" + guest.code} /></div><div className="num" style={{ letterSpacing: ".3em", fontWeight: 700, marginTop: 8 }}>{guest.code}</div></>}
-    </div>
-  );
-}
-
-export function Invites() {
-  const db = useDB();
-  const toast = useToast();
-  const [preview, setPreview] = useState<Guest | null>(null);
-  const pending = db.client.guests.filter((g) => g.status === "pending");
-  const copy = async (g: Guest) => { try { await navigator.clipboard.writeText(inviteUrl(g.code)); toast("تم نسخ رابط الدعوة"); } catch { toast(`رمز الدعوة: ${g.code}`); } };
-  return (
-    <>
-      <div><h1 className="page-title">الدعوات</h1><p className="page-sub">صمّم البطاقة وأرسل لكل ضيف رابطه الخاص.</p></div>
-      <div className="home-grid">
-        <section className="card stack">
-          <div className="field"><span className="label">التصميم</span>
-            <div className="tpl-pick">{(Object.keys(TPL) as (keyof typeof TPL)[]).map((k) => <button key={k} className={db.client.invite.template === k ? "on" : ""} style={{ background: `linear-gradient(160deg, ${TPL[k].palette.join(", ")})` }} onClick={() => apply(patchClient({ invite: { ...db.client.invite, template: k } }))} aria-label={TPL[k].name} aria-pressed={db.client.invite.template === k} />)}</div>
-          </div>
-          <div className="field"><label htmlFor="i-t">العنوان على البطاقة</label><input id="i-t" className="input" value={db.client.event!.title} onChange={(e) => apply(updateEvent({ title: e.target.value }))} /></div>
-          <div className="field"><label htmlFor="i-m">نص الدعوة</label><textarea id="i-m" className="input" value={db.client.invite.message} onChange={(e) => apply(patchClient({ invite: { ...db.client.invite, message: e.target.value } }))} /></div>
-        </section>
-        <InviteCard live />
-      </div>
-      <section className="card" style={{ paddingBlock: 6 }}>
-        <div className="section-title" style={{ marginTop: 14 }}><h3>الإرسال</h3><span className="pill warn num">{pending.length} بانتظار الرد</span></div>
-        <div className="list">{db.client.guests.map((g) => (
-          <div key={g.id} className="list-row">
-            <span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span>
-            <div className="t"><b>{g.name}</b><small className={"num"} style={{ color: g.status === "yes" ? "var(--ok)" : g.status === "no" ? "var(--bad)" : undefined }}>{RSVP_LABEL[g.status][1]}</small></div>
-            <a className="icon-btn sm" aria-label="واتساب" href={`https://wa.me/${g.phone ? "966" + g.phone.replace(/^0/, "") : ""}?text=${encodeURIComponent(`السلام عليكم ${g.name}\n${db.client.invite.message}\n${inviteUrl(g.code)}`)}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={16} /></a>
-            <button className="icon-btn sm" aria-label="نسخ الرابط" onClick={() => copy(g)}><Icon name="Copy" size={16} /></button>
-            <button className="icon-btn sm" aria-label="معاينة" onClick={() => setPreview(g)}><Icon name="Eye" size={16} /></button>
-          </div>
-        ))}</div>
-      </section>
-      <Sheet open={!!preview} onClose={() => setPreview(null)} title={preview ? `دعوة ${preview.name}` : ""}>
-        {preview && <InviteCard guest={preview} />}
-      </Sheet>
-    </>
-  );
-}
-
-/** صفحة الدعوة كما يراها الضيف */
-export function GuestInvite({ code }: { code: string }) {
-  const db = useDB();
-  const g = db.client.guests.find((x) => x.code === code);
-  const [count, setCount] = useState(g?.count ?? 1);
-  if (!g || !db.client.event) return <div className="container" style={{ paddingBlock: 60 }}><Empty icon="MailX" title="الدعوة غير موجودة">تأكد من الرابط أو تواصل مع صاحب المناسبة.</Empty></div>;
-  return (
-    <div className="container" style={{ paddingBlock: "28px 60px", maxWidth: 460, display: "grid", gap: 18 }}>
-      <div className="muted" style={{ textAlign: "center", fontSize: 14 }}>دعوة خاصة لـ <b style={{ color: "var(--ink)" }}>{g.name}</b></div>
-      <InviteCard guest={g.status === "yes" ? g : null} live />
-      {g.status === "pending" ? (
-        <section className="card stack">
-          <b className="display" style={{ fontSize: 18 }}>بتشرفنا بحضورك؟</b>
-          <div className="field"><label htmlFor="r-c">عدد الحضور مع المرافقين</label><input id="r-c" type="number" min={1} max={20} className="input num" value={count} onChange={(e) => setCount(+e.target.value || 1)} /></div>
-          <div className="row"><button className="btn primary lg grow" onClick={() => apply(updateGuest(g.id, { status: "yes", count }))}>أكيد بحضر</button><button className="btn lg grow" onClick={() => apply(updateGuest(g.id, { status: "no" }))}>أعتذر</button></div>
-        </section>
-      ) : (
-        <section className="card stack" style={{ textAlign: "center", justifyItems: "center" }}>
-          <b className="display" style={{ fontSize: 18 }}>{g.status === "yes" ? "تم تأكيد حضورك 🤍" : "شكراً لردك"}</b>
-          <p className="muted">{g.status === "yes" ? "اعرض رمز الدخول للحارس عند الباب." : "نتمنى نشوفك في مناسبة قادمة."}</p>
-          <button className="btn sm ghost" onClick={() => apply(updateGuest(g.id, { status: "pending" }))}>تغيير الرد</button>
-        </section>
-      )}
-      <a className="faint" style={{ textAlign: "center", fontSize: 12.5 }} href="#home">للتجربة: ارجع للوحة صاحب المناسبة</a>
-    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { OCCASIONS, type Occasion } from "@munasabati/core";
-import { Icon, LogoMark, MeshGradient, Reveal, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { Icon, MeshGradient, Reveal, ThemeToggle, photoUrl } from "@munasabati/ui";
 
 // كل بوابة تطبيق مستقل يُنشر منفصلاً. الروابط قابلة للتغيير عند النشر على نطاقات مختلفة.
 const LINKS = {
@@ -126,7 +126,7 @@ function Hero({ occ }: { occ: Occasion }) {
         <video ref={vid} className="hero-video" autoPlay muted loop playsInline preload="auto" poster={portrait ? "./media/hero-poster-m.webp" : "./media/hero-poster.webp"} src={portrait ? "./media/hero-m.mp4" : "./media/hero.mp4"} aria-hidden="true" />
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
-          <div className="logo"><LogoMark />مناسبتي</div>
+          <div className="logo">مناسبتي</div>
           <div className="links"><a href="#story">كيف تعمل</a><a href={LINKS.vendors}>للموردين</a><a href={LINKS.venues}>للقاعات</a></div>
           <div style={{ flex: 1 }} />
           <a className="btn glass sm" href={LINKS.client}>ادخل التطبيق</a>
@@ -273,7 +273,7 @@ export default function App() {
         </Reveal>
       </section>
       <footer className="container footer">
-        <div className="row"><LogoMark /><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء والأسعار أمثلة</span></div>
+        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء والأسعار أمثلة</span></div>
         <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a></nav>
         <ThemeToggle />
       </footer>

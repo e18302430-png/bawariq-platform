@@ -172,3 +172,91 @@
 .mini-stats b { font-family: var(--f-display); font-size: 18px; color: var(--ink); }
 .mini-stats small { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 480px) { .mini-stats button { flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px; } }
+
+/* ═══════════ الدعوات الفاخرة ═══════════ */
+.inv { --ink-i: #f6efe2; --gold: #d9b46a; position: relative; width: min(380px, 100%); aspect-ratio: 5 / 7.4; border-radius: 22px; overflow: hidden; isolation: isolate; margin-inline: auto; box-shadow: 0 40px 80px -30px rgba(10, 5, 20, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.04); text-align: center; container-type: inline-size; }
+.inv-pattern { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; }
+.inv-frame { position: absolute; inset: 12px; border: 1px solid var(--gold); border-radius: 14px; opacity: 0.55; pointer-events: none; }
+.inv-frame::after { content: ""; position: absolute; inset: 4px; border: 0.5px solid var(--gold); border-radius: 11px; opacity: 0.6; }
+.inv-body { position: relative; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.4cqw; padding: 10cqw 9cqw; }
+.inv-basmala { font-family: "Reem Kufi", var(--f-display); font-size: 3.6cqw; letter-spacing: 0.02em; opacity: 0.8; }
+.inv-lead { font-size: 3.9cqw; opacity: 0.85; margin-top: 3cqw; }
+.inv-names { font-family: "Reem Kufi", var(--f-display); font-weight: 700; font-size: 10.5cqw; line-height: 1.25; text-wrap: balance; }
+.inv-orn { display: flex; align-items: center; gap: 2.5cqw; color: var(--gold); width: 60%; }
+.inv-orn i { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.inv-date { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 4cqw; width: 88%; margin-top: 1cqw; }
+.inv-date span { font-size: 3.9cqw; padding-block: 2cqw; border-block: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); }
+.inv-date b { font-family: var(--f-display); font-size: 15cqw; font-weight: 700; line-height: 1; }
+.inv-hijri { font-size: 3.3cqw; opacity: 0.7; }
+.inv-meta { display: flex; align-items: center; gap: 2.5cqw; font-size: 3.7cqw; margin-top: 1.5cqw; flex-wrap: wrap; justify-content: center; }
+.inv-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+.inv-msg { font-size: 3.5cqw; opacity: 0.75; font-style: italic; }
+.inv-guest { margin-top: 2cqw; font-size: 3.6cqw; padding: 2cqw 4cqw; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+.inv-pass { display: flex; align-items: center; gap: 4cqw; margin-top: 2.5cqw; padding: 3cqw; border-radius: 4cqw; background: #fff; color: #121016; text-align: start; }
+.inv-pass .qr { width: 22cqw; height: 22cqw; flex: none; }
+.inv-pass small { display: block; font-size: 3cqw; color: #6c6776; }
+.inv-pass b { display: block; font-size: 6cqw; letter-spacing: 0.25em; font-family: var(--f-display); }
+
+/* ليل: أسود وذهب بلمعة رقائق */
+.inv-night { background: radial-gradient(120% 70% at 50% 0%, #2a1d33 0%, #120c18 55%, #0b0710 100%); color: var(--ink-i); }
+.inv-night .inv-names, .inv-night .inv-date b { background: linear-gradient(110deg, #b8893b 0%, #f6dc9b 22%, #c99a4a 40%, #fff1c9 52%, #b8893b 70%, #e9c98b 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: foil 6s ease-in-out infinite; }
+@keyframes foil { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+/* عاج: ورق بملمس */
+.inv-ivory { --gold: #b0894d; background: #f7f1e6; color: #3b2a3f; }
+.inv-ivory::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.55; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .45 0 0 0 0 .35 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.inv-ivory .inv-names { color: #4a1f3a; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 -1px 0 rgba(0, 0, 0, 0.06); }
+.inv-ivory .inv-date b { color: #4a1f3a; }
+/* صورة: صورة القاعة ولوحة زجاجية */
+.inv-bgimg { position: absolute; inset: 0; z-index: -1; }
+.inv-bgimg img { width: 100%; height: 100%; object-fit: cover; }
+.inv-bgimg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12, 6, 18, 0.35), rgba(12, 6, 18, 0.55) 40%, rgba(12, 6, 18, 0.92)); }
+.inv-bgimg ~ .inv-body { color: #fff; justify-content: flex-end; }
+.inv-bgimg ~ .inv-frame { --gold: rgba(255, 255, 255, 0.6); }
+.inv.inv-photo { --gold: #f1d39a; }
+
+/* استوديو التصميم */
+.inv-studio { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.inv-stage { padding: 30px 10px; border-radius: 28px; background: radial-gradient(80% 60% at 50% 40%, color-mix(in srgb, var(--brand) 12%, transparent), transparent), var(--bg-2); }
+.tpl-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tpl { display: grid; gap: 6px; justify-items: center; padding: 10px 6px 12px; border-radius: 18px; border: 1.5px solid var(--line-2); background: var(--surface); transition: border-color 0.2s, transform 0.3s var(--spring); }
+.tpl.on { border-color: var(--ink); }
+.tpl:active { transform: scale(0.97); }
+.tpl b { font-family: var(--f-display); font-size: 14px; }
+.tpl small { font-size: 11.5px; color: var(--muted); }
+.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; border-radius: 12px; }
+.tpl-swatch.tpl-night { background: radial-gradient(circle at 50% 30%, #3a2a3f, #0b0710); box-shadow: inset 0 0 0 1px #d9b46a88; }
+.tpl-swatch.tpl-ivory { background: linear-gradient(160deg, #fbf6ec, #eadfca); box-shadow: inset 0 0 0 1px #b0894d88; }
+.tpl-swatch.tpl-photo { background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.7)), linear-gradient(135deg, #d39b5b, #5a2a3a); background-size: cover; }
+.wa-btn { --b-bg: #25d366; --b-fg: #fff; --b-bd: transparent; }
+
+/* صفحة الضيف */
+.guest-page { min-height: 100vh; min-height: 100dvh; position: relative; color: #fff; overflow: hidden; background: #0b0710; }
+.guest-bg { position: fixed; inset: 0; background: radial-gradient(60% 45% at 50% 30%, rgba(229, 25, 94, 0.32), transparent 70%), radial-gradient(70% 50% at 20% 100%, rgba(106, 27, 154, 0.45), transparent 70%), radial-gradient(50% 40% at 90% 80%, rgba(255, 138, 61, 0.25), transparent 70%); }
+.guest-in { position: relative; max-width: 460px; margin-inline: auto; padding: calc(28px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: grid; gap: 20px; justify-items: center; perspective: 1200px; }
+.guest-hi { font-size: 17px; opacity: 0.9; }
+.guest-hi b { font-family: var(--f-display); }
+.envelope { position: relative; width: min(380px, 100%); aspect-ratio: 1.45; margin-top: 14vh; border: 0; padding: 0; border-radius: 16px; background: linear-gradient(160deg, #f4ead9, #e3d3b8); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8); cursor: pointer; color: #4a1f3a; margin-bottom: 64px; }
+.env-back { position: absolute; inset: 0; border-radius: 16px; background: linear-gradient(200deg, transparent 49.6%, rgba(0, 0, 0, 0.06) 50%), linear-gradient(160deg, transparent 49.6%, rgba(0, 0, 0, 0.06) 50%); }
+.env-flap { position: absolute; z-index: 1; inset: 0 0 auto 0; height: 58%; clip-path: polygon(0 0, 100% 0, 50% 100%); background: linear-gradient(180deg, #efe2cb, #e0cdaa); border-radius: 16px 16px 0 0; transform-origin: top; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.12)); transition: transform 0.6s var(--spring); }
+.envelope:hover .env-flap { transform: rotateX(18deg); }
+.env-seal { position: absolute; z-index: 2; top: 54%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, #ff6b8f, #b3124a 70%); box-shadow: 0 6px 16px rgba(120, 10, 50, 0.45), inset 0 -3px 6px rgba(0, 0, 0, 0.25); }
+.env-seal span { font-family: var(--f-display); font-weight: 800; font-size: 28px; color: #ffe3ea; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); }
+.env-to { position: absolute; bottom: 16%; inset-inline: 0; font-family: "Reem Kufi", var(--f-display); font-size: 17px; }
+.env-cta { position: absolute; bottom: -54px; inset-inline: 0; display: inline-flex; justify-content: center; align-items: center; gap: 8px; color: #fff; font-size: 14px; opacity: 0.85; animation: nudge 1.8s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateY(-5px); } }
+.guest-card { position: relative; width: 100%; display: grid; justify-items: center; }
+.sparks { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.sparks i { position: absolute; bottom: 30%; border-radius: 50%; background: radial-gradient(circle, #fff3c4, #f0b85a 60%, transparent 70%); }
+.guest-actions { width: 100%; display: grid; gap: 12px; }
+.g-cd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.g-cd div { text-align: center; padding: 10px 4px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); }
+.g-cd b { display: block; font-family: var(--f-display); font-size: 24px; line-height: 1.15; }
+.g-cd small { font-size: 11px; opacity: 0.7; }
+.g-rsvp { display: grid; gap: 12px; padding: 16px; border-radius: 22px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.stepper { display: flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; padding: 4px; }
+.stepper button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 18px; }
+.stepper b { min-width: 30px; text-align: center; font-family: var(--f-display); }
+.g-done { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-radius: 18px; background: rgba(61, 211, 155, 0.14); color: #c9f5e2; font-size: 14px; }
+.g-done button { margin-inline-start: auto; border: 0; background: transparent; color: #fff; text-decoration: underline; font-size: 13px; }
+.g-back { font-size: 12px; opacity: 0.5; }
+@media (max-width: 860px) { .inv-studio { grid-template-columns: 1fr; } }

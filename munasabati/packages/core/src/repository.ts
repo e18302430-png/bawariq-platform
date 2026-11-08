@@ -48,6 +48,9 @@ export function createLocalRepository(key = KEY): Repository {
       // ترحيل: إضافة صور الهوية للنشاطات التجريبية المحفوظة قبل إضافتها
       parsed.suppliers = parsed.suppliers.map((x) => x.photos?.length ? x : { ...x, photos: SEED_SUPPLIERS.find((y) => y.id === x.id)?.photos });
       parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });
+      // ترحيل قوالب الدعوة القديمة
+      if (!["night", "ivory", "photo"].includes(parsed.client.invite.template)) parsed.client.invite = { ...parsed.client.invite, template: "night" };
+      if (parsed.client.invite.message.startsWith("يتشرفون")) parsed.client.invite = { ...parsed.client.invite, message: "وبحضوركم تكتمل فرحتنا" };
       return parsed;
     } catch {
       return null;
