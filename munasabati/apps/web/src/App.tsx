@@ -153,6 +153,9 @@ function Features() {
 }
 
 /* ───── الواجهة الرئيسية ───── */
+/** الصفحة مطبوعة مسبقاً في HTML؟ إذن لا نعيد حركات الدخول (يستلمها React كما هي بدون وميض) */
+const SSG = typeof document !== "undefined" && !!document.getElementById("root")?.firstElementChild;
+
 function Hero({ occ }: { occ: Occasion }) {
   const [film, setFilm] = useState(false);
   // الصورة الأولى تظهر فوراً من HTML، ثم يبدأ الفيلم الحي فوقها
@@ -177,7 +180,7 @@ function Hero({ occ }: { occ: Occasion }) {
           <span className="live"><i /> منصة المناسبات السعودية</span>
           <h1>
             <span className="word-slot">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={!SSG}>
                 <motion.span key={occ.id} initial={{ opacity: 0, y: 30, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -24, filter: "blur(10px)" }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>{HERO_WORD[occ.id]}،</motion.span>
               </AnimatePresence>
             </span>
@@ -187,7 +190,7 @@ function Hero({ occ }: { occ: Occasion }) {
           <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد فيلم مناسبتي</button>
           <div className="doors">
             {doors.map(([href, ic, t, d], i) => (
-              <motion.a key={t} href={href} className={"door" + (i === 0 ? " main" : "")} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
+              <motion.a key={t} href={href} className={"door" + (i === 0 ? " main" : "")} initial={SSG ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
                 <span className="door-ico"><Icon name={ic} size={22} /></span>
                 <span className="grow"><b>{t}</b><small>{d}</small></span>
                 <Icon name="ArrowLeft" size={19} />
