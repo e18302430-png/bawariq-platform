@@ -68,9 +68,9 @@ export function AdminLogin({ onDone }: { onDone: () => void }) {
   const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [sentReset, setSentReset] = useState(false);
   const auth = repo.auth;
   if (!auth) return <p className="muted" style={{ textAlign: "center" }}>لحظة، جاري الاتصال…</p>;
-  const [sentReset, setSentReset] = useState(false);
   if (auth.needsNewPassword()) return <NewPassword onDone={onDone} />;
   const forgot = async () => {
     if (!email.includes("@")) { setErr("اكتب بريدك أولاً، ثم اضغط «نسيت كلمة المرور»."); return; }
