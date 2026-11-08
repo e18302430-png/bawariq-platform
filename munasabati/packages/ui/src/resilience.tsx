@@ -32,5 +32,7 @@ export function ScreenSkeleton() {
 /** تخزين مؤقت للعمل بدون إنترنت عند النشر الفعلي (يُتجاهل حيث لا تُدعم Service Workers) */
 export function registerServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || location.protocol !== "https:") return;
+  // داخل إطار (مثل رابط المعاينة) لا نسجّل التخزين المؤقت، ونزيل أي تسجيل سابق حتى تظهر آخر نسخة دائماً
+  if (window.top !== window) { navigator.serviceWorker.getRegistrations?.().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); return; }
   window.addEventListener("load", () => { navigator.serviceWorker.register("./sw.js").catch(() => { /* غير مدعوم هنا */ }); });
 }

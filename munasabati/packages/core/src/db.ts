@@ -26,7 +26,7 @@ function seedBookings(now = Date.now()): Booking[] {
 export function createInitialDB(): DB {
   return {
     version: 2,
-    client: { profile: null, event: null, guests: [], budget: [], tasks: [], favorites: [], invite: { template: "night", message: "وبحضوركم تكتمل فرحتنا", time: "20:30" } },
+    client: { profile: null, event: null, guests: [], budget: [], tasks: [], favorites: [], invite: { template: "diriyah", message: "وبحضوركم تكتمل فرحتنا", time: "20:30", program: [{ title: "الاستقبال", time: "20:30" }, { title: "السامر", time: "21:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }] } },
     suppliers: structuredClone(SEED_SUPPLIERS),
     venues: structuredClone(SEED_VENUES),
     bookings: seedBookings(),

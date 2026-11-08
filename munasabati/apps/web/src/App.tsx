@@ -110,11 +110,25 @@ function Phone({ children, tilt = true }: { children: ReactNode; tilt?: boolean 
 
 /* ───── الواجهة الرئيسية ───── */
 function Hero({ occ }: { occ: Occasion }) {
-  const vid = useRef<HTMLVideoElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const [film, setFilm] = useState(false);
   // نسخة عمودية للجوال ونسخة عريضة للشاشات الكبيرة: يُحمَّل ملف واحد فقط
   const portrait = typeof window !== "undefined" && window.matchMedia("(max-aspect-ratio: 1/1)").matches;
-  useEffect(() => { const v = vid.current; if (v) { v.muted = true; void v.play().catch(() => {}); } }, []);
+  // الفيديو يبدأ تحميله من HTML قبل React (#boot-video)، وهنا ننقله داخل الواجهة بدون إعادة تحميل
+  useEffect(() => {
+    let v = document.getElementById("boot-video") as HTMLVideoElement | null;
+    if (!v) {
+      v = document.createElement("video");
+      Object.assign(v, { muted: true, autoplay: true, loop: true, playsInline: true, preload: "auto" });
+      v.poster = portrait ? "./media/hero-poster-m.webp" : "./media/hero-poster.webp";
+      v.src = portrait ? "./media/hero-m.mp4" : "./media/hero.mp4";
+    }
+    v.className = "hero-video"; v.setAttribute("aria-hidden", "true");
+    box.current?.prepend(v);
+    document.getElementById("boot-hero")?.remove();
+    v.muted = true; void v.play().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const doors: [string, string, string, string][] = [
     [LINKS.client, "Heart", "عندي مناسبة", "خطط واحجز وأرسل الدعوات"],
     [LINKS.vendors, "Store", "أنا مورّد", "كوشة، تصوير، ضيافة، صوت…"],
@@ -123,7 +137,7 @@ function Hero({ occ }: { occ: Occasion }) {
   return (
     <div className="hero-frame">
       <section className="hero">
-        <video ref={vid} className="hero-video" autoPlay muted loop playsInline preload="auto" poster={portrait ? "./media/hero-poster-m.webp" : "./media/hero-poster.webp"} src={portrait ? "./media/hero-m.mp4" : "./media/hero.mp4"} aria-hidden="true" />
+        <div ref={box} className="hero-video-box" />
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
           <div className="logo">مناسبتي</div>

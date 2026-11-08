@@ -49,7 +49,8 @@ export function createLocalRepository(key = KEY): Repository {
       parsed.suppliers = parsed.suppliers.map((x) => x.photos?.length ? x : { ...x, photos: SEED_SUPPLIERS.find((y) => y.id === x.id)?.photos });
       parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });
       // ترحيل قوالب الدعوة القديمة
-      if (!["night", "ivory", "photo"].includes(parsed.client.invite.template)) parsed.client.invite = { ...parsed.client.invite, template: "night" };
+      if (!["balad", "diriyah", "ula", "night", "ivory", "photo"].includes(parsed.client.invite.template)) parsed.client.invite = { ...parsed.client.invite, template: "diriyah" };
+      if (!parsed.client.invite.program) parsed.client.invite = { ...parsed.client.invite, program: [{ title: "الاستقبال", time: "20:30" }, { title: "السامر", time: "21:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }] };
       if (parsed.client.invite.message.startsWith("يتشرفون")) parsed.client.invite = { ...parsed.client.invite, message: "وبحضوركم تكتمل فرحتنا" };
       return parsed;
     } catch {

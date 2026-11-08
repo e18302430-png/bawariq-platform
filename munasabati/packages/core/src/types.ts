@@ -150,7 +150,9 @@ export interface Task {
   done: boolean;
 }
 
-export type InviteTemplate = "night" | "ivory" | "photo";
+/** لوحات مائية (balad جدة التاريخية، diriyah الدرعية، ula العُلا) وقوالب كلاسيكية */
+export type InviteTemplate = "balad" | "diriyah" | "ula" | "night" | "ivory" | "photo";
+export interface ProgramItem { title: string; time: string }
 
 export interface ClientSpace {
   profile: { name: string; phone: string } | null;
@@ -159,7 +161,7 @@ export interface ClientSpace {
   budget: BudgetLine[];
   tasks: Task[];
   favorites: string[];
-  invite: { template: InviteTemplate; message: string; time?: string };
+  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[] };
 }
 
 export interface DB {
