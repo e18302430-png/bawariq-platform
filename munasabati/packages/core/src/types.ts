@@ -25,9 +25,13 @@ export interface Category {
 export interface Package {
   id: string;
   name: string;
-  price: number;
+  /** يدخله المورد؛ فارغ = "عند الطلب" */
+  price?: number;
   items: string[];
 }
+
+/** حالة الحساب: الإدارة تقدر تعلّق الحساب فيختفي من المنصة */
+export type AccountStatus = "active" | "suspended";
 
 /** مورّد خدمات التجهيز (كوشة، تصوير، صوت…) */
 export interface Supplier {
@@ -36,9 +40,12 @@ export interface Supplier {
   city: string;
   area: string;
   cats: CategoryId[];
-  priceFrom: number;
-  rating: number;
-  reviews: number;
+  /** كل الأرقام يدخلها التاجر بنفسه (فارغة = لم تُحدد بعد) */
+  priceFrom?: number;
+  rating?: number;
+  reviews?: number;
+  status?: AccountStatus;
+  verified?: boolean;
   hue: number;
   tags: string[];
   about: string;
@@ -54,10 +61,10 @@ export interface Supplier {
 export interface Hall {
   id: string;
   name: string;
-  menCap: number;
-  womenCap: number;
-  weekdayPrice: number;
-  weekendPrice: number;
+  menCap?: number;
+  womenCap?: number;
+  weekdayPrice?: number;
+  weekendPrice?: number;
 }
 
 /** منشأة أفراح يملكها صاحب قاعة */
@@ -67,8 +74,10 @@ export interface Venue {
   city: string;
   district: string;
   hue: number;
-  rating: number;
-  reviews: number;
+  rating?: number;
+  reviews?: number;
+  status?: AccountStatus;
+  verified?: boolean;
   tags: string[];
   about: string;
   halls: Hall[];
@@ -164,8 +173,26 @@ export interface ClientSpace {
   invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[] };
 }
 
+/** تذكرة دعم: من العميل أو المورد أو صاحب القاعة إلى إدارة المنصة */
+export type TicketStatus = "open" | "answered" | "closed";
+export interface Ticket {
+  id: string;
+  from: "client" | "supplier" | "venue";
+  fromId: string;
+  fromName: string;
+  topic: "booking" | "payment" | "account" | "technical" | "other";
+  subject: string;
+  status: TicketStatus;
+  messages: { from: "user" | "admin"; text: string; at: number }[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface DB {
   version: 2;
+  tickets: Ticket[];
+  /** إعلان من الإدارة يظهر أعلى كل التطبيقات */
+  announcement?: string;
   client: ClientSpace;
   suppliers: Supplier[];
   venues: Venue[];

@@ -77,6 +77,30 @@ function Monogram({ initials, size = 120, color = "#b8893b" }: { initials: strin
   );
 }
 
+/* ───── ميل ثلاثي الأبعاد + لمعة ضوء (بالماوس أو اللمس، وبحركة الجوال عند النشر) ───── */
+export function Tilt({ children, max = 9 }: { children: React.ReactNode; max?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current!; let raf = 0; let tx = 0, ty = 0, cx = 0, cy = 0, lx = 50, ly = 30, clx = 50, cly = 30;
+    const set = (px: number, py: number) => { tx = (py - 0.5) * -max; ty = (px - 0.5) * max; lx = px * 100; ly = py * 100; };
+    const onMove = (e: PointerEvent) => { const r = el.getBoundingClientRect(); set(clamp01((e.clientX - r.left) / r.width), clamp01((e.clientY - r.top) / r.height)); };
+    const onLeave = () => set(0.5, 0.35);
+    const onTilt = (e: DeviceOrientationEvent) => { if (e.beta == null || e.gamma == null) return; set(clamp01(0.5 + e.gamma / 50), clamp01(0.5 + (e.beta - 45) / 50)); };
+    const loop = () => {
+      cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12; clx += (lx - clx) * 0.12; cly += (ly - cly) * 0.12;
+      el.style.transform = `perspective(1100px) rotateX(${cx.toFixed(2)}deg) rotateY(${cy.toFixed(2)}deg)`;
+      el.style.setProperty("--lx", clx.toFixed(1) + "%"); el.style.setProperty("--ly", cly.toFixed(1) + "%");
+      raf = requestAnimationFrame(loop);
+    };
+    el.addEventListener("pointermove", onMove); el.addEventListener("pointerleave", onLeave);
+    window.addEventListener("deviceorientation", onTilt);
+    raf = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("pointermove", onMove); el.removeEventListener("pointerleave", onLeave); window.removeEventListener("deviceorientation", onTilt); };
+  }, [max]);
+  return <div ref={ref} className="tilt">{children}<span className="tilt-light" aria-hidden="true" /></div>;
+}
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
 /* ───── البطاقة (معاينة وصفحة الضيف) ───── */
 export function InviteCard({ template, guest, showPass = false, scratch }: { template?: InviteTemplate; guest?: Guest | null; showPass?: boolean; scratch?: React.ReactNode }) {
   const db = useDB();
@@ -220,7 +244,12 @@ export function Invites() {
   const replied = db.client.guests.filter((g) => g.status !== "pending").length;
   const program = invite.program?.length ? invite.program : DEFAULT_PROGRAM;
   const setInv = (patch: Partial<typeof invite>) => apply(patchClient({ invite: { ...invite, ...patch } }));
-  const copy = async (g: Guest) => { try { await navigator.clipboard.writeText(inviteUrl(g.code)); toast("تم نسخ الرابط"); } catch { toast(g.code); } };
+  const copy = async (g: Guest) => {
+    const url = inviteUrl(g.code);
+    // على الجوال: قائمة المشاركة الأصلية (واتساب، رسائل، سناب…)، وإلا نسخ الرابط
+    try { if (navigator.share) { await navigator.share({ url }); return; } } catch { /* أُلغيت المشاركة */ return; }
+    try { await navigator.clipboard.writeText(url); toast("تم نسخ الرابط"); } catch { toast(g.code); }
+  };
   const sample = db.client.guests[0];
 
   return (
@@ -230,7 +259,7 @@ export function Invites() {
         {sample && <a className="btn" href={"#invite-" + sample.code}><Icon name="Eye" size={16} /> جرّب تجربة الضيف</a>}
       </div>
       <div className="inv-studio">
-        <div className="inv-stage"><InviteCard /></div>
+        <div className="inv-stage"><Tilt><InviteCard /></Tilt></div>
         <section className="card stack" style={{ alignContent: "start" }}>
           <div className="field"><span className="label">التصميم</span>
             <div className="tpl-row">
@@ -276,7 +305,7 @@ export function Invites() {
             <span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span>
             <div className="t"><b>{g.name}</b><small style={{ color: g.status === "yes" ? "var(--ok)" : g.status === "no" ? "var(--bad)" : undefined }}>{g.status === "yes" ? "سيحضر" : g.status === "no" ? "اعتذر" : "لم يرد"}</small></div>
             <a className="btn sm wa-btn" href={waLink(g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>
-            <button className="icon-btn sm" aria-label="نسخ الرابط" onClick={() => copy(g)}><Icon name="Link" size={15} /></button>
+            <button className="icon-btn sm" aria-label="مشاركة الرابط" onClick={() => copy(g)}><Icon name="Share2" size={15} /></button>
             <a className="icon-btn sm" aria-label="معاينة صفحة الضيف" href={"#invite-" + g.code}><Icon name="Eye" size={15} /></a>
           </div>
         ))}</div> : <Empty icon="Users" title="لا يوجد ضيوف هنا" />}
@@ -342,11 +371,11 @@ export function GuestInvite({ code }: { code: string }) {
         <motion.main className="gx-page" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
           <Confetti fire={fire} />
           <p className="gx-hi">حيّاك يا <b>{first}</b></p>
-          <InviteCard guest={g} showPass={g.status === "yes"} scratch={revealed ? undefined : (
+          <Tilt max={6}><InviteCard guest={g} showPass={g.status === "yes"} scratch={revealed ? undefined : (
             <Scratch onReveal={reveal} tint={wc.tint}>
               <div className="inv-date"><span>{info.day}</span><b className="num">{info.num}</b><span>{info.month}</span></div>
             </Scratch>
-          )} />
+          )} /></Tilt>
 
           <section className="gx-sec">
             <h2 className="gx-h">باقي على الفرح</h2>

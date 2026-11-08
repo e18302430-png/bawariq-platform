@@ -5,6 +5,7 @@ import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
 import { photoUrl } from "./media";
+import { BookingChat } from "./support";
 import { apply, repo, resizeImage } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
@@ -80,6 +81,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
               {describe?.(b)}
             </div>
             {b.note && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}>{b.note}</div>}
+            <div className="row"><BookingChat booking={b} me="provider" other={b.clientName} /></div>
             {b.status === "new" && <div className="row wrap">
               <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>
               <button className="btn sm" onClick={() => { apply(setBookingStatus(b.id, "confirmed", { quote: defaultQuote(b), message: { from: "provider", text: "تم تأكيد الحجز" } })); toast("تم تأكيد الحجز"); }}>تأكيد مباشر</button>

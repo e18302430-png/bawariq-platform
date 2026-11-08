@@ -45,6 +45,15 @@ export function createLocalRepository(key = KEY): Repository {
       const raw = globalThis.localStorage?.getItem(key);
       const parsed = raw ? (JSON.parse(raw) as DB) : null;
       if (parsed?.version !== 2) return null;
+      parsed.tickets ??= [];
+      // ترحيل: إزالة الأرقام التجريبية القديمة من النشاطات التجريبية (التاجر يدخل أرقامه بنفسه)
+      const seedS = new Set(SEED_SUPPLIERS.map((x) => x.id)), seedV = new Set(SEED_VENUES.map((x) => x.id));
+      if (!(parsed as DB & { _clean?: boolean })._clean) {
+        parsed.suppliers = parsed.suppliers.map((x) => seedS.has(x.id) ? { ...x, priceFrom: undefined, rating: undefined, reviews: undefined, packages: x.packages.map((p) => ({ ...p, price: undefined })) } : x);
+        parsed.venues = parsed.venues.map((x) => seedV.has(x.id) ? { ...x, rating: undefined, reviews: undefined, halls: x.halls.map((h) => ({ id: h.id, name: h.name })) } : x);
+        parsed.bookings = parsed.bookings.map((b) => (b.seed ? { ...b, quote: undefined, estimate: 0 } : b));
+        (parsed as DB & { _clean?: boolean })._clean = true;
+      }
       // ترحيل: إضافة صور الهوية للنشاطات التجريبية المحفوظة قبل إضافتها
       parsed.suppliers = parsed.suppliers.map((x) => x.photos?.length ? x : { ...x, photos: SEED_SUPPLIERS.find((y) => y.id === x.id)?.photos });
       parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });

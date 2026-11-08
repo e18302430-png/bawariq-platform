@@ -340,3 +340,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .next-action.info .na-ico { background: var(--info-soft); color: var(--info); }
 .next-action.ok .na-ico { background: transparent; color: var(--ok); }
 @media (max-width: 560px) { .next-action .btn { width: 100%; } }
+
+/* ── المحادثات والدعم ── */
+.thread { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; padding: 4px 2px; }
+.bubble { align-self: flex-start; max-width: 84%; display: grid; gap: 2px; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14.5px; }
+.bubble.me { align-self: flex-end; background: var(--ink); color: var(--bg); border-color: transparent; border-radius: 18px 18px 6px 18px; }
+.bubble .who { font-family: var(--f-display); font-size: 12px; color: var(--brand); }
+.bubble time { font-size: 10.5px; opacity: 0.6; }
+.chat-wrap { display: grid; gap: 12px; }
+.composer { display: flex; gap: 8px; position: sticky; bottom: 0; background: var(--surface); padding-top: 6px; }
+.composer .input { border-radius: 999px; }
+.composer .send { width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: var(--bg); border: 0; }
+.composer .send:disabled { opacity: 0.35; }
+.topic-tile { display: grid; gap: 10px; justify-items: start; padding: 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--surface); text-align: start; box-shadow: var(--shadow-1); transition: transform 0.3s var(--spring); }
+.topic-tile:active { transform: scale(0.97); }
+.announce { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 14px; border-radius: 16px; background: var(--info-soft); color: var(--info); font-size: 14px; font-weight: 500; }
+.suspended-bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 18px; background: var(--bad-soft); color: var(--bad); font-weight: 600; }

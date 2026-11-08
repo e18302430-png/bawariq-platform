@@ -3,8 +3,9 @@ import type { Booking, Hall, TierId, Venue } from "./types";
 
 export const DAY = 864e5;
 
-export const fmt = (n: number) => new Intl.NumberFormat("en-US").format(Math.round(n || 0));
-export const sar = (n: number) => `${fmt(n)} ر.س`;
+export const fmt = (n?: number) => (n == null ? "—" : new Intl.NumberFormat("en-US").format(Math.round(n || 0)));
+/** المبلغ بالريال، أو "عند الطلب" إذا ما أدخله التاجر */
+export const sar = (n?: number) => (n ? `${fmt(n)} ر.س` : "عند الطلب");
 export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 export const today = () => isoDay(new Date());
 
@@ -24,10 +25,13 @@ export function isWeekend(iso: string): boolean {
   return day === 4 || day === 5 || day === 6;
 }
 
-export const hallCapacity = (h: Hall) => h.menCap + h.womenCap;
-export const hallPrice = (h: Hall, iso: string) => (isWeekend(iso) ? h.weekendPrice : h.weekdayPrice);
-export const venueCapacity = (v: Venue) => Math.max(...v.halls.map(hallCapacity));
-export const venueFrom = (v: Venue) => Math.min(...v.halls.map((h) => h.weekdayPrice));
+/** الأرقام كلها يدخلها صاحب القاعة؛ 0 أو undefined تعني "لم تُحدد بعد" */
+export const hallCapacity = (h: Hall) => (h.menCap ?? 0) + (h.womenCap ?? 0);
+export const hallPrice = (h: Hall, iso: string): number | undefined => (isWeekend(iso) ? h.weekendPrice ?? h.weekdayPrice : h.weekdayPrice ?? h.weekendPrice);
+export const venueCapacity = (v: Venue) => Math.max(0, ...v.halls.map(hallCapacity));
+export const venueFrom = (v: Venue): number | undefined => { const p = v.halls.map((h) => h.weekdayPrice).filter((x): x is number => !!x); return p.length ? Math.min(...p) : undefined; };
+/** نص السعر للعرض: الرقم إن أدخله التاجر، وإلا "عند الطلب" */
+export const priceText = (n?: number) => (n ? `${fmt(n)} ر.س` : "السعر عند الطلب");
 
 export function estimateBudget(guests: number, tier: TierId) {
   const t = TIERS.find((x) => x.id === tier) ?? TIERS[1];
@@ -64,10 +68,9 @@ export function matchVenues(venues: Venue[], city: string, guests: number) {
     .map((v) => {
       const cap = venueCapacity(v);
       let s = 60;
-      if (v.city === city) s += 22;
-      s += cap >= guests ? 10 : -25;
-      if (cap < guests * 1.6) s += 4;
-      s += (v.rating - 4.5) * 8;
+      if (v.city === city) s += 25;
+      if (cap) { s += cap >= guests ? 10 : -25; if (cap < guests * 1.6) s += 4; }
+      if (v.verified) s += 5;
       return { venue: v, score: Math.max(40, Math.min(99, Math.round(s))) };
     })
     .sort((a, b) => b.score - a.score);

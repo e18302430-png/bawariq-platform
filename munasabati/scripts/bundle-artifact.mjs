@@ -12,7 +12,7 @@ const out = join(root, "artifact");
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
 cpSync(join(root, "apps/web/dist"), out, { recursive: true });
-for (const app of ["client", "vendors", "venues"]) cpSync(join(root, `apps/${app}/dist`), join(out, app), { recursive: true });
+for (const app of ["client", "vendors", "venues", "admin"]) cpSync(join(root, `apps/${app}/dist`), join(out, app), { recursive: true });
 
 const html = readFileSync(join(out, "index.html"), "utf8");
 const head = html.match(/<head>([\s\S]*?)<\/head>/i)[1]

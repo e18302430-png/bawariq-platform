@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -12,11 +12,11 @@ function Login() {
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
   const signedIn = !isCloud || !!repo.auth?.user();
-  const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: "", men: 300, women: 300, wd: 30000, we: 38000 });
+  const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: "", men: 0, women: 0, wd: 0, we: 0 });
   const demos = db.venues.filter((v) => ["v1", "v3"].includes(v.id) || v.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
-    const v: Venue = { id: uid("v"), name: f.name, city: f.city, district: f.district || f.city, hue: Math.floor(Math.random() * 360), rating: 5, reviews: 0, tags: ["جديد على مناسبتي"], about: "عرّف العرسان بقاعتك من صفحة الملف التعريفي.", halls: [{ id: "a", name: "القاعة الرئيسية", menCap: f.men, womenCap: f.women, weekdayPrice: f.wd, weekendPrice: f.we }], blocked: [], custom: true };
+    const v: Venue = { id: uid("v"), name: f.name, city: f.city, district: f.district || f.city, hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العرسان بقاعتك من صفحة الملف التعريفي.", halls: [{ id: "a", name: "القاعة الرئيسية", menCap: f.men || undefined, womenCap: f.women || undefined, weekdayPrice: f.wd || undefined, weekendPrice: f.we || undefined }], blocked: [], custom: true };
     apply(upsertVenue(v)); apply(setSession({ venueId: v.id })); toast("تم تسجيل قاعتك");
   };
   return (
@@ -41,8 +41,8 @@ function Login() {
           <div className="form-2">
             <div className="field"><label htmlFor="j-c">المدينة</label><select id="j-c" className="select" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
             <div className="field"><label htmlFor="j-d">الحي</label><input id="j-d" className="input" value={f.district} onChange={(e) => setF({ ...f, district: e.target.value })} /></div>
-            <div className="field"><label htmlFor="j-m">سعة قسم الرجال</label><input id="j-m" type="number" min={0} className="input num" value={f.men} onChange={(e) => setF({ ...f, men: +e.target.value })} /></div>
-            <div className="field"><label htmlFor="j-w">سعة قسم النساء</label><input id="j-w" type="number" min={0} className="input num" value={f.women} onChange={(e) => setF({ ...f, women: +e.target.value })} /></div>
+            <div className="field"><label htmlFor="j-m">سعة قسم الرجال</label><input id="j-m" type="number" min={0} className="input num" value={f.men || ""} placeholder="أدخل السعة" onChange={(e) => setF({ ...f, men: +e.target.value })} /></div>
+            <div className="field"><label htmlFor="j-w">سعة قسم النساء</label><input id="j-w" type="number" min={0} className="input num" value={f.women || ""} placeholder="أدخل السعة" onChange={(e) => setF({ ...f, women: +e.target.value })} /></div>
           </div>
           <div className="field"><label htmlFor="j-p">الجوال</label><input id="j-p" className="input num" inputMode="tel" required pattern="05\d{8}" title="رقم يبدأ بـ 05 ومكون من 10 أرقام" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
           <button className="btn primary lg block" type="submit">سجّل قاعتي</button>
@@ -110,7 +110,7 @@ function Halls({ v }: { v: Venue }) {
   };
   return (
     <>
-      <div className="row between wrap"><div><h1 className="page-title">قاعاتي والأسعار</h1><p className="page-sub">سعر الويكند يُطبّق تلقائياً على الخميس والجمعة والسبت.</p></div><button className="btn primary" onClick={() => setEdit({ id: uid("h"), name: "", menCap: 200, womenCap: 200, weekdayPrice: 20000, weekendPrice: 26000 })}><Icon name="Plus" size={16} /> قاعة</button></div>
+      <div className="row between wrap"><div><h1 className="page-title">قاعاتي والأسعار</h1><p className="page-sub">سعر الويكند يُطبّق تلقائياً على الخميس والجمعة والسبت.</p></div><button className="btn primary" onClick={() => setEdit({ id: uid("h"), name: "" })}><Icon name="Plus" size={16} /> قاعة</button></div>
       <div className="grid-auto" style={{ ["--min" as string]: "300px" }}>
         {v.halls.map((h) => (
           <section key={h.id} className="card stack" style={{ ["--gap" as string]: "14px" }}>
@@ -129,10 +129,10 @@ function Halls({ v }: { v: Venue }) {
         {edit && <form className="form" onSubmit={save}>
           <div className="field"><label htmlFor="h-n">اسم القاعة</label><input id="h-n" className="input" required value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
           <div className="form-2">
-            <div className="field"><label htmlFor="h-m">سعة الرجال</label><input id="h-m" type="number" min={0} className="input num" value={edit.menCap} onChange={(e) => setEdit({ ...edit, menCap: +e.target.value })} /></div>
-            <div className="field"><label htmlFor="h-w">سعة النساء</label><input id="h-w" type="number" min={0} className="input num" value={edit.womenCap} onChange={(e) => setEdit({ ...edit, womenCap: +e.target.value })} /></div>
-            <div className="field"><label htmlFor="h-wd">سعر وسط الأسبوع</label><input id="h-wd" type="number" min={0} className="input num" value={edit.weekdayPrice} onChange={(e) => setEdit({ ...edit, weekdayPrice: +e.target.value })} /></div>
-            <div className="field"><label htmlFor="h-we">سعر الويكند</label><input id="h-we" type="number" min={0} className="input num" value={edit.weekendPrice} onChange={(e) => setEdit({ ...edit, weekendPrice: +e.target.value })} /></div>
+            <div className="field"><label htmlFor="h-m">سعة الرجال</label><input id="h-m" type="number" min={0} className="input num" value={edit.menCap ?? ""} placeholder="أدخل الرقم" onChange={(e) => setEdit({ ...edit, menCap: e.target.value ? +e.target.value : undefined })} /></div>
+            <div className="field"><label htmlFor="h-w">سعة النساء</label><input id="h-w" type="number" min={0} className="input num" value={edit.womenCap ?? ""} placeholder="أدخل الرقم" onChange={(e) => setEdit({ ...edit, womenCap: e.target.value ? +e.target.value : undefined })} /></div>
+            <div className="field"><label htmlFor="h-wd">سعر وسط الأسبوع</label><input id="h-wd" type="number" min={0} className="input num" value={edit.weekdayPrice ?? ""} placeholder="أدخل الرقم" onChange={(e) => setEdit({ ...edit, weekdayPrice: e.target.value ? +e.target.value : undefined })} /></div>
+            <div className="field"><label htmlFor="h-we">سعر الويكند</label><input id="h-we" type="number" min={0} className="input num" value={edit.weekendPrice ?? ""} placeholder="أدخل الرقم" onChange={(e) => setEdit({ ...edit, weekendPrice: e.target.value ? +e.target.value : undefined })} /></div>
           </div>
           <button className="btn primary lg block" type="submit">حفظ</button>
         </form>}
@@ -186,13 +186,15 @@ function Portal({ v }: { v: Venue }) {
     { id: "calendar", label: "التقويم", icon: "CalendarRange" },
     { id: "halls", label: "القاعات", icon: "DoorOpen" },
     { id: "profile", label: "الملف التعريفي", icon: "Building2" },
+    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "venue" && t.fromId === v.id && t.status === "answered").length },
     { id: "plan", label: "الاشتراك", icon: "Gem" },
   ];
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
   return (
     <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ venueId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
-      <AnimatePresence mode="wait">
-        <motion.div key={tab} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+      <AnimatePresence initial={false}>
+        <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
+          {v.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}
           {tab === "overview" && <Overview v={v} go={setTab} />}
           {tab === "bookings" && <Inbox bookings={mine}
             describe={(b) => <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="DoorOpen" size={14} />{hallName(b.hallId)}</span>}
@@ -201,6 +203,7 @@ function Portal({ v }: { v: Venue }) {
           {tab === "calendar" && <Calendar v={v} />}
           {tab === "halls" && <Halls v={v} />}
           {tab === "profile" && <Profile v={v} />}
+          {tab === "support" && <SupportCenter from="venue" fromId={v.id} fromName={v.name} />}
           {tab === "plan" && <Plans venue />}
         </motion.div>
       </AnimatePresence>

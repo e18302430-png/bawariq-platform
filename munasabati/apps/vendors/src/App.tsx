@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -16,7 +16,7 @@ function Login() {
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();
-    const s: Supplier = { id: uid("s"), name: f.name, city: f.city, area: f.city, cats: [f.cat], priceFrom: 5000, rating: 5, reviews: 0, hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العملاء بخدماتك من صفحة الملف التعريفي.", packages: [], phone: f.phone, custom: true };
+    const s: Supplier = { id: uid("s"), name: f.name, city: f.city, area: f.city, cats: [f.cat], hue: Math.floor(Math.random() * 360), tags: ["جديد على مناسبتي"], about: "عرّف العملاء بخدماتك من صفحة الملف التعريفي.", packages: [], phone: f.phone, custom: true };
     apply(upsertSupplier(s)); apply(setSession({ supplierId: s.id })); toast("تم إنشاء حسابك");
   };
   return (
@@ -74,7 +74,7 @@ function Overview({ s, go }: { s: Supplier; go: (t: string) => void }) {
           {upcoming.length ? <div className="list">{upcoming.slice(0, 4).map((b) => <div key={b.id} className="list-row"><span className="avatar">{b.clientName[0]}</span><div className="t"><b>{b.clientName}</b><small className="num">{b.date} · {fmt(b.guests)} ضيف · {OCCASIONS.find((o) => o.id === b.occasion)?.name}</small></div><b className="num display" style={{ fontSize: 13 }}>{sar(b.quote ?? b.estimate)}</b></div>)}</div> : <Empty icon="CalendarHeart" title="لا توجد مناسبات مؤكدة قادمة" />}
         </section>
       </div>
-      <section className="card row wrap"><span className="rate num" style={{ fontSize: 16 }}><Icon name="Star" size={16} style={{ color: "#f5a524", fill: "#f5a524" }} /> {s.rating}</span><span className="muted grow" style={{ minWidth: 200 }}>الرد على الطلبات خلال ساعتين يرفع ظهورك في نتائج البحث.</span><button className="btn sm" onClick={() => go("profile")}>حسّن ملفك</button></section>
+      <section className="card row wrap"><span className="rate num" style={{ fontSize: 16 }}><Icon name="Star" size={16} style={{ color: "#f5a524", fill: "#f5a524" }} /> {s.reviews ? s.rating : "جديد"}</span><span className="muted grow" style={{ minWidth: 200 }}>الرد على الطلبات خلال ساعتين يرفع ظهورك في نتائج البحث.</span><button className="btn sm" onClick={() => go("profile")}>حسّن ملفك</button></section>
     </>
   );
 }
@@ -84,9 +84,10 @@ function Packages({ s }: { s: Supplier }) {
   const [edit, setEdit] = useState<(Package & { text: string }) | null>(null);
   const save = (e: React.FormEvent) => {
     e.preventDefault(); if (!edit) return;
-    const p: Package = { id: edit.id, name: edit.name, price: +edit.price, items: edit.text.split("\n").map((x) => x.trim()).filter(Boolean) };
+    const p: Package = { id: edit.id, name: edit.name, price: edit.price ? +edit.price : undefined, items: edit.text.split("\n").map((x) => x.trim()).filter(Boolean) };
     const packages = s.packages.some((x) => x.id === p.id) ? s.packages.map((x) => (x.id === p.id ? p : x)) : [...s.packages, p];
-    apply(upsertSupplier({ ...s, packages, priceFrom: Math.min(...packages.map((x) => x.price)) })); setEdit(null); toast("تم حفظ الباقة");
+    const priced = packages.map((x) => x.price).filter((x): x is number => !!x);
+    apply(upsertSupplier({ ...s, packages, priceFrom: priced.length ? Math.min(...priced) : undefined })); setEdit(null); toast("تم حفظ الباقة");
   };
   return (
     <>
@@ -146,18 +147,21 @@ function Portal({ s }: { s: Supplier }) {
     { id: "calendar", label: "التقويم", icon: "CalendarDays" },
     { id: "packages", label: "الباقات", icon: "Package" },
     { id: "profile", label: "الملف التعريفي", icon: "Store" },
+    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "supplier" && t.fromId === s.id && t.status === "answered").length },
     { id: "plan", label: "الاشتراك", icon: "Gem" },
   ];
   return (
     <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
-      <AnimatePresence mode="wait">
-        <motion.div key={tab} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+      <AnimatePresence initial={false}>
+        <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
+          {s.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}
           {tab === "overview" && <Overview s={s} go={setTab} />}
           {tab === "requests" && <Inbox bookings={mine} defaultQuote={(b) => s.packages.find((p) => p.id === b.packageId)?.price ?? b.estimate ?? s.priceFrom}
             quoteTemplate={(b) => { const p = s.packages.find((x) => x.id === b.packageId); return `حياكم الله، يسعدنا نكون جزء من فرحتكم. العرض يشمل ${p ? p.items.join("، ") : "التجهيز حسب طلبكم"}.`; }} />}
           {tab === "calendar" && <><div><h1 className="page-title">التقويم</h1><p className="page-sub">المناسبات المؤكدة والطلبات قيد الانتظار.</p></div><MonthBoard bookings={mine} /><section className="card" style={{ paddingBlock: 6 }}><div className="list">{mine.filter((b) => b.status !== "declined").sort((a, b) => a.date.localeCompare(b.date)).map((b) => <div key={b.id} className="list-row"><b className="num display" style={{ width: 92 }}>{b.date}</b><div className="t"><b>{b.clientName}</b><small>{fmt(b.guests)} ضيف · {b.city}</small></div><StatusPill status={b.status} /></div>)}</div></section></>}
           {tab === "packages" && <Packages s={s} />}
           {tab === "profile" && <Profile s={s} />}
+          {tab === "support" && <SupportCenter from="supplier" fromId={s.id} fromName={s.name} />}
           {tab === "plan" && <Plans />}
         </motion.div>
       </AnimatePresence>

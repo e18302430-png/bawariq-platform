@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   CATEGORIES, CITIES, OCCASIONS, busyDays, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
-  venueCapacity, venueFrom, type CategoryId, type OccasionId, type Supplier, type Venue,
+  venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
 import { Calendar, Empty, Icon, Media, Segmented, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
@@ -20,14 +20,14 @@ export function Explore({ initialCat }: { initialCat?: string }) {
   const [favOnly, setFavOnly] = useState(false);
 
   const items = useMemo(() => {
-    const venues: Item[] = db.venues.map((v) => ({ kind: "venue", v }));
-    const sups: Item[] = db.suppliers.map((v) => ({ kind: "supplier", v }));
+    const venues: Item[] = db.venues.filter(isActive).map((v) => ({ kind: "venue", v }));
+    const sups: Item[] = db.suppliers.filter(isActive).map((v) => ({ kind: "supplier", v }));
     let list = cat === "all" ? [...venues, ...sups] : cat === "venues" ? venues : sups.filter((s) => (s.v as Supplier).cats.includes(cat));
     if (city !== "all") list = list.filter((i) => i.v.city === city || (i.kind === "supplier" && i.v.area.includes("كل مناطق")));
     if (q.trim()) list = list.filter((i) => (i.v.name + i.v.about + i.v.tags.join(" ")).includes(q.trim()));
     if (favOnly) list = list.filter((i) => db.client.favorites.includes(i.v.id));
     const price = (i: Item) => (i.kind === "venue" ? venueFrom(i.v) : i.v.priceFrom);
-    const by = { best: (a: Item, b: Item) => Number(!!(b.v as Supplier).featured) - Number(!!(a.v as Supplier).featured) || b.v.rating - a.v.rating, price: (a: Item, b: Item) => price(a) - price(b), rating: (a: Item, b: Item) => b.v.rating - a.v.rating };
+    const by = { best: (a: Item, b: Item) => Number(!!(b.v as Supplier).featured) - Number(!!(a.v as Supplier).featured) || (b.v.rating ?? 0) - (a.v.rating ?? 0), price: (a: Item, b: Item) => (price(a) ?? Infinity) - (price(b) ?? Infinity), rating: (a: Item, b: Item) => (b.v.rating ?? 0) - (a.v.rating ?? 0) };
     return list.sort(by[sort]);
   }, [db.venues, db.suppliers, db.client.favorites, cat, city, q, sort, favOnly]);
 
@@ -72,10 +72,10 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
       <div className="body">
-        <div className="row between"><h3>{v.name}</h3><span className="rate num"><Icon name="Star" size={13} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews})</span></span></div>
+        <div className="row between"><h3>{v.name}</h3>{v.reviews ? <span className="rate num"><Icon name="Star" size={13} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews})</span></span> : v.verified ? <span className="pill ok"><Icon name="BadgeCheck" size={12} /> موثّق</span> : <span className="pill neutral">جديد</span>}</div>
         <div className="m">
           <span><Icon name="MapPin" size={13} />{v.city}</span>
-          {item.kind === "venue" ? <span><Icon name="Users" size={13} />حتى {fmt(venueCapacity(item.v))}</span> : <span><Icon name="Layers" size={13} />{item.v.cats.length} خدمات</span>}
+          {item.kind === "venue" ? <span><Icon name="Users" size={13} />{venueCapacity(item.v) ? `حتى ${fmt(venueCapacity(item.v))}` : `${item.v.halls.length} ${item.v.halls.length > 1 ? "قاعات" : "قاعة"}`}</span> : <span><Icon name="Layers" size={13} />{item.v.cats.length} خدمات</span>}
         </div>
         <div className="row between" style={{ marginTop: 4 }}>
           <span className="num" style={{ fontWeight: 700, fontFamily: "var(--f-display)" }}><span className="faint" style={{ fontWeight: 400, fontSize: 12 }}>يبدأ من </span>{sar(item.kind === "venue" ? venueFrom(item.v) : item.v.priceFrom)}</span>
@@ -111,7 +111,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
     ev.preventDefault();
     apply(createBooking({
       kind, targetId: v.id, hallId, packageId: pkgId, clientName: form.name, phone: form.phone, occasion: form.occasion, city: e.city, date, guests: +form.guests,
-      note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price, fromClient: true,
+      note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price ?? 0, fromClient: true,
     }));
     setOpen(false);
     toast("وصل طلبك. تابعه من رحلتك");
@@ -135,7 +135,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
           <div>
             <div className="row wrap" style={{ ["--gap" as string]: "6px", marginBottom: 8 }}>{v.tags.map((t) => <span key={t} className="tag">{t}</span>)}</div>
             <h1 className="page-title">{v.name}</h1>
-            <div className="row wrap muted" style={{ fontSize: 14, marginTop: 4 }}><span className="row" style={{ ["--gap" as string]: "4px" }}><Icon name="MapPin" size={15} />{v.city} · {venue ? venue.district : supplier!.area}</span><span className="rate num"><Icon name="Star" size={14} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews} تقييم)</span></span></div>
+            <div className="row wrap muted" style={{ fontSize: 14, marginTop: 4 }}><span className="row" style={{ ["--gap" as string]: "4px" }}><Icon name="MapPin" size={15} />{v.city} · {venue ? venue.district : supplier!.area}</span>{v.reviews ? <span className="rate num"><Icon name="Star" size={14} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews} تقييم)</span></span> : <span className="pill neutral">لا توجد تقييمات بعد</span>}{v.verified && <span className="pill ok"><Icon name="BadgeCheck" size={12} /> موثّق من مناسبتي</span>}</div>
           </div>
           <p className="muted" style={{ fontSize: 15.5 }}>{v.about}</p>
 
@@ -145,8 +145,8 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
               {venue.halls.map((h) => (
                 <button key={h.id} className={"hall-opt" + (hallId === h.id ? " on" : "")} onClick={() => setHallId(h.id)} aria-pressed={hallId === h.id}>
                   <span className="avatar"><Icon name="DoorOpen" size={18} /></span>
-                  <span className="grow"><b className="display" style={{ display: "block" }}>{h.name}</b><small className="muted num">رجال {fmt(h.menCap)} · نساء {fmt(h.womenCap)}{hallCapacity(h) < e.guests ? " · أصغر من عدد ضيوفك" : ""}</small></span>
-                  <span className="num" style={{ textAlign: "end", fontSize: 13 }}><b style={{ display: "block", fontFamily: "var(--f-display)" }}>{fmt(h.weekdayPrice)}</b><span className="faint">ويكند {fmt(h.weekendPrice)}</span></span>
+                  <span className="grow"><b className="display" style={{ display: "block" }}>{h.name}</b><small className="muted num">{hallCapacity(h) ? <>رجال {fmt(h.menCap)} · نساء {fmt(h.womenCap)}{hallCapacity(h) < e.guests ? " · أصغر من عدد ضيوفك" : ""}</> : "قسم رجال وقسم نساء"}</small></span>
+                  <span className="num" style={{ textAlign: "end", fontSize: 13 }}><b style={{ display: "block", fontFamily: "var(--f-display)" }}>{sar(h.weekdayPrice)}</b>{h.weekendPrice ? <span className="faint">ويكند {fmt(h.weekendPrice)}</span> : null}</span>
                 </button>
               ))}
             </div>

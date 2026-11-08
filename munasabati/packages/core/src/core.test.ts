@@ -21,14 +21,17 @@ describe("الحسابات", () => {
   it("سعر نهاية الأسبوع للخميس والجمعة والسبت", () => {
     expect(isWeekend("2026-11-12")).toBe(true); // خميس
     expect(isWeekend("2026-11-10")).toBe(false); // ثلاثاء
-    const h = SEED_VENUES[0].halls[0];
-    expect(hallPrice(h, "2026-11-13")).toBe(h.weekendPrice);
+    const h = { id: "a", name: "ق", weekdayPrice: 100, weekendPrice: 150 };
+    expect(hallPrice(h, "2026-11-13")).toBe(150);
+    expect(hallPrice({ id: "b", name: "بدون سعر" }, "2026-11-13")).toBeUndefined();
   });
 
-  it("المطابقة تفضّل نفس المدينة والسعة الكافية", () => {
+  it("المطابقة تفضّل نفس المدينة، وتستبعد السعة الأصغر إذا أدخلها صاحب القاعة", () => {
     const [first] = matchVenues(SEED_VENUES, "جدة", 1000);
     expect(first.venue.city).toBe("جدة");
-    expect(first.venue.halls.some((h) => h.menCap + h.womenCap >= 1000)).toBe(true);
+    const small = { ...SEED_VENUES[2], id: "x", halls: [{ id: "a", name: "صغيرة", menCap: 100, womenCap: 100 }] };
+    const ranked = matchVenues([small, SEED_VENUES[2]], "جدة", 1000);
+    expect(ranked[0].venue.id).toBe(SEED_VENUES[2].id);
   });
 
   it("إزاحة التاريخ", () => expect(shiftDate("2026-12-30", 3)).toBe("2027-01-02"));

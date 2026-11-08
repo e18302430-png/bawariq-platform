@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Venue,
+  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 
 /**
@@ -19,7 +19,7 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
   const empty = createInitialDB();
-  let state: DB = { ...empty, suppliers: [], venues: [], bookings: [] };
+  let state: DB = { ...empty, suppliers: [], venues: [], bookings: [], tickets: [] };
   let user: AuthUser | null = null;
   let lastError: string | null = null;
 
@@ -28,12 +28,14 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
   async function load() {
     const { data: s } = await sb.auth.getSession();
     user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone ?? "" } : null;
-    const [sup, ven, bk, space, busy] = await Promise.all([
+    const [sup, ven, bk, space, busy, tk, st] = await Promise.all([
       sb.from("suppliers").select("id, owner_id, data"),
       sb.from("venues").select("id, owner_id, data"),
       user ? sb.from("bookings").select("id, data, status").order("created_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Booking; status: string }[], error: null }),
       user ? sb.from("client_spaces").select("data").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
+      user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
+      sb.from("settings").select("key, value").eq("key", "announcement").maybeSingle(),
     ]);
     const suppliers = ((sup.data ?? []) as Row<Supplier>[]).map((r) => ({ ...r.data, id: r.id }));
     const venues = ((ven.data ?? []) as Row<Venue>[]).map((r) => ({ ...r.data, id: r.id }));
@@ -50,6 +52,8 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       suppliers, venues,
       bookings: [...real, ...blockedByOthers.filter((b) => !real.some((x) => x.targetId === b.targetId && x.date === b.date && x.status === "confirmed"))],
       sessions: { supplierId: owned(sup.data as Row<unknown>[]), venueId: owned(ven.data as Row<unknown>[]) },
+      tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
+      announcement: (st.data as { value?: string } | null)?.value || undefined,
     };
     lastError = sup.error?.message ?? ven.error?.message ?? null;
     emit();
@@ -65,22 +69,31 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
     const diff = <T extends { id: string }>(a: T[], b: T[]) => b.filter((x) => a.find((y) => y.id === x.id) !== x);
     for (const s of diff(prev.suppliers, next.suppliers)) {
       const isNew = !prev.suppliers.some((x) => x.id === s.id);
-      jobs.push(sb.from("suppliers").upsert({ id: s.id, data: s, updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+      jobs.push(sb.from("suppliers").upsert({ id: s.id, data: s, status: s.status ?? "active", updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
     }
     for (const v of diff(prev.venues, next.venues)) {
       const isNew = !prev.venues.some((x) => x.id === v.id);
-      jobs.push(sb.from("venues").upsert({ id: v.id, data: v, updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+      jobs.push(sb.from("venues").upsert({ id: v.id, data: v, status: v.status ?? "active", updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
     }
     for (const b of diff(prev.bookings, next.bookings).filter((x) => !x.id.startsWith("busy-"))) {
       const isNew = !prev.bookings.some((x) => x.id === b.id);
       const row = { id: b.id, kind: b.kind, target_id: b.targetId, status: b.status, event_date: b.date, data: b, updated_at: new Date().toISOString() };
       jobs.push((isNew ? sb.from("bookings").insert({ ...row, client_id: uid }) : sb.from("bookings").update(row).eq("id", b.id)).then(({ error }) => { if (error) throw error; }));
     }
+    for (const t of diff(prev.tickets ?? [], next.tickets ?? [])) {
+      jobs.push(sb.from("tickets").upsert({ id: t.id, status: t.status, data: t, updated_at: new Date().toISOString(), ...(!(prev.tickets ?? []).some((x) => x.id === t.id) ? { user_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+    }
+    for (const kind of ["suppliers", "venues"] as const) {
+      for (const x of (prev[kind] as { id: string }[]).filter((p) => !(next[kind] as { id: string }[]).some((n) => n.id === p.id))) jobs.push(sb.from(kind).delete().eq("id", x.id).then(({ error }) => { if (error) throw error; }));
+    }
+    for (const b of prev.bookings.filter((p) => !p.id.startsWith("busy-") && !next.bookings.some((n) => n.id === p.id))) jobs.push(sb.from("bookings").delete().eq("id", b.id).then(({ error }) => { if (error) throw error; }));
+    if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
   }
 
   // تحديث لحظي: أي تغيير على الطلبات المسموح بها يعيد تحميلها
-  sb.channel("bookings-live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); }).subscribe();
+  sb.channel("live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); }).subscribe();
   sb.auth.onAuthStateChange(() => { void load(); });
   void load().catch(fail("تعذّر الاتصال"));
 

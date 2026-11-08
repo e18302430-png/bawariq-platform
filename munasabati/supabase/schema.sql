@@ -128,3 +128,50 @@ create policy "media upload own folder" on storage.objects for insert to authent
 drop policy if exists "media delete own" on storage.objects;
 create policy "media delete own" on storage.objects for delete to authenticated
   using (bucket_id = 'media' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ═══════════════ الإدارة والدعم (إضافة) ═══════════════
+alter table public.profiles add column if not exists role text not null default 'user' check (role in ('user', 'admin'));
+alter table public.suppliers add column if not exists status text not null default 'active' check (status in ('active', 'suspended'));
+alter table public.venues add column if not exists status text not null default 'active' check (status in ('active', 'suspended'));
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+$$;
+
+-- الحسابات المعلّقة تختفي عن العامة، والإدارة ترى وتعدّل وتحذف كل شيء
+drop policy if exists "read suppliers" on public.suppliers;
+create policy "read suppliers" on public.suppliers for select using ((published and status = 'active') or owner_id = auth.uid() or public.is_admin());
+drop policy if exists "read venues" on public.venues;
+create policy "read venues" on public.venues for select using ((published and status = 'active') or owner_id = auth.uid() or public.is_admin());
+drop policy if exists "admin manage suppliers" on public.suppliers;
+create policy "admin manage suppliers" on public.suppliers for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin manage venues" on public.venues;
+create policy "admin manage venues" on public.venues for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin manage bookings" on public.bookings;
+create policy "admin manage bookings" on public.bookings for all using (public.is_admin()) with check (public.is_admin());
+
+-- تذاكر الدعم
+create table if not exists public.tickets (
+  id text primary key,
+  user_id uuid references auth.users on delete cascade,
+  status text not null default 'open' check (status in ('open', 'answered', 'closed')),
+  data jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.tickets enable row level security;
+drop policy if exists "own tickets" on public.tickets;
+create policy "own tickets" on public.tickets for all using (user_id = auth.uid() or public.is_admin()) with check (user_id = auth.uid() or public.is_admin());
+alter publication supabase_realtime add table public.tickets;
+
+-- إعدادات المنصة (الإعلان العام)
+create table if not exists public.settings (key text primary key, value text);
+alter table public.settings enable row level security;
+drop policy if exists "read settings" on public.settings;
+create policy "read settings" on public.settings for select using (true);
+drop policy if exists "admin settings" on public.settings;
+create policy "admin settings" on public.settings for all using (public.is_admin()) with check (public.is_admin());
+
+-- لتعيين نفسك مديراً بعد أول دخول برقم جوالك:
+-- update public.profiles set role = 'admin' where phone = '9665XXXXXXXX';

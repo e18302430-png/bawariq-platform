@@ -351,3 +351,25 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .gx-foot-art { width: calc(100% + 32px); max-width: none; margin-inline: -16px; height: 200px; object-fit: cover; object-position: bottom; -webkit-mask-image: linear-gradient(180deg, transparent, #000 60%); mask-image: linear-gradient(180deg, transparent, #000 60%); }
 .gx .g-back { color: var(--wc-deep); }
 .wc-card, .inv, .scratch, .gx-env { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* ميل ثلاثي الأبعاد ولمعة ضوء على الدعوة */
+.tilt { position: relative; width: min(390px, 100%); margin-inline: auto; transform-style: preserve-3d; will-change: transform; border-radius: 22px; }
+.tilt > .wc-card, .tilt > .inv { width: 100%; }
+.tilt-light { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 5; mix-blend-mode: soft-light; background: radial-gradient(60% 45% at var(--lx, 50%) var(--ly, 30%), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 60%); }
+.tilt:has(.inv-night) .tilt-light { mix-blend-mode: overlay; }
+.inv-night .inv-names, .inv-night .inv-date b { background-position: var(--lx, 50%) 0; }
+.scratch { touch-action: none; }
+.ec-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transform: scale(1.04); animation: ken 22s ease-in-out infinite alternate; }
+@keyframes ken { to { transform: scale(1.14) translateX(-2%); } }
+.event-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8, 4, 14, 0.35), rgba(8, 4, 14, 0.05) 40%, rgba(8, 4, 14, 0.75)); pointer-events: none; }
+.event-card.compact { min-height: 250px; padding-top: 80px; }
+.cam { position: relative; width: 100%; aspect-ratio: 1; max-width: 360px; border-radius: 24px; overflow: hidden; background: #000; display: grid; place-items: center; }
+.cam video { width: 100%; height: 100%; object-fit: cover; }
+.cam-err { color: #fff; padding: 24px; text-align: center; font-size: 14px; opacity: 0.85; }
+.cam-frame { position: absolute; inset: 18%; }
+.cam-frame i { position: absolute; width: 34px; height: 34px; border: 3px solid #fff; }
+.cam-frame i:nth-child(1) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 14px 0 0; }
+.cam-frame i:nth-child(2) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 0; }
+.cam-frame i:nth-child(3) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 14px 0; }
+.cam-frame i:nth-child(4) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 14px; }
+.cam-close { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); }

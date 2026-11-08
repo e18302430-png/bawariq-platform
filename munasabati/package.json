@@ -12,7 +12,8 @@
     "dev:client": "npm run dev -w @munasabati/client",
     "dev:vendors": "npm run dev -w @munasabati/vendors",
     "dev:venues": "npm run dev -w @munasabati/venues",
-    "build": "npm run build -w @munasabati/web -w @munasabati/client -w @munasabati/vendors -w @munasabati/venues",
+    "build": "npm run build -w @munasabati/web -w @munasabati/client -w @munasabati/vendors -w @munasabati/venues -w @munasabati/admin",
+    "dev:admin": "npm run dev -w @munasabati/admin",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "bundle:artifact": "node scripts/bundle-artifact.mjs"

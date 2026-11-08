@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useId, useRef
 import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion";
 import { Icon } from "./icons";
 import { photoUrl } from "./media";
+import { AnnouncementBar } from "./support";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
 
 /* ───── عدّاد رقمي متحرك ───── */
@@ -241,7 +242,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
             <ThemeToggle />
           </div>
         </header>
-        <main className="container">{children}</main>
+        <main className="container"><AnnouncementBar />{children}</main>
       </div>
       <nav className="bottom-nav" aria-label="التنقل">
         {primary.map((t) => (

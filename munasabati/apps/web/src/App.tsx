@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { OCCASIONS, type Occasion } from "@munasabati/core";
 import { Icon, MeshGradient, Reveal, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { LiveFilm } from "./LiveFilm";
+import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
+import stillDesert from "./assets/film/f5-desert.webp";
 
 // كل بوابة تطبيق مستقل يُنشر منفصلاً. الروابط قابلة للتغيير عند النشر على نطاقات مختلفة.
 const LINKS = {
@@ -108,27 +111,52 @@ function Phone({ children, tilt = true }: { children: ReactNode; tilt?: boolean 
   );
 }
 
+
+/* ───── ميزات حية بدل الكلام ───── */
+function Features() {
+  return (
+    <section className="sec container" id="features">
+      <Reveal className="sec-head"><span className="eyebrow">ليش مناسبتي</span><h2>تفاصيل تخلّي ضيوفك <span className="grad-text">يتكلمون عنها</span></h2></Reveal>
+      <div className="bento">
+        <Reveal className="b-card b-invite">
+          <img src={wcDiriyah} alt="" loading="lazy" />
+          <div className="b-seal"><span>ع</span></div>
+          <div className="b-text"><b>دعوة تنفتح في يد ضيفك</b><span>ظرف بلوحة مائية سعودية وختم شمع ذهبي، يفتحه الضيف بلمسة.</span></div>
+        </Reveal>
+        <Reveal className="b-card b-scratch" delay={0.05}>
+          <div className="b-foil"><span>اكشط لتعرف الموعد ✦</span></div>
+          <div className="b-text"><b>اكشط لتكشف التاريخ</b><span>طبقة ذهبية يكشطها الضيف بإصبعه، وتنطلق القصاصات.</span></div>
+        </Reveal>
+        <Reveal className="b-card b-scan" delay={0.1}>
+          <div className="b-scanbox"><i /><i /><i /><i /><motion.span className="b-laser" animate={{ top: ["14%", "84%", "14%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
+          <div className="b-text"><b>دخول بالكاميرا</b><span>الحارس يمسح رمز الضيف بكاميرا الجوال ويعرف قسمه وعدد مرافقيه.</span></div>
+        </Reveal>
+        <Reveal className="b-card b-chat" delay={0.05}>
+          <div className="b-bubbles">
+            <span className="in">هل يتوفر بث مباشر لقسم النساء؟</span>
+            <span className="out">أكيد، نضيفه للباقة ونرسل لك العرض الآن.</span>
+            <span className="in">ممتاز، بانتظاركم 🤍</span>
+          </div>
+          <div className="b-text"><b>محادثة مع كل مورد</b><span>كل طلب له محادثته الخاصة، بدون ضياع بين الأرقام والقروبات.</span></div>
+        </Reveal>
+        <Reveal className="b-card b-journey" delay={0.1}>
+          <ol className="b-steps">{["الخطة", "القاعة", "التجهيزات", "الدعوات", "يوم المناسبة"].map((t, i) => <li key={t} className={i < 2 ? "done" : i === 2 ? "now" : ""}><i>{i < 2 ? "✓" : i + 1}</i>{t}</li>)}</ol>
+          <div className="b-text"><b>رحلة واضحة من خمس مراحل</b><span>في كل لحظة خطوة تالية واحدة. ما تحتار وش تسوي.</span></div>
+        </Reveal>
+        <Reveal className="b-card b-film" delay={0.15}>
+          <img src={stillDesert} alt="" loading="lazy" />
+          <div className="b-text"><b>لكل مناسبة هويتها</b><span>زواج، ملكة، تخرّج، عقيقة، أو لمّة عائلية. التصميم يتغيّر مع مناسبتك.</span></div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 /* ───── الواجهة الرئيسية ───── */
 function Hero({ occ }: { occ: Occasion }) {
-  const box = useRef<HTMLDivElement>(null);
   const [film, setFilm] = useState(false);
-  // نسخة عمودية للجوال ونسخة عريضة للشاشات الكبيرة: يُحمَّل ملف واحد فقط
-  const portrait = typeof window !== "undefined" && window.matchMedia("(max-aspect-ratio: 1/1)").matches;
-  // الفيديو يبدأ تحميله من HTML قبل React (#boot-video)، وهنا ننقله داخل الواجهة بدون إعادة تحميل
-  useEffect(() => {
-    let v = document.getElementById("boot-video") as HTMLVideoElement | null;
-    if (!v) {
-      v = document.createElement("video");
-      Object.assign(v, { muted: true, autoplay: true, loop: true, playsInline: true, preload: "auto" });
-      v.poster = portrait ? "./media/hero-poster-m.webp" : "./media/hero-poster.webp";
-      v.src = portrait ? "./media/hero-m.mp4" : "./media/hero.mp4";
-    }
-    v.className = "hero-video"; v.setAttribute("aria-hidden", "true");
-    box.current?.prepend(v);
-    document.getElementById("boot-hero")?.remove();
-    v.muted = true; void v.play().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // الصورة الأولى تظهر فوراً من HTML، ثم يبدأ الفيلم الحي فوقها
+  const onFilmReady = () => { const boot = document.getElementById("boot-hero"); if (boot) { boot.style.transition = "opacity .6s"; boot.style.opacity = "0"; setTimeout(() => boot.remove(), 700); } };
   const doors: [string, string, string, string][] = [
     [LINKS.client, "Heart", "عندي مناسبة", "خطط واحجز وأرسل الدعوات"],
     [LINKS.vendors, "Store", "أنا مورّد", "كوشة، تصوير، ضيافة، صوت…"],
@@ -137,7 +165,7 @@ function Hero({ occ }: { occ: Occasion }) {
   return (
     <div className="hero-frame">
       <section className="hero">
-        <div ref={box} className="hero-video-box" />
+        <div className="hero-video-box"><LiveFilm onReady={onFilmReady} /></div>
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
           <div className="logo">مناسبتي</div>
@@ -274,6 +302,7 @@ export default function App() {
     <>
       <Hero occ={occ} />
       <Story occ={occ} />
+      <Features />
       <Portals occ={occ} />
       <section className="container" style={{ paddingBottom: 20 }}>
         <Reveal className="final">

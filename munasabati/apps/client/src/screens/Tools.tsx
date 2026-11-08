@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   acceptQuote, addBudget, addTask, checkIn, fmt, hospitality, removeBudget, removeTask, sar, setBookingStatus, toggleTask, today, updateBudget,
   type CheckInResult,
 } from "@munasabati/core";
-import { Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
+import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
 /* ───── الحجوزات ───── */
@@ -26,6 +26,7 @@ export function Bookings() {
               <StatusPill status={b.status} />
             </div>
             {b.note && <div className="muted" style={{ fontSize: 13.5 }}>{b.note}</div>}
+            <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
             {b.messages.filter((m) => m.from === "provider").map((m, i) => <div key={i} className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: "var(--muted)" }}>رد {nameOf(b.kind, b.targetId)}</b>{m.text}</div>)}
             {b.status === "quoted" && (
               <div className="row wrap">
@@ -162,8 +163,10 @@ export function Door() {
   const scan = (raw: string) => {
     const { db: next, result } = checkIn(repo.get(), raw);
     if (result.ok) apply(() => next);
+    try { navigator.vibrate?.(result.ok ? 60 : [40, 60, 40]); } catch { /* */ }
     setRes({ ...result, at: Date.now() }); setCode("");
   };
+  const [cam, setCam] = useState(false);
   const simulate = () => {
     const g = db.client.guests.find((x) => !x.checkedIn && x.status === "yes") ?? db.client.guests.find((x) => !x.checkedIn && x.status === "pending");
     if (g) scan(g.code);
@@ -185,7 +188,11 @@ export function Door() {
             <input id="sc" className="input num grow" placeholder="رمز الدعوة" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" />
             <button className="btn white" type="submit">تحقق</button>
           </form>
-          <button className="btn glass sm" onClick={simulate}>محاكاة مسح ضيف</button>
+          <div className="row" style={{ justifyContent: "center" }}>
+            <button className="btn white sm" onClick={() => setCam(true)}><Icon name="Camera" size={15} /> مسح بالكاميرا</button>
+            <button className="btn glass sm" onClick={simulate}>محاكاة مسح ضيف</button>
+          </div>
+          {cam && <CameraScanner onCode={(c) => { scan(c); }} onClose={() => setCam(false)} />}
           <AnimatePresence mode="wait">
             {res && (
               <motion.div key={res.at} className={"scan-res " + (res.ok ? "ok" : "bad")} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 26 }}>
@@ -201,5 +208,42 @@ export function Door() {
         </section>
       </div>
     </>
+  );
+}
+
+/* ───── مسح QR بالكاميرا (BarcodeDetector المدمج في المتصفح، بدون مكتبات) ───── */
+type Detector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
+function CameraScanner({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const [err, setErr] = useState("");
+  const last = useRef({ code: "", at: 0 });
+  useEffect(() => {
+    let stream: MediaStream | null = null, timer = 0, alive = true;
+    const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector;
+    if (!BD) { setErr("المسح بالكاميرا يحتاج متصفح Chrome على الجوال. استخدم إدخال الرمز يدوياً."); return; }
+    const detector = new BD({ formats: ["qr_code"] });
+    navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment" }, audio: false }).then((s) => {
+      if (!alive) { s.getTracks().forEach((t) => t.stop()); return; }
+      stream = s; const v = video.current!; v.srcObject = s; void v.play();
+      const tick = async () => {
+        if (!alive) return;
+        try {
+          const found = await detector.detect(v);
+          const raw = found[0]?.rawValue;
+          if (raw && (raw !== last.current.code || Date.now() - last.current.at > 2500)) { last.current = { code: raw, at: Date.now() }; onCode(raw); }
+        } catch { /* إطار غير جاهز */ }
+        timer = window.setTimeout(tick, 280);
+      };
+      void tick();
+    }).catch(() => setErr("ما قدرنا نفتح الكاميرا. اسمح للمتصفح باستخدامها أو أدخل الرمز يدوياً."));
+    return () => { alive = false; clearTimeout(timer); stream?.getTracks().forEach((t) => t.stop()); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="cam">
+      {err ? <p className="cam-err">{err}</p> : <video ref={video} playsInline muted />}
+      <div className="cam-frame" aria-hidden="true"><i /><i /><i /><i /></div>
+      <button className="btn white sm cam-close" onClick={onClose}><Icon name="X" size={15} /> إغلاق الكاميرا</button>
+    </div>
   );
 }

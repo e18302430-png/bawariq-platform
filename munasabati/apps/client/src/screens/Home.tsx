@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { OCCASIONS, fmt, journey, nextStage, sar, type Stage } from "@munasabati/core";
-import { Counter, Icon, MeshGradient, useDB } from "@munasabati/ui";
+import { Counter, Icon, useDB } from "@munasabati/ui";
+import f1 from "../assets/scenes/f1-wedding.webp";
+import f2 from "../assets/scenes/f2-milka.webp";
+import f4 from "../assets/scenes/f4-rooftop.webp";
+import f5 from "../assets/scenes/f5-desert.webp";
+
+/** صورة سينمائية لكل نوع مناسبة */
+const SCENE: Record<string, string> = { wedding: f1, milka: f2, grad: f4, aqiqa: f2, family: f5, corp: f4 };
 import { go } from "../nav";
 
 function useCountdown(iso: string) {
@@ -37,7 +44,7 @@ export default function Home() {
       </div>
 
       <section className="event-card compact">
-        <MeshGradient palette={occ.palette} />
+        <img className="ec-photo" src={SCENE[occ.id] ?? f1} alt="" decoding="async" />
         <div className="meta"><span className="pill" style={{ background: "rgba(255,255,255,.2)", color: "#fff", backdropFilter: "blur(10px)" }}>{occ.name} · {e.city} · {fmt(e.guests)} ضيف</span><span className="num" style={{ opacity: 0.9 }}>{e.date}</span></div>
         <div className="cd num" aria-label={`باقي ${d} يوم`}>
           {[[d, "يوم"], [h, "ساعة"], [m, "دقيقة"], [s, "ثانية"]].map(([v, l]) => <div key={l}><b>{String(v).padStart(2, "0")}</b><small>{l}</small></div>)}

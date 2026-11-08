@@ -16,6 +16,14 @@ const Budget = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Bu
 const Door = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Door })));
 const Hosp = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Hosp })));
 const Tasks = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Tasks })));
+// تحميل كل الشاشات مسبقاً في وقت الفراغ بعد أول عرض: التنقل يصير فورياً
+const prefetch = () => [import("./screens/Home"), import("./screens/Explore"), import("./screens/Guests"), import("./screens/Invite"), import("./screens/Tools")];
+if (typeof window !== "undefined") {
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1200));
+  window.addEventListener("load", () => idle(() => { void Promise.all(prefetch()); }));
+}
+
+const Support = lazy(() => import("@munasabati/ui").then((m) => ({ default: () => <m.SupportCenter from="client" fromId="me" fromName={m.repo.get().client.profile?.name ?? "عميل"} /> })));
 
 
 function useHash() {
@@ -46,6 +54,7 @@ function Main() {
     { id: "hosp", label: "حاسبة الضيافة", icon: "Coffee" },
     { id: "tasks", label: "مهام العائلة", icon: "ListChecks" },
     { id: "door", label: "يوم المناسبة", icon: "ScanLine" },
+    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "client" && t.status === "answered").length },
   ];
   const detail = route.match(/^(venue|supplier)-(.+)$/);
   const exploreCat = route.startsWith("explore-") ? route.slice(8) : undefined;
@@ -61,8 +70,8 @@ function Main() {
     >
       <ErrorBoundary key={route}>
       <Suspense fallback={<ScreenSkeleton />}>
-      <AnimatePresence mode="wait">
-        <motion.div key={route} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+      <AnimatePresence initial={false}>
+        <motion.div key={route} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {detail ? <Detail kind={detail[1] as "venue" | "supplier"} id={detail[2]} />
             : active === "explore" ? <Explore initialCat={exploreCat} />
             : active === "guests" ? <Guests />
@@ -72,6 +81,7 @@ function Main() {
             : active === "tasks" ? <Tasks />
             : active === "bookings" ? <Bookings />
             : active === "door" ? <Door />
+            : active === "support" ? <Support />
             : <Home />}
         </motion.div>
       </AnimatePresence>
