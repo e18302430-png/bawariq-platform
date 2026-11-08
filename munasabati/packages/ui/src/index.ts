@@ -3,3 +3,5 @@ export * from "./icons";
 export * from "./data";
 export { MeshGradient } from "./MeshGradient";
 export * from "./provider";
+export * from "./Logo";
+export * from "./auth";

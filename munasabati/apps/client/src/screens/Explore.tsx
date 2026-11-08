@@ -3,7 +3,7 @@ import {
   CATEGORIES, CITIES, OCCASIONS, busyDays, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
   venueCapacity, venueFrom, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
-import { Art, Calendar, Empty, Icon, Segmented, Sheet, StatusPill, apply, useDB, useToast } from "@munasabati/ui";
+import { Calendar, Empty, Icon, Media, Segmented, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
 type Item = { kind: "venue"; v: Venue } | { kind: "supplier"; v: Supplier };
@@ -61,7 +61,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
   return (
     <div className="vcard" role="link" tabIndex={0} onClick={() => go(`${item.kind}-${v.id}`)} onKeyDown={(e) => e.key === "Enter" && go(`${item.kind}-${v.id}`)}>
       <div className="art">
-        <Art seed={v.id} hue={v.hue} kind={item.kind} />
+        <Media photos={v.photos} seed={v.id} hue={v.hue} kind={item.kind} alt={v.name} />
         <div className="over">{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
@@ -89,7 +89,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
   const v = venue ?? supplier;
   const [hallId, setHallId] = useState(venue?.halls.find((h) => hallCapacity(h) >= e.guests)?.id ?? venue?.halls[0]?.id);
   const [pkgId, setPkgId] = useState(supplier?.packages[1]?.id ?? supplier?.packages[0]?.id);
-  const busy = useMemo(() => busyDays(id, db.bookings, venue?.blocked ?? [], hallId), [id, db.bookings, venue, hallId]);
+  const busy = useMemo(() => busyDays(id, db.bookings, venue?.blocked ?? [], hallId, !isCloud), [id, db.bookings, venue, hallId]);
   const [date, setDate] = useState(!busy.has(e.date) ? e.date : "");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: db.client.profile?.name ?? "", phone: db.client.profile?.phone ?? "", guests: e.guests, occasion: e.occasion as OccasionId, note: "" });
@@ -114,7 +114,9 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
   return (
     <>
       <div className="detail-hero">
-        <Art seed={v.id + "h"} hue={v.hue} kind={kind} />
+        {(v.photos?.length ?? 0) > 1
+          ? <div className="gallery">{v.photos!.map((p, i) => <img key={i} src={p} alt={`${v.name} ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />)}</div>
+          : <Media photos={v.photos} seed={v.id + "h"} hue={v.hue} kind={kind} alt={v.name} />}
         <div className="bar-top">
           <button className="icon-btn" onClick={() => history.length > 1 ? history.back() : go("explore")} aria-label="رجوع"><Icon name="ArrowRight" size={18} /></button>
           <button className="icon-btn" onClick={() => apply(toggleFavorite(v.id))} aria-label="المفضلة" aria-pressed={fav}><Icon name="Heart" size={18} fill={fav ? "#e5195e" : "none"} color={fav ? "#e5195e" : undefined} /></button>

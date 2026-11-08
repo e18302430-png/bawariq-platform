@@ -38,12 +38,12 @@ export function createInitialDB(): DB {
 
 export type Mutation = (db: DB) => DB;
 
-export interface NewEventInput extends Omit<ClientEvent, "id"> { hostName: string; phone?: string }
+export interface NewEventInput extends Omit<ClientEvent, "id"> { hostName: string; phone?: string; /** أمثلة ضيوف للتجربة (تُعطّل في الإنتاج) */ samples?: boolean }
 
 export const createEvent = (input: NewEventInput): Mutation => (db) => {
-  const { hostName, phone = "", ...ev } = input;
+  const { hostName, phone = "", samples = true, ...ev } = input;
   const plan = estimateBudget(ev.guests, ev.tier);
-  const guests: Guest[] = SAMPLE_GUESTS.map(([name, section, side, status, count], i) => ({
+  const guests: Guest[] = !samples ? [] : SAMPLE_GUESTS.map(([name, section, side, status, count], i) => ({
     id: uid("g"), name, phone: `05${String(50000000 + i * 1234567).slice(0, 8)}`, section, side, status, count, code: inviteCode(), checkedIn: false, sample: true,
   }));
   return {

@@ -80,13 +80,13 @@ export function seeded(seed: string) {
   return () => ((h = (Math.imul(h, 1664525) + 1013904223) >>> 0) / 4294967296);
 }
 
-/** الأيام غير المتاحة: حجوزات مؤكدة + أيام مغلقة + سجل تجريبي ثابت */
-export function busyDays(targetId: string, bookings: Booking[], blocked: string[] = [], hallId?: string): Set<string> {
+/** الأيام غير المتاحة: حجوزات مؤكدة + أيام مغلقة (+ سجل تجريبي ثابت في وضع التجربة فقط) */
+export function busyDays(targetId: string, bookings: Booking[], blocked: string[] = [], hallId?: string, demo = true): Set<string> {
   const set = new Set<string>(blocked);
-  const rnd = seeded(targetId + (hallId ?? ""));
-  const start = new Date();
-  for (let i = 1; i < 120; i++) {
-    if (rnd() < 0.18) set.add(isoDay(new Date(start.getTime() + i * DAY)));
+  if (demo) {
+    const rnd = seeded(targetId + (hallId ?? ""));
+    const start = new Date();
+    for (let i = 1; i < 120; i++) if (rnd() < 0.18) set.add(isoDay(new Date(start.getTime() + i * DAY)));
   }
   bookings
     .filter((b) => b.targetId === targetId && b.status === "confirmed" && (!hallId || b.hallId === hallId))

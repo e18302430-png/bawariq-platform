@@ -4,7 +4,8 @@ import { OCCASIONS, fmt, isoDay, sar, setBookingStatus, type Booking } from "@mu
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
-import { apply } from "./data";
+import { LogoMark } from "./Logo";
+import { apply, repo, resizeImage } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
 
@@ -171,7 +172,7 @@ export function Gate({ palette, eyebrow, title, lead, features, children }: { pa
       <div className="gate-art">
         <MeshGradient palette={palette} />
         <div className="gate-art-in">
-          <div className="row" style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: 20 }}><span className="logo-mark" />مناسبتي</div>
+          <div className="row" style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: 20 }}><LogoMark />مناسبتي</div>
           <div className="stack" style={{ ["--gap" as string]: "16px" }}>
             <span className="live-pill">{eyebrow}</span>
             <h1 className="gate-title">{title}</h1>
@@ -181,6 +182,48 @@ export function Gate({ palette, eyebrow, title, lead, features, children }: { pa
         </div>
       </div>
       <div className="gate-form"><div className="gate-form-in">{children}</div></div>
+    </div>
+  );
+}
+
+/** إدارة صور النشاط: رفع، حذف، واختيار صورة الغلاف */
+export function PhotoManager({ photos = [], onChange, max = 8 }: { photos?: string[]; onChange: (p: string[]) => void; max?: number }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const add = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    try {
+      const room = Math.max(0, max - photos.length);
+      const urls: string[] = [];
+      for (const f of Array.from(files).slice(0, room)) urls.push(await repo.uploadPhoto(await resizeImage(f, repo.mode === "local" ? 1000 : 1600, repo.mode === "local" ? 0.72 : 0.84)));
+      onChange([...photos, ...urls]);
+      const err = repo.error();
+      toast(err ?? `تمت إضافة ${urls.length} صورة`);
+    } catch (e) { toast((e as Error).message || "تعذّر رفع الصورة"); } finally { setBusy(false); }
+  };
+  return (
+    <div className="stack" style={{ ["--gap" as string]: "12px" }}>
+      <div className="row between"><span className="label">صور النشاط ({photos.length}/{max}) · الصورة الأولى هي الغلاف</span></div>
+      <div className="photo-grid">
+        {photos.map((p, i) => (
+          <div key={p.slice(-40) + i} className="photo-cell">
+            <img src={p} alt={`صورة ${i + 1}`} />
+            {i === 0 && <span className="pill" style={{ position: "absolute", top: 8, right: 8, background: "#fff", color: "#121016" }}>الغلاف</span>}
+            <div className="photo-acts">
+              {i > 0 && <button type="button" className="icon-btn sm" aria-label="اجعلها الغلاف" onClick={() => onChange([p, ...photos.filter((_, k) => k !== i)])}><Icon name="Star" size={15} /></button>}
+              <button type="button" className="icon-btn sm" aria-label="حذف الصورة" onClick={() => onChange(photos.filter((_, k) => k !== i))}><Icon name="Trash2" size={15} /></button>
+            </div>
+          </div>
+        ))}
+        {photos.length < max && (
+          <label className="photo-add" aria-busy={busy}>
+            <input type="file" accept="image/*" multiple className="sr" onChange={(e) => { void add(e.target.files); e.target.value = ""; }} disabled={busy} />
+            <Icon name={busy ? "Loader" : "ImagePlus"} size={26} />
+            <span>{busy ? "جاري الرفع…" : "أضف صور"}</span>
+          </label>
+        )}
+      </div>
     </div>
   );
 }

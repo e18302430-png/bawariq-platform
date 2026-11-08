@@ -44,6 +44,8 @@ export interface Supplier {
   about: string;
   packages: Package[];
   phone?: string;
+  /** روابط صور حقيقية يرفعها المورد (الأولى غلاف) */
+  photos?: string[];
   featured?: boolean;
   custom?: boolean;
 }
@@ -72,6 +74,9 @@ export interface Venue {
   halls: Hall[];
   /** أيام مغلقة يدوياً من صاحب القاعة (صيانة أو حجز خارجي) */
   blocked: string[];
+  /** روابط صور حقيقية يرفعها صاحب القاعة (الأولى غلاف) */
+  photos?: string[];
+  phone?: string;
   custom?: boolean;
 }
 

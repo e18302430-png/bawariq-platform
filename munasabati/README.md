@@ -33,4 +33,7 @@ npm run bundle:artifact   # تجميعها في مجلد واحد للعرض
 
 عند النشر على نطاقات منفصلة، حدد الروابط بين التطبيقات: `VITE_HOME_URL`، `VITE_CLIENT_URL`، `VITE_VENDORS_URL`، `VITE_VENUES_URL`.
 
-التفاصيل التقنية في `docs/ARCHITECTURE.md`، ودراسة السوق في `docs/COMPETITION.md`.
+- **الإطلاق الفعلي** (قاعدة البيانات، الدخول بالجوال، النشر): `docs/LAUNCH.md`
+- **البنية التقنية:** `docs/ARCHITECTURE.md`
+- **دراسة السوق:** `docs/COMPETITION.md`
+- **قاعدة البيانات:** `supabase/schema.sql`

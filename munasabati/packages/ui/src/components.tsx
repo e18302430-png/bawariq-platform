@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useId, useRef
 import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion";
 import QRCode from "qrcode";
 import { Icon } from "./icons";
+import { LogoMark } from "./Logo";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
 
 /* ───── عدّاد رقمي متحرك ───── */
@@ -218,7 +219,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
   return (
     <div className="shell">
       <aside className="shell-side" aria-label="القائمة">
-        <div className="logo"><span className="logo-mark" /><span>مناسبتي<span className="portal">{portal}</span></span></div>
+        <div className="logo"><LogoMark /><span>مناسبتي<span className="portal">{portal}</span></span></div>
         {tabs.map((t) => (
           <button key={t.id} className={"side-link" + (active === t.id ? " on" : "")} onClick={() => go(t.id)} aria-current={active === t.id ? "page" : undefined}>
             {active === t.id && <motion.span layoutId="side-thumb" className="nav-thumb" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
@@ -230,7 +231,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
       <div className="shell-main">
         <header className={"appbar" + (scrolled ? " scrolled" : "")}>
           <div className="container appbar-in">
-            <div className="logo mobile-only"><span className="logo-mark" /><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
+            <div className="logo mobile-only"><LogoMark /><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
             <div className="grow" />
             {actions}
             <ThemeToggle />
@@ -278,4 +279,12 @@ export function useInView<T extends Element>(opts?: IntersectionObserverInit) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return [ref, inView] as const;
+}
+
+/* ───── صورة حقيقية إن وُجدت، وإلا رسم الهوية التوليدي ───── */
+export function Media({ photos, seed, hue, kind = "venue", alt = "" }: { photos?: string[]; seed: string; hue: number; kind?: "venue" | "supplier"; alt?: string }) {
+  const src = photos?.[0];
+  return src
+    ? <img src={src} alt={alt} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+    : <Art seed={seed} hue={hue} kind={kind} />;
 }

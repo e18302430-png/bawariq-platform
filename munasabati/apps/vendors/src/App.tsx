@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, Art, Empty, Gate, Icon, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -9,7 +9,9 @@ const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
 function Login() {
   const db = useDB();
   const toast = useToast();
-  const [mode, setMode] = useState<"demo" | "join">("demo");
+  const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
+  const [, force] = useState(0);
+  const signedIn = !isCloud || !!repo.auth?.user();
   const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الرياض", phone: "", cr: "" });
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
@@ -20,13 +22,14 @@ function Login() {
   return (
     <Gate palette={PALETTE} eyebrow="بوابة الموردين" title={<>طلبات جاهزة،<br />تصلك مباشرة.</>} lead="لمزودي الكوشة والتصوير والصوت والإضاءة والبث المباشر والضيافة والخيام والمولدات والاستيدج."
       features={[["Inbox", "صندوق طلبات", "التاريخ وعدد الضيوف ونوع المناسبة في كل طلب"], ["Package", "باقاتك بأسعارك", "عدّلها متى ما تبي وتظهر للعميل فوراً"], ["TrendingUp", "تقارير الإيرادات", "معدل التحويل ومتوسط قيمة الحجز"]]}>
-      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">ادخل بحساب تجريبي أو سجّل نشاطك.</p></div>
-      <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل نشاطك"]]} />
+      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة نشاطك." : "ادخل بحساب تجريبي أو سجّل نشاطك."}</p></div>
+      {!signedIn ? <PhoneAuth onDone={() => force((x) => x + 1)} /> : <>
+      {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل نشاطك"]]} />}
       {mode === "demo" ? (
         <div className="stack" style={{ ["--gap" as string]: "10px" }}>
           {demos.map((s) => (
             <button key={s.id} className="demo-acc" onClick={() => apply(setSession({ supplierId: s.id }))}>
-              <div className="th"><Art seed={s.id} hue={s.hue} kind="supplier" /></div>
+              <div className="th"><Media photos={s.photos} seed={s.id} hue={s.hue} kind="supplier" /></div>
               <div className="grow"><b className="display" style={{ display: "block" }}>{s.name}</b><small className="muted">{s.cats.length > 1 ? "تجهيز متكامل" : CATEGORIES.find((c) => c.id === s.cats[0])?.name} · {s.city}</small></div>
               <Icon name="ArrowLeft" size={18} />
             </button>
@@ -44,6 +47,7 @@ function Login() {
           <button className="btn primary lg block" type="submit">أنشئ حسابي</button>
         </form>
       )}
+      </>}
       <a className="faint" style={{ fontSize: 13, textAlign: "center" }} href={HOME}>موقع مناسبتي</a>
     </Gate>
   );
@@ -110,7 +114,7 @@ function Profile({ s }: { s: Supplier }) {
   return (
     <>
       <div><h1 className="page-title">الملف التعريفي</h1><p className="page-sub">هذا اللي يشوفه العميل في تطبيق مناسبتي.</p></div>
-      <form className="card form" onSubmit={(e) => { e.preventDefault(); apply(upsertSupplier({ ...s, ...f, cats: f.cats.length ? f.cats : s.cats, tags: f.tags.split(/[,،]/).map((x) => x.trim()).filter(Boolean) })); toast("تم تحديث ملفك"); }}>
+      <form className="card form" onSubmit={(e) => { e.preventDefault(); apply(upsertSupplier({ ...s, ...f, photos: s.photos, cats: f.cats.length ? f.cats : s.cats, tags: f.tags.split(/[,،]/).map((x) => x.trim()).filter(Boolean) })); toast("تم تحديث ملفك"); }}>
         <div className="form-2">
           <div className="field"><label htmlFor="f-n">الاسم التجاري</label><input id="f-n" className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
           <div className="field"><label htmlFor="f-c">المدينة</label><select id="f-c" className="select" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
@@ -118,6 +122,7 @@ function Profile({ s }: { s: Supplier }) {
           <div className="field full"><label htmlFor="f-b">نبذة</label><textarea id="f-b" className="input" rows={5} value={f.about} onChange={(e) => setF({ ...f, about: e.target.value })} /></div>
         </div>
         <div className="field"><span className="label">الخدمات اللي تقدمها</span><div className="chips wrap">{CATEGORIES.map((c) => <button type="button" key={c.id} className={"chip" + (f.cats.includes(c.id) ? " on" : "")} onClick={() => toggle(c.id)} aria-pressed={f.cats.includes(c.id)}><Icon name={c.icon} size={15} />{c.name}</button>)}</div></div>
+        <PhotoManager photos={s.photos} onChange={(photos) => apply(upsertSupplier({ ...s, photos }))} />
         <div className="field"><label htmlFor="f-t">مميزات قصيرة (افصل بفاصلة)</label><input id="f-t" className="input" value={f.tags} onChange={(e) => setF({ ...f, tags: e.target.value })} /></div>
         <button className="btn primary lg" type="submit">حفظ التغييرات</button>
       </form>
@@ -138,7 +143,7 @@ function Portal({ s }: { s: Supplier }) {
     { id: "plan", label: "الاشتراك", icon: "Gem" },
   ];
   return (
-    <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => apply(setSession({ supplierId: null }))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
+    <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
       <AnimatePresence mode="wait">
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
           {tab === "overview" && <Overview s={s} go={setTab} />}

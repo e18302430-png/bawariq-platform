@@ -6,18 +6,38 @@ import type { DB } from "./types";
  * - LocalRepository: للعرض والتجربة (التخزين في المتصفح، ومزامنة لحظية بين التطبيقات المفتوحة).
  * - لاحقاً: SupabaseRepository أو API خاص بنفس الواجهة، بدون تغيير أي شاشة.
  */
+export interface AuthUser { id: string; phone: string }
+
+export interface AuthAdapter {
+  user(): AuthUser | null;
+  /** يرسل رمز تحقق SMS للرقم السعودي (05xxxxxxxx) */
+  sendOtp(phone: string): Promise<void>;
+  verifyOtp(phone: string, code: string): Promise<AuthUser>;
+  signOut(): Promise<void>;
+}
+
 export interface Repository {
+  /** local: تجربة داخل المتصفح. cloud: قاعدة بيانات حقيقية مع دخول بالجوال */
+  readonly mode: "local" | "cloud";
   get(): DB;
   apply(m: Mutation): void;
   subscribe(listener: () => void): () => void;
   reset(): void;
+  /** يرفع صورة (مصغّرة مسبقاً) ويعيد رابطها */
+  uploadPhoto(file: Blob): Promise<string>;
+  auth?: AuthAdapter;
+  /** آخر خطأ في الحفظ (مثلاً امتلاء التخزين أو انقطاع الاتصال) */
+  error(): string | null;
 }
+
+const toDataURL = (b: Blob) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
 
 const KEY = "munasabati.db.v2";
 
 export function createLocalRepository(key = KEY): Repository {
   const listeners = new Set<() => void>();
   let state: DB = read() ?? createInitialDB();
+  let lastError: string | null = null;
 
   function read(): DB | null {
     try {
@@ -29,7 +49,8 @@ export function createLocalRepository(key = KEY): Repository {
     }
   }
   function write() {
-    try { globalThis.localStorage?.setItem(key, JSON.stringify(state)); } catch { /* التخزين غير متاح */ }
+    try { globalThis.localStorage?.setItem(key, JSON.stringify(state)); lastError = null; }
+    catch { lastError = "مساحة التخزين في المتصفح ممتلئة. احذف بعض الصور."; }
   }
   const emit = () => listeners.forEach((l) => l());
 
@@ -43,10 +64,13 @@ export function createLocalRepository(key = KEY): Repository {
   }
 
   return {
+    mode: "local",
     get: () => state,
     apply(m) { state = m(state); write(); emit(); },
     subscribe(l) { listeners.add(l); return () => listeners.delete(l); },
     reset() { state = createInitialDB(); write(); emit(); },
+    uploadPhoto: toDataURL,
+    error: () => lastError,
   };
 }
 
@@ -54,9 +78,12 @@ export function createMemoryRepository(initial: DB = createInitialDB()): Reposit
   let state = initial;
   const listeners = new Set<() => void>();
   return {
+    mode: "local",
     get: () => state,
     apply(m) { state = m(state); listeners.forEach((l) => l()); },
     subscribe(l) { listeners.add(l); return () => listeners.delete(l); },
     reset() { state = createInitialDB(); listeners.forEach((l) => l()); },
+    uploadPhoto: async () => "memory://photo",
+    error: () => null,
   };
 }

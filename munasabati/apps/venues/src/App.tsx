@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, Art, Empty, Gate, Icon, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, Plans, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -9,7 +9,9 @@ const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
 function Login() {
   const db = useDB();
   const toast = useToast();
-  const [mode, setMode] = useState<"demo" | "join">("demo");
+  const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
+  const [, force] = useState(0);
+  const signedIn = !isCloud || !!repo.auth?.user();
   const [f, setF] = useState({ name: "", city: "الرياض", district: "", phone: "", men: 300, women: 300, wd: 30000, we: 38000 });
   const demos = db.venues.filter((v) => ["v1", "v3"].includes(v.id) || v.custom);
   const join = (e: React.FormEvent) => {
@@ -20,13 +22,14 @@ function Login() {
   return (
     <Gate palette={PALETTE} eyebrow="بوابة أصحاب القاعات" title={<>قاعتك محجوزة<br />طول الموسم.</>} lead="أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند، واستقبل طلبات الحجز من العرسان مباشرة."
       features={[["Building2", "أكثر من قاعة", "لكل قاعة قسم رجال وقسم نساء وسعة وسعر"], ["CalendarRange", "تقويم إشغال", "أغلق أيام الصيانة والحجوزات الخارجية بضغطة"], ["TrendingUp", "تسعير الويكند", "سعر مختلف للخميس والجمعة والسبت تلقائياً"]]}>
-      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">ادخل بحساب تجريبي أو سجّل قاعتك.</p></div>
-      <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل قاعتك"]]} />
+      <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة قاعتك." : "ادخل بحساب تجريبي أو سجّل قاعتك."}</p></div>
+      {!signedIn ? <PhoneAuth onDone={() => force((x) => x + 1)} /> : <>
+      {!isCloud && <Segmented value={mode} onChange={setMode} options={[["demo", "دخول تجريبي"], ["join", "سجّل قاعتك"]]} />}
       {mode === "demo" ? (
         <div className="stack" style={{ ["--gap" as string]: "10px" }}>
           {demos.map((v) => (
             <button key={v.id} className="demo-acc" onClick={() => apply(setSession({ venueId: v.id }))}>
-              <div className="th"><Art seed={v.id} hue={v.hue} /></div>
+              <div className="th"><Media photos={v.photos} seed={v.id} hue={v.hue} /></div>
               <div className="grow"><b className="display" style={{ display: "block" }}>{v.name}</b><small className="muted">{v.halls.length} {v.halls.length > 1 ? "قاعات" : "قاعة"} · {v.city}</small></div>
               <Icon name="ArrowLeft" size={18} />
             </button>
@@ -45,6 +48,7 @@ function Login() {
           <button className="btn primary lg block" type="submit">سجّل قاعتي</button>
         </form>
       )}
+      </>}
       <a className="faint" style={{ fontSize: 13, textAlign: "center" }} href={HOME}>موقع مناسبتي</a>
     </Gate>
   );
@@ -157,6 +161,7 @@ function Profile({ v }: { v: Venue }) {
           <div className="field"><label htmlFor="p-c">المدينة</label><select id="p-c" className="select" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
           <div className="field full"><label htmlFor="p-d">الحي</label><input id="p-d" className="input" value={f.district} onChange={(e) => setF({ ...f, district: e.target.value })} /></div>
           <div className="field full"><label htmlFor="p-a">نبذة</label><textarea id="p-a" className="input" rows={5} value={f.about} onChange={(e) => setF({ ...f, about: e.target.value })} /></div>
+          <div className="full"><PhotoManager photos={v.photos} onChange={(photos) => apply(upsertVenue({ ...v, photos }))} /></div>
           <div className="field full"><label htmlFor="p-t">المميزات (افصل بفاصلة)</label><input id="p-t" className="input" value={f.tags} onChange={(e) => setF({ ...f, tags: e.target.value })} /></div>
         </div>
         <button className="btn primary lg" type="submit">حفظ التغييرات</button>
@@ -179,7 +184,7 @@ function Portal({ v }: { v: Venue }) {
   ];
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
   return (
-    <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => apply(setSession({ venueId: null }))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
+    <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ venueId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
       <AnimatePresence mode="wait">
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
           {tab === "overview" && <Overview v={v} go={setTab} />}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { CATEGORIES, OCCASIONS, hospitality, type Occasion } from "@munasabati/core";
-import { Counter, Icon, MeshGradient, Reveal, ThemeToggle } from "@munasabati/ui";
+import { Counter, Icon, LogoMark, MeshGradient, Reveal, ThemeToggle } from "@munasabati/ui";
 
 // كل بوابة تطبيق مستقل يُنشر منفصلاً. الروابط قابلة للتغيير عند النشر على نطاقات مختلفة.
 const LINKS = {
@@ -132,7 +132,7 @@ function Hero({ occ, setOcc }: { occ: Occasion; setOcc: (o: Occasion, manual?: b
       <section className="hero">
         <MeshGradient palette={occ.palette} />
         <nav className="hero-nav" aria-label="التنقل">
-          <div className="logo"><span className="logo-mark" />مناسبتي</div>
+          <div className="logo"><LogoMark />مناسبتي</div>
           <div className="links"><a href={LINKS.client}>لأصحاب المناسبات</a><a href={LINKS.vendors}>للموردين</a><a href={LINKS.venues}>لأصحاب القاعات</a><a href="#story">كيف تعمل</a></div>
           <div style={{ flex: 1 }} />
           <a className="btn glass sm" href={LINKS.client}>ادخل التطبيق</a>
@@ -305,7 +305,7 @@ export default function App() {
         </Reveal>
       </section>
       <footer className="container footer">
-        <div className="row"><span className="logo-mark" /><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء والأسعار أمثلة</span></div>
+        <div className="row"><LogoMark /><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء والأسعار أمثلة</span></div>
         <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a></nav>
         <ThemeToggle />
       </footer>

@@ -13,6 +13,7 @@ export function appConfig(port: number): UserConfig {
     resolve: {
       alias: [
         { find: /^@munasabati\/core$/, replacement: r("./packages/core/src/index.ts") },
+        { find: /^@munasabati\/cloud$/, replacement: r("./packages/cloud/src/index.ts") },
         { find: /^@munasabati\/ui$/, replacement: r("./packages/ui/src/index.ts") },
         { find: /^@munasabati\/ui\/tokens\.css$/, replacement: r("./packages/ui/src/tokens.css") },
       ],

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CITIES, OCCASIONS, SEED_VENUES, TIERS, createEvent, daysUntil, estimateBudget, fmt, hospitality, matchVenues, shiftDate, today,
+  CITIES, OCCASIONS, TIERS, createEvent, daysUntil, estimateBudget, fmt, hospitality, matchVenues, shiftDate, today,
   type OccasionId, type TierId,
 } from "@munasabati/core";
-import { Art, Counter, Icon, MeshGradient, apply } from "@munasabati/ui";
+import { Counter, Icon, LogoMark, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
 
 const OCC_ICON: Record<OccasionId, string> = { wedding: "Gem", milka: "Heart", grad: "GraduationCap", aqiqa: "Baby", family: "Users", corp: "Briefcase" };
 const greeting = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "صباح الخير" : h < 17 ? "نهارك سعيد" : "مساء الخير"; };
@@ -32,14 +32,16 @@ function Seats({ guests, menRatio }: { guests: number; menRatio: number }) {
 }
 
 export default function Onboarding() {
+  const db = useDB();
   const [step, setStep] = useState(0);
+  const [needAuth, setNeedAuth] = useState(false);
   const [f, setF] = useState({ occasion: "wedding" as OccasionId, city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
   const men = Math.round(f.guests * f.menRatio);
   const plan = useMemo(() => estimateBudget(f.guests, f.tier), [f.guests, f.tier]);
   const hosp = useMemo(() => hospitality(men, f.guests - men), [men, f.guests]);
-  const matches = useMemo(() => matchVenues(SEED_VENUES, f.city, f.guests).slice(0, 3), [f.city, f.guests]);
+  const matches = useMemo(() => matchVenues(db.venues, f.city, f.guests).slice(0, 3), [db.venues, f.city, f.guests]);
 
   useEffect(() => {
     if (step !== 6) return;
@@ -49,7 +51,11 @@ export default function Onboarding() {
 
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
-  const finish = (demo = false) => apply(createEvent({
+  const finish = (demo = false) => {
+    if (isCloud && !repo.auth?.user()) { setNeedAuth(true); return; }
+    create(demo);
+  };
+  const create = (demo: boolean) => apply(createEvent({ samples: !isCloud,
     occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier,
     title: `${occ.name} ${demo ? "عبدالله" : f.name.split(" ")[0]}`.trim(), hostName: demo ? "عبدالله" : f.name.trim() || "ضيفنا", phone: f.phone,
   }));
@@ -64,9 +70,9 @@ export default function Onboarding() {
           {Array.from({ length: STEPS }, (_, i) => <i key={i}><motion.b initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} /></i>)}
         </div>
         <div className="onb-top">
-          {step > 0 && step !== 6 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo"><span className="logo-mark" />مناسبتي</div>}
+          {step > 0 && step !== 6 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo"><LogoMark />مناسبتي</div>}
           <div className="grow" />
-          {step < 6 && <button className="btn glass sm" onClick={() => finish(true)}>جرّب لوحة تجريبية</button>}
+          {step < 6 && !isCloud && <button className="btn glass sm" onClick={() => finish(true)}>جرّب لوحة تجريبية</button>}
         </div>
 
         <AnimatePresence mode="wait">
@@ -147,7 +153,7 @@ export default function Onboarding() {
               <div className="stack" style={{ ["--gap" as string]: "8px" }}>
                 {matches.map(({ venue, score }) => (
                   <div key={venue.id} className="match">
-                    <div className="th"><Art seed={venue.id} hue={venue.hue} /></div>
+                    <div className="th"><Media photos={venue.photos} seed={venue.id} hue={venue.hue} alt={venue.name} /></div>
                     <div style={{ minWidth: 0 }}><b className="display" style={{ display: "block", fontSize: 14.5 }}>{venue.name}</b><span style={{ fontSize: 12, opacity: 0.8 }}>{venue.city} · {venue.district}</span></div>
                     <div className="sc"><b className="num">{score}%</b>تطابق</div>
                   </div>
@@ -157,7 +163,12 @@ export default function Onboarding() {
           </motion.div>
         </AnimatePresence>
 
-        {step !== 6 && step !== 1 && (
+        {needAuth && (
+          <div className="card" style={{ color: "var(--ink)", marginBottom: 12 }}>
+            <PhoneAuth title="آخر خطوة: أكّد رقم جوالك عشان نحفظ مناسبتك" initialPhone={f.phone} onDone={() => { setNeedAuth(false); create(false); }} />
+          </div>
+        )}
+        {step !== 6 && step !== 1 && !needAuth && (
           <div className="onb-foot">
             {step === 7
               ? <button className="btn white lg" onClick={() => finish()}>افتح لوحة مناسبتي <Icon name="ArrowLeft" size={18} /></button>

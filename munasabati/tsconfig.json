@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@munasabati/core": ["packages/core/src/index.ts"],
-      "@munasabati/ui": ["packages/ui/src/index.ts"]
+      "@munasabati/ui": ["packages/ui/src/index.ts"],
+      "@munasabati/cloud": ["packages/cloud/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "apps/*/src"]

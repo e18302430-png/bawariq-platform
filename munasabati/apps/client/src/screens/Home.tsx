@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { OCCASIONS, TIERS, fmt, matchVenues, sar, hospitality, venueFrom, toggleTask } from "@munasabati/core";
-import { Art, Counter, Icon, MeshGradient, StatusPill, apply, useDB } from "@munasabati/ui";
+import { Counter, Icon, Media, MeshGradient, StatusPill, apply, useDB } from "@munasabati/ui";
 import { go } from "../nav";
 
 function useCountdown(iso: string) {
@@ -92,7 +92,7 @@ export default function Home() {
         <div className="hscroll">
           {recs.map(({ venue, score }) => (
             <button key={venue.id} className="vcard" onClick={() => go("venue-" + venue.id)}>
-              <div className="art"><Art seed={venue.id} hue={venue.hue} /><div className="over"><span className="pill num">{score}% تطابق</span></div></div>
+              <div className="art"><Media photos={venue.photos} seed={venue.id} hue={venue.hue} alt={venue.name} /><div className="over"><span className="pill num">{score}% تطابق</span></div></div>
               <div className="body">
                 <div className="row between"><h3>{venue.name}</h3><span className="rate num"><Icon name="Star" size={13} />{venue.rating}</span></div>
                 <div className="m"><span><Icon name="MapPin" size={13} />{venue.city}</span><span className="num">من {fmt(venueFrom(venue))} ر.س</span></div>
