@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -137,5 +137,25 @@ describe("الإدارة وسيط بين العميل والتجار", () => {
     expect(normPhone("٠٥٥١١١٢٢٢٢")).toBe("0551112222");
     expect(validPhone("0551112222")).toBe(true);
     expect(validPhone("12345")).toBe(false);
+  });
+});
+
+describe("المنسق عند الباب", () => {
+  it("رابط بمفتاح يتجدد، وضيف القسم الآخر يُوجَّه بدل تسجيله", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    repo.apply(enableDoor());
+    const k1 = repo.get().client.doorKey!;
+    expect(k1).toHaveLength(12);
+    repo.apply(enableDoor());
+    expect(repo.get().client.doorKey).toBe(k1);
+    repo.apply(enableDoor(true));
+    expect(repo.get().client.doorKey).not.toBe(k1);
+    const w = repo.get().client.guests.find((g) => g.section === "women" && g.status !== "no")!;
+    const r1 = checkIn(repo.get(), w.code, "men");
+    expect(r1.result.ok).toBe(false);
+    expect(!r1.result.ok && r1.result.reason).toBe("section");
+    const r2 = checkIn(repo.get(), "https://x.com/client/#invite-" + w.code.toLowerCase(), "women");
+    expect(r2.result.ok).toBe(true);
   });
 });

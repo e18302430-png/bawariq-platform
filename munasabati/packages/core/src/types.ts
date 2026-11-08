@@ -173,6 +173,8 @@ export interface ClientSpace {
   event: ClientEvent | null;
   guests: Guest[];
   budget: BudgetLine[];
+  /** مفتاح رابط المنسق عند الباب (يُلغى ويُجدد من العميل) */
+  doorKey?: string;
   tasks: Task[];
   favorites: string[];
   invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[] };

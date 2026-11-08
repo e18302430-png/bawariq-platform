@@ -129,7 +129,7 @@ function Features() {
         </Reveal>
         <Reveal className="b-card b-scan" delay={0.1}>
           <div className="b-scanbox"><i /><i /><i /><i /><motion.span className="b-laser" animate={{ top: ["14%", "84%", "14%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
-          <div className="b-text"><b>دخول بالكاميرا</b><span>الحارس يمسح رمز الضيف بكاميرا الجوال ويعرف قسمه وعدد مرافقيه.</span></div>
+          <div className="b-text"><b>دخول بالكاميرا</b><span>المنسق يمسح رمز الضيف بكاميرا الجوال ويعرف قسمه وعدد مرافقيه.</span></div>
         </Reveal>
         <Reveal className="b-card b-chat" delay={0.05}>
           <div className="b-bubbles">
@@ -279,7 +279,7 @@ const STEPS = [
   { t: "احجز القاعة", d: "قاعات بأسعار واضحة وتقويم توفر حقيقي. اطلب الحجز، وصاحب القاعة يرد بعرض سعر داخل التطبيق.", s: (o: Occasion) => <MiniMarket occ={o} /> },
   { t: "جهّز مناسبتك", d: "الكوشة والتصوير والضيافة. قائمة واضحة تعرف منها وش تأكد ووش باقي.", s: () => <MiniPrep /> },
   { t: "ادعُ ضيوفك", d: "لكل ضيف رابط دعوة خاص على الواتساب. يرد بضغطة، ويوصله رمز دخول خاص فيه.", s: (o: Occasion) => <MiniInvite occ={o} /> },
-  { t: "استقبلهم بالاسم", d: "شاشة الحارس عند الباب تمسح الرمز وتعرف القسم وعدد المرافقين، والعدّاد يتحدث لحظياً.", s: () => <MiniDoor /> },
+  { t: "استقبلهم بالاسم", d: "شاشة المنسق عند الباب تمسح الرمز وتعرف القسم وعدد المرافقين، والعدّاد يتحدث لحظياً.", s: () => <MiniDoor /> },
 ];
 
 function Story({ occ }: { occ: Occasion }) {

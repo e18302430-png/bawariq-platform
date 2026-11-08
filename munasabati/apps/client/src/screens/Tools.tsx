@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, fmt, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
-  type CheckInResult,
+  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  type CheckInResult, type DoorSnapshot,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
@@ -166,63 +166,177 @@ export function Tasks() {
 }
 
 /* ───── يوم المناسبة: استقبال الضيوف ───── */
-const REASON = { unknown: "الرمز غير موجود في قائمة الدعوات", already: "دخل مسبقاً", declined: "معتذر عن الحضور، تأكد من صاحب الدعوة" };
+const REASON: Record<"unknown" | "already" | "declined" | "section", string> = { unknown: "الرمز غير موجود في قائمة الدعوات", already: "دخل مسبقاً", declined: "معتذر عن الحضور، تأكد من صاحب الدعوة", section: "" };
+const SEC = { men: "قسم الرجال", women: "قسم النساء" } as const;
+export const doorUrl = (key: string, section?: "men" | "women") => `${location.href.split("#")[0]}#door-${key}${section ? "-" + section : ""}`;
 
+/* ───── يوم المناسبة (عند العميل): متابعة الحضور لحظياً + روابط المنسقين. المسح نفسه عند المنسق ───── */
 export function Door() {
   const db = useDB();
-  const [code, setCode] = useState("");
-  const [res, setRes] = useState<(CheckInResult & { at: number }) | null>(null);
+  const toast = useToast();
+  const key = db.client.doorKey;
   const inside = db.client.guests.filter((g) => g.checkedIn);
   const cnt = (s: "men" | "women", list = inside) => list.filter((g) => g.section === s).reduce((a, g) => a + g.count, 0);
   const expected = db.client.guests.filter((g) => g.status === "yes");
-  const scan = (raw: string) => {
-    const { db: next, result } = checkIn(repo.get(), raw);
-    if (result.ok) apply(() => next);
-    try { navigator.vibrate?.(result.ok ? 60 : [40, 60, 40]); } catch { /* */ }
-    setRes({ ...result, at: Date.now() }); setCode("");
+  const total = cnt("men", expected) + cnt("women", expected);
+  const arrived = cnt("men") + cnt("women");
+  const share = async (url: string) => {
+    try { if (navigator.share) { await navigator.share({ url }); return; } } catch { return; }
+    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener");
   };
-  const [cam, setCam] = useState(false);
-  const simulate = () => {
-    const g = db.client.guests.find((x) => !x.checkedIn && x.status === "yes") ?? db.client.guests.find((x) => !x.checkedIn && x.status === "pending");
-    if (g) scan(g.code);
-  };
+  const copy = async (url: string) => { try { await navigator.clipboard.writeText(url); toast("تم نسخ الرابط"); } catch { toast(url); } };
+  const links: [string, "men" | "women" | undefined, string][] = [["منسق قسم الرجال", "men", "User"], ["منسقة قسم النساء", "women", "UserRound"], ["منسق لكل الأقسام", undefined, "Users"]];
   return (
     <>
-      <div><h1 className="page-title">يوم المناسبة</h1><p className="page-sub">شاشة الحارس عند الباب: امسح الرمز أو اكتبه.</p></div>
-      <div className="stats">
-        <div className="card"><div className="stat-label">داخل قسم الرجال</div><div className="stat-value brand"><Counter value={cnt("men")} /></div><div className="stat-sub num">من {cnt("men", expected)} مؤكد</div></div>
-        <div className="card"><div className="stat-label">داخل قسم النساء</div><div className="stat-value" style={{ color: "var(--info)" }}><Counter value={cnt("women")} /></div><div className="stat-sub num">من {cnt("women", expected)} مؤكدة</div></div>
-        <div className="card"><div className="stat-label">إجمالي الحضور</div><div className="stat-value"><Counter value={cnt("men") + cnt("women")} /></div></div>
-        <div className="card"><div className="stat-label">دعوات دخلت</div><div className="stat-value num">{inside.length}/{db.client.guests.length}</div></div>
-      </div>
-      <div className="home-grid">
-        <section className="scanner">
-          <div className="frame-box"><i /><i /><i /><i /><motion.span className="laser" animate={{ top: ["12%", "86%", "12%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
-          <form className="row" style={{ width: "100%", maxWidth: 360 }} onSubmit={(e) => { e.preventDefault(); if (code.trim()) scan(code); }}>
-            <label className="sr" htmlFor="sc">رمز الدعوة</label>
-            <input id="sc" className="input num grow" placeholder="رمز الدعوة" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" />
-            <button className="btn white" type="submit">تحقق</button>
-          </form>
-          <div className="row" style={{ justifyContent: "center" }}>
-            <button className="btn white sm" onClick={() => setCam(true)}><Icon name="Camera" size={15} /> مسح بالكاميرا</button>
-            <button className="btn glass sm" onClick={simulate}>محاكاة مسح ضيف</button>
-          </div>
-          {cam && <CameraScanner onCode={(c) => { scan(c); }} onClose={() => setCam(false)} />}
-          <AnimatePresence mode="wait">
-            {res && (
-              <motion.div key={res.at} className={"scan-res " + (res.ok ? "ok" : "bad")} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 26 }}>
-                <Icon name={res.ok ? "CheckCircle2" : "XCircle"} size={30} style={{ color: res.ok ? "#3dd39b" : "#ff6b62" }} />
-                <div><b className="display">{res.ok ? `أهلاً ${res.guest.name}` : `${res.guest?.name ?? ""} ${REASON[res.reason]}`}</b>{res.guest && <div style={{ fontSize: 13, opacity: 0.75 }}>{res.guest.section === "men" ? "قسم الرجال" : "قسم النساء"} · {res.guest.count} {res.guest.count > 1 ? "أشخاص" : "شخص"}</div>}</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
-        <section className="card">
-          <div className="section-title"><h3>آخر الداخلين</h3></div>
-          {inside.length ? <div className="list">{[...inside].reverse().slice(0, 8).map((g) => <div key={g.id} className="list-row"><span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span><div className="t"><b>{g.name}</b><small>{g.section === "men" ? "رجال" : "نساء"}</small></div><span className="num faint">{g.count}</span></div>)}</div> : <p className="muted">ما دخل أحد للحين.</p>}
-        </section>
-      </div>
+      <div><h1 className="page-title">يوم المناسبة</h1><p className="page-sub">المنسق يستقبل ضيوفك عند الباب بمسح رمز دعوتهم، وأنت تتابع الحضور لحظة بلحظة.</p></div>
+      <section className="card live-arrivals">
+        <div className="row between"><span className="eyebrow"><span className="live-dot-c" /> الحضور الآن</span><span className="pill neutral num">{inside.length} من {db.client.guests.length} دعوة</span></div>
+        <div className="la-big num"><Counter value={arrived} /><small>من {total || "—"} مؤكد</small></div>
+        <span className="bar" style={{ height: 8 }}><i style={{ width: `${total ? Math.min(100, (arrived / total) * 100) : 0}%` }} /></span>
+        <div className="la-split">
+          <div><small>{SEC.men}</small><b className="num"><Counter value={cnt("men")} /> <span className="faint">/ {cnt("men", expected)}</span></b></div>
+          <div><small>{SEC.women}</small><b className="num"><Counter value={cnt("women")} /> <span className="faint">/ {cnt("women", expected)}</span></b></div>
+        </div>
+      </section>
+
+      <section className="card stack">
+        <div><h3 className="display" style={{ margin: 0 }}>روابط المنسقين</h3><p className="muted" style={{ margin: "4px 0 0", fontSize: 14 }}>أرسل الرابط للمنسق أو الحارس. يفتح عنده شاشة استقبال فيها مسح بالكاميرا وقائمة الضيوف فقط، بدون ميزانيتك أو طلباتك.</p></div>
+        {!key ? <button className="btn primary lg block" onClick={() => { apply(enableDoor()); toast("جهّزنا روابط الاستقبال"); }}><Icon name="ScanLine" size={18} /> فعّل الاستقبال الذكي</button> : <>
+          <div className="list">{links.map(([label, sec, ic]) => (
+            <div key={label} className="list-row door-link">
+              <span className="avatar"><Icon name={ic} size={17} /></span>
+              <div className="t"><b>{label}</b><small>{sec ? `يسجل ضيوف ${SEC[sec]} فقط، وينبّه لو جاه ضيف القسم الثاني` : "يسجل كل الضيوف"}</small></div>
+              <div className="row" style={{ ["--gap" as string]: "6px" }}>
+                <button className="icon-btn sm" aria-label={"إرسال رابط " + label} onClick={() => void share(doorUrl(key, sec))}><Icon name="Send" size={15} /></button>
+                <button className="icon-btn sm" aria-label={"نسخ رابط " + label} onClick={() => void copy(doorUrl(key, sec))}><Icon name="Copy" size={15} /></button>
+                <a className="icon-btn sm" aria-label={"معاينة شاشة " + label} href={"#door-" + key + (sec ? "-" + sec : "")}><Icon name="Eye" size={15} /></a>
+              </div>
+            </div>
+          ))}</div>
+          <button className="btn ghost sm" onClick={() => { apply(enableDoor(true)); toast("ألغينا الروابط القديمة وجهّزنا روابط جديدة"); }}><Icon name="RotateCcw" size={15} /> إلغاء الروابط الحالية وإنشاء روابط جديدة</button>
+        </>}
+      </section>
+
+      <section className="card door-how">
+        <div className="section-title"><h3>كيف يشتغل الاستقبال الذكي؟</h3></div>
+        <ol>
+          <li><span className="num">1</span><div><b>ضيفك يفتح دعوته</b><small>يطلع له رمز دخول خاص فيه اسمه وقسمه وعدد مرافقيه.</small></div></li>
+          <li><span className="num">2</span><div><b>المنسق يمسح الرمز بالكاميرا</b><small>يعرف فوراً القسم وعدد المرافقين، ويرفض الرمز المكرر أو المعتذر.</small></div></li>
+          <li><span className="num">3</span><div><b>أنت تتابع من جوالك</b><small>عدد الحاضرين في كل قسم يتحدث لحظياً، وتعرف وقت تبدأ العشاء.</small></div></li>
+        </ol>
+      </section>
+
+      <section className="card">
+        <div className="section-title"><h3>آخر الواصلين</h3></div>
+        {inside.length ? <div className="list">{[...inside].reverse().slice(0, 10).map((g) => <div key={g.id} className="list-row"><span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span><div className="t"><b>{g.name}</b><small>{g.section === "men" ? "رجال" : "نساء"}</small></div><span className="num faint">{g.count}</span></div>)}</div> : <p className="muted" style={{ margin: 0 }}>ما وصل أحد للحين. أول ما يمسح المنسق دعوة بتظهر هنا.</p>}
+      </section>
     </>
+  );
+}
+
+/* ───── شاشة المنسق عند الباب (رابط مستقل يفتحه المنسق على جواله) ───── */
+const beep = (ok: boolean) => {
+  try {
+    const W = window as unknown as { __ac?: AudioContext; webkitAudioContext?: typeof AudioContext };
+    const ac = (W.__ac ??= new (window.AudioContext || W.webkitAudioContext!)());
+    const t = ac.currentTime;
+    (ok ? [880, 1318.5] : [220, 196]).forEach((f, i) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = ok ? "sine" : "square"; o.frequency.value = f; g.gain.setValueAtTime(0, t + i * 0.11); g.gain.linearRampToValueAtTime(ok ? 0.18 : 0.06, t + i * 0.11 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.11 + 0.3); o.connect(g).connect(ac.destination); o.start(t + i * 0.11); o.stop(t + i * 0.11 + 0.32); });
+  } catch { /* */ }
+};
+
+export function DoorStation({ k, section }: { k: string; section?: "men" | "women" }) {
+  const db = useDB();
+  const local = !!db.client.doorKey && db.client.doorKey === k;
+  const [remote, setRemote] = useState<DoorSnapshot | null | undefined>(undefined);
+  const [code, setCode] = useState("");
+  const [q, setQ] = useState("");
+  const [cam, setCam] = useState(false);
+  const [res, setRes] = useState<(CheckInResult & { at: number }) | null>(null);
+  useEffect(() => {
+    if (local || !repo.door) return;
+    let alive = true;
+    const pull = () => repo.door!.load(k).then((s) => alive && setRemote(s)).catch(() => alive && setRemote(null));
+    void pull(); const t = setInterval(pull, 5000);
+    return () => { alive = false; clearInterval(t); };
+  }, [k, local]);
+  useEffect(() => { document.title = "استقبال الضيوف · مناسبتي"; }, []);
+
+  const valid = local || (remote !== null && !!repo.door);
+  if (!valid || (!local && remote === undefined && repo.door)) {
+    return (
+      <div className="station center">
+        {(!local && remote === undefined && repo.door) ? <div className="gen-orb" /> : <>
+          <Icon name="ShieldAlert" size={40} />
+          <h1 className="display">الرابط غير صالح</h1>
+          <p>انتهت صلاحية رابط الاستقبال أو تم إلغاؤه. اطلب رابطاً جديداً من صاحب المناسبة.</p>
+        </>}
+      </div>
+    );
+  }
+  const title = local ? db.client.event?.title ?? "المناسبة" : remote!.title;
+  const guests = local ? db.client.guests : remote!.guests;
+  const mine = section ? guests.filter((g) => g.section === section) : guests;
+  const inside = mine.filter((g) => g.checkedIn);
+  const expected = mine.filter((g) => g.status === "yes");
+  const sum = (l: typeof guests) => l.reduce((a, g) => a + g.count, 0);
+
+  const scan = async (raw: string, force = false) => {
+    if (!raw.trim()) return;
+    let result: CheckInResult;
+    const g = guests.find((x) => x.code === normCode(raw));
+    if (g && section && g.section !== section && !g.checkedIn && !force) result = { ok: false, reason: "section", guest: g };
+    else if (local) { const out = checkIn(repo.get(), raw); if (out.result.ok) apply(() => out.db); result = out.result; }
+    else { result = await repo.door!.checkIn(k, raw); if (result.ok) setRemote((s) => s && { ...s, guests: s.guests.map((x) => (x.code === result.guest!.code ? { ...x, checkedIn: true, status: "yes" } : x)) }); }
+    beep(result.ok);
+    try { navigator.vibrate?.(result.ok ? 70 : [40, 60, 40]); } catch { /* */ }
+    setRes({ ...result, at: Date.now() }); setCode("");
+  };
+  const found = q.trim() ? mine.filter((g) => g.name.includes(q.trim()) && !g.checkedIn).slice(0, 6) : [];
+
+  return (
+    <div className="station">
+      <header className="st-head">
+        <div><span className="st-eyebrow"><span className="live-dot-c" /> استقبال الضيوف{section ? ` · ${SEC[section]}` : ""}</span><h1 className="display">{title}</h1></div>
+        <div className="st-count num"><b><Counter value={sum(inside)} /></b><small>من {sum(expected)}</small></div>
+      </header>
+
+      <section className="scanner">
+        <div className="frame-box"><i /><i /><i /><i /><motion.span className="laser" animate={{ top: ["12%", "86%", "12%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
+        <button className="btn white lg" onClick={() => setCam(true)}><Icon name="Camera" size={18} /> امسح دعوة الضيف</button>
+        <form className="row" style={{ width: "100%", maxWidth: 360 }} onSubmit={(e) => { e.preventDefault(); void scan(code); }}>
+          <label className="sr" htmlFor="sc">رمز الدعوة</label>
+          <input id="sc" className="input num grow" placeholder="أو اكتب رمز الدعوة" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" />
+          <button className="btn glass" type="submit">تحقق</button>
+        </form>
+        {cam && <CameraScanner onCode={(c) => { void scan(c); }} onClose={() => setCam(false)} />}
+        <AnimatePresence mode="wait">
+          {res && (
+            <motion.div key={res.at} className={"scan-res " + (res.ok ? "ok" : res.reason === "section" ? "warn" : "bad")} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 26 }}>
+              <Icon name={res.ok ? "CheckCircle2" : res.reason === "section" ? "ArrowLeftRight" : "XCircle"} size={30} style={{ color: res.ok ? "#3dd39b" : res.reason === "section" ? "#ffc35c" : "#ff6b62" }} />
+              <div className="grow">
+                <b className="display">{res.ok ? `أهلاً ${res.guest.name}` : res.reason === "section" ? `${res.guest!.name}: ضيف ${SEC[res.guest!.section]}` : `${res.guest?.name ?? ""} ${REASON[res.reason]}`}</b>
+                {res.guest && <div style={{ fontSize: 13, opacity: 0.8 }}>{!res.ok && res.reason === "section" ? `وجّهه لمدخل ${SEC[res.guest.section]}` : `${SEC[res.guest.section]} · ${res.guest.count} ${res.guest.count > 1 ? "أشخاص" : "شخص"}`}</div>}
+              </div>
+              {!res.ok && res.reason === "section" && <button className="btn sm white" onClick={() => void scan(res.guest!.code, true)}>دخّله هنا</button>}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      <section className="st-card">
+        <label className="st-label" htmlFor="st-q"><Icon name="Search" size={15} /> ضيف نسي جواله؟ ابحث باسمه</label>
+        <input id="st-q" className="input" placeholder="اسم الضيف" value={q} onChange={(e) => setQ(e.target.value)} />
+        {found.length > 0 && <div className="list">{found.map((g) => (
+          <div key={g.id} className="list-row"><span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span><div className="t"><b>{g.name}</b><small>{SEC[g.section]} · {g.count} {g.count > 1 ? "أشخاص" : "شخص"}{g.status === "no" ? " · معتذر" : ""}</small></div><button className="btn sm white" onClick={() => { void scan(g.code); setQ(""); }}>تسجيل دخول</button></div>
+        ))}</div>}
+      </section>
+
+      <section className="st-card">
+        <span className="st-label">آخر الداخلين</span>
+        {inside.length ? <div className="list">{[...inside].reverse().slice(0, 8).map((g) => <div key={g.id} className="list-row"><span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span><div className="t"><b>{g.name}</b><small>{SEC[g.section]}</small></div><span className="num">{g.count}</span></div>)}</div> : <p style={{ opacity: 0.6, margin: 0 }}>ما دخل أحد للحين.</p>}
+      </section>
+      <p className="st-foot">شاشة استقبال من <b>مناسبتي</b> · لا تعرض أي بيانات مالية</p>
+    </div>
   );
 }
 

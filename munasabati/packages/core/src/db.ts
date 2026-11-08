@@ -75,16 +75,23 @@ export const updateGuest = (id: string, patch: Partial<Guest>): Mutation => (db)
 export const removeGuest = (id: string): Mutation => (db) => ({ ...db, client: { ...db.client, guests: db.client.guests.filter((g) => g.id !== id) } });
 
 /** مسح رمز الدخول عند البوابة */
-export type CheckInResult = { ok: true; guest: Guest } | { ok: false; reason: "unknown" | "already" | "declined"; guest?: Guest };
-export function checkIn(db: DB, raw: string): { db: DB; result: CheckInResult } {
-  const code = raw.trim().toUpperCase().replace(/^MNS-/, "");
+export type CheckInResult = { ok: true; guest: Guest } | { ok: false; reason: "unknown" | "already" | "declined" | "section"; guest?: Guest };
+export const normCode = (raw: string) => raw.trim().toUpperCase().replace(/^.*#INVITE-/, "").replace(/^MNS-/, "");
+/** تسجيل دخول ضيف عند الباب. section: قسم المنسق (ضيف القسم الآخر يُوجَّه بدل تسجيله) */
+export function checkIn(db: DB, raw: string, section?: Guest["section"]): { db: DB; result: CheckInResult } {
+  const code = normCode(raw);
   const g = db.client.guests.find((x) => x.code === code);
   if (!g) return { db, result: { ok: false, reason: "unknown" } };
+  if (section && g.section !== section && !g.checkedIn) return { db, result: { ok: false, reason: "section", guest: g } };
   if (g.checkedIn) return { db, result: { ok: false, reason: "already", guest: g } };
   if (g.status === "no") return { db, result: { ok: false, reason: "declined", guest: g } };
   const next = updateGuest(g.id, { checkedIn: true, status: "yes" })(db);
   return { db: next, result: { ok: true, guest: { ...g, checkedIn: true, status: "yes" } } };
 }
+
+/** رابط المنسق: يُنشأ مرة، ويمكن إلغاؤه وتجديده (الرابط القديم يتوقف فوراً) */
+const doorKeyGen = () => Array.from({ length: 12 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
+export const enableDoor = (rotate = false): Mutation => (db) => (db.client.doorKey && !rotate ? db : { ...db, client: { ...db.client, doorKey: doorKeyGen() } });
 
 export const toggleFavorite = (id: string): Mutation => (db) => {
   const f = db.client.favorites;

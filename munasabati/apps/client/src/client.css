@@ -408,3 +408,39 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .mini-stats > button { transition: transform .3s var(--spring, cubic-bezier(.22,1,.36,1)); }
 .mini-stats > button:active { transform: scale(.97); }
 .event-card .meta { z-index: 2; }
+
+/* ═══════ يوم المناسبة (العميل) ═══════ */
+.live-dot-c { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-inline-end: 4px; vertical-align: middle; animation: ldc 1.6s infinite; }
+@keyframes ldc { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.55); } 70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+.live-arrivals { display: grid; gap: 12px; }
+.la-big { display: flex; align-items: baseline; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: clamp(44px, 12vw, 64px); line-height: 1; letter-spacing: -.03em; }
+.la-big small { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.la-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.la-split > div { background: var(--surface-2); border-radius: 16px; padding: 12px 14px; display: grid; gap: 2px; }
+.la-split small { color: var(--muted); font-size: 12.5px; }
+.la-split b { font-family: var(--f-display); font-size: 22px; }
+.door-link .t small { font-size: 12px; }
+.door-how ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.door-how li { display: flex; gap: 12px; align-items: flex-start; }
+.door-how li > span { flex: none; width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-family: var(--f-display); background: linear-gradient(135deg, #fff1c9, #e7c27a 45%, #b8863d); color: #3a2208; }
+.door-how li b { display: block; font-family: var(--f-display); }
+.door-how li small { color: var(--muted); font-size: 13.5px; }
+
+/* ═══════ شاشة المنسق عند الباب ═══════ */
+.station { min-height: 100dvh; background: radial-gradient(120% 60% at 50% 0%, #241a12, #0b0908 60%); color: #f6efe4; padding: max(18px, env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); display: grid; gap: 14px; align-content: start; max-width: 560px; margin: 0 auto; }
+.station.center { place-content: center; justify-items: center; text-align: center; gap: 10px; }
+.station.center p { opacity: .7; max-width: 30ch; }
+.st-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.st-head h1 { font-size: clamp(22px, 6vw, 28px); margin: 2px 0 0; }
+.st-eyebrow { font-size: 12.5px; opacity: .75; font-weight: 600; }
+.st-count { text-align: center; padding: 10px 14px; border-radius: 18px; background: rgba(255,236,200,.08); border: 1px solid rgba(222,178,108,.3); display: grid; }
+.st-count b { font-family: var(--f-display); font-size: 30px; line-height: 1; background: linear-gradient(180deg, #fff, #f7e0a6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.st-count small { font-size: 11.5px; opacity: .7; }
+.station .scanner { background: rgba(0,0,0,.35); border: 1px solid rgba(222,178,108,.2); }
+.st-card { border-radius: 22px; padding: 16px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); display: grid; gap: 10px; }
+.st-card .input { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.15); color: #fff; }
+.st-card .list-row { border-color: rgba(255,255,255,.08); }
+.st-card .list-row small { color: rgba(246,239,228,.6); }
+.st-label { font-size: 13px; font-weight: 600; opacity: .8; display: flex; align-items: center; gap: 6px; }
+.st-foot { text-align: center; font-size: 12px; opacity: .45; margin: 6px 0 0; }
+.scan-res.warn { background: rgba(255,195,92,.14); border: 1px solid rgba(255,195,92,.4); }

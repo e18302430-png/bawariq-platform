@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
+  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type Guest, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 
 /**
@@ -123,8 +123,23 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
     async signOut() { await sb.auth.signOut(); user = null; await load(); },
   };
 
+  // شاشة المنسق: تقرأ وتسجل الدخول بمفتاح الرابط فقط (دوال security definer، بدون كشف بقية بيانات العميل)
+  const door = {
+    async load(key: string) {
+      const { data, error } = await sb.rpc("door_load", { k: key });
+      if (error || !data) return null;
+      return data as { title: string; date: string; guests: Guest[] };
+    },
+    async checkIn(key: string, code: string) {
+      const { data, error } = await sb.rpc("door_checkin", { k: key, c: code });
+      if (error || !data) return { ok: false as const, reason: "unknown" as const };
+      return data as CheckInResult;
+    },
+  };
+
   return {
     mode: "cloud",
+    door,
     get: () => state,
     apply(m: Mutation) { const prev = state; state = m(state); emit(); void persist(prev, state); },
     subscribe(l) { listeners.add(l); return () => listeners.delete(l); },

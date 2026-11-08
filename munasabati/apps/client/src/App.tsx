@@ -14,6 +14,7 @@ const GuestInvite = lazy(() => import("./screens/Invite").then((m) => ({ default
 const Bookings = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Bookings })));
 const Budget = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Budget })));
 const Door = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Door })));
+const DoorStation = lazy(() => import("./screens/Tools").then((m) => ({ default: m.DoorStation })));
 const Hosp = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Hosp })));
 const Tasks = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Tasks })));
 // تحميل كل الشاشات مسبقاً في وقت الفراغ بعد أول عرض: التنقل يصير فورياً
@@ -41,6 +42,9 @@ function Main() {
   const db = useDB();
   const route = useHash();
   if (route.startsWith("invite-")) return <Suspense fallback={<div className="guest-page" />}><GuestInvite code={route.slice(7)} /></Suspense>;
+  // شاشة المنسق عند الباب: #door-<مفتاح>[-men|-women]
+  const dm = route.match(/^door-([a-z0-9]{10,})(?:-(men|women))?$/);
+  if (dm) return <Suspense fallback={<div className="station" />}><DoorStation k={dm[1]} section={dm[2] as "men" | "women" | undefined} /></Suspense>;
   if (!db.client.event) return <Suspense fallback={<div className="onb" />}><Onboarding /></Suspense>;
 
   const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;

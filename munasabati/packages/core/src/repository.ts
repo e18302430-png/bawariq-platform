@@ -1,6 +1,6 @@
-import { createInitialDB, type Mutation } from "./db";
+import { createInitialDB, type CheckInResult, type Mutation } from "./db";
 import { SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
-import type { DB } from "./types";
+import type { DB, Guest } from "./types";
 
 /**
  * مستودع البيانات: واجهة موحدة تعتمد عليها كل التطبيقات.
@@ -17,6 +17,12 @@ export interface AuthAdapter {
   signOut(): Promise<void>;
 }
 
+export interface DoorSnapshot { title: string; date: string; guests: Guest[] }
+export interface DoorAdapter {
+  load(key: string): Promise<DoorSnapshot | null>;
+  checkIn(key: string, code: string): Promise<CheckInResult>;
+}
+
 export interface Repository {
   /** local: تجربة داخل المتصفح. cloud: قاعدة بيانات حقيقية مع دخول بالجوال */
   readonly mode: "local" | "cloud";
@@ -27,6 +33,8 @@ export interface Repository {
   /** يرفع صورة (مصغّرة مسبقاً) ويعيد رابطها */
   uploadPhoto(file: Blob): Promise<string>;
   auth?: AuthAdapter;
+  /** شاشة المنسق عند الباب على جهاز آخر (سحابياً عبر دوال آمنة بمفتاح الرابط) */
+  door?: DoorAdapter;
   /** آخر خطأ في الحفظ (مثلاً امتلاء التخزين أو انقطاع الاتصال) */
   error(): string | null;
 }
