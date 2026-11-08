@@ -17,15 +17,15 @@ export const TicketStatusPill = ({ s }: { s: Ticket["status"] }) => <span classN
 const when = (t: number) => new Date(t).toLocaleString("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 /** سلسلة رسائل بفقاعات (تُستخدم في الدعم ومحادثة الطلب) */
-export function Thread({ items, mine }: { items: { mine: boolean; text: string; at: number; who?: string }[]; mine?: string }) {
+export function Thread({ items, mine }: { items: { mine: boolean; text: string; at: number; who?: string; admin?: boolean }[]; mine?: string }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [items.length]);
   if (!items.length) return <p className="muted" style={{ textAlign: "center", padding: 20 }}>{mine ?? "ابدأ المحادثة"}</p>;
   return (
     <div className="thread">
       {items.map((m, i) => (
-        <motion.div key={i} className={"bubble" + (m.mine ? " me" : "")} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-          {m.who && <b className="who">{m.who}</b>}
+        <motion.div key={i} className={"bubble" + (m.mine ? " me" : "") + (m.admin && !m.mine ? " admin" : "")} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+          {m.admin && !m.mine ? <b className="who"><Icon name="ShieldCheck" size={12} /> إدارة مناسبتي</b> : m.who && <b className="who">{m.who}</b>}
           <span>{m.text}</span>
           <time>{when(m.at)}</time>
         </motion.div>
@@ -35,7 +35,7 @@ export function Thread({ items, mine }: { items: { mine: boolean; text: string; 
   );
 }
 
-function Composer({ onSend, placeholder = "اكتب رسالتك" }: { onSend: (t: string) => void; placeholder?: string }) {
+export function Composer({ onSend, placeholder = "اكتب رسالتك" }: { onSend: (t: string) => void; placeholder?: string }) {
   const [t, setT] = useState("");
   return (
     <form className="composer" onSubmit={(e) => { e.preventDefault(); if (t.trim()) { onSend(t.trim()); setT(""); } }}>
@@ -55,7 +55,8 @@ export function BookingChat({ booking, me, other }: { booking: Booking; me: Mess
       <button className="btn sm" onClick={() => setOpen(true)}><Icon name="MessagesSquare" size={15} /> محادثة{unread ? <span className="pill brand num" style={{ padding: "0 7px" }}>{unread}</span> : null}</button>
       <Sheet open={open} onClose={() => setOpen(false)} title={`محادثة مع ${other}`}>
         <div className="chat-wrap">
-          <Thread items={booking.messages.map((m) => ({ mine: m.from === me, text: m.text, at: m.at }))} mine="اسأل عن التفاصيل، الوقت، أو أي طلب خاص" />
+          <div className="chat-guard"><Icon name="ShieldCheck" size={14} /> المحادثة بإشراف إدارة مناسبتي لحماية الطرفين</div>
+          <Thread items={booking.messages.map((m) => ({ mine: m.from === me, text: m.text, at: m.at, admin: m.from === "admin" }))} mine="اسأل عن التفاصيل، الوقت، أو أي طلب خاص" />
           <Composer onSend={(t) => apply(bookingMessage(booking.id, me, t))} />
         </div>
       </Sheet>

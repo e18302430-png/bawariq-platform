@@ -27,7 +27,7 @@ export function Bookings() {
             </div>
             {b.note && <div className="muted" style={{ fontSize: 13.5 }}>{b.note}</div>}
             <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
-            {b.messages.filter((m) => m.from === "provider").map((m, i) => <div key={i} className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: "var(--muted)" }}>رد {nameOf(b.kind, b.targetId)}</b>{m.text}</div>)}
+            {b.messages.filter((m) => m.from !== "client").map((m, i) => <div key={i} className={"card flat tight" + (m.from === "admin" ? " admin-note" : "")} style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: m.from === "admin" ? "var(--brand)" : "var(--muted)" }}>{m.from === "admin" ? "إدارة مناسبتي" : `رد ${nameOf(b.kind, b.targetId)}`}</b>{m.text}</div>)}
             {b.status === "quoted" && (
               <div className="row wrap">
                 <span className="grow">عرض السعر: <b className="num display" style={{ fontSize: 18 }}>{sar(b.quote ?? 0)}</b></span>

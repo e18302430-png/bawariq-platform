@@ -37,10 +37,10 @@ function MiniMarket({ occ }: { occ: Occasion }) {
       <div className="ms-hello">استكشف</div>
       <div className="ms-card" style={{ padding: "9px 12px", color: "var(--faint)", display: "flex", gap: 6, alignItems: "center" }}><Icon name="Search" size={14} /> قاعات، كوشة، تصوير…</div>
       <div style={{ display: "flex", gap: 6 }}>{["قاعات", "كوشة", "تصوير", "ضيافة"].map((c, i) => <span key={c} className={"chip" + (i === 0 ? " on" : "")} style={{ minHeight: 28, padding: "0 10px", fontSize: 11 }}>{c}</span>)}</div>
-      {[["قصر الندى", "الرياض · حتى 900", "65,000", "v1"], ["دار اللؤلؤ", "جدة · حتى 1,200", "88,000", "v3"]].map(([n, m, p, k]) => (
+      {[["قصر الندى", "الرياض · قسم رجال ونساء", "v1"], ["دار اللؤلؤ", "جدة · قاعتان", "v3"]].map(([n, m, k]) => (
         <div key={n as string} className="ms-card" style={{ padding: 0, overflow: "hidden" }}>
           <img src={photoUrl(`media:${k}`, true)} alt="" style={{ height: 82, width: "100%", objectFit: "cover", display: "block", borderBottom: `3px solid ${occ.palette[1]}` }} />
-          <div style={{ padding: 10 }}><div className="row between"><b className="display" style={{ fontSize: 13 }}>{n}</b><span className="brand num" style={{ fontWeight: 600 }}>★ 4.9</span></div><div className="row between faint" style={{ fontSize: 11 }}><span>{m}</span><span className="num" style={{ color: "var(--ink)", fontWeight: 600 }}>{p} ر.س</span></div></div>
+          <div style={{ padding: 10 }}><div className="row between"><b className="display" style={{ fontSize: 13 }}>{n}</b><span className="brand" style={{ fontWeight: 600, fontSize: 10.5, display: "inline-flex", gap: 3, alignItems: "center" }}><Icon name="BadgeCheck" size={12} /> موثّق</span></div><div className="row between faint" style={{ fontSize: 11 }}><span>{m}</span><span style={{ color: "var(--ink)", fontWeight: 600 }}>السعر عند الطلب</span></div></div>
         </div>
       ))}
     </div>
@@ -211,6 +211,30 @@ function Hero({ occ }: { occ: Occasion }) {
   );
 }
 
+/** شريط التوقيع: هوية فاخرة بالأسود والذهبي مباشرة بعد الفيلم */
+const SIG_WORDS = ["زواج", "ملكة", "تخرج", "عقيقة", "اجتماع عائلي", "حفل شركة", "كوشة", "تصوير", "ضيافة", "صوت وإضاءة", "بث مباشر", "خيام", "استيدج"];
+const PROMISES: [string, string, string][] = [
+  ["ShieldCheck", "حسابات موثّقة", "كل قاعة ومورد يراجعه فريق مناسبتي قبل الظهور"],
+  ["MessagesSquare", "محادثة بإشراف الإدارة", "الإدارة وسيط بينك وبين التاجر وتحمي حقك"],
+  ["Wallet", "ميزانيتك أنت تحددها", "تكتبها مرة، وتوصل مع كل طلب للتاجر"],
+  ["Sparkles", "بدون رسوم على العميل", "تخطط وتحجز وترسل الدعوات مجاناً"],
+];
+function Signature() {
+  return (
+    <section className="sig" aria-label="لماذا مناسبتي">
+      <div className="sig-marquee" aria-hidden="true"><div>{[...SIG_WORDS, ...SIG_WORDS].map((w, i) => <span key={i}>{w}<i>✦</i></span>)}</div></div>
+      <div className="container sig-grid">
+        {PROMISES.map(([ic, t, d], i) => (
+          <Reveal key={t} delay={i * 0.06} className="sig-item">
+            <span className="sig-ico"><Icon name={ic} size={20} /></span>
+            <b>{t}</b><small>{d}</small>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Portals({ occ }: { occ: Occasion }) {
   return (
     <section className="sec container" id="portals">
@@ -304,22 +328,23 @@ export default function App() {
   return (
     <>
       <Hero occ={occ} />
+      <Signature />
       <Story occ={occ} />
       <Features />
       <Portals occ={occ} />
       <section className="container" style={{ paddingBottom: 20 }}>
-        <Reveal className="final">
-          <MeshGradient palette={OCCASIONS[2].palette} />
-          <span className="live"><i /> مجاناً لأصحاب المناسبات</span>
-          <h2>جاهز؟<br />خلّنا نبدأ فرحتك.</h2>
+        <Reveal className="final lux">
+          <div className="lux-seal" aria-hidden="true"><span>مناسبتي</span></div>
+          <span className="lux-eyebrow">✦ مجاناً لأصحاب المناسبات ✦</span>
+          <h2>جاهز؟<br /><span className="gold-text">خلّنا نبدأ فرحتك.</span></h2>
           <div className="hero-cta" style={{ justifyContent: "center" }}>
-            <a className="btn white lg" href={LINKS.client}>ابدأ الآن</a>
+            <a className="btn lg lux-btn" href={LINKS.client}>ابدأ الآن <Icon name="ArrowLeft" size={18} /></a>
             <a className="btn glass lg" href={LINKS.venues}>سجّل قاعتك</a>
           </div>
         </Reveal>
       </section>
       <footer className="container footer">
-        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء والأسعار أمثلة</span></div>
+        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء أمثلة</span></div>
         <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a></nav>
         <ThemeToggle />
       </footer>

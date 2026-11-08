@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -108,5 +108,34 @@ describe("رحلة العميل", () => {
     const prep = journey(repo.get())[2];
     expect(prep.status).toBe("done");
     expect(prep.checklist?.every((c) => c.state === "confirmed")).toBe(true);
+  });
+});
+
+describe("الإدارة وسيط بين العميل والتجار", () => {
+  it("ترى العميل ببياناته وطلباته، وتعدل وتحذف", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 150000, samples: false }));
+    repo.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "+966551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, note: "", estimate: 0, fromClient: true, budget: 50000 }));
+    let c = adminClients(repo.get()).find((x) => x.phone === "0551112222")!;
+    expect(c.source).toBe("space");
+    expect(c.budget).toBe(150000);
+    expect(c.bookings).toHaveLength(1);
+    repo.apply(adminUpdateClient(c, { name: "سارة محمد", event: { guests: 500 } }));
+    expect(repo.get().bookings.find((b) => b.fromClient)!.clientName).toBe("سارة محمد");
+    expect(repo.get().client.event!.guests).toBe(500);
+    repo.apply(adminUpdateBooking(repo.get().bookings[0].id, { quote: 48000 }));
+    expect(repo.get().bookings[0].quote).toBe(48000);
+    c = adminClients(repo.get()).find((x) => x.phone === "0551112222")!;
+    repo.apply(adminDeleteClient(c));
+    expect(repo.get().client.event).toBeNull();
+    expect(repo.get().bookings.some((b) => b.fromClient)).toBe(false);
+  });
+
+  it("يقبل أرقام الجوال بكل الصيغ", () => {
+    expect(normPhone("+966 55 111 2222")).toBe("0551112222");
+    expect(normPhone("551112222")).toBe("0551112222");
+    expect(normPhone("٠٥٥١١١٢٢٢٢")).toBe("0551112222");
+    expect(validPhone("0551112222")).toBe(true);
+    expect(validPhone("12345")).toBe(false);
   });
 });

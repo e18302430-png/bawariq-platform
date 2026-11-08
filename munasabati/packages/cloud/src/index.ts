@@ -37,6 +37,9 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
       sb.from("settings").select("key, value").eq("key", "announcement").maybeSingle(),
     ]);
+    // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
+    const role = user ? (await sb.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role : null;
+    const allSpaces = role === "admin" ? (await sb.from("client_spaces").select("user_id, data, updated_at")).data ?? [] : null;
     const suppliers = ((sup.data ?? []) as Row<Supplier>[]).map((r) => ({ ...r.data, id: r.id }));
     const venues = ((ven.data ?? []) as Row<Venue>[]).map((r) => ({ ...r.data, id: r.id }));
     const owned = (rows: Row<unknown>[] | null) => (rows ?? []).find((r) => r.owner_id && r.owner_id === user?.id)?.id ?? null;
@@ -54,6 +57,7 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       sessions: { supplierId: owned(sup.data as Row<unknown>[]), venueId: owned(ven.data as Row<unknown>[]) },
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
       announcement: (st.data as { value?: string } | null)?.value || undefined,
+      clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
     lastError = sup.error?.message ?? ven.error?.message ?? null;
     emit();
@@ -87,13 +91,19 @@ export function createSupabaseRepository(url: string, anonKey: string): Reposito
       for (const x of (prev[kind] as { id: string }[]).filter((p) => !(next[kind] as { id: string }[]).some((n) => n.id === p.id))) jobs.push(sb.from(kind).delete().eq("id", x.id).then(({ error }) => { if (error) throw error; }));
     }
     for (const b of prev.bookings.filter((p) => !p.id.startsWith("busy-") && !next.bookings.some((n) => n.id === p.id))) jobs.push(sb.from("bookings").delete().eq("id", b.id).then(({ error }) => { if (error) throw error; }));
+    // تعديلات وحذف الإدارة على مساحات العملاء
+    if (next.clients && prev.clients) {
+      for (const c of next.clients.filter((x) => prev.clients!.find((y) => y.id === x.id) !== x)) jobs.push(sb.from("client_spaces").update({ data: c.data, updated_at: new Date().toISOString() }).eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
+      for (const c of prev.clients.filter((p) => !next.clients!.some((n) => n.id === p.id))) jobs.push(sb.from("client_spaces").delete().eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
+    }
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
   }
 
   // تحديث لحظي: أي تغيير على الطلبات المسموح بها يعيد تحميلها
   sb.channel("live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); })
-    .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); }).subscribe();
+    .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); }).subscribe();
   sb.auth.onAuthStateChange(() => { void load(); });
   void load().catch(fail("تعذّر الاتصال"));
 

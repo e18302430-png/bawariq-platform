@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminDelete, fmt, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setBookingStatus, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setTicketStatus,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, apply, isCloud, useDB, useToast,
 } from "@munasabati/ui";
+import { BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 
 /*
@@ -46,6 +47,7 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
     ...tickets.map((t) => ({ at: t.updatedAt, icon: "LifeBuoy", text: `تذكرة: ${t.subject} · ${t.fromName}`, go: () => go("support", t.id) })),
   ].sort((a, b) => b.at - a.at).slice(0, 8);
   const tiles: [string, number, string, string][] = [
+    ["العملاء", adminClients(db).length, "Users", "clients"],
     ["الطلبات", db.bookings.length, "CalendarCheck", "bookings"],
     ["الموردون", db.suppliers.length, "Store", "suppliers"],
     ["القاعات", db.venues.length, "Building2", "venues"],
@@ -74,7 +76,7 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
 }
 
 /* ───── الطلبات ───── */
-function Bookings({ focus }: { focus?: string }) {
+function Bookings({ focus, go }: { focus?: string; go: (t: string, id?: string) => void }) {
   const db = useDB();
   const toast = useToast();
   const [status, setStatus] = useState<"all" | BookingStatus>("all");
@@ -105,8 +107,7 @@ function Bookings({ focus }: { focus?: string }) {
             <span>الضيوف</span><b className="num">{fmt(cur.guests)}</b><span>ميزانية العميل</span><b className="num">{cur.budget ? sar(cur.budget) : "لم يحددها"}</b>
           </div>
           {cur.note && <div className="card flat tight" style={{ background: "var(--surface-2)" }}>{cur.note}</div>}
-          <div className="field"><span className="label">المحادثة بين الطرفين</span><Thread items={cur.messages.map((m) => ({ mine: m.from === "provider", text: m.text, at: m.at, who: m.from === "provider" ? name(cur) : cur.clientName }))} mine="لا توجد رسائل" /></div>
-          <div className="field"><span className="label">تغيير الحالة</span><Segmented value={cur.status} onChange={(v) => { apply(setBookingStatus(cur.id, v)); toast("تم تحديث الحالة"); }} options={[["new", "جديد"], ["quoted", "عرض"], ["confirmed", "مؤكد"], ["declined", "مرفوض"]]} /></div>
+          <BookingAdmin b={cur} provider={name(cur)} onClient={() => go("clients", normPhone(cur.phone) || undefined)} />
           <Confirm label="حذف الطلب" onYes={() => { apply(adminDelete("booking", cur.id)); setSel(null); toast("تم حذف الطلب"); }} />
         </div>}
       </Sheet>
@@ -299,6 +300,7 @@ function Panel() {
   const tabs = [
     { id: "overview", label: "نظرة عامة", icon: "LayoutDashboard" },
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "new").length },
+    { id: "clients", label: "العملاء", icon: "Users" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
@@ -311,7 +313,8 @@ function Panel() {
       <AnimatePresence mode="wait">
         <motion.div key={tab + (focus ?? "")} className="page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
           {tab === "overview" && <Overview go={go} live={live.feed} />}
-          {tab === "bookings" && <Bookings focus={focus} />}
+          {tab === "bookings" && <Bookings focus={focus} go={go} />}
+          {tab === "clients" && <Clients focus={focus} go={go} />}
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}

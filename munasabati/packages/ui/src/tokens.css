@@ -359,3 +359,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .client-budget { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; background: color-mix(in oklab, var(--ok) 12%, transparent); color: var(--ink); font-size: 14px; }
 .client-budget span { flex: 1; color: var(--muted); }
 .client-budget b { font-size: 16px; }
+.sheet-grab { touch-action: none; cursor: grab; position: sticky; top: -10px; z-index: 2; background: var(--surface); margin: -10px -4px 0; padding: 10px 4px 0; }
+.sheet .form-submit { position: sticky; bottom: calc(-24px - env(safe-area-inset-bottom, 0px)); z-index: 2; margin: 4px -18px calc(-24px - env(safe-area-inset-bottom, 0px)); padding: 12px 18px calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--surface) 75%, transparent); }
+@media (min-width: 720px) { .sheet .form-submit { margin: 4px -26px -26px; padding: 12px 26px 22px; bottom: -26px; } }
+.field-err { color: var(--danger, #e5484d); font-size: 12.5px; font-weight: 600; }
+.input.bad { border-color: var(--danger, #e5484d); box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger, #e5484d) 18%, transparent); }
+.bubble.admin { align-self: center; max-width: 92%; background: color-mix(in oklab, var(--brand) 9%, var(--surface)); border: 1px solid color-mix(in oklab, var(--brand) 28%, transparent); text-align: center; }
+.bubble.admin .who { color: var(--brand); display: inline-flex; align-items: center; gap: 4px; justify-content: center; }
+.chat-guard { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--muted); padding: 6px 10px; border-radius: 99px; background: var(--surface-2); margin-bottom: 8px; }

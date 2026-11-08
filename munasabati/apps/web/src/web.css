@@ -239,3 +239,45 @@
 .b-film .b-text span { color: rgba(255, 255, 255, 0.8); }
 @media (max-width: 1020px) { .bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 290px; } .b-invite { grid-column: span 2; grid-row: span 2; } .b-scratch, .b-scan, .b-chat, .b-journey, .b-film { grid-column: span 1; } }
 @media (max-width: 620px) { .bento { grid-template-columns: 1fr; grid-auto-rows: auto; } .b-invite { grid-row: auto; min-height: 520px; } .b-card { grid-column: span 1 !important; min-height: 280px; } }
+
+/* ═══════ الهوية الفاخرة: أسود وذهبي ونجمة نجدية ═══════ */
+:root { --gold-1: #f7e0a6; --gold-2: #d9ae62; --gold-3: #9b6d2c; --gold: linear-gradient(135deg, #fff1c9 0%, #e7c27a 32%, #b8863d 62%, #f4d999 100%); }
+.gold-text { background: var(--gold); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* نجمة ذهبية قبل عناوين الأقسام */
+.sec-head .eyebrow { display: inline-flex; align-items: center; gap: 8px; }
+.sec-head .eyebrow::before { content: ""; width: 14px; height: 14px; flex: none; background: var(--gold);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 6L35 18L47 13L42 25L54 30L42 35L47 47L35 42L30 54L25 42L13 47L18 35L6 30L18 25L13 13L25 18Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 6L35 18L47 13L42 25L54 30L42 35L47 47L35 42L30 54L25 42L13 47L18 35L6 30L18 25L13 13L25 18Z'/%3E%3C/svg%3E") center/contain no-repeat; }
+
+/* شريط التوقيع */
+.sig { position: relative; margin: 10px; border-radius: 34px; overflow: hidden; color: #f4e3c3; isolation: isolate;
+  background: radial-gradient(120% 90% at 50% 0%, #2a1a10 0%, #120b08 55%, #07050a 100%); }
+.sig::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23dcb06a' stroke-opacity='.22' stroke-width='.8'%3E%3Cpath d='M30 6L35 18L47 13L42 25L54 30L42 35L47 47L35 42L30 54L25 42L13 47L18 35L6 30L18 25L13 13L25 18Z'/%3E%3Cpath d='M30 0V6M30 54V60M0 30H6M54 30H60'/%3E%3C/g%3E%3C/svg%3E") 0 0/60px 60px;
+  -webkit-mask: linear-gradient(180deg, #000, transparent 85%); mask: linear-gradient(180deg, #000, transparent 85%); }
+.sig-marquee { overflow: hidden; border-bottom: 1px solid rgba(222,178,108,.18); padding: 18px 0; -webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+.sig-marquee > div { display: flex; width: max-content; animation: sigRoll 38s linear infinite; }
+.sig-marquee span { font-family: var(--f-display); font-weight: 800; font-size: clamp(22px, 3.4vw, 40px); letter-spacing: -.02em; padding-inline: 18px; display: inline-flex; align-items: center; gap: 36px; background: var(--gold); -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; }
+.sig-marquee span i { font-style: normal; font-size: .5em; opacity: .7; }
+@keyframes sigRoll { to { transform: translateX(50%); } }
+.sig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 14px; padding-block: 34px 38px; }
+.sig-item { display: grid; gap: 6px; padding: 20px; border-radius: 22px; background: linear-gradient(180deg, rgba(255,236,200,.06), rgba(255,236,200,.015)); border: 1px solid rgba(222,178,108,.2); }
+.sig-item b { font-family: var(--f-display); font-size: 17px; color: #fff3dc; }
+.sig-item small { color: rgba(244,227,195,.68); font-size: 13.5px; line-height: 1.6; }
+.sig-ico { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; color: #2a1606; background: var(--gold); box-shadow: 0 8px 22px -8px rgba(217,174,98,.6), inset 0 1px 0 rgba(255,255,255,.6); margin-bottom: 6px; }
+
+/* الختام الفاخر */
+.final.lux { background: radial-gradient(90% 80% at 50% 0%, #34210f 0%, #140c08 55%, #07050a 100%); color: #f4e3c3; padding-top: 70px; }
+.final.lux::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .45;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23dcb06a' stroke-opacity='.25' stroke-width='.8'%3E%3Cpath d='M30 6L35 18L47 13L42 25L54 30L42 35L47 47L35 42L30 54L25 42L13 47L18 35L6 30L18 25L13 13L25 18Z'/%3E%3Cpath d='M30 0V6M30 54V60M0 30H6M54 30H60'/%3E%3C/g%3E%3C/svg%3E") 0 0/60px 60px;
+  -webkit-mask: radial-gradient(70% 70% at 50% 40%, #000, transparent); mask: radial-gradient(70% 70% at 50% 40%, #000, transparent); }
+.final.lux::after { content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: 100%; z-index: -1; transform: translateX(-50%); background: linear-gradient(180deg, transparent, rgba(255,214,150,.5), transparent); box-shadow: 0 0 60px 18px rgba(255,190,110,.16); }
+.lux-seal { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; color: #2a1606; font-family: var(--f-display); font-weight: 800; font-size: 17px;
+  background: radial-gradient(circle at 34% 28%, #fff4d6 0%, #f0cf8a 22%, #c99a4c 52%, #8a5f26 80%, #5e3d14 100%);
+  box-shadow: 0 0 0 5px rgba(10,6,4,.6), 0 0 0 6px rgba(230,190,120,.45), 0 0 60px rgba(255,200,120,.35), inset 0 -6px 14px rgba(80,45,10,.55), inset 0 4px 10px rgba(255,250,230,.55); margin-bottom: 8px; animation: luxFloat 5s ease-in-out infinite; }
+@keyframes luxFloat { 50% { transform: translateY(-6px) rotate(-3deg); } }
+.lux-eyebrow { font-size: 12.5px; letter-spacing: .2em; color: var(--gold-2); font-weight: 600; }
+.lux-btn { color: #2a1606 !important; background: var(--gold) !important; border: 0; box-shadow: 0 14px 34px -12px rgba(217,174,98,.7), inset 0 1px 0 rgba(255,255,255,.7); position: relative; overflow: hidden; }
+.lux-btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.65) 48%, transparent 66%); transform: translateX(120%); animation: luxShine 3.6s ease-in-out infinite 1s; }
+@keyframes luxShine { 0%, 55% { transform: translateX(120%); } 100% { transform: translateX(-120%); } }
+@media (prefers-reduced-motion: reduce) { .sig-marquee > div, .lux-seal, .lux-btn::after { animation: none; } }

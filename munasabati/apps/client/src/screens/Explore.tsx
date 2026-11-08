@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
+  CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
   venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
 import { Calendar, Empty, Icon, Media, Segmented, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
@@ -107,12 +107,18 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
   const fav = db.client.favorites.includes(v.id);
   const mine = db.bookings.filter((b) => b.targetId === v.id && b.fromClient);
 
+  const [tried, setTried] = useState(false);
+  const errs = { name: form.name.trim().length < 2 ? "اكتب اسمك" : "", phone: !validPhone(form.phone) ? "رقم جوال سعودي مثل 05xxxxxxxx" : "", guests: !(+form.guests > 0) ? "اكتب عدد الضيوف" : "" };
   const submit = (ev: React.FormEvent) => {
     ev.preventDefault();
+    setTried(true);
+    if (errs.name || errs.phone || errs.guests) { toast("أكمل البيانات المطلوبة"); return; }
     apply(createBooking({
-      kind, targetId: v.id, hallId, packageId: pkgId, clientName: form.name, phone: form.phone, occasion: form.occasion, city: e.city, date, guests: +form.guests,
+      kind, targetId: v.id, hallId, packageId: pkgId, clientName: form.name.trim(), phone: normPhone(form.phone), occasion: form.occasion, city: e.city, date, guests: +form.guests,
       note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price ?? 0, fromClient: true, budget: +form.budget || undefined,
     }));
+    // نحفظ اسم العميل وجواله في ملفه حتى تصل بياناته كاملة للإدارة
+    if (!db.client.profile?.phone || !db.client.profile?.name) apply(patchClient({ profile: { name: db.client.profile?.name || form.name.trim(), phone: db.client.profile?.phone || normPhone(form.phone) } }));
     setOpen(false);
     toast("وصل طلبك. تابعه من رحلتك");
     setTimeout(() => go("home"), 700);
@@ -177,17 +183,17 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
       </div>
 
       <Sheet open={open} onClose={() => setOpen(false)} title={`طلب حجز: ${v.name}`}>
-        <form className="form" onSubmit={submit}>
+        <form className="form" onSubmit={submit} noValidate>
           <div className="card flat tight row" style={{ background: "var(--surface-2)" }}><span className="avatar"><Icon name="CalendarDays" size={18} /></span><div className="grow"><b className="num display">{date}</b><div className="muted" style={{ fontSize: 13 }}>{hall?.name ?? pkg?.name} · {sar(price)}</div></div></div>
           <div className="form-2">
-            <div className="field"><label htmlFor="b-n">الاسم</label><input id="b-n" className="input" required value={form.name} onChange={(ev) => setForm({ ...form, name: ev.target.value })} /></div>
-            <div className="field"><label htmlFor="b-p">الجوال</label><input id="b-p" className="input num" inputMode="tel" required pattern="05\d{8}" title="رقم يبدأ بـ 05 ومكون من 10 أرقام" placeholder="05xxxxxxxx" value={form.phone} onChange={(ev) => setForm({ ...form, phone: ev.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
+            <div className="field"><label htmlFor="b-n">الاسم</label><input id="b-n" className={"input" + (tried && errs.name ? " bad" : "")} autoComplete="name" value={form.name} onChange={(ev) => setForm({ ...form, name: ev.target.value })} />{tried && errs.name && <span className="field-err">{errs.name}</span>}</div>
+            <div className="field"><label htmlFor="b-p">الجوال</label><input id="b-p" dir="ltr" style={{ textAlign: "right" }} className={"input num" + (tried && errs.phone ? " bad" : "")} inputMode="tel" autoComplete="tel" placeholder="05xxxxxxxx" value={form.phone} onChange={(ev) => setForm({ ...form, phone: ev.target.value.replace(/[^\d+٠-٩]/g, "").slice(0, 15) })} />{tried && errs.phone && <span className="field-err">{errs.phone}</span>}</div>
             <div className="field"><label htmlFor="b-o">المناسبة</label><select id="b-o" className="select" value={form.occasion} onChange={(ev) => setForm({ ...form, occasion: ev.target.value as OccasionId })}>{OCCASIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
-            <div className="field"><label htmlFor="b-g">عدد الضيوف</label><input id="b-g" type="number" min={10} className="input num" value={form.guests} onChange={(ev) => setForm({ ...form, guests: +ev.target.value })} /></div>
+            <div className="field"><label htmlFor="b-g">عدد الضيوف</label><input id="b-g" type="number" inputMode="numeric" min={1} className={"input num" + (tried && errs.guests ? " bad" : "")} value={form.guests || ""} onChange={(ev) => setForm({ ...form, guests: +ev.target.value })} />{tried && errs.guests && <span className="field-err">{errs.guests}</span>}</div>
             <div className="field full"><label htmlFor="b-bud">ميزانيتك لهذا البند (اختياري)</label><input id="b-bud" className="input num" inputMode="numeric" placeholder="اكتب المبلغ اللي يناسبك" value={+form.budget ? fmt(+form.budget) : ""} onChange={(ev) => setForm({ ...form, budget: ev.target.value.replace(/\D/g, "").slice(0, 9) })} /><small className="muted">توصل للتاجر مع طلبك عشان يجهز لك عرض يناسبها.</small></div>
             <div className="field full"><label htmlFor="b-note">ملاحظات</label><textarea id="b-note" className="input" placeholder="مثال: نحتاج بث مباشر لقسم النساء" value={form.note} onChange={(ev) => setForm({ ...form, note: ev.target.value })} /></div>
           </div>
-          <button className="btn primary lg block" type="submit">أرسل الطلب</button>
+          <div className="form-submit"><button className="btn primary lg block" type="submit"><Icon name="Send" size={17} /> أرسل الطلب</button></div>
         </form>
       </Sheet>
     </>

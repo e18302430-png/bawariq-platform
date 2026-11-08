@@ -38,7 +38,7 @@ export default function Home() {
       <div className="hello">
         <div className="grow"><div className="muted" style={{ fontSize: 14 }}>{greet()} {db.client.profile?.name}</div><h1>رحلة مناسبتك</h1></div>
         <div className="journey-ring" aria-label={`${doneCount} من 5 مراحل مكتملة`}>
-          <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" /><motion.circle cx="22" cy="22" r="19" className="fg" initial={{ pathLength: 0 }} animate={{ pathLength: doneCount / 5 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} /></svg>
+          <svg viewBox="0 0 44 44"><defs><linearGradient id="jr-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f7e0a6" /><stop offset=".5" stopColor="#d9ae62" /><stop offset="1" stopColor="#9b6d2c" /></linearGradient></defs><circle cx="22" cy="22" r="19" /><motion.circle cx="22" cy="22" r="19" className="fg" stroke="url(#jr-g)" initial={{ pathLength: 0 }} animate={{ pathLength: doneCount / 5 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} /></svg>
           <b className="num">{doneCount}/5</b>
         </div>
       </div>
@@ -46,6 +46,8 @@ export default function Home() {
       <section className="event-card compact">
         <img className="ec-photo" src={SCENE[occ.id] ?? f1} alt="" decoding="async" />
         <div className="meta"><span className="pill" style={{ background: "rgba(255,255,255,.2)", color: "#fff", backdropFilter: "blur(10px)" }}>{occ.name} · {e.city} · {fmt(e.guests)} ضيف</span><span className="num" style={{ opacity: 0.9 }}>{e.date}</span></div>
+        <div className="ec-frame" aria-hidden="true" />
+        <h2 className="ec-title">{e.title}</h2>
         <div className="cd num" aria-label={`باقي ${d} يوم`}>
           {[[d, "يوم"], [h, "ساعة"], [m, "دقيقة"], [s, "ثانية"]].map(([v, l]) => <div key={l}><b>{String(v).padStart(2, "0")}</b><small>{l}</small></div>)}
         </div>

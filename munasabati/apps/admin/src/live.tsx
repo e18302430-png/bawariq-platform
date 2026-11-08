@@ -43,7 +43,7 @@ function diff(prev: DB, db: DB): LiveEvent[] {
     const p = before.get(b.id);
     if (!p) { out.push({ id: "b" + b.id, kind: "booking", title: `طلب جديد من ${b.clientName}`, sub: `إلى ${name(b.kind, b.targetId)} · ${b.city} · ${b.date}`, at: Date.now(), tab: "bookings", focus: b.id }); continue; }
     if (p.status !== b.status) out.push({ id: "s" + b.id + b.status, kind: "status", title: `${name(b.kind, b.targetId)}: ${b.status === "quoted" ? "أرسل عرض سعر" : b.status === "confirmed" ? "تم تأكيد الحجز" : b.status === "declined" ? "اعتذر عن الطلب" : "طلب جديد"}`, sub: `للعميل ${b.clientName}`, at: Date.now(), tab: "bookings", focus: b.id });
-    if (b.messages.length > p.messages.length) { const m = b.messages.at(-1)!; out.push({ id: "m" + b.id + b.messages.length, kind: "message", title: `رسالة من ${m.from === "client" ? b.clientName : name(b.kind, b.targetId)}`, sub: m.text.slice(0, 80), at: Date.now(), tab: "bookings", focus: b.id }); }
+    if (b.messages.length > p.messages.length && b.messages.at(-1)!.from !== "admin") { const m = b.messages.at(-1)!; out.push({ id: "m" + b.id + b.messages.length, kind: "message", title: `رسالة من ${m.from === "client" ? b.clientName : name(b.kind, b.targetId)}`, sub: m.text.slice(0, 80), at: Date.now(), tab: "bookings", focus: b.id }); }
   }
   const tb = new Map((prev.tickets ?? []).map((t) => [t.id, t]));
   for (const t of db.tickets ?? []) {

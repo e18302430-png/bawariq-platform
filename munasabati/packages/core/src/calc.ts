@@ -117,4 +117,13 @@ export function busyDays(targetId: string, bookings: Booking[], blocked: string[
 }
 
 export const inviteCode = () => Math.random().toString(36).slice(2, 7).toUpperCase().replace(/[O0I1]/g, "K");
+/** توحيد رقم الجوال السعودي: يقبل 05xxxxxxxx أو 5xxxxxxxx أو +9665xxxxxxxx أو 009665xxxxxxxx ويُرجع 05xxxxxxxx */
+export function normPhone(raw: string) {
+  let d = (raw || "").replace(/[٠-٩]/g, (c) => String("٠١٢٣٤٥٦٧٨٩".indexOf(c))).replace(/\D/g, "");
+  if (d.startsWith("00966")) d = d.slice(5); else if (d.startsWith("966")) d = d.slice(3);
+  if (d.length === 9 && d.startsWith("5")) d = "0" + d;
+  return d;
+}
+export const validPhone = (raw: string) => /^05\d{8}$/.test(normPhone(raw));
+
 export const uid = (p = "") => p + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);

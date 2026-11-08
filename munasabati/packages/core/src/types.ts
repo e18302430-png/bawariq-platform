@@ -90,7 +90,8 @@ export interface Venue {
 }
 
 export interface Message {
-  from: "client" | "provider";
+  /** admin = إدارة مناسبتي (الوسيط بين الطرفين) */
+  from: "client" | "provider" | "admin";
   text: string;
   at: number;
 }
@@ -192,8 +193,17 @@ export interface Ticket {
   updatedAt: number;
 }
 
+/** مساحة عميل كما تراها الإدارة (سحابياً: كل صفوف client_spaces) */
+export interface ClientRecord {
+  id: string;
+  data: DB["client"];
+  updatedAt?: number;
+}
+
 export interface DB {
   version: 2;
+  /** للإدارة فقط: مساحات كل العملاء (في الوضع المحلي تُشتق من db.client) */
+  clients?: ClientRecord[];
   tickets: Ticket[];
   /** إعلان من الإدارة يظهر أعلى كل التطبيقات */
   announcement?: string;

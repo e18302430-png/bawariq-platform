@@ -175,3 +175,10 @@ create policy "admin settings" on public.settings for all using (public.is_admin
 
 -- لتعيين نفسك مديراً بعد أول دخول برقم جوالك:
 -- update public.profiles set role = 'admin' where phone = '9665XXXXXXXX';
+
+-- ═══════════════ الإدارة وسيط فعلي: ترى وتعدّل وتحذف بيانات كل العملاء ═══════════════
+drop policy if exists "admin manage spaces" on public.client_spaces;
+create policy "admin manage spaces" on public.client_spaces for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admin manage profiles" on public.profiles;
+create policy "admin manage profiles" on public.profiles for all using (public.is_admin()) with check (public.is_admin());
+alter publication supabase_realtime add table public.client_spaces;

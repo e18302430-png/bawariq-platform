@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, animate, useDragControls } from "framer-motion";
 import { Icon } from "./icons";
 import { photoUrl } from "./media";
 import { AnnouncementBar } from "./support";
@@ -54,6 +54,8 @@ export const useToast = () => useContext(ToastCtx);
 /* ───── نافذة سفلية (تُسحب للإغلاق على الجوال) ───── */
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const wide = typeof window !== "undefined" && window.matchMedia("(min-width: 720px)").matches;
+  // السحب للإغلاق من المقبض والعنوان فقط، حتى يبقى المحتوى قابلاً للتمرير على الجوال
+  const drag = useDragControls();
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -73,11 +75,13 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
             animate={wide ? { opacity: 1, scale: 1, x: "-50%", y: "-50%" } : { y: 0 }}
             exit={wide ? { opacity: 0, scale: 0.96, x: "-50%", y: "-48%" } : { y: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            drag={wide ? false : "y"} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }}
+            drag={wide ? false : "y"} dragControls={drag} dragListener={false} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={(_, info) => { if (info.offset.y > 120 || info.velocity.y > 600) onClose(); }}
           >
-            <div className="sheet-handle" />
-            <div className="sheet-head"><h3>{title}</h3><button className="icon-btn sm" onClick={onClose} aria-label="إغلاق"><Icon name="X" size={17} /></button></div>
+            <div className="sheet-grab" onPointerDown={(e) => !wide && drag.start(e)}>
+              <div className="sheet-handle" />
+              <div className="sheet-head"><h3>{title}</h3><button className="icon-btn sm" onClick={onClose} onPointerDown={(e) => e.stopPropagation()} aria-label="إغلاق"><Icon name="X" size={17} /></button></div>
+            </div>
             {children}
           </motion.div>
         </>
