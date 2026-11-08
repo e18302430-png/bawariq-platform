@@ -59,3 +59,5 @@
 .live-toast.urgent .lt-ico { background: linear-gradient(135deg, #e5484d, #ff8a3d); }
 .live-toast.urgent { border-color: #e5484d; }
 .lf-urgent { background: rgba(229,72,77,.14) !important; color: #e5484d !important; }
+.wa-notify { background: #25d366; color: #fff !important; border-color: transparent; }
+.wa-notify:hover { background: #1fb457; }

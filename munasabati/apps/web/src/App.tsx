@@ -345,8 +345,8 @@ export default function App() {
       </section>
       <ScrollNav bottom="24px" />
       <footer className="container footer">
-        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء أمثلة</span></div>
-        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a></nav>
+        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>منصة المناسبات السعودية · مجانية لأصحاب المناسبات</span></div>
+        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./privacy.html">الخصوصية والشروط</a></nav>
         <ThemeToggle />
       </footer>
     </>

@@ -132,6 +132,8 @@ export interface Booking {
   reassignedFrom?: string;
   /** التاجر طلب إلغاء حجز مؤكد: لا يُلغى إلا بقرار الإدارة */
   cancelRequest?: { reason: string; at: number };
+  /** آخر مرة أبلغت فيها الإدارة التاجر بالطلب عبر واتساب */
+  notifiedAt?: number;
   /** حالة التاجر يوم المناسبة */
   vendorStatus?: VendorStatus;
 }

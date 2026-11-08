@@ -57,7 +57,7 @@ function QuickAuth({ onDone, title, initialPhone, initialName }: { onDone: () =>
       <div className="field"><label htmlFor="qa-p">رقم الجوال</label><input id="qa-p" dir="ltr" style={{ textAlign: "right" }} className="input num" inputMode="tel" autoComplete="tel" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
       {err && <div className="card flat tight" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderColor: "transparent", fontSize: 13.5 }}>{err}</div>}
       <button className="btn primary lg block" type="submit" disabled={busy}>{busy ? "لحظة…" : "دخول"}</button>
-      <span className="faint" style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center" }}><Icon name="Lock" size={13} /> نستخدم رقمك للتواصل بخصوص حجوزاتك فقط.</span>
+      <span className="faint" style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><Icon name="Lock" size={13} /> نستخدم رقمك للتواصل بخصوص حجوزاتك فقط. <a href="../privacy.html" target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>الخصوصية والشروط</a></span>
     </form>
   );
 }

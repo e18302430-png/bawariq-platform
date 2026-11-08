@@ -190,7 +190,7 @@ function Portal({ v }: { v: Venue }) {
   ];
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
   return (
-    <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ venueId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
+    <AppShell portal="بوابة القاعات" tabs={tabs} active={tab} onChange={setTab} footer={<><button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ venueId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button><a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a></>}>
       <AnimatePresence initial={false}>
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {v.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}

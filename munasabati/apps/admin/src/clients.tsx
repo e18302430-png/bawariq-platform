@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, reassignBooking, resolveCancel, fmt, normPhone, sar,
+  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, markNotified, reassignBooking, resolveCancel, fmt, normPhone, sar,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
 import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, useDB, useToast } from "@munasabati/ui";
@@ -125,6 +125,22 @@ export function Clients({ focus, go }: { focus?: string; go: (t: string, id?: st
   );
 }
 
+/* ───── إبلاغ التاجر أو صاحب القاعة بالطلب عبر واتساب (رسالة جاهزة برابط بوابته) ───── */
+export function NotifyVendor({ b, provider }: { b: Booking; provider: string }) {
+  const db = useDB();
+  const toast = useToast();
+  const phone = (b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId)?.phone : db.suppliers.find((s) => s.id === b.targetId)?.phone) ?? "";
+  if (!normPhone(phone).match(/^05\d{8}$/)) return <span className="pill neutral" title="أضف جوال التاجر من تعديل حسابه">ما فيه جوال للتاجر</span>;
+  const base = location.href.split("#")[0].replace(/admin\/(index\.html)?$/, "");
+  const occ = OCCASIONS.find((o) => o.id === b.occasion)?.name ?? "مناسبة";
+  const text = [`السلام عليكم ${provider}`, "وصلك طلب جديد عبر منصة مناسبتي 🎉", `${occ} · ${b.city} · ${b.date} · ${fmt(b.guests)} ضيف${b.budget ? ` · ميزانية العميل ${sar(b.budget)}` : ""}`, `للرد على الطلب افتح بوابتك: ${base}${b.kind === "venue" ? "venues/" : "vendors/"}`].join("\n");
+  return (
+    <a className="btn sm wa-notify" href={`${wa(phone)}?text=${encodeURIComponent(text)}`} target="_blank" rel="noreferrer" onClick={() => { apply(markNotified(b.id)); toast("فتحنا واتساب برسالة جاهزة للتاجر"); }}>
+      <Icon name="MessageCircle" size={15} /> {b.notifiedAt ? `أبلغته ${ago(b.notifiedAt)} · ذكّره` : "بلّغ التاجر بواتساب"}
+    </a>
+  );
+}
+
 /* ───── أدوات الوسيط داخل الطلب: تعديل أي حقل + رسالة من الإدارة للطرفين ───── */
 const QUICK = ["تم استلام طلبك، ونتابعه مع التاجر الآن.", "نرجو من التاجر إرسال عرض السعر خلال 24 ساعة.", "تم تعديل موعد الحجز بالاتفاق بين الطرفين.", "تم تأكيد الحجز من الإدارة."];
 export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: string; onClient?: () => void }) {
@@ -158,6 +174,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
       </div>}
       <div className="row wrap">
         <button className="btn sm" onClick={() => setF({ clientName: b.clientName, phone: b.phone, date: b.date, guests: String(b.guests), budget: String(b.budget ?? ""), quote: String(b.quote ?? ""), note: b.note })}><Icon name="Pencil" size={15} /> تعديل الطلب</button>
+        <NotifyVendor b={b} provider={provider} />
         {onClient && <button className="btn sm" onClick={onClient}><Icon name="UserCheck" size={15} /> ملف العميل</button>}
         {b.phone && <a className="btn sm" href={wa(b.phone)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب العميل</a>}
       </div>

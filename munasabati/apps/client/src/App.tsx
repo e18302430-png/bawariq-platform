@@ -76,6 +76,7 @@ function Main() {
       footer={<>
         <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
         <ResetButton />
+        <a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a>
       </>}
     >
       <ErrorBoundary key={route}>

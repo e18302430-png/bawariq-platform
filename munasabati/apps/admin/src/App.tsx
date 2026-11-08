@@ -155,13 +155,14 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
   const [filter, setFilter] = useState<"all" | "active" | "suspended" | "unverified">("all");
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<string | null>(focus ?? null);
-  const [edit, setEdit] = useState<{ name: string; city: string; about: string } | null>(null);
+  const [edit, setEdit] = useState<{ name: string; city: string; about: string; phone: string } | null>(null);
   const list = items.filter((x) => (filter === "all" || (filter === "suspended" ? x.status === "suspended" : filter === "active" ? x.status !== "suspended" : !x.verified)) && (!q || (x.name + x.city).includes(q)));
   const cur = items.find((x) => x.id === sel);
   const count = (x: Supplier | Venue) => db.bookings.filter((b) => b.targetId === x.id).length;
   const save = () => {
     if (!cur || !edit) return;
-    if (kind === "supplier") apply(upsertSupplier({ ...(cur as Supplier), ...edit })); else apply(upsertVenue({ ...(cur as Venue), ...edit }));
+    const patch = { ...edit, phone: normPhone(edit.phone) || undefined };
+    if (kind === "supplier") apply(upsertSupplier({ ...(cur as Supplier), ...patch })); else apply(upsertVenue({ ...(cur as Venue), ...patch }));
     setEdit(null); toast("تم حفظ التعديل");
   };
   return (
@@ -188,6 +189,7 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
           <form className="form" onSubmit={(e) => { e.preventDefault(); save(); }}>
             <div className="field"><label htmlFor="ed-n">الاسم</label><input id="ed-n" className="input" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></div>
             <div className="field"><label htmlFor="ed-c">المدينة</label><select id="ed-c" className="select" value={edit.city} onChange={(e) => setEdit({ ...edit, city: e.target.value })}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
+            <div className="field"><label htmlFor="ed-p">جوال التاجر (لإبلاغه بالطلبات على واتساب)</label><input id="ed-p" className="input num" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} /></div>
             <div className="field"><label htmlFor="ed-a">النبذة</label><textarea id="ed-a" className="input" rows={5} value={edit.about} onChange={(e) => setEdit({ ...edit, about: e.target.value })} /></div>
             <div className="row"><button className="btn primary grow" type="submit">حفظ</button><button className="btn ghost" type="button" onClick={() => setEdit(null)}>إلغاء</button></div>
           </form>
@@ -206,7 +208,7 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
             <div className="adm-actions">
               <button className="btn" onClick={() => { apply(adminSetVerified(kind, cur.id, !cur.verified)); toast(cur.verified ? "تم إلغاء التوثيق" : "تم توثيق الحساب"); }}><Icon name="BadgeCheck" size={16} /> {cur.verified ? "إلغاء التوثيق" : "توثيق الحساب"}</button>
               <button className="btn" onClick={() => { apply(adminSetStatus(kind, cur.id, cur.status === "suspended" ? "active" : "suspended")); toast(cur.status === "suspended" ? "تم تفعيل الحساب" : "تم تعليق الحساب"); }}><Icon name={cur.status === "suspended" ? "PlayCircle" : "PauseCircle"} size={16} /> {cur.status === "suspended" ? "تفعيل الحساب" : "تعليق الحساب"}</button>
-              <button className="btn" onClick={() => setEdit({ name: cur.name, city: cur.city, about: cur.about })}><Icon name="Pencil" size={16} /> تعديل البيانات</button>
+              <button className="btn" onClick={() => setEdit({ name: cur.name, city: cur.city, about: cur.about, phone: cur.phone ?? "" })}><Icon name="Pencil" size={16} /> تعديل البيانات</button>
               <button className={"btn" + (cur.promoted ? " primary" : "")} onClick={() => { apply(setPromoted(kind, cur.id, !cur.promoted)); toast(cur.promoted ? "ألغينا الاختيار" : "صار الحساب مختاراً من مناسبتي"); }}><Icon name="Sparkles" size={16} /> {cur.promoted ? "إلغاء «مختار من مناسبتي»" : "اختيار «مختار من مناسبتي»"}</button>
             </div>
             {(() => { const t = trustOf(db, kind, cur.id); return <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>{t.fast && <span className="pill ok">يرد بسرعة</span>}{t.committed && <span className="pill ok">ملتزم</span>}{t.cancels > 0 && <span className="pill warn">{t.cancels} طلب إلغاء</span>}</div>; })()}

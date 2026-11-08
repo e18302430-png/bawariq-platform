@@ -150,7 +150,7 @@ function Portal({ s }: { s: Supplier }) {
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "supplier" && t.fromId === s.id && t.status === "answered").length },
   ];
   return (
-    <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>}>
+    <AppShell portal="بوابة الموردين" tabs={tabs} active={tab} onChange={setTab} footer={<><button className="btn sm ghost" onClick={() => (isCloud ? void repo.auth?.signOut() : apply(setSession({ supplierId: null })))}><Icon name="LogOut" size={15} /> تسجيل الخروج</button><a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a></>}>
       <AnimatePresence initial={false}>
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {s.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}

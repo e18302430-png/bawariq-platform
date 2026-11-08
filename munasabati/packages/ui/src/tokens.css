@@ -411,3 +411,5 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   .side-foot { gap: 4px; padding-top: 8px; }
   .side-foot .btn { min-height: 32px; padding-inline: 10px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+.side-legal { font-size: 12px; color: var(--muted); text-align: center; text-decoration: none; padding: 2px; }
+.side-legal:hover { text-decoration: underline; }

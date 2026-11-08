@@ -154,7 +154,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
               <input id="o-name" className="onb-input" placeholder="اسمك" value={f.name} onChange={(e) => set("name", e.target.value)} onKeyDown={(e) => e.key === "Enter" && canNext && next()} autoFocus />
               <label className="sr" htmlFor="o-phone">رقم الجوال</label>
               <input id="o-phone" className="onb-input num" inputMode="tel" placeholder="رقم الجوال (اختياري) 05xxxxxxxx" value={f.phone} onChange={(e) => set("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} />
-              <span style={{ fontSize: 13, opacity: 0.8, display: "flex", gap: 6, alignItems: "center" }}><Icon name="Lock" size={14} /> بياناتك ما تنشارك مع أي مورد إلا بموافقتك.</span>
+              <span style={{ fontSize: 13, opacity: 0.8, display: "flex", gap: 6, alignItems: "center" }}><Icon name="Lock" size={14} /> بياناتك ما تنشارك مع أي مورد إلا بطلبك. <a href="../privacy.html" target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>الخصوصية والشروط</a></span>
             </>}
 
             {step === 7 && <div className="stack" style={{ justifyItems: "center", textAlign: "center", ["--gap" as string]: "22px" }}>
