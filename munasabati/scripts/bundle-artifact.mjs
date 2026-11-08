@@ -13,6 +13,8 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
 cpSync(join(root, "apps/web/dist"), out, { recursive: true });
 for (const app of ["client", "vendors", "venues", "admin"]) cpSync(join(root, `apps/${app}/dist`), join(out, app), { recursive: true });
+// دوال Vercel (المهمة اليومية لإبقاء قاعدة البيانات نشطة) تُنشر مع الموقع، ولا تدخل في ملفات المعاينة
+cpSync(join(root, "api"), join(out, "api"), { recursive: true });
 
 const html = readFileSync(join(out, "index.html"), "utf8");
 const head = html.match(/<head>([\s\S]*?)<\/head>/i)[1]
@@ -24,7 +26,7 @@ writeFileSync(join(out, "page.html"), `${head.trim()}\n${body.trim()}\n`);
 const files = [];
 const walk = (d, rel = "") => readdirSync(d).forEach((f) => {
   const p = join(d, f), r = rel ? `${rel}/${f}` : f;
-  if (statSync(p).isDirectory()) walk(p, r); else if (r !== "index.html" && r !== "page.html") files.push(r);
+  if (statSync(p).isDirectory()) { if (r !== "api") walk(p, r); } else if (r !== "index.html" && r !== "page.html") files.push(r);
 });
 walk(out);
 writeFileSync(join(out, "files.json"), JSON.stringify(files, null, 2));
