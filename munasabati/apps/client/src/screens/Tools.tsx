@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, fmt, hospitality, removeBudget, removeTask, sar, setBookingStatus, toggleTask, today, updateBudget,
+  acceptQuote, addBudget, addTask, checkIn, fmt, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
   type CheckInResult,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -46,24 +46,39 @@ export function Bookings() {
 /* ───── الميزانية ───── */
 export function Budget() {
   const db = useDB();
+  const toast = useToast();
   const [n, setN] = useState({ label: "", est: "" });
   const lines = db.client.budget;
+  const total = db.client.event?.budget ?? 0;
   const est = lines.reduce((s, b) => s + b.est, 0), paid = lines.reduce((s, b) => s + b.paid, 0);
+  const base = total || est;
+  const left = total - est;
   const colors = ["var(--brand)", "var(--info)", "var(--ok)", "var(--warn)", "var(--brand-2)", "#8e7cff", "#2ab7ca"];
   return (
     <>
-      <div><h1 className="page-title">الميزانية</h1><p className="page-sub">الأرقام الأولية تقديرية. عدّلها حسب العروض اللي توصلك.</p></div>
-      <section className="card stack">
-        <div className="row between wrap"><div><div className="stat-label">المدفوع من الميزانية</div><div className="stat-value"><Counter value={paid} /> <span className="faint" style={{ fontSize: 15, fontWeight: 500 }}>/ {sar(est)}</span></div></div><span className="pill brand num">{est ? Math.round((paid / est) * 100) : 0}%</span></div>
-        <div style={{ display: "flex", height: 14, borderRadius: 10, overflow: "hidden", background: "var(--bg-2)", gap: 2 }}>{lines.map((b, i) => <i key={b.id} title={b.label} style={{ width: `${est ? (b.est / est) * 100 : 0}%`, background: colors[i % colors.length] }} />)}</div>
+      <div><h1 className="page-title">الميزانية</h1><p className="page-sub">أنت تحدد ميزانيتك، وكل طلب ترسله للتاجر يوصله معه المبلغ المخصص له.</p></div>
+      <section className="card budget-hero">
+        <label className="stat-label" htmlFor="b-total">ميزانيتك الكلية</label>
+        <div className="bh-total">
+          <input id="b-total" className="num" inputMode="numeric" placeholder="اكتب المبلغ" value={total ? fmt(total) : ""} onChange={(e) => apply(setTotalBudget(+e.target.value.replace(/\D/g, "").slice(0, 9) || undefined))} />
+          <span className="faint">ر.س</span>
+          <div className="grow" />
+          <button className="btn sm" disabled={!total} onClick={() => { apply(setTotalBudget(total, true)); toast("وزّعنا ميزانيتك على البنود"); }}><Icon name="Sparkles" size={15} /> وزّعها تلقائياً</button>
+        </div>
+        <div className="bh-meter">
+          <div><small>موزّع على البنود</small><b className="num">{est ? sar(est) : "—"}</b></div>
+          <div className={left < 0 ? "over" : ""}><small>{left < 0 ? "تجاوزت بـ" : "متبقي"}</small><b className="num">{!total ? "—" : left ? sar(Math.abs(left)) : "0 ر.س"}</b></div>
+          <div><small>المدفوع</small><b className="num">{paid ? sar(paid) : "—"}</b></div>
+        </div>
+        <div style={{ display: "flex", height: 14, borderRadius: 10, overflow: "hidden", background: "var(--bg-2)", gap: 2 }}>{lines.map((b, i) => <i key={b.id} title={b.label} style={{ width: `${base ? (b.est / base) * 100 : 0}%`, background: colors[i % colors.length] }} />)}</div>
         <div className="row wrap" style={{ ["--gap" as string]: "12px", fontSize: 12.5 }}>{lines.map((b, i) => <span key={b.id} className="row" style={{ ["--gap" as string]: "5px" }}><i style={{ width: 9, height: 9, borderRadius: 3, background: colors[i % colors.length] }} />{b.label}</span>)}</div>
       </section>
       <section className="card" style={{ paddingBlock: 6 }}>
         <div className="list">{lines.map((b) => (
           <div key={b.id} className="list-row" style={{ flexWrap: "wrap" }}>
             <div className="t" style={{ minWidth: 140 }}><b>{b.label}</b><div className="bar ok" style={{ height: 5, marginTop: 6 }}><i style={{ width: `${b.est ? Math.min(100, (b.paid / b.est) * 100) : 0}%` }} /></div></div>
-            <div className="field" style={{ width: 120 }}><label htmlFor={"e" + b.id}>التقدير</label><input id={"e" + b.id} type="number" className="input num" style={{ minHeight: 40 }} value={b.est} onChange={(e) => apply(updateBudget(b.id, { est: +e.target.value }))} /></div>
-            <div className="field" style={{ width: 120 }}><label htmlFor={"p" + b.id}>المدفوع</label><input id={"p" + b.id} type="number" className="input num" style={{ minHeight: 40 }} value={b.paid} onChange={(e) => apply(updateBudget(b.id, { paid: +e.target.value }))} /></div>
+            <div className="field" style={{ width: 120 }}><label htmlFor={"e" + b.id}>المخصص</label><input id={"e" + b.id} type="number" className="input num" style={{ minHeight: 40 }} placeholder="0" value={b.est || ""} onChange={(e) => apply(updateBudget(b.id, { est: +e.target.value }))} /></div>
+            <div className="field" style={{ width: 120 }}><label htmlFor={"p" + b.id}>المدفوع</label><input id={"p" + b.id} type="number" className="input num" style={{ minHeight: 40 }} placeholder="0" value={b.paid || ""} onChange={(e) => apply(updateBudget(b.id, { paid: +e.target.value }))} /></div>
             <button className="icon-btn sm" aria-label={"حذف " + b.label} onClick={() => apply(removeBudget(b.id))}><Icon name="Trash2" size={15} /></button>
           </div>
         ))}</div>

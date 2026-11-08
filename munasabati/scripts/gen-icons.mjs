@@ -17,7 +17,7 @@ const walk = (d) => readdirSync(d).forEach((f) => {
 ["apps", "packages"].forEach((d) => walk(join(root, d)));
 
 const names = new Set(["Sparkles"]);
-for (const f of files) for (const m of readFileSync(f, "utf8").matchAll(/["'`]([A-Z][A-Za-z0-9]+)["'`]/g)) if (available.has(kebab(m[1]))) names.add(m[1]);
+for (const f of files) for (const m of readFileSync(f, "utf8").matchAll(/["'`]([A-Z][A-Za-z0-9]*)["'`]/g)) if (available.has(kebab(m[1]))) names.add(m[1]);
 const list = [...names].sort();
 writeFileSync(join(root, "packages/ui/src/icons.tsx"), `// ملف مولّد تلقائياً عبر scripts/gen-icons.mjs
 import { ${list.join(", ")} } from "lucide-react";

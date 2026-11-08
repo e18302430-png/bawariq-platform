@@ -54,6 +54,11 @@ export function createLocalRepository(key = KEY): Repository {
         parsed.bookings = parsed.bookings.map((b) => (b.seed ? { ...b, quote: undefined, estimate: 0 } : b));
         (parsed as DB & { _clean?: boolean })._clean = true;
       }
+      // ترحيل: الميزانية صارت يحددها العميل بنفسه (إزالة التقديرات الآلية القديمة)
+      if (!(parsed as DB & { _b2?: boolean })._b2) {
+        if (parsed.client.event && parsed.client.event.budget == null) parsed.client.budget = parsed.client.budget.map((l) => ({ ...l, est: 0, paid: 0 }));
+        (parsed as DB & { _b2?: boolean })._b2 = true;
+      }
       // ترحيل: إضافة صور الهوية للنشاطات التجريبية المحفوظة قبل إضافتها
       parsed.suppliers = parsed.suppliers.map((x) => x.photos?.length ? x : { ...x, photos: SEED_SUPPLIERS.find((y) => y.id === x.id)?.photos });
       parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });

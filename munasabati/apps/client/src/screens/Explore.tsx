@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CATEGORIES, CITIES, OCCASIONS, busyDays, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
+  CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, createBooking, fmt, hallCapacity, hallPrice, isWeekend, sar, toggleFavorite,
   venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
 import { Calendar, Empty, Icon, Media, Segmented, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
@@ -98,7 +98,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
   const busy = useMemo(() => busyDays(id, db.bookings, venue?.blocked ?? [], hallId, !isCloud), [id, db.bookings, venue, hallId]);
   const [date, setDate] = useState(!busy.has(e.date) ? e.date : "");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: db.client.profile?.name ?? "", phone: db.client.profile?.phone ?? "", guests: e.guests, occasion: e.occasion as OccasionId, note: "" });
+  const [form, setForm] = useState({ name: db.client.profile?.name ?? "", phone: db.client.profile?.phone ?? "", guests: e.guests, occasion: e.occasion as OccasionId, note: "", budget: String(budgetFor(db.client.budget, kind === "venue" ? "venue" : supplier?.cats.find((c) => budgetFor(db.client.budget, c)) ?? supplier?.cats[0] ?? "other") ?? "") });
 
   if (!v) return <Empty icon="SearchX" title="ما لقينا هذي الصفحة"><button className="btn" onClick={() => go("explore")}>رجوع</button></Empty>;
   const hall = venue?.halls.find((h) => h.id === hallId);
@@ -111,7 +111,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
     ev.preventDefault();
     apply(createBooking({
       kind, targetId: v.id, hallId, packageId: pkgId, clientName: form.name, phone: form.phone, occasion: form.occasion, city: e.city, date, guests: +form.guests,
-      note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price ?? 0, fromClient: true,
+      note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price ?? 0, fromClient: true, budget: +form.budget || undefined,
     }));
     setOpen(false);
     toast("وصل طلبك. تابعه من رحلتك");
@@ -184,6 +184,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
             <div className="field"><label htmlFor="b-p">الجوال</label><input id="b-p" className="input num" inputMode="tel" required pattern="05\d{8}" title="رقم يبدأ بـ 05 ومكون من 10 أرقام" placeholder="05xxxxxxxx" value={form.phone} onChange={(ev) => setForm({ ...form, phone: ev.target.value.replace(/\D/g, "").slice(0, 10) })} /></div>
             <div className="field"><label htmlFor="b-o">المناسبة</label><select id="b-o" className="select" value={form.occasion} onChange={(ev) => setForm({ ...form, occasion: ev.target.value as OccasionId })}>{OCCASIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>
             <div className="field"><label htmlFor="b-g">عدد الضيوف</label><input id="b-g" type="number" min={10} className="input num" value={form.guests} onChange={(ev) => setForm({ ...form, guests: +ev.target.value })} /></div>
+            <div className="field full"><label htmlFor="b-bud">ميزانيتك لهذا البند (اختياري)</label><input id="b-bud" className="input num" inputMode="numeric" placeholder="اكتب المبلغ اللي يناسبك" value={+form.budget ? fmt(+form.budget) : ""} onChange={(ev) => setForm({ ...form, budget: ev.target.value.replace(/\D/g, "").slice(0, 9) })} /><small className="muted">توصل للتاجر مع طلبك عشان يجهز لك عرض يناسبها.</small></div>
             <div className="field full"><label htmlFor="b-note">ملاحظات</label><textarea id="b-note" className="input" placeholder="مثال: نحتاج بث مباشر لقسم النساء" value={form.note} onChange={(ev) => setForm({ ...form, note: ev.target.value })} /></div>
           </div>
           <button className="btn primary lg block" type="submit">أرسل الطلب</button>

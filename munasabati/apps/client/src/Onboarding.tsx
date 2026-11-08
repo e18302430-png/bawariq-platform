@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CITIES, OCCASIONS, TIERS, createEvent, daysUntil, estimateBudget, fmt, hospitality, matchVenues, shiftDate, today,
+  CITIES, OCCASIONS, TIERS, BUDGET_SPLIT, createEvent, daysUntil, fmt, hospitality, matchVenues, shiftDate, today,
   type OccasionId, type TierId,
 } from "@munasabati/core";
 import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
@@ -35,11 +35,11 @@ export default function Onboarding() {
   const db = useDB();
   const [step, setStep] = useState(0);
   const [needAuth, setNeedAuth] = useState(false);
-  const [f, setF] = useState({ occasion: "wedding" as OccasionId, city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, name: "", phone: "" });
+  const [f, setF] = useState({ occasion: "wedding" as OccasionId, city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
   const men = Math.round(f.guests * f.menRatio);
-  const plan = useMemo(() => estimateBudget(f.guests, f.tier), [f.guests, f.tier]);
+  const budget = +f.budget.replace(/\D/g, "") || 0;
   const hosp = useMemo(() => hospitality(men, f.guests - men), [men, f.guests]);
   const matches = useMemo(() => matchVenues(db.venues, f.city, f.guests).slice(0, 3), [db.venues, f.city, f.guests]);
 
@@ -56,7 +56,7 @@ export default function Onboarding() {
     create(demo);
   };
   const create = (demo: boolean) => apply(createEvent({ samples: !isCloud,
-    occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier,
+    occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, budget: budget || undefined,
     title: `${occ.name} ${demo ? "عبدالله" : f.name.split(" ")[0]}`.trim(), hostName: demo ? "عبدالله" : f.name.trim() || "ضيفنا", phone: f.phone,
   }));
 
@@ -80,7 +80,7 @@ export default function Onboarding() {
             {step === 0 && <>
               <span className="onb-sub">{greeting()} 👋</span>
               <h1 className="onb-q" style={{ fontSize: "clamp(40px, 11vw, 64px)" }}>حيّاك في<br />مناسبتي.</h1>
-              <p className="onb-sub" style={{ maxWidth: "34ch" }}>جاوب على 5 أسئلة سريعة، ونجهز لك خطة كاملة: الميزانية، والضيافة، وأنسب القاعات في مدينتك.</p>
+              <p className="onb-sub" style={{ maxWidth: "34ch" }}>جاوب على 5 أسئلة سريعة، ونجهز لك خطة كاملة: توزيع ميزانيتك، والضيافة، وأنسب القاعات في مدينتك.</p>
             </>}
 
             {step === 1 && <>
@@ -113,16 +113,26 @@ export default function Onboarding() {
             </>}
 
             {step === 4 && <>
-              <h2 className="onb-q">وش مستوى<br />التجهيز؟</h2>
-              <div className="stack" style={{ ["--gap" as string]: "10px" }}>
-                {TIERS.map((t) => (
-                  <button key={t.id} className={"onb-opt" + (f.tier === t.id ? " on" : "")} style={{ flexDirection: "row", alignItems: "center" }} onClick={() => set("tier", t.id)} aria-pressed={f.tier === t.id}>
-                    <span className="oi"><Icon name={t.id === "lux" ? "Crown" : t.id === "mid" ? "Sparkles" : "Leaf"} size={20} /></span>
-                    <span className="grow"><b style={{ display: "block" }}>{t.name}</b><small>{t.desc}</small></span>
-                    <b className="num" style={{ fontSize: 14 }}>≈ {fmt(estimateBudget(f.guests, t.id).total / 1000)} ألف</b>
-                  </button>
+              <h2 className="onb-q">كم ميزانيتك؟</h2>
+              <p className="onb-sub" style={{ marginTop: -6 }}>أنت تحددها، ونحن نوزعها على البنود ونرشّح لك ما يناسبها.</p>
+              <label className="sr" htmlFor="o-b">الميزانية بالريال</label>
+              <div className="budget-input">
+                <input id="o-b" className="onb-input num" inputMode="numeric" placeholder="اكتب ميزانيتك" value={budget ? fmt(budget) : ""} onChange={(e) => set("budget", e.target.value.replace(/\D/g, "").slice(0, 9))} autoFocus />
+                <span>ر.س</span>
+              </div>
+              <div className="split-bars" aria-hidden={!budget}>
+                {BUDGET_SPLIT.map((l) => (
+                  <div key={l.cat} className="split-row">
+                    <span>{l.label}</span>
+                    <i><motion.b initial={false} animate={{ scaleX: budget ? l.pct / 0.35 : 0.04 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} /></i>
+                    <b className="num">{budget ? fmt(Math.round((budget * l.pct) / 100) * 100) : "—"}</b>
+                  </div>
                 ))}
               </div>
+              <div className="onb-chips">
+                {TIERS.map((t) => <button key={t.id} className={"onb-chip" + (f.tier === t.id ? " on" : "")} onClick={() => set("tier", t.id)} aria-pressed={f.tier === t.id}><Icon name={t.id === "lux" ? "Crown" : t.id === "mid" ? "Sparkles" : "Leaf"} size={14} /> {t.name}</button>)}
+              </div>
+              {!budget && <span style={{ fontSize: 13, opacity: 0.8 }}>ما حددت بعد؟ تقدر تتخطى وتضيفها لاحقاً من صفحة الميزانية.</span>}
             </>}
 
             {step === 5 && <>
@@ -137,13 +147,13 @@ export default function Onboarding() {
             {step === 6 && <div className="stack" style={{ justifyItems: "center", textAlign: "center", ["--gap" as string]: "22px" }}>
               <div className="gen-orb" />
               <h2 className="onb-q" style={{ fontSize: 30 }}>نجهز خطتك يا {f.name.split(" ")[0]}…</h2>
-              <motion.div className="onb-sub" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }} transition={{ duration: 1.8, times: [0, 0.2, 0.8, 1] }}>نحسب الميزانية والضيافة ونطابق القاعات في {f.city}</motion.div>
+              <motion.div className="onb-sub" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }} transition={{ duration: 1.8, times: [0, 0.2, 0.8, 1] }}>نوزع ميزانيتك ونحسب الضيافة ونطابق القاعات في {f.city}</motion.div>
             </div>}
 
             {step === 7 && <>
               <h2 className="onb-q" style={{ fontSize: "clamp(28px, 7vw, 40px)" }}>خطتك جاهزة ✨</h2>
               <div className="plan-tiles">
-                <div className="plan-tile wide"><small>الميزانية التقديرية</small><b className="num"><Counter value={plan.total} /> <span style={{ fontSize: 15 }}>ر.س</span></b></div>
+                <div className="plan-tile wide"><small>ميزانيتك</small>{budget ? <b className="num"><Counter value={budget} /> <span style={{ fontSize: 15 }}>ر.س</span></b> : <b style={{ fontSize: 18 }}>تحددها لاحقاً</b>}</div>
                 <div className="plan-tile"><small>ذبائح تقريباً</small><b><Counter value={hosp.sheep} /></b></div>
                 <div className="plan-tile"><small>قهوة سعودية</small><b><Counter value={hosp.coffee} /> كجم</b></div>
                 <div className="plan-tile"><small>قهوجية وصبابين</small><b><Counter value={hosp.servers} /></b></div>

@@ -47,6 +47,25 @@ export function estimateBudget(guests: number, tier: TierId) {
   return { lines, total: lines.reduce((s, l) => s + l.est, 0) };
 }
 
+/** توزيع ذكي لميزانية يحددها العميل: نسب فقط، والمبلغ من العميل */
+export const BUDGET_SPLIT: { cat: string; label: string; pct: number }[] = [
+  { cat: "venue", label: "القاعة", pct: 0.35 },
+  { cat: "hosp", label: "العشاء والضيافة", pct: 0.3 },
+  { cat: "kosha", label: "الكوشة والتنسيق", pct: 0.12 },
+  { cat: "photo", label: "التصوير", pct: 0.08 },
+  { cat: "av", label: "الصوت والإضاءة", pct: 0.06 },
+  { cat: "other", label: "الدعوات والهدايا والطوارئ", pct: 0.09 },
+];
+export function splitBudget(total?: number) {
+  const t = Math.max(0, total ?? 0);
+  return BUDGET_SPLIT.map(({ cat, label, pct }) => ({ cat, label, est: Math.round((t * pct) / 100) * 100 }));
+}
+/** ميزانية العميل المخصصة لفئة (القاعة أو خدمة مورد) */
+export function budgetFor(lines: { cat: string; est: number }[], cat: string) {
+  const l = lines.find((x) => x.cat === cat) ?? (cat === "venue" ? undefined : lines.find((x) => x.cat === "other"));
+  return l && l.est > 0 ? l.est : undefined;
+}
+
 /** حاسبة الضيافة: تقديرات استرشادية تقريبية للعادات السعودية */
 export function hospitality(men: number, women: number, style: "traditional" | "buffet" = "traditional") {
   const total = men + women;

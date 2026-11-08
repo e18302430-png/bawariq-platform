@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, estimateBudget,
+  acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
 
@@ -12,10 +12,11 @@ describe("الحسابات", () => {
     expect(h.servers).toBe(4);
   });
 
-  it("الميزانية تتضاعف مع المستوى الفاخر", () => {
-    const mid = estimateBudget(400, "mid").total;
-    const lux = estimateBudget(400, "lux").total;
-    expect(lux).toBeGreaterThan(mid * 1.6);
+  it("الميزانية يحددها العميل وتتوزع بالنسب", () => {
+    const lines = splitBudget(100000);
+    expect(lines.find((l) => l.cat === "venue")!.est).toBe(35000);
+    expect(lines.reduce((a, l) => a + l.est, 0)).toBe(100000);
+    expect(splitBudget(undefined).every((l) => l.est === 0)).toBe(true);
   });
 
   it("سعر نهاية الأسبوع للخميس والجمعة والسبت", () => {
@@ -51,6 +52,16 @@ describe("رحلة الحجز بين العميل والمورد", () => {
     expect(db.client.budget).toHaveLength(budgetBefore + 1);
     expect(db.client.budget.at(-1)?.est).toBe(22000);
     expect(busyDays("s1", db.bookings).has("2027-02-10")).toBe(true);
+  });
+
+  it("العميل يحدد ميزانيته ويعيد توزيعها", () => {
+    const repo = createMemoryRepository();
+    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    expect(repo.get().client.budget.every((l) => l.est === 0)).toBe(true);
+    repo.apply(setTotalBudget(200000, true));
+    const db = repo.get();
+    expect(db.client.event!.budget).toBe(200000);
+    expect(db.client.budget.find((l) => l.cat === "venue")!.est).toBe(70000);
   });
 });
 

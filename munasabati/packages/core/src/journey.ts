@@ -38,7 +38,7 @@ export function journey(db: DB, now = Date.now()): Stage[] {
   const stages: Stage[] = [];
 
   stages.push({ id: "plan", n: 1, title: "الخطة", status: e ? "done" : "active", progress: e ? 1 : 0,
-    summary: e ? `ميزانية ${db.client.budget.length} بنود · ${db.client.tasks.length} مهام للعائلة` : "حدد نوع المناسبة والعدد والميزانية",
+    summary: e ? `${e.budget ? "ميزانيتك محددة" : "حدد ميزانيتك"} · ${db.client.tasks.length} مهام للعائلة` : "حدد نوع المناسبة والعدد والميزانية",
     cta: e ? { label: "راجع الميزانية", route: "budget" } : { label: "ابدأ الخطة", route: "home" } });
 
   const vConfirmed = venue.find((b) => b.status === "confirmed");

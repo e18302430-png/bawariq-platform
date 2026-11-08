@@ -117,6 +117,8 @@ export interface Booking {
   /** أنشأه العميل من تطبيق العميل (ليس مثالاً) */
   fromClient?: boolean;
   seed?: boolean;
+  /** ميزانية العميل المخصصة لهذا البند (يحددها العميل) */
+  budget?: number;
 }
 
 export interface ClientEvent {
@@ -128,6 +130,8 @@ export interface ClientEvent {
   menRatio: number;
   tier: TierId;
   title: string;
+  /** الميزانية الكلية يحددها العميل بنفسه (فارغة = لم تحدد) */
+  budget?: number;
 }
 
 export interface Guest {

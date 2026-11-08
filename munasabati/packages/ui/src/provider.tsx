@@ -80,6 +80,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
               <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="Phone" size={14} />{b.phone}</span>
               {describe?.(b)}
             </div>
+            {b.budget ? <div className="client-budget"><Icon name="Wallet" size={16} /><span>ميزانية العميل لهذا البند</span><b className="num">{sar(b.budget)}</b></div> : null}
             {b.note && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}>{b.note}</div>}
             <div className="row"><BookingChat booking={b} me="provider" other={b.clientName} /></div>
             {b.status === "new" && <div className="row wrap">

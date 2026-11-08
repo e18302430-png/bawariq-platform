@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CATEGORIES, CITIES, OCCASIONS, adminDelete, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setBookingStatus, setTicketStatus,
+  CATEGORIES, CITIES, OCCASIONS, adminDelete, fmt, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setBookingStatus, setTicketStatus,
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, apply, isCloud, useDB, useToast,
 } from "@munasabati/ui";
+import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 
 /*
   لوحة إدارة مناسبتي (مخفية، بدون روابط من أي تطبيق).
@@ -34,7 +35,7 @@ function Gate({ onOk }: { onOk: () => void }) {
 }
 
 /* ───── نظرة عامة ───── */
-function Overview({ go }: { go: (t: string, id?: string) => void }) {
+function Overview({ go, live }: { go: (t: string, id?: string) => void; live: LiveEvent[] }) {
   const db = useDB();
   const tickets = db.tickets ?? [];
   const stale = db.bookings.filter((b) => b.status === "new" && Date.now() - b.createdAt > 24 * 36e5);
@@ -53,6 +54,7 @@ function Overview({ go }: { go: (t: string, id?: string) => void }) {
   return (
     <>
       <div><span className="eyebrow">مركز التحكم</span><h1 className="page-title">نظرة عامة</h1></div>
+      <LiveFeed feed={live} onOpen={(e) => go(e.tab, e.focus)} />
       <div className="stats">{tiles.map(([l, n, ic, t]) => <button key={l} className="card adm-tile" onClick={() => go(t)}><div className="stat-label"><Icon name={ic} size={15} /> {l}</div><div className="stat-value num">{n}</div></button>)}</div>
       <section className="card">
         <div className="section-title"><h3>يحتاج انتباهك</h3></div>
@@ -100,6 +102,7 @@ function Bookings({ focus }: { focus?: string }) {
             <span>العميل</span><b>{cur.clientName}</b><span>الجوال</span><b className="num">{cur.phone}</b>
             <span>الجهة</span><b>{name(cur)}</b><span>المناسبة</span><b>{OCCASIONS.find((o) => o.id === cur.occasion)?.name}</b>
             <span>التاريخ</span><b className="num">{cur.date}</b><span>المدينة</span><b>{cur.city}</b>
+            <span>الضيوف</span><b className="num">{fmt(cur.guests)}</b><span>ميزانية العميل</span><b className="num">{cur.budget ? sar(cur.budget) : "لم يحددها"}</b>
           </div>
           {cur.note && <div className="card flat tight" style={{ background: "var(--surface-2)" }}>{cur.note}</div>}
           <div className="field"><span className="label">المحادثة بين الطرفين</span><Thread items={cur.messages.map((m) => ({ mine: m.from === "provider", text: m.text, at: m.at, who: m.from === "provider" ? name(cur) : cur.clientName }))} mine="لا توجد رسائل" /></div>
@@ -292,6 +295,7 @@ function Panel() {
     return () => window.removeEventListener("keydown", k);
   }, []);
   const go = (t: string, id?: string) => { setFocus(id); setTab(t); window.scrollTo({ top: 0 }); };
+  const live = useLive(db);
   const tabs = [
     { id: "overview", label: "نظرة عامة", icon: "LayoutDashboard" },
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "new").length },
@@ -302,11 +306,11 @@ function Panel() {
   ];
   return (
     <AppShell portal="الإدارة" tabs={tabs} active={tab} onChange={(t) => go(t)}
-      actions={<button className="btn sm ghost" onClick={() => setPal(true)}><Icon name="Search" size={15} /> بحث <kbd className="kbd">Ctrl K</kbd></button>}
+      actions={<><LiveBadge sound={live.sound} setSound={live.setSound} /><button className="btn sm ghost" onClick={() => setPal(true)}><Icon name="Search" size={15} /> بحث <kbd className="kbd">Ctrl K</kbd></button></>}
       footer={<button className="btn sm ghost" onClick={() => { try { sessionStorage.removeItem(KEY); } catch { /* */ } location.reload(); }}><Icon name="LogOut" size={15} /> خروج</button>}>
       <AnimatePresence mode="wait">
         <motion.div key={tab + (focus ?? "")} className="page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-          {tab === "overview" && <Overview go={go} />}
+          {tab === "overview" && <Overview go={go} live={live.feed} />}
           {tab === "bookings" && <Bookings focus={focus} />}
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
@@ -315,6 +319,7 @@ function Panel() {
         </motion.div>
       </AnimatePresence>
       <Palette open={pal} onClose={() => setPal(false)} go={go} />
+      <LiveToasts items={live.toasts} onOpen={(e) => go(e.tab, e.focus)} onClose={live.dismiss} />
     </AppShell>
   );
 }

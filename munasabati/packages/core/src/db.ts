@@ -1,5 +1,5 @@
 import { SAMPLE_GUESTS, SAMPLE_TASKS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
-import { estimateBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
+import { splitBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
 import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, Supplier, Task, Ticket, Venue } from "./types";
 
 /* ───────────────── البيانات الأولية ───────────────── */
@@ -43,7 +43,6 @@ export interface NewEventInput extends Omit<ClientEvent, "id"> { hostName: strin
 
 export const createEvent = (input: NewEventInput): Mutation => (db) => {
   const { hostName, phone = "", samples = true, ...ev } = input;
-  const plan = estimateBudget(ev.guests, ev.tier);
   const guests: Guest[] = !samples ? [] : SAMPLE_GUESTS.map(([name, section, side, status, count], i) => ({
     id: uid("g"), name, phone: `05${String(50000000 + i * 1234567).slice(0, 8)}`, section, side, status, count, code: inviteCode(), checkedIn: false, sample: true,
   }));
@@ -55,7 +54,7 @@ export const createEvent = (input: NewEventInput): Mutation => (db) => {
       event: { id: uid("e"), ...ev },
       guests,
       tasks: SAMPLE_TASKS.map(([title, who, before, done]) => ({ id: uid("t"), title, who, due: shiftDate(ev.date, -before), done })),
-      budget: plan.lines.map((l) => ({ id: uid("b"), ...l, paid: l.cat === "venue" ? Math.round(l.est * 0.3) : 0 })),
+      budget: splitBudget(ev.budget).map((l) => ({ id: uid("b"), ...l, paid: 0 })),
     },
   };
 };
@@ -126,6 +125,17 @@ export const setSession = (patch: Partial<DB["sessions"]>): Mutation => (db) => 
 export const addTask = (t: Omit<Task, "id" | "done">): Mutation => (db) => ({ ...db, client: { ...db.client, tasks: [...db.client.tasks, { ...t, id: uid("t"), done: false }] } });
 export const toggleTask = (id: string): Mutation => (db) => ({ ...db, client: { ...db.client, tasks: db.client.tasks.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) } });
 export const removeTask = (id: string): Mutation => (db) => ({ ...db, client: { ...db.client, tasks: db.client.tasks.filter((t) => t.id !== id) } });
+/** العميل يحدد ميزانيته الكلية؛ redistribute يوزعها على البنود الأساسية بالنسب الذكية */
+export const setTotalBudget = (total: number | undefined, redistribute = false): Mutation => (db) => {
+  if (!db.client.event) return db;
+  const event = { ...db.client.event, budget: total && total > 0 ? total : undefined };
+  if (!redistribute) return { ...db, client: { ...db.client, event } };
+  const split = splitBudget(event.budget);
+  const lines = db.client.budget.map((l) => { const s = split.find((x) => x.cat === l.cat); return s ? { ...l, est: s.est } : l; });
+  const missing = split.filter((s) => !lines.some((l) => l.cat === s.cat)).map((s) => ({ id: uid("b"), ...s, paid: 0 }));
+  return { ...db, client: { ...db.client, event, budget: [...lines, ...missing] } };
+};
+
 export const addBudget = (b: Omit<BudgetLine, "id">): Mutation => (db) => ({ ...db, client: { ...db.client, budget: [...db.client.budget, { ...b, id: uid("b") }] } });
 export const updateBudget = (id: string, patch: Partial<BudgetLine>): Mutation => (db) => ({ ...db, client: { ...db.client, budget: db.client.budget.map((b) => (b.id === id ? { ...b, ...patch } : b)) } });
 export const removeBudget = (id: string): Mutation => (db) => ({ ...db, client: { ...db.client, budget: db.client.budget.filter((b) => b.id !== id) } });

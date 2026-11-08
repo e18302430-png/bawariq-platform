@@ -88,7 +88,7 @@ export default function Home() {
 
       <div className="mini-stats">
         <button onClick={() => go("guests")}><Icon name="UserCheck" size={17} /><span><b className="num"><Counter value={yes} /></b><small>ضيف مؤكد</small></span></button>
-        <button onClick={() => go("budget")}><Icon name="Wallet" size={17} /><span><b className="num">{est ? Math.round((paid / est) * 100) : 0}%</b><small>من {sar(est)}</small></span></button>
+        <button onClick={() => go("budget")}><Icon name="Wallet" size={17} /><span>{(e.budget ?? est) ? <><b className="num">{sar(e.budget ?? est)}</b><small>{paid ? `مدفوع ${Math.round((paid / (e.budget ?? est)) * 100)}%` : "ميزانيتك"}</small></> : <><b>حدّدها</b><small>ميزانيتك</small></>}</span></button>
         <button onClick={() => go("tasks")}><Icon name="ListChecks" size={17} /><span><b className="num">{db.client.tasks.filter((t) => t.done).length}/{db.client.tasks.length}</b><small>مهام العائلة</small></span></button>
       </div>
     </>

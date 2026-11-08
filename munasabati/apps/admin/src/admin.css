@@ -18,3 +18,26 @@
 .palette-in input { flex: 1; border: 0; background: transparent; font-size: 16px; color: var(--ink); min-height: 40px; }
 .palette-in input:focus { outline: none; }
 .palette .list { max-height: 50vh; overflow-y: auto; padding: 4px; }
+
+/* ── البث المباشر ── */
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: livePulse 1.6s infinite; vertical-align: middle; margin-inline-end: 4px; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.55); } 70% { box-shadow: 0 0 0 9px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+.live-badge { gap: 6px; }
+.live-badge:not(.on) .live-dot { background: var(--muted); animation: none; }
+.live-toasts { position: fixed; top: max(14px, env(safe-area-inset-top)); inset-inline: 0; margin-inline: auto; width: min(420px, calc(100% - 24px)); z-index: 90; display: grid; gap: 8px; pointer-events: none; }
+.live-toast { pointer-events: auto; position: relative; overflow: hidden; display: flex; align-items: center; gap: 6px; padding: 10px 10px 12px 12px; border-radius: 18px; background: var(--glass, rgba(255,255,255,.86)); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid var(--line, rgba(0,0,0,.08)); box-shadow: 0 18px 40px -16px rgba(20,10,40,.35); }
+.live-toast .lt-main { flex: 1; display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; text-align: start; color: inherit; font: inherit; cursor: pointer; min-width: 0; }
+.lt-ico { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--brand), var(--brand-2, #ff8a3d)); }
+.live-toast.ticket .lt-ico, .live-toast.ticket-reply .lt-ico { background: linear-gradient(135deg, #6366f1, #8e7cff); }
+.live-toast.status .lt-ico { background: linear-gradient(135deg, #10b981, #2ab7ca); }
+.live-toast.message .lt-ico { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+.lt-t { display: grid; min-width: 0; }
+.lt-t b { font-size: 14.5px; }
+.lt-t small { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-timer { position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--brand); transform-origin: right; animation: ltTimer 7s linear forwards; opacity: .7; }
+@keyframes ltTimer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.live-feed .list { max-height: 360px; overflow: auto; }
+.lf-booking { background: color-mix(in oklab, var(--brand) 14%, transparent) !important; color: var(--brand) !important; }
+.lf-ticket, .lf-ticket-reply { background: rgba(99,102,241,.14) !important; color: #6366f1 !important; }
+.lf-status { background: rgba(16,185,129,.14) !important; color: #10b981 !important; }
+@media (prefers-reduced-motion: reduce) { .live-dot, .lt-timer { animation: none; } }

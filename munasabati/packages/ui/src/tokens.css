@@ -356,3 +356,6 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .topic-tile:active { transform: scale(0.97); }
 .announce { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 14px; border-radius: 16px; background: var(--info-soft); color: var(--info); font-size: 14px; font-weight: 500; }
 .suspended-bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 18px; background: var(--bad-soft); color: var(--bad); font-weight: 600; }
+.client-budget { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; background: color-mix(in oklab, var(--ok) 12%, transparent); color: var(--ink); font-size: 14px; }
+.client-budget span { flex: 1; color: var(--muted); }
+.client-budget b { font-size: 16px; }
