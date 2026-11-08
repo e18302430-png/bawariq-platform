@@ -37,6 +37,12 @@ export interface AuthAdapter {
 }
 
 export interface DoorSnapshot { title: string; date: string; guests: Guest[]; program?: { title: string; time: string }[]; live?: number }
+/** دعوة الضيف عبر رابطه (بدون حساب): يرى دعوته فقط ويرد عليها */
+export interface InviteSnapshot { event: DB["client"]["event"]; invite: DB["client"]["invite"]; liveIndex?: number; host?: string; guest: Guest; venue?: { name: string; district: string; photos?: string[] } | null }
+export interface InviteAdapter {
+  load(code: string): Promise<InviteSnapshot | null>;
+  rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string }): Promise<Guest | null>;
+}
 export interface DoorAdapter {
   load(key: string): Promise<DoorSnapshot | null>;
   checkIn(key: string, code: string): Promise<CheckInResult>;
@@ -54,6 +60,10 @@ export interface Repository {
   auth?: AuthAdapter;
   /** شاشة المنسق عند الباب على جهاز آخر (سحابياً عبر دوال آمنة بمفتاح الرابط) */
   door?: DoorAdapter;
+  /** صفحة دعوة الضيف عبر رمزه */
+  invite?: InviteAdapter;
+  /** اكتمل أول تحميل (الجلسة والبيانات): قبلها نعرض شاشة تحميل بدل وميض صفحة الدخول */
+  ready?(): boolean;
   /** آخر خطأ في الحفظ (مثلاً امتلاء التخزين أو انقطاع الاتصال) */
   error(): string | null;
 }

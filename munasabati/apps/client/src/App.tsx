@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AppShell, ErrorBoundary, Icon, ScreenSkeleton, ToastProvider, repo, useDB, type ShellTab } from "@munasabati/ui";
+import { AppShell, ErrorBoundary, Icon, ScreenSkeleton, ToastProvider, repo, useDB, type ShellTab, Splash, useReady } from "@munasabati/ui";
 import { go } from "./nav";
 import type { OccasionId } from "@munasabati/core";
 
@@ -41,11 +41,13 @@ function useHash() {
 
 function Main() {
   const db = useDB();
+  const ready = useReady();
   const route = useHash();
   if (route.startsWith("invite-")) return <Suspense fallback={<div className="guest-page" />}><GuestInvite code={route.slice(7)} /></Suspense>;
   // شاشة المنسق عند الباب: #door-<مفتاح>[-men|-women]
   const dm = route.match(/^door-([a-z0-9]{10,})(?:-(men|women))?$/);
   if (dm) return <Suspense fallback={<div className="station" />}><DoorStation k={dm[1]} section={dm[2] as "men" | "women" | undefined} /></Suspense>;
+  if (!ready) return <Splash dark />;
   // ضيف ضغط «ابدأ مناسبتك» من دعوة: #start-<نوع المناسبة>
   const st = route.match(/^start-(\w+)$/);
   if (!db.client.event) return <Suspense fallback={<div className="onb" />}><Onboarding preset={st?.[1] as OccasionId | undefined} source={st ? "invite" : undefined} /></Suspense>;

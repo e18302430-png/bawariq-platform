@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -169,7 +169,9 @@ function Portal({ s }: { s: Supplier }) {
 
 function Main() {
   const db = useDB();
+  const ready = useReady();
   const s = db.suppliers.find((x) => x.id === db.sessions.supplierId);
+  if (!ready) return <Splash />;
   return s ? <Portal s={s} /> : <Login />;
 }
 

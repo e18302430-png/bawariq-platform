@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type Guest, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
+  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type Guest, type InviteSnapshot, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 
 /**
@@ -29,6 +29,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
 
   const fail = (msg: string) => (e: unknown) => { lastError = `${msg}: ${(e as Error)?.message ?? e}`; emit(); };
 
+  let loaded = false;
   async function load() {
     const { data: s } = await sb.auth.getSession();
     user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "" } : null;
@@ -65,6 +66,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       supportPhone: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "support_phone")?.value || undefined,
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
+    loaded = true;
     lastError = sup.error?.message ?? ven.error?.message ?? null;
     emit();
   }
@@ -113,7 +115,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); }).subscribe();
   let recovering = false;
   sb.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") recovering = true; void load(); });
-  void load().catch(fail("تعذّر الاتصال"));
+  void load().catch((e) => { loaded = true; fail("تعذّر الاتصال")(e); emit(); });
 
   const auth: AuthAdapter = {
     mode: authMode,
@@ -186,6 +188,18 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   };
 
   // شاشة المنسق: تقرأ وتسجل الدخول بمفتاح الرابط فقط (دوال security definer، بدون كشف بقية بيانات العميل)
+  const invite = {
+    async load(code: string) {
+      const { data, error } = await sb.rpc("invite_load", { c: code });
+      if (error || !data || !(data as { guest?: unknown }).guest) return null;
+      return data as InviteSnapshot;
+    },
+    async rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string }) {
+      const { data, error } = await sb.rpc("invite_rsvp", { c: code, st: patch.status, cnt: patch.count ?? null, dt: patch.diet ?? null });
+      if (error || !data) return null;
+      return data as Guest;
+    },
+  };
   const door = {
     async load(key: string) {
       const { data, error } = await sb.rpc("door_load", { k: key });
@@ -202,6 +216,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   return {
     mode: "cloud",
     door,
+    invite,
+    ready: () => loaded,
     get: () => state,
     apply(m: Mutation) { const prev = state; state = m(state); emit(); void persist(prev, state); },
     subscribe(l) { listeners.add(l); return () => listeners.delete(l); },

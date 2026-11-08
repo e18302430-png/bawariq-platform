@@ -357,3 +357,13 @@ export function Media({ photos, seed, hue, kind = "venue", alt = "", small = tru
     ? <img src={src} alt={alt} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
     : <Art seed={seed} hue={hue} kind={kind} />;
 }
+
+/** شاشة تحميل قصيرة بهوية مناسبتي (بدل وميض صفحة الدخول قبل التحقق من الجلسة) */
+export function Splash({ dark = false }: { dark?: boolean }) {
+  return (
+    <div className={"splash" + (dark ? " dark" : "")} role="status" aria-label="جاري التحميل">
+      <b>مناسبتي</b>
+      <i aria-hidden="true"><span /></i>
+    </div>
+  );
+}

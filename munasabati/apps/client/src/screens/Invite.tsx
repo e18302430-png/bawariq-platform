@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, greetingFor, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
-import { Empty, Icon, QR, Segmented, apply, photoUrl, useDB, useToast } from "@munasabati/ui";
+import { OCCASIONS, greetingFor, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
+import { DBProvider, Empty, Icon, QR, Segmented, Splash, apply, photoUrl, repo, useDB, useToast } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
 import diriyah from "../assets/invite/diriyah.webp";
@@ -353,7 +353,7 @@ function useCountdown(iso: string, time: string) {
   return [Math.floor(d / 864e5), Math.floor(d / 36e5) % 24, Math.floor(d / 6e4) % 60, Math.floor(d / 1e3) % 60];
 }
 
-export function GuestInvite({ code }: { code: string }) {
+function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patch: Partial<Guest>) => void }) {
   const db = useDB();
   const g = db.client.guests.find((x) => x.code === code);
   const info = useEventInfo();
@@ -441,11 +441,11 @@ export function GuestInvite({ code }: { code: string }) {
                 </div>
                 <label className="sr" htmlFor="gx-diet">ملاحظة أكل أو حساسية</label>
                 <input id="gx-diet" className="input" placeholder="عندك حساسية أو نظام أكل خاص؟ (اختياري)" value={diet} onChange={(e) => setDiet(e.target.value.slice(0, 120))} />
-                <button className="btn lg block gx-yes" onClick={() => { apply(updateGuest(g.id, { status: "yes", count, diet: diet.trim() || undefined })); setFire((f) => f + 1); }}>بحضر إن شاء الله</button>
-                <button className="btn block ghost" onClick={() => apply(updateGuest(g.id, { status: "no" }))}>أعتذر عن الحضور</button>
+                <button className="btn lg block gx-yes" onClick={() => { rsvp(g.id, { status: "yes", count, diet: diet.trim() || undefined }); setFire((f) => f + 1); }}>بحضر إن شاء الله</button>
+                <button className="btn block ghost" onClick={() => rsvp(g.id, { status: "no" })}>أعتذر عن الحضور</button>
               </div>
             ) : (
-              <div className="gx-done">{g.status === "yes" ? <><Icon name="CheckCircle2" size={20} /> بانتظارك. بطاقة الدخول على الدعوة فوق.</> : <>شكراً لردك.</>}<button onClick={() => apply(updateGuest(g.id, { status: "pending" }))}>تغيير</button></div>
+              <div className="gx-done">{g.status === "yes" ? <><Icon name="CheckCircle2" size={20} /> بانتظارك. بطاقة الدخول على الدعوة فوق.</> : <>شكراً لردك.</>}<button onClick={() => rsvp(g.id, { status: "pending" })}>تغيير</button></div>
             )}
             <div className="row" style={{ marginTop: 12 }}><a className="btn grow" href={map} target="_blank" rel="noreferrer"><Icon name="MapPin" size={16} /> الموقع</a><a className="btn grow" href={cal} target="_blank" rel="noreferrer"><Icon name="CalendarPlus" size={16} /> أضف للتقويم</a></div>
           </section>
@@ -457,4 +457,34 @@ export function GuestInvite({ code }: { code: string }) {
       )}
     </div>
   );
+}
+
+
+/* ───── دعوة الضيف: من بيانات صاحب المناسبة (نفس الجهاز) أو من البوابة الآمنة برمز الضيف (على جوال الضيف) ───── */
+type Snap = NonNullable<Awaited<ReturnType<NonNullable<typeof repo.invite>["load"]>>>;
+export function GuestInvite({ code }: { code: string }) {
+  const db = useDB();
+  const local = db.client.guests.some((x) => x.code === code);
+  const [snap, setSnap] = useState<Snap | null | undefined>(undefined);
+  useEffect(() => {
+    if (local || !repo.invite) return;
+    let alive = true;
+    void repo.invite.load(code).then((s) => alive && setSnap(s));
+    return () => { alive = false; };
+  }, [code, local]);
+  if (local || !repo.invite) return <GuestInviteView code={code} rsvp={(id, patch) => apply(updateGuest(id, patch))} />;
+  if (snap === undefined) return <Splash />;
+  if (snap === null) return <GuestInviteView code={code} rsvp={() => {}} />;
+  const venueId = "invite-venue";
+  const view: DB = {
+    ...db,
+    bookings: snap.venue ? [{ id: "invite-booking", kind: "venue", targetId: venueId, clientName: "", phone: "", occasion: snap.event!.occasion, city: snap.event!.city, date: snap.event!.date, guests: 0, note: "", status: "confirmed", estimate: 0, createdAt: 0, messages: [], fromClient: true }] : [],
+    venues: snap.venue ? [{ id: venueId, name: snap.venue.name, district: snap.venue.district, city: snap.event!.city, hue: 30, tags: [], about: "", halls: [], blocked: [], photos: snap.venue.photos }] : [],
+    client: { ...db.client, event: snap.event, invite: snap.invite, liveIndex: snap.liveIndex, guests: [snap.guest], profile: snap.host ? { name: snap.host, phone: "" } : db.client.profile },
+  };
+  const rsvp = (_id: string, patch: Partial<Guest>) => {
+    setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...patch } } : s));
+    void repo.invite!.rsvp(code, { status: patch.status ?? snap.guest.status, count: patch.count, diet: patch.diet }).then((g) => g && setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...g } } : s)));
+  };
+  return <DBProvider value={view}><GuestInviteView code={code} rsvp={rsvp} /></DBProvider>;
 }

@@ -5,7 +5,7 @@ import {
   upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
-  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useToast,
+  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useToast, Splash, useReady,
 } from "@munasabati/ui";
 import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
@@ -365,8 +365,10 @@ function Panel() {
 
 function Main() {
   useDB();
+  const ready = useReady();
   const [ok, setOk] = useState(() => { try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; } });
   const allowed = isCloud ? repo.auth?.user()?.role === "admin" && !repo.auth?.needsNewPassword() : ok;
+  if (!ready) return <Splash />;
   return allowed ? <Panel /> : <Gate onOk={() => setOk(true)} />;
 }
 

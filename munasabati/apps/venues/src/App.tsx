@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast } from "@munasabati/ui";
+import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -211,7 +211,9 @@ function Portal({ v }: { v: Venue }) {
 
 function Main() {
   const db = useDB();
+  const ready = useReady();
   const v = db.venues.find((x) => x.id === db.sessions.venueId);
+  if (!ready) return <Splash />;
   return v ? <Portal v={v} /> : <Login />;
 }
 

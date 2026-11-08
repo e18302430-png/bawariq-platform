@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
 import { createInitialDB, createLocalRepository, type DB, type Mutation, type Repository } from "@munasabati/core";
 
 /** مستودع مؤجل: يحمّل مكتبة Supabase فقط عند تفعيل وضع الإنتاج (لا تُحمَّل في وضع التجربة) */
@@ -23,6 +23,11 @@ function deferredCloud(url: string, key: string, authMode: "phone" | "quick"): R
       load: async (k) => (await ready).door!.load(k),
       checkIn: async (k, c) => (await ready).door!.checkIn(k, c),
     },
+    invite: {
+      load: async (c) => (await ready).invite!.load(c),
+      rsvp: async (c, p) => (await ready).invite!.rsvp(c, p),
+    },
+    ready: () => inner?.ready?.() ?? false,
     error: () => inner?.error() ?? null,
   };
 }
@@ -40,8 +45,18 @@ const AUTH_MODE = (import.meta.env.VITE_AUTH_MODE as string | undefined) === "ph
 export const repo: Repository = URL_ && KEY_ ? deferredCloud(URL_, KEY_, AUTH_MODE) : createLocalRepository();
 export const isCloud = repo.mode === "cloud";
 
+/** بيانات بديلة لشاشة واحدة (مثل دعوة ضيف قادمة من البوابة الآمنة بدل بيانات المستخدم) */
+const DBOverride = createContext<DB | null>(null);
+export const DBProvider = DBOverride.Provider;
 export function useDB(): DB {
-  return useSyncExternalStore(repo.subscribe, repo.get, repo.get);
+  const over = useContext(DBOverride);
+  const db = useSyncExternalStore(repo.subscribe, repo.get, repo.get);
+  return over ?? db;
+}
+/** اكتمل التحميل الأول؟ (محلياً دائماً نعم) */
+export function useReady(): boolean {
+  useSyncExternalStore(repo.subscribe, repo.get, repo.get);
+  return !isCloud || (repo.ready?.() ?? true);
 }
 
 export const apply = (m: Mutation) => repo.apply(m);
