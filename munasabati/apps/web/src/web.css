@@ -136,3 +136,22 @@
   .occ-row::-webkit-scrollbar { display: none; }
   .occ { flex: none; }
 }
+
+/* شريط الصور السينمائي */
+.reel { position: relative; border-radius: 34px; overflow: hidden; aspect-ratio: 21 / 9; background: #120a1c; color: #fff; isolation: isolate; box-shadow: var(--shadow-2); }
+.reel-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.reel-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(10, 6, 16, 0.78), rgba(10, 6, 16, 0.05) 55%, rgba(10, 6, 16, 0.35)); }
+.reel-bars { position: absolute; top: 18px; inset-inline: 22px; display: flex; gap: 6px; }
+.reel-bars button { flex: 1; height: 16px; padding: 6px 0; border: 0; background: transparent; }
+.reel-bars i { display: block; height: 3.5px; border-radius: 4px; background: #fff; transform-origin: right; box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0); }
+.reel-bars button { position: relative; }
+.reel-bars button::before { content: ""; position: absolute; inset: 6px 0; border-radius: 4px; background: rgba(255, 255, 255, 0.3); }
+.reel-cap { position: absolute; bottom: 30px; inset-inline-start: 34px; max-width: 60%; }
+.reel-cap h3 { font-size: clamp(24px, 3.4vw, 44px); font-weight: 800; letter-spacing: -0.03em; }
+.reel-cap p { opacity: 0.88; font-size: clamp(14px, 1.3vw, 17px); margin-top: 4px; }
+.reel-cta { position: absolute; bottom: 30px; inset-inline-end: 30px; }
+@media (max-width: 720px) {
+  .reel { aspect-ratio: 4 / 5; border-radius: 28px; }
+  .reel-cap { inset-inline: 20px; bottom: 92px; max-width: none; }
+  .reel-cta { inset-inline: 20px; bottom: 22px; }
+}

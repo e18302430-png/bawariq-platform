@@ -5,3 +5,4 @@ export { MeshGradient } from "./MeshGradient";
 export * from "./provider";
 export * from "./Logo";
 export * from "./auth";
+export * from "./media";

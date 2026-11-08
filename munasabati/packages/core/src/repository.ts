@@ -1,4 +1,5 @@
 import { createInitialDB, type Mutation } from "./db";
+import { SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
 import type { DB } from "./types";
 
 /**
@@ -43,7 +44,11 @@ export function createLocalRepository(key = KEY): Repository {
     try {
       const raw = globalThis.localStorage?.getItem(key);
       const parsed = raw ? (JSON.parse(raw) as DB) : null;
-      return parsed?.version === 2 ? parsed : null;
+      if (parsed?.version !== 2) return null;
+      // ترحيل: إضافة صور الهوية للنشاطات التجريبية المحفوظة قبل إضافتها
+      parsed.suppliers = parsed.suppliers.map((x) => x.photos?.length ? x : { ...x, photos: SEED_SUPPLIERS.find((y) => y.id === x.id)?.photos });
+      parsed.venues = parsed.venues.map((x) => x.photos?.length ? x : { ...x, photos: SEED_VENUES.find((y) => y.id === x.id)?.photos });
+      return parsed;
     } catch {
       return null;
     }

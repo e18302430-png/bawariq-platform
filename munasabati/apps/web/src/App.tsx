@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { CATEGORIES, OCCASIONS, hospitality, type Occasion } from "@munasabati/core";
-import { Counter, Icon, LogoMark, MeshGradient, Reveal, ThemeToggle } from "@munasabati/ui";
+import { Counter, Icon, LogoMark, MeshGradient, Reveal, ThemeToggle, photoUrl } from "@munasabati/ui";
 
 // كل بوابة تطبيق مستقل يُنشر منفصلاً. الروابط قابلة للتغيير عند النشر على نطاقات مختلفة.
 const LINKS = {
@@ -55,9 +55,9 @@ function MiniMarket({ occ }: { occ: Occasion }) {
       <div className="ms-hello">استكشف</div>
       <div className="ms-card" style={{ padding: "9px 12px", color: "var(--faint)", display: "flex", gap: 6, alignItems: "center" }}><Icon name="Search" size={14} /> قاعات، كوشة، تصوير…</div>
       <div style={{ display: "flex", gap: 6 }}>{["قاعات", "كوشة", "تصوير", "ضيافة"].map((c, i) => <span key={c} className={"chip" + (i === 0 ? " on" : "")} style={{ minHeight: 28, padding: "0 10px", fontSize: 11 }}>{c}</span>)}</div>
-      {[["قصر الندى", "الرياض · حتى 900", "65,000", 0], ["دار اللؤلؤ", "جدة · حتى 1,200", "88,000", 2]].map(([n, m, p, k]) => (
+      {[["قصر الندى", "الرياض · حتى 900", "65,000", "v1"], ["دار اللؤلؤ", "جدة · حتى 1,200", "88,000", "v3"]].map(([n, m, p, k]) => (
         <div key={n as string} className="ms-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 82, background: `linear-gradient(135deg, ${occ.palette[k as number]}, ${occ.palette[(k as number) + 1]})` }} />
+          <img src={photoUrl(`media:${k}`, true)} alt="" style={{ height: 82, width: "100%", objectFit: "cover", display: "block", borderBottom: `3px solid ${occ.palette[1]}` }} />
           <div style={{ padding: 10 }}><div className="row between"><b className="display" style={{ fontSize: 13 }}>{n}</b><span className="brand num" style={{ fontWeight: 600 }}>★ 4.9</span></div><div className="row between faint" style={{ fontSize: 11 }}><span>{m}</span><span className="num" style={{ color: "var(--ink)", fontWeight: 600 }}>{p} ر.س</span></div></div>
         </div>
       ))}
@@ -122,6 +122,44 @@ function FloatCard({ style, icon, color, title, sub, delay, className = "" }: { 
       <span className="fi" style={{ background: color + "22", color }}><Icon name={icon} size={18} /></span>
       <div><b>{title}</b><small>{sub}</small></div>
     </motion.div>
+  );
+}
+
+
+const REEL: [string, string, string][] = [
+  ["v1", "قصر الندى · الرياض", "قاعة بقسمين وكوشة بارتفاع 7 أمتار"],
+  ["s1", "تجهيز متكامل", "كوشة وإضاءة وشاشات وبث مباشر من مورد واحد"],
+  ["v6", "خيمة رجال ومشبّات · القصيم", "مجالس تراثية للمناسبات الكبيرة"],
+  ["s3", "الضيافة السعودية", "قهوجية وصبابين وتمور فاخرة"],
+  ["v3", "دار اللؤلؤ · جدة", "إطلالة بحرية وممر زفة 40 متر"],
+  ["s7", "استيدج وكوشات", "تصميم ثلاثي الأبعاد قبل التنفيذ"],
+  ["v7", "قاعة غيم · أبها", "حفلة فوق الضباب"],
+];
+
+function Reel() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => { if (paused) return; const t = setTimeout(() => setI((x) => (x + 1) % REEL.length), 5200); return () => clearTimeout(t); }, [i, paused]);
+  const [k, title, sub] = REEL[i];
+  return (
+    <section className="container sec" style={{ paddingTop: 30 }}>
+      <Reveal className="sec-head"><span className="eyebrow">من داخل المنصة</span><h2>قاعات وتجهيزات <span className="grad-text">تستاهل فرحتك</span></h2></Reveal>
+      <div className="reel" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+        <AnimatePresence initial={false}>
+          <motion.img key={k} src={photoUrl(`media:${k}`)} alt={title} className="reel-img"
+            initial={{ opacity: 0, scale: 1.14 }} animate={{ opacity: 1, scale: 1.02 }} exit={{ opacity: 0 }}
+            transition={{ opacity: { duration: 1.1 }, scale: { duration: 7, ease: "linear" } }} />
+        </AnimatePresence>
+        <div className="reel-shade" />
+        <div className="reel-bars">{REEL.map((_, n) => <button key={n} onClick={() => setI(n)} aria-label={`الصورة ${n + 1}`}><motion.i initial={false} animate={{ scaleX: n < i ? 1 : n === i ? 1 : 0 }} transition={{ duration: n === i && !paused ? 5.2 : 0.3, ease: "linear" }} /></button>)}</div>
+        <AnimatePresence mode="wait">
+          <motion.div key={title} className="reel-cap" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.5 }}>
+            <h3>{title}</h3><p>{sub}</p>
+          </motion.div>
+        </AnimatePresence>
+        <a className="btn white reel-cta" href={LINKS.client}>تصفح في التطبيق <Icon name="ArrowLeft" size={17} /></a>
+      </div>
+    </section>
   );
 }
 
@@ -290,6 +328,7 @@ export default function App() {
       <div className="marquee" aria-label="خدمات التجهيز">
         <div className="track">{[0, 1].map((k) => CATEGORIES.map((c) => <span key={k + c.id} className="item" aria-hidden={k === 1}><span><Icon name={c.icon} size={18} /></span>{c.name}</span>))}</div>
       </div>
+      <Reel />
       <Portals occ={occ} />
       <Story occ={occ} />
       <CalcBand />

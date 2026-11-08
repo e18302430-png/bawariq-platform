@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValue, animate } from "framer-motion"
 import QRCode from "qrcode";
 import { Icon } from "./icons";
 import { LogoMark } from "./Logo";
+import { photoUrl } from "./media";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
 
 /* ───── عدّاد رقمي متحرك ───── */
@@ -282,8 +283,8 @@ export function useInView<T extends Element>(opts?: IntersectionObserverInit) {
 }
 
 /* ───── صورة حقيقية إن وُجدت، وإلا رسم الهوية التوليدي ───── */
-export function Media({ photos, seed, hue, kind = "venue", alt = "" }: { photos?: string[]; seed: string; hue: number; kind?: "venue" | "supplier"; alt?: string }) {
-  const src = photos?.[0];
+export function Media({ photos, seed, hue, kind = "venue", alt = "", small = true }: { photos?: string[]; seed: string; hue: number; kind?: "venue" | "supplier"; alt?: string; small?: boolean }) {
+  const src = photos?.[0] ? photoUrl(photos[0], small) : "";
   return src
     ? <img src={src} alt={alt} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
     : <Art seed={seed} hue={hue} kind={kind} />;

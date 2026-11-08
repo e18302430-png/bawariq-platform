@@ -5,6 +5,7 @@ import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
 import { LogoMark } from "./Logo";
+import { photoUrl } from "./media";
 import { apply, repo, resizeImage } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
@@ -208,7 +209,7 @@ export function PhotoManager({ photos = [], onChange, max = 8 }: { photos?: stri
       <div className="photo-grid">
         {photos.map((p, i) => (
           <div key={p.slice(-40) + i} className="photo-cell">
-            <img src={p} alt={`صورة ${i + 1}`} />
+            <img src={photoUrl(p, true)} alt={`صورة ${i + 1}`} />
             {i === 0 && <span className="pill" style={{ position: "absolute", top: 8, right: 8, background: "#fff", color: "#121016" }}>الغلاف</span>}
             <div className="photo-acts">
               {i > 0 && <button type="button" className="icon-btn sm" aria-label="اجعلها الغلاف" onClick={() => onChange([p, ...photos.filter((_, k) => k !== i)])}><Icon name="Star" size={15} /></button>}
