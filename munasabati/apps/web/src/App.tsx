@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { OCCASIONS, type Occasion } from "@munasabati/core";
-import { Icon, MeshGradient, Reveal, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { Icon, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
@@ -343,6 +343,7 @@ export default function App() {
           </div>
         </Reveal>
       </section>
+      <ScrollNav bottom="24px" />
       <footer className="container footer">
         <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>نسخة تجريبية · الأسماء أمثلة</span></div>
         <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a></nav>

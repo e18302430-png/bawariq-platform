@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CITIES, OCCASIONS, TIERS, BUDGET_SPLIT, STYLES, createEvent, daysUntil, fmt, suggestPlan, hospitality, shiftDate, today,
+  CITIES, OCCASIONS, TIERS, BUDGET_SPLIT, STYLES, createEvent, daysUntil, fmt, suggestPlan, shiftDate, today,
   type OccasionId, type StyleId, type TierId,
 } from "@munasabati/core";
 import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, isCloud, repo, useDB } from "@munasabati/ui";
@@ -38,9 +38,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
   const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, style: [] as StyleId[], city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
-  const men = Math.round(f.guests * f.menRatio);
   const budget = +f.budget.replace(/\D/g, "") || 0;
-  const hosp = useMemo(() => hospitality(men, f.guests - men), [men, f.guests]);
   // معاينة الخطة المقترحة قبل الحفظ: نفس محرك الاقتراح على مناسبة مؤقتة
   const preview = useMemo(() => suggestPlan({ ...db, client: { ...db.client, budget: [], event: { id: "tmp", occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, title: "", budget: budget || undefined, style: f.style } } }, { budget: budget || undefined, style: f.style }), [db, f.occasion, f.city, f.date, f.guests, f.menRatio, f.tier, budget, f.style]);
 
@@ -170,7 +168,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
               <div className="plan-tiles">
                 <div className="plan-tile wide"><small>ميزانيتك</small>{budget ? <b className="num"><Counter value={budget} /> <span style={{ fontSize: 15 }}>ر.س</span></b> : <b style={{ fontSize: 18 }}>تحددها لاحقاً</b>}</div>
                 <div className="plan-tile"><small>باقي على الموعد</small><b><Counter value={daysUntil(f.date)} /> يوم</b></div>
-                <div className="plan-tile"><small>ذبائح تقريباً</small><b><Counter value={hosp.sheep} /></b></div>
+                <div className="plan-tile"><small>ضيوفك</small><b><Counter value={f.guests} /></b></div>
               </div>
               <span style={{ fontSize: 13, opacity: 0.85 }}>اخترنا لك على {f.style.length ? "ذوقك و" : ""}ميزانيتك في {f.city}</span>
               <div className="stack" style={{ ["--gap" as string]: "8px" }}>
@@ -186,6 +184,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
           </motion.div>
         </AnimatePresence>
 
+        <ScrollHint step={step} />
         {needAuth && (
           <div className="card" style={{ color: "var(--ink)", marginBottom: 12 }}>
             <PhoneAuth title="آخر خطوة: أكّد رقم جوالك عشان نحفظ مناسبتك" initialPhone={f.phone} initialName={f.name} onDone={() => { setNeedAuth(false); create(false); }} />
@@ -200,5 +199,25 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
         )}
       </div>
     </div>
+  );
+}
+
+/** سهم صغير يظهر لما يكون في الخطوة محتوى تحت، ويختفي لما توصل للأسفل */
+function ScrollHint({ step }: { step: number }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let el: HTMLElement | null = null;
+    const check = () => { if (el) setShow(el.scrollHeight - el.clientHeight - el.scrollTop > 24); };
+    const t = setTimeout(() => { el = document.querySelector(".onb-body"); if (!el) return; check(); el.addEventListener("scroll", check, { passive: true }); }, 520);
+    window.addEventListener("resize", check);
+    return () => { clearTimeout(t); el?.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
+  }, [step]);
+  return (
+    <AnimatePresence>
+      {show && <motion.button key="sh" className="onb-more" aria-label="انزل لباقي الخطوة" onClick={() => document.querySelector(".onb-body")?.scrollBy({ top: 240, behavior: "smooth" })}
+        initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: [0, 4, 0] }} exit={{ opacity: 0 }} transition={{ y: { repeat: Infinity, duration: 1.6 }, opacity: { duration: 0.3 } }}>
+        <Icon name="ChevronDown" size={18} />
+      </motion.button>}
+    </AnimatePresence>
   );
 }

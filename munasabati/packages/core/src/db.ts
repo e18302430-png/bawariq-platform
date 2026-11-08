@@ -189,6 +189,11 @@ export const setPromoted = (kind: "supplier" | "venue", id: string, promoted: bo
   : { ...db, venues: db.venues.map((x) => (x.id === id ? { ...x, promoted } : x)) };
 
 /* ───── الضيوف وليلة المناسبة ───── */
+export const DEFAULT_INVITE: DB["client"]["invite"] = { template: "diriyah", message: "وبحضوركم تكتمل فرحتنا", time: "20:30", program: [{ title: "الاستقبال", time: "20:30" }, { title: "الزفّة", time: "23:00" }, { title: "العشاء", time: "00:00" }] };
+/** حذف الدعوة: يرجع التصميم للأصل ويلغي كل الروابط المرسلة (رموز جديدة لكل الضيوف، والقديمة تتوقف) */
+export const resetInvite = (): Mutation => (db) => ({ ...db, client: { ...db.client, invite: { ...DEFAULT_INVITE }, guests: db.client.guests.map((g) => ({ ...g, code: inviteCode() })) } });
+/** رابط دعوة جديد لضيف واحد (القديم يتوقف) */
+export const renewGuestCode = (id: string): Mutation => (db) => ({ ...db, client: { ...db.client, guests: db.client.guests.map((g) => (g.id === id ? { ...g, code: inviteCode() } : g)) } });
 /** عبارة الترحيب في الدعوة حسب صلة القرابة */
 export const RELATIONS: [Relation, string, string][] = [
   ["uncle", "عم", "عمّي الغالي"], ["maternal-uncle", "خال", "خالي الغالي"], ["aunt", "عمّة", "عمّتي الغالية"], ["maternal-aunt", "خالة", "خالتي الغالية"],

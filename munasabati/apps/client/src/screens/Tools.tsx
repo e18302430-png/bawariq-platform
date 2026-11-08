@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, hospitality, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
   type CheckInResult, type DoorSnapshot,
 } from "@munasabati/core";
-import { BookingChat, Counter, Empty, Icon, Segmented, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
+import { BookingChat, Counter, Empty, Icon, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
 /* ───── الحجوزات ───── */
@@ -91,37 +91,6 @@ export function Budget() {
           <button className="btn primary" type="submit"><Icon name="Plus" size={16} /> إضافة</button>
         </form>
       </section>
-    </>
-  );
-}
-
-/* ───── حاسبة الضيافة ───── */
-export function Hosp() {
-  const db = useDB();
-  const e = db.client.event!;
-  const yesOf = (s: "men" | "women") => db.client.guests.filter((g) => g.status === "yes" && g.section === s).reduce((a, g) => a + g.count, 0);
-  const [basis, setBasis] = useState<"expected" | "confirmed">("expected");
-  const [style, setStyle] = useState<"traditional" | "buffet">("traditional");
-  const [men, setMen] = useState(Math.round(e.guests * e.menRatio));
-  const [women, setWomen] = useState(e.guests - Math.round(e.guests * e.menRatio));
-  const M = basis === "confirmed" ? yesOf("men") : men, W = basis === "confirmed" ? yesOf("women") : women;
-  const h = hospitality(M, W, style);
-  const tiles: [string, number, string, string][] = [
-    ["Beef", h.sheep, "ذبيحة", style === "traditional" ? "ذبيحة لكل 8 رجال و9 نساء" : "ذبيحة لكل 8 رجال"],
-    ["Wheat", h.rice, "كجم رز", "220 جرام للشخص"], ["Coffee", h.coffee, "كجم قهوة", "3 فناجين للضيف"], ["Cherry", h.dates, "كجم تمر", "40 جرام للضيف"],
-    ["Cake", h.sweets, "قطعة حلا", "قطعة ونص للضيف"], ["CupSoda", h.water, "كرتون ماء", "عبوتين للضيف"], ["Users", h.servers, "قهوجي وصباب", "واحد لكل 70 ضيف بكل قسم"], ["Armchair", h.tables, "طاولة نساء", "10 كراسي للطاولة"],
-  ];
-  return (
-    <>
-      <div><h1 className="page-title">حاسبة الضيافة</h1><p className="page-sub">تقديرات استرشادية للكميات. راجعها مع الطباخ قبل الطلب.</p></div>
-      <section className="card stack">
-        <div className="row wrap"><Segmented value={basis} onChange={setBasis} label="الأساس" options={[["expected", "العدد المتوقع"], ["confirmed", `المؤكدين (${yesOf("men") + yesOf("women")})`]]} /><Segmented value={style} onChange={setStyle} label="العشاء" options={[["traditional", "ذبائح للقسمين"], ["buffet", "بوفيه للنساء"]]} /></div>
-        {basis === "expected" && <div className="form-2">
-          <div className="field"><label htmlFor="h-m">رجال</label><input id="h-m" type="number" min={0} className="input num" value={men} onChange={(ev) => setMen(+ev.target.value)} /></div>
-          <div className="field"><label htmlFor="h-w">نساء</label><input id="h-w" type="number" min={0} className="input num" value={women} onChange={(ev) => setWomen(+ev.target.value)} /></div>
-        </div>}
-      </section>
-      <div className="calc-grid">{tiles.map(([ic, v, u, hint]) => <div key={u} className="calc-tile"><span className="ci"><Icon name={ic} size={19} /></span><b><Counter value={v} /></b><div className="display" style={{ fontWeight: 600 }}>{u}</div><small>{hint}</small></div>)}</div>
     </>
   );
 }

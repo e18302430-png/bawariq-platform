@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, greetingFor, patchClient, today, updateEvent, updateGuest, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
+import { OCCASIONS, greetingFor, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
 import { Empty, Icon, QR, Segmented, apply, photoUrl, useDB, useToast } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
@@ -240,6 +240,9 @@ export function Invites() {
   const { invite } = db.client;
   const info = useEventInfo();
   const [filter, setFilter] = useState<"all" | "pending" | "yes">("all");
+  const [editing, setEditing] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
+  const [rowAsk, setRowAsk] = useState<string | null>(null);
   const list = db.client.guests.filter((g) => filter === "all" || g.status === filter);
   const replied = db.client.guests.filter((g) => g.status !== "pending").length;
   const program = invite.program?.length ? invite.program : DEFAULT_PROGRAM;
@@ -260,6 +263,26 @@ export function Invites() {
       </div>
       <div className="inv-studio">
         <div className="inv-stage"><Tilt><InviteCard /></Tilt></div>
+        {!editing ? (
+          <section className="card stack inv-summary" style={{ alignContent: "start" }}>
+            <div className="row between"><b className="display" style={{ fontSize: 18 }}>دعوتك</b><span className="pill neutral">{TEMPLATES.find((t) => t.id === invite.template)?.name}</span></div>
+            <dl className="inv-kv">
+              <dt>العروسان</dt><dd>{invite.couple || info?.couple || "—"}</dd>
+              <dt>التاريخ</dt><dd className="num">{db.client.event!.date} · {invite.time ?? "20:30"}</dd>
+              <dt>البرنامج</dt><dd>{program.map((p) => `${p.title} ${p.time}`).join(" · ")}</dd>
+              {invite.message && <><dt>سطر الختام</dt><dd>{invite.message}</dd></>}
+              {invite.kids != null && <><dt>الأطفال</dt><dd>{invite.kids ? "مرحّب فيهم" : "للكبار فقط"}</dd></>}
+            </dl>
+            <button className="btn primary lg block" onClick={() => setEditing(true)}><Icon name="Pencil" size={17} /> تعديل الدعوة</button>
+            {!askDelete ? <button className="btn ghost" style={{ color: "var(--bad)" }} onClick={() => setAskDelete(true)}><Icon name="Trash2" size={16} /> حذف الدعوة</button> : (
+              <div className="card flat stack" style={{ background: "var(--bad-soft)", borderColor: "transparent" }}>
+                <b>متأكد؟</b>
+                <span style={{ fontSize: 13.5 }}>يرجع التصميم للأصل، وكل الروابط اللي أرسلتها للضيوف تتوقف. قائمة الضيوف تبقى، وتقدر ترسل لهم روابط جديدة.</span>
+                <div className="row"><button className="btn grow" style={{ background: "var(--bad)", color: "#fff", borderColor: "transparent" }} onClick={() => { apply(resetInvite()); setAskDelete(false); toast("حذفنا الدعوة وألغينا الروابط القديمة"); }}>نعم، احذفها</button><button className="btn ghost" onClick={() => setAskDelete(false)}>تراجع</button></div>
+              </div>
+            )}
+          </section>
+        ) : (
         <section className="card stack" style={{ alignContent: "start" }}>
           <div className="field"><span className="label">التصميم</span>
             <div className="tpl-row">
@@ -292,7 +315,9 @@ export function Invites() {
           </div>
           <div className="field"><label htmlFor="i-m">سطر ختامي (اختياري)</label><input id="i-m" className="input" placeholder="مثال: وبحضوركم تكتمل فرحتنا" value={invite.message} onChange={(e) => setInv({ message: e.target.value })} /></div>
           <div className="field"><span className="label">الأطفال</span><Segmented value={invite.kids == null ? "none" : invite.kids ? "yes" : "no"} onChange={(v) => setInv({ kids: v === "none" ? undefined : v === "yes" })} options={[["none", "بدون ذكر"], ["yes", "مرحّب فيهم"], ["no", "للكبار فقط"]]} /></div>
+          <div className="form-submit inv-done"><button className="btn primary lg block" onClick={() => { setEditing(false); toast("حفظنا دعوتك"); }}><Icon name="Check" size={17} /> تم</button></div>
         </section>
+        )}
       </div>
 
       <section className="card" style={{ paddingBlock: 6 }}>
@@ -306,8 +331,13 @@ export function Invites() {
             <span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span>
             <div className="t"><b>{g.name}</b><small style={{ color: g.status === "yes" ? "var(--ok)" : g.status === "no" ? "var(--bad)" : undefined }}>{g.status === "yes" ? "سيحضر" : g.status === "no" ? "اعتذر" : "لم يرد"}</small></div>
             <a className="btn sm wa-btn" href={waLink(g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>
-            <button className="icon-btn sm" aria-label="مشاركة الرابط" onClick={() => copy(g)}><Icon name="Share2" size={15} /></button>
-            <a className="icon-btn sm" aria-label="معاينة صفحة الضيف" href={"#invite-" + g.code}><Icon name="Eye" size={15} /></a>
+            <button className="icon-btn sm" aria-label={"خيارات دعوة " + g.name} aria-expanded={rowAsk === g.id} onClick={() => setRowAsk(rowAsk === g.id ? null : g.id)}><Icon name={rowAsk === g.id ? "X" : "MoreHorizontal"} size={15} /></button>
+            {rowAsk === g.id && <div className="inv-row-menu">
+              <button className="btn sm" onClick={() => { void copy(g); setRowAsk(null); }}><Icon name="Share2" size={14} /> مشاركة الرابط</button>
+              <a className="btn sm" href={"#invite-" + g.code}><Icon name="Eye" size={14} /> معاينة</a>
+              <button className="btn sm" onClick={() => { apply(renewGuestCode(g.id)); setRowAsk(null); toast(`رابط جديد لـ ${g.name.split(/[،,\s]/)[0]}، والقديم توقف`); }}><Icon name="RefreshCw" size={14} /> رابط جديد</button>
+              <button className="btn sm" style={{ color: "var(--bad)" }} onClick={() => { apply(removeGuest(g.id)); setRowAsk(null); toast("حذفنا دعوة الضيف"); }}><Icon name="Trash2" size={14} /> حذف الدعوة</button>
+            </div>}
           </div>
         ))}</div> : <Empty icon="Users" title="لا يوجد ضيوف هنا" />}
       </section>

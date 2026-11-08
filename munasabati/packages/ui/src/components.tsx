@@ -207,11 +207,55 @@ export function ThemeToggle() {
   return <button className="icon-btn" onClick={() => setMode(isDark ? "light" : "dark")} aria-label={isDark ? "الوضع النهاري" : "الوضع الليلي"}><Icon name={isDark ? "Sun" : "Moon"} size={18} /></button>;
 }
 
-/* ───── غلاف التطبيق: شريط جانبي على الكمبيوتر وشريط سفلي عائم على الجوال ───── */
-export interface ShellTab { id: string; label: string; icon: string; count?: number }
+/* ───── زر تمرير عائم: ينزل لأسفل الصفحة أو يرجع لأعلاها (يظهر فقط في الصفحات الطويلة) ───── */
+export function ScrollNav({ bottom }: { bottom?: string }) {
+  const [st, setSt] = useState<"none" | "down" | "up">("none");
+  useEffect(() => {
+    let raf = 0;
+    const calc = () => {
+      raf = 0;
+      const el = document.scrollingElement ?? document.documentElement;
+      const long = el.scrollHeight > innerHeight * 1.35;
+      setSt(!long ? "none" : el.scrollTop > innerHeight * 0.6 ? "up" : "down");
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(calc); };
+    calc();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    const ro = new ResizeObserver(on); ro.observe(document.body);
+    return () => { window.removeEventListener("scroll", on); window.removeEventListener("resize", on); ro.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+  const go = () => {
+    const el = document.scrollingElement ?? document.documentElement;
+    if (st === "up") window.scrollTo({ top: 0, behavior: "smooth" });
+    else window.scrollTo({ top: Math.min(el.scrollTop + innerHeight * 0.85, el.scrollHeight), behavior: "smooth" });
+  };
+  return (
+    <AnimatePresence>
+      {st !== "none" && (
+        <motion.button key="sn" className="scroll-nav" style={bottom ? { bottom } : undefined} onClick={go} aria-label={st === "up" ? "ارجع لأعلى الصفحة" : "انزل لتحت"}
+          initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={{ type: "spring", stiffness: 420, damping: 28 }}>
+          <motion.span animate={{ rotate: st === "up" ? 180 : 0 }} transition={{ type: "spring", stiffness: 300, damping: 22 }} style={{ display: "grid" }}><Icon name="ChevronDown" size={20} /></motion.span>
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+}
 
-export function AppShell({ portal, tabs, active, onChange, actions, children, footer }: {
+/* ───── غلاف التطبيق: شريط جانبي على الكمبيوتر وشريط سفلي عائم على الجوال ───── */
+export interface ShellTab { id: string; label: string; icon: string; count?: number; /** عنوان المجموعة في القائمة الجانبية وقائمة «المزيد» */ group?: string }
+
+/** يجمع التبويبات المتتالية حسب group مع الحفاظ على الترتيب */
+const grouped = (tabs: ShellTab[]) => tabs.reduce<{ group?: string; items: ShellTab[] }[]>((acc, t) => {
+  const last = acc[acc.length - 1];
+  if (last && last.group === t.group) last.items.push(t); else acc.push({ group: t.group, items: [t] });
+  return acc;
+}, []);
+
+export function AppShell({ portal, tabs, active, onChange, actions, children, footer, sideTop }: {
   portal: string; tabs: ShellTab[]; active: string; onChange: (id: string) => void; actions?: ReactNode; children: ReactNode; footer?: ReactNode;
+  /** بطاقة أعلى القائمة الجانبية (مثل ملخص المناسبة) */
+  sideTop?: ReactNode;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [more, setMore] = useState(false);
@@ -229,13 +273,21 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
     <div className="shell">
       <aside className="shell-side" aria-label="القائمة">
         <div className="logo"><span>مناسبتي<span className="portal">{portal}</span></span></div>
-        {tabs.map((t) => (
-          <button key={t.id} className={"side-link" + (active === t.id ? " on" : "")} onClick={() => go(t.id)} aria-current={active === t.id ? "page" : undefined}>
-            {active === t.id && <motion.span layoutId="side-thumb" className="nav-thumb" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
-            <Icon name={t.icon} size={19} /> {t.label}{t.count ? <span className="count num">{t.count}</span> : null}
-          </button>
-        ))}
-        <div style={{ marginTop: "auto", display: "grid", gap: 8 }}>{footer}</div>
+        {sideTop}
+        <nav className="side-nav">
+          {grouped(tabs).map((g, gi) => (
+            <div key={gi} className="side-group">
+              {g.group && <span className="side-h">{g.group}</span>}
+              {g.items.map((t) => (
+                <button key={t.id} className={"side-link" + (active === t.id ? " on" : "")} onClick={() => go(t.id)} aria-current={active === t.id ? "page" : undefined}>
+                  {active === t.id && <motion.span layoutId="side-thumb" className="nav-thumb" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
+                  <Icon name={t.icon} size={19} /> {t.label}{t.count ? <span className="count num">{t.count}</span> : null}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <div className="side-foot">{footer}</div>
       </aside>
       <div className="shell-main">
         <header className={"appbar" + (scrolled ? " scrolled" : "")}>
@@ -248,6 +300,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
         </header>
         <main className="container"><AnnouncementBar />{children}</main>
       </div>
+      <ScrollNav />
       <nav className="bottom-nav" aria-label="التنقل">
         {primary.map((t) => (
           <button key={t.id} className={active === t.id ? "on" : ""} onClick={() => go(t.id)} aria-current={active === t.id ? "page" : undefined}>
@@ -263,11 +316,18 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
         )}
       </nav>
       <Sheet open={more} onClose={() => setMore(false)} title="المزيد">
-        <div className="grid-auto" style={{ ["--min" as string]: "140px" }}>
-          {rest.map((t) => (
-            <button key={t.id} className="card flat" style={{ display: "grid", gap: 10, justifyItems: "start", textAlign: "start", cursor: "pointer", background: active === t.id ? "var(--brand-soft)" : undefined }} onClick={() => go(t.id)}>
-              <span className="avatar"><Icon name={t.icon} size={20} /></span><b className="display">{t.label}</b>
-            </button>
+        <div className="more-groups">
+          {grouped(rest).map((g, gi) => (
+            <div key={gi} className="stack" style={{ ["--gap" as string]: "8px" }}>
+              {g.group && <span className="side-h">{g.group}</span>}
+              <div className="more-grid">
+                {g.items.map((t) => (
+                  <button key={t.id} className={"more-tile" + (active === t.id ? " on" : "")} onClick={() => go(t.id)}>
+                    <span className="avatar"><Icon name={t.icon} size={20} /></span><b className="display">{t.label}</b>{t.count ? <span className="pill brand num">{t.count}</span> : null}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
         {footer && <div style={{ display: "grid", gap: 8, marginTop: 16 }}>{footer}</div>}

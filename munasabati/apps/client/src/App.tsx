@@ -17,7 +17,6 @@ const Budget = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Bu
 const Door = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Door })));
 const DoorStation = lazy(() => import("./screens/Tools").then((m) => ({ default: m.DoorStation })));
 const Plan = lazy(() => import("./screens/Plan"));
-const Hosp = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Hosp })));
 const Tasks = lazy(() => import("./screens/Tools").then((m) => ({ default: m.Tasks })));
 // تحميل كل الشاشات مسبقاً في وقت الفراغ بعد أول عرض: التنقل يصير فورياً
 const prefetch = () => [import("./screens/Plan"), import("./screens/Home"), import("./screens/Explore"), import("./screens/Guests"), import("./screens/Invite"), import("./screens/Tools")];
@@ -53,18 +52,19 @@ function Main() {
 
   const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;
   const tabs: ShellTab[] = [
-    { id: "home", label: "رحلتي", icon: "Route" },
-    { id: "plan", label: "خطتي", icon: "Sparkles" },
-    { id: "bookings", label: "حجوزاتي", icon: "CalendarCheck", count: quotes },
-    { id: "guests", label: "الضيوف", icon: "Users" },
-    { id: "explore", label: "استكشف بنفسك", icon: "Compass" },
-    { id: "invites", label: "الدعوات", icon: "Send" },
-    { id: "budget", label: "الميزانية", icon: "Wallet" },
-    { id: "hosp", label: "حاسبة الضيافة", icon: "Coffee" },
-    { id: "tasks", label: "مهام العائلة", icon: "ListChecks" },
-    { id: "door", label: "يوم المناسبة", icon: "ScanLine" },
-    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "client" && t.status === "answered").length },
+    { id: "home", label: "رحلتي", icon: "Route", group: "رحلتي" },
+    { id: "plan", label: "خطتي", icon: "Sparkles", group: "رحلتي" },
+    { id: "bookings", label: "حجوزاتي", icon: "CalendarCheck", count: quotes, group: "رحلتي" },
+    { id: "guests", label: "الضيوف", icon: "Users", group: "الضيوف والدعوات" },
+    { id: "invites", label: "الدعوات", icon: "Send", group: "الضيوف والدعوات" },
+    { id: "door", label: "يوم المناسبة", icon: "ScanLine", group: "الضيوف والدعوات" },
+    { id: "budget", label: "الميزانية", icon: "Wallet", group: "التنظيم" },
+    { id: "tasks", label: "مهام العائلة", icon: "ListChecks", group: "التنظيم" },
+    { id: "explore", label: "استكشف بنفسك", icon: "Compass", group: "المزيد" },
+    { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "client" && t.status === "answered").length, group: "المزيد" },
   ];
+  const ev = db.client.event;
+  const daysLeft = Math.max(0, Math.ceil((new Date(ev.date + "T00:00:00").getTime() - Date.now()) / 864e5));
   const detail = route.match(/^(venue|supplier)-(.+)$/);
   const exploreCat = route.startsWith("explore-") ? route.slice(8) : undefined;
   const active = detail || exploreCat ? "explore" : tabs.some((t) => t.id === route) ? route : "home";
@@ -72,6 +72,7 @@ function Main() {
   return (
     <AppShell
       portal="لأصحاب المناسبات" tabs={tabs} active={active} onChange={go}
+      sideTop={<a className="side-event" href="#home" style={{ background: "linear-gradient(135deg, #3a1726, #7a1f3f 55%, #b8863d)" }}><small>مناسبتك</small><b>{ev.title}</b><span className="se-days"><strong className="num">{daysLeft}</strong><small>يوم باقي · {ev.city}</small></span></a>}
       footer={<>
         <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
         <ResetButton />
@@ -87,7 +88,6 @@ function Main() {
             : active === "guests" ? <Guests />
             : active === "invites" ? <Invites />
             : active === "budget" ? <Budget />
-            : active === "hosp" ? <Hosp />
             : active === "tasks" ? <Tasks />
             : active === "bookings" ? <Bookings />
             : active === "door" ? <Door />
