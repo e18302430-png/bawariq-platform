@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, BRAND, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { hasAgreement, normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
+import { AppShell, BRAND, PartnerAgreementGate, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -175,7 +175,9 @@ function Main() {
   const ready = useReady();
   const s = db.suppliers.find((x) => x.id === db.sessions.supplierId);
   if (!ready) return <Splash />;
-  return s ? <Portal s={s} /> : <Login />;
+  if (!s) return <Login />;
+  // قبل أي طلب: التاجر يوقّع اتفاقية الشراكة (التواصل والدفع عبر مناسبتي فقط)
+  return hasAgreement(s) ? <Portal s={s} /> : <PartnerAgreementGate kind="supplier" id={s.id} name={s.name} />;
 }
 
 export default function App() { return <ToastProvider><Main /></ToastProvider>; }

@@ -57,6 +57,8 @@ export interface Supplier {
   featured?: boolean;
   /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;
+  /** اتفاقية الشراكة مع مناسبتي (لازم قبل استقبال الطلبات) */
+  agreement?: PartnerAgreement;
   custom?: boolean;
 }
 
@@ -91,6 +93,8 @@ export interface Venue {
   phone?: string;
   /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;
+  /** اتفاقية الشراكة مع مناسبتي (لازم قبل استقبال الطلبات) */
+  agreement?: PartnerAgreement;
   custom?: boolean;
 }
 
@@ -139,6 +143,12 @@ export interface Booking {
   vendorStatus?: VendorStatus;
   /** تقييم العميل بعد ختم الليلة */
   rating?: { stars: number; note?: string; at: number };
+  /** سعر مناسبتي للعميل (شامل خدمة المنصة). سعر التاجر الصافي هو quote، وكل طرف يشوف سعره بس */
+  clientPrice?: number;
+  /** الدفع عبر مناسبتي: العميل يحوّل العربون لحساب المنصة، والمنصة تحوّل للتاجر بعد ختم الليلة */
+  pay?: { stage: "due" | "claimed" | "paid"; claimedAt?: number; paidAt?: number; payoutAt?: number };
+  /** محاولات مشاركة رقم أو حساب في المحادثة (انخفت تلقائياً) */
+  leaks?: number;
 }
 
 export interface ClientEvent {
@@ -266,8 +276,15 @@ export interface OpsMsg {
   at: number;
 }
 
+/** اتفاقية الشراكة: التاجر وصاحب القاعة يوقعونها داخل المنصة */
+export interface PartnerAgreement { v: number; at: number; by: string }
+
 export interface DB {
   version: 2;
+  /** سياسة التسعير: نسبة مناسبتي، الحد الأدنى، العربون، والتسعير التلقائي */
+  pricing?: { feePct: number; minFee: number; depositPct: number; auto: boolean };
+  /** حساب مناسبتي البنكي لتحويل العربون */
+  bank?: { name: string; iban: string; holder: string };
   /** غرفة التنسيق: رسائل ليلة المناسبة */
   ops?: OpsMsg[];
   /** رقم واتساب الإدارة (لمن نسي كلمة المرور أو يحتاج مساعدة) */

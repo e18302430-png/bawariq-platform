@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -290,5 +290,44 @@ describe("كل مناسبة لها نظامها", () => {
     expect(cats[0]).toBe("kosha");
     expect(cats).toContain("cake");
     expect(cats).not.toContain("venue");
+  });
+});
+
+describe("حماية المنصة: التسعير والدفع والاتفاقية وإخفاء الأرقام", () => {
+  it("يخفي الأرقام والحسابات ويترك المبالغ والتواريخ", () => {
+    for (const t of ["كلمني 0551234567", "واتساب ٠٥٥١٢٣٤٥٦٧", "+966 55 123 4567", "سناب: bawareq_events", "تابعني @myshop", "www.myshop.com", "me@shop.sa", "wa.me/966551234567"])
+      expect(maskContacts(t).hit).toBe(true);
+    for (const t of ["السعر 25000 ريال", "يوم 2027-01-23", "عدد الضيوف 450", "الكوشة ٦٠٠٠"])
+      expect(maskContacts(t)).toEqual({ text: t, hit: false });
+  });
+  it("التاجر يرسل سعره الصافي، والعميل يشوف سعر مناسبتي، والعربون يتأكد من الإدارة", () => {
+    expect(clientPriceFor(20000)).toBe(23000);
+    expect(clientPriceFor(800)).toBe(1100); // الحد الأدنى ٣٠٠
+    const r = createMemoryRepository();
+    r.apply(createEvent({ occasion: "milka", city: "الدمام", date: "2027-03-01", guests: 100, menRatio: 0.5, tier: "mid", title: "ملكة", hostName: "سارة", samples: false }));
+    const s = r.get().suppliers[0];
+    r.apply(createBooking({ kind: "supplier", targetId: s.id, clientName: "سارة", phone: "0551234567", occasion: "milka", city: "الدمام", date: "2027-03-01", guests: 100, note: "", estimate: 0, fromClient: true }));
+    const id = r.get().bookings.find((b) => b.fromClient)!.id;
+    r.apply(forwardToVendor(id));
+    r.apply(sendQuote(id, 6000, "جوالي 0551112222"));
+    let b = r.get().bookings.find((x) => x.id === id)!;
+    expect(b.quote).toBe(6000);
+    expect(b.clientPrice).toBe(6900);
+    expect(b.messages.at(-1)!.text).not.toContain("0551112222");
+    r.apply(acceptQuote(id, "الكوشة"));
+    b = r.get().bookings.find((x) => x.id === id)!;
+    expect(b.pay!.stage).toBe("due");
+    expect(depositFor(b)).toBe(2070);
+    r.apply(claimPaid(id)); r.apply(confirmPaid(id));
+    expect(r.get().bookings.find((x) => x.id === id)!.pay!.stage).toBe("paid");
+    r.apply(bookingMessage(id, "client", "ارسل لي رقمك 0559998888"));
+    expect(r.get().bookings.find((x) => x.id === id)!.leaks).toBe(1);
+  });
+  it("التاجر يوقّع الاتفاقية", () => {
+    const r = createMemoryRepository();
+    const s = r.get().suppliers[0];
+    expect(hasAgreement(s)).toBe(false);
+    r.apply(acceptAgreement("supplier", s.id, "محمد"));
+    expect(hasAgreement(r.get().suppliers.find((x) => x.id === s.id))).toBe(true);
   });
 });

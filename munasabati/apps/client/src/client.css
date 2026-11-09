@@ -593,3 +593,9 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .gx-thanks-came { font-size: 14px; color: var(--wc-deep, #5a2a1a); opacity: .8; margin-top: -6px; }
 .onb-goal { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); align-self: flex-start; line-height: 1.5; }
 .onb-mark { display: block; margin-bottom: 6px; filter: drop-shadow(0 14px 30px rgba(0,0,0,.25)); }
+.paybox { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1.5px solid color-mix(in oklab, var(--brand) 35%, transparent); background: color-mix(in oklab, var(--brand) 6%, var(--surface)); }
+.pay-rows { display: grid; gap: 6px; }
+.pay-rows > div { display: grid; grid-template-columns: 7.5em 1fr auto; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface); font-size: 14px; }
+.pay-rows small { color: var(--muted); }
+.pay-rows b { overflow-wrap: anywhere; }
+.pay-ok { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: color-mix(in oklab, var(--ok) 13%, var(--surface)); color: var(--ok); font-size: 14px; font-weight: 600; }

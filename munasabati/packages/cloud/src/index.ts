@@ -43,7 +43,9 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
 
   const fail = (msg: string) => (e: unknown) => { lastError = `${msg}: ${(e as Error)?.message ?? e}`; emit(); };
 
+  const parse = <T,>(v?: string): T | undefined => { try { return v ? (JSON.parse(v) as T) : undefined; } catch { return undefined; } };
   let loaded = false;
+  let ownedTargets = new Set<string>();
   async function load() {
     const { data: s } = await sb.auth.getSession();
     user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "", anon: !!s.session.user.is_anonymous } : null;
@@ -54,7 +56,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       user ? sb.from("client_spaces").select("data").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
-      sb.from("settings").select("key, value").in("key", ["announcement", "support_phone"]),
+      sb.from("settings").select("key, value").in("key", ["announcement", "support_phone", "pricing", "bank"]),
       user ? sb.from("event_ops").select("id, owner, data").order("created_at", { ascending: false }).limit(400) : Promise.resolve({ data: [] as { id: string; owner: string; data: OpsMsg }[], error: null }),
     ]);
     // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
@@ -65,7 +67,15 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     const venues = ((ven.data ?? []) as Row<Venue>[]).map((r) => ({ ...r.data, id: r.id }));
     const owned = (rows: Row<unknown>[] | null) => (rows ?? []).find((r) => r.owner_id && r.owner_id === user?.id)?.id ?? null;
     const ownedIds = new Set([...(sup.data ?? []), ...(ven.data ?? [])].filter((r) => r.owner_id && r.owner_id === user?.id).map((r) => r.id as string));
-    const real = ((bk.data ?? []) as { id: string; data: Booking; status: Booking["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status }));
+    // الخصوصية: جوال العميل وسعره من booking_client (العميل والإدارة)، وسعر التاجر من booking_net (التاجر والإدارة)
+    const [bcl, bnt] = user ? await Promise.all([sb.from("booking_client").select("booking_id, phone, price"), sb.from("booking_net").select("booking_id, net")]) : [{ data: [] }, { data: [] }];
+    const cMap = new Map(((bcl.data ?? []) as { booking_id: string; phone: string | null; price: number | null }[]).map((r) => [r.booking_id, r]));
+    const nMap = new Map(((bnt.data ?? []) as { booking_id: string; net: number | null }[]).map((r) => [r.booking_id, r]));
+    ownedTargets = ownedIds;
+    const real = ((bk.data ?? []) as { id: string; data: Booking; status: Booking["status"] }[]).map((r) => {
+      const c = cMap.get(r.id), n = nMap.get(r.id);
+      return { ...r.data, id: r.id, status: r.status, phone: c?.phone ?? "", clientPrice: c?.price != null ? Number(c.price) : undefined, quote: n?.net != null ? Number(n.net) : undefined };
+    });
     // أيام محجوزة لدى الآخرين (بدون بياناتهم) حتى لا يُحجز نفس اليوم مرتين
     const blockedByOthers: Booking[] = ((busy.data ?? []) as { kind: Booking["kind"]; target_id: string; hall_id: string | null; event_date: string }[])
       .filter((r) => !ownedIds.has(r.target_id))
@@ -79,6 +89,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
       announcement: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "announcement")?.value || undefined,
       supportPhone: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "support_phone")?.value || undefined,
+      pricing: parse(((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "pricing")?.value),
+      bank: parse(((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "bank")?.value),
       ops: ((ops.data ?? []) as { id: string; owner: string; data: OpsMsg }[]).map((r) => ({ ...r.data, id: r.id, owner: r.owner })).reverse(),
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
@@ -108,9 +120,19 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       jobs.push((isNew ? sb.from("venues").insert({ ...row, owner_id: uid }) : sb.from("venues").update(row).eq("id", v.id)).then(({ error }) => { if (error) throw error; }));
     }
     for (const b of diff(prev.bookings, next.bookings).filter((x) => !x.id.startsWith("busy-"))) {
-      const isNew = !prev.bookings.some((x) => x.id === b.id);
-      const row = { id: b.id, kind: b.kind, target_id: b.targetId, status: b.status, event_date: b.date, data: b, updated_at: new Date().toISOString() };
-      jobs.push((isNew ? sb.from("bookings").insert({ ...row, client_id: uid }) : sb.from("bookings").update(row).eq("id", b.id)).then(({ error }) => { if (error) throw error; }));
+      const old = prev.bookings.find((x) => x.id === b.id);
+      const isNew = !old;
+      // البيانات المشتركة بدون الجوال والأسعار: كل واحد منها في جدوله المحمي
+      const { phone, quote, clientPrice, ...shared } = b;
+      const row = { id: b.id, kind: b.kind, target_id: b.targetId, status: b.status, event_date: b.date, data: { ...shared, phone: "" }, updated_at: new Date().toISOString() };
+      const admin = user?.role === "admin", vendor = ownedTargets.has(b.targetId), client = isNew || (!vendor && !admin);
+      const priv = async () => {
+        const now = new Date().toISOString();
+        if ((client || admin) && (isNew || phone !== old?.phone) && phone) { const { error } = await sb.from("booking_client").upsert({ booking_id: b.id, phone, updated_at: now }); if (error) throw error; }
+        if (admin && clientPrice !== old?.clientPrice && clientPrice != null) { const { error } = await sb.from("booking_client").upsert({ booking_id: b.id, price: clientPrice, updated_at: now }); if (error) throw error; }
+        if ((vendor || admin) && quote !== old?.quote && quote != null) { const { error } = await sb.from("booking_net").upsert({ booking_id: b.id, net: quote, updated_at: now }); if (error) throw error; }
+      };
+      jobs.push((isNew ? sb.from("bookings").insert({ ...row, client_id: uid }) : sb.from("bookings").update(row).eq("id", b.id)).then(({ error }) => { if (error) throw error; return priv(); }));
     }
     for (const t of diff(prev.tickets ?? [], next.tickets ?? [])) {
       const isNew = !(prev.tickets ?? []).some((x) => x.id === t.id);
@@ -131,6 +153,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       const { owner, id, ...data } = o;
       jobs.push(sb.from("event_ops").insert({ id, owner: owner ?? uid, data }).then(({ error }) => { if (error) throw error; }));
     }
+    if (prev.pricing !== next.pricing && next.pricing) jobs.push(sb.from("settings").upsert({ key: "pricing", value: JSON.stringify(next.pricing) }).then(({ error }) => { if (error) throw error; }));
+    if (prev.bank !== next.bank && next.bank) jobs.push(sb.from("settings").upsert({ key: "bank", value: JSON.stringify(next.bank) }).then(({ error }) => { if (error) throw error; }));
     if (prev.supportPhone !== next.supportPhone) jobs.push(sb.from("settings").upsert({ key: "support_phone", value: next.supportPhone ?? "" }).then(({ error }) => { if (error) throw error; }));
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
@@ -140,7 +164,9 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   sb.channel("live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); })
-    .on("postgres_changes", { event: "*", schema: "public", table: "event_ops" }, () => { void load(); }).subscribe();
+    .on("postgres_changes", { event: "*", schema: "public", table: "event_ops" }, () => { void load(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "booking_client" }, () => { void load(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "booking_net" }, () => { void load(); }).subscribe();
   let recovering = false;
   sb.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") recovering = true; void load(); });
   void load().catch((e) => { loaded = true; fail("تعذّر الاتصال")(e); emit(); });

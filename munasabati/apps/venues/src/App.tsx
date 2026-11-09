@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, BRAND, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { hasAgreement, normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
+import { AppShell, BRAND, PartnerAgreementGate, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -217,7 +217,9 @@ function Main() {
   const ready = useReady();
   const v = db.venues.find((x) => x.id === db.sessions.venueId);
   if (!ready) return <Splash />;
-  return v ? <Portal v={v} /> : <Login />;
+  if (!v) return <Login />;
+  // قبل أي طلب: صاحب القاعة يوقّع اتفاقية الشراكة (التواصل والدفع عبر مناسبتي فقط)
+  return hasAgreement(v) ? <Portal v={v} /> : <PartnerAgreementGate kind="venue" id={v.id} name={v.name} />;
 }
 
 export default function App() { return <ToastProvider><Main /></ToastProvider>; }

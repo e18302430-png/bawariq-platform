@@ -55,7 +55,7 @@ export function BookingChat({ booking, me, other }: { booking: Booking; me: Mess
       <button className="btn sm" onClick={() => setOpen(true)}><Icon name="MessagesSquare" size={15} /> محادثة{unread ? <span className="pill brand num" style={{ padding: "0 7px" }}>{unread}</span> : null}</button>
       <Sheet open={open} onClose={() => setOpen(false)} title={`محادثة مع ${other}`}>
         <div className="chat-wrap">
-          <div className="chat-guard"><Icon name="ShieldCheck" size={14} /> المحادثة بإشراف إدارة مناسبتي لحماية الطرفين</div>
+          <div className="chat-guard"><Icon name="ShieldCheck" size={14} /> المحادثة بإشراف مناسبتي. أرقام الجوال والحسابات تنخفي تلقائياً، والدفع عبر مناسبتي فقط لحماية الطرفين.</div>
           <Thread items={booking.messages.map((m) => ({ mine: m.from === me, text: m.text, at: m.at, admin: m.from === "admin" }))} mine="اسأل عن التفاصيل، الوقت، أو أي طلب خاص" />
           <Composer onSend={(t) => apply(bookingMessage(booking.id, me, t))} />
         </div>

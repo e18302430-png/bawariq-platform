@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
-  type CheckInResult, type DoorSnapshot, type OpsMsg,
+  acceptQuote, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  type Booking, type CheckInResult, type DoorSnapshot, type OpsMsg,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
 import { go } from "../nav";
@@ -30,13 +30,15 @@ export function Bookings() {
             {b.status === "confirmed" && b.vendorStatus && (b.kind !== "venue" || b.vendorStatus === "ready") && <div className="vstat-view"><Icon name="Radio" size={15} /> {b.kind === "venue" ? <b>القاعة جاهزة لاستقبالكم</b> : <>حالة التاجر: <b>{VLABEL[b.vendorStatus]}</b></>}</div>}
             <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
             {b.messages.filter((m) => m.from !== "client").map((m, i) => <div key={i} className={"card flat tight" + (m.from === "admin" ? " admin-note" : "")} style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: m.from === "admin" ? "var(--brand)" : "var(--muted)" }}>{m.from === "admin" ? "إدارة مناسبتي" : `رد ${nameOf(b.kind, b.targetId)}`}</b>{m.text}</div>)}
-            {b.status === "quoted" && (
+            {b.status === "quoted" && !b.clientPrice && <div className="req-step"><Icon name="Hourglass" size={15} /> وصلنا عرض التاجر، ونجهّز لك سعر مناسبتي النهائي.</div>}
+            {b.status === "quoted" && !!b.clientPrice && (
               <div className="row wrap">
-                <span className="grow">عرض السعر: <b className="num display" style={{ fontSize: 18 }}>{sar(b.quote ?? 0)}</b></span>
+                <span className="grow">سعر مناسبتي: <b className="num display" style={{ fontSize: 18 }}>{sar(b.clientPrice)}</b><small className="muted" style={{ display: "block", fontSize: 12.5 }}>شامل التنسيق والمتابعة لين ليلة المناسبة</small></span>
                 <button className="btn sm ghost" onClick={() => apply(setBookingStatus(b.id, "declined", { message: { from: "client", text: "اعتذر العميل" } }))}>رفض</button>
                 <button className="btn sm primary" onClick={() => { apply(acceptQuote(b.id, nameOf(b.kind, b.targetId))); toast("تم تأكيد الحجز وإضافته للميزانية"); }}>اقبل العرض</button>
               </div>
             )}
+            {b.status === "confirmed" && <PayBox b={b} name={nameOf(b.kind, b.targetId)} />}
             {b.status === "review" && <div className="req-step"><Icon name="ShieldCheck" size={15} /> طلبك عند الإدارة. بنراجعه ونطلب لك عرض السعر من التاجر.</div>}
             {b.status === "new" && <div className="req-step"><Icon name="Hourglass" size={15} /> طلبنا عرض السعر من التاجر، وبيوصلك هنا أول ما يرد.</div>}
           </motion.section>
@@ -47,6 +49,32 @@ export function Bookings() {
 }
 
 const VLABEL = { onway: "في الطريق", arrived: "وصل الموقع", setup: "يجهّز الآن", ready: "جاهز" } as const;
+
+/** العربون عبر مناسبتي: تحويل بنكي لحساب المنصة برقم مرجعي، والإدارة تأكد الاستلام */
+function PayBox({ b, name }: { b: Booking; name: string }) {
+  const db = useDB();
+  const toast = useToast();
+  const p = pricingOf(db);
+  const dep = depositFor(b, p);
+  const ref = "MNS-" + b.id.slice(-6).toUpperCase();
+  const copy = async (t: string, what: string) => { try { await navigator.clipboard.writeText(t); toast(`نسخنا ${what}`); } catch { toast(t); } };
+  if (!b.clientPrice) return null;
+  if (b.pay?.stage === "paid") return <div className="pay-ok"><Icon name="ShieldCheck" size={17} /> العربون مستلم، وحجزك مع {name} مؤكد ومضمون عبر مناسبتي.</div>;
+  if (b.pay?.stage === "claimed") return <div className="req-step"><Icon name="Hourglass" size={15} /> استلمنا إشعار تحويلك، ونأكد الاستلام خلال ساعات.</div>;
+  return (
+    <div className="paybox">
+      <div className="row between wrap"><b className="display">ثبّت حجزك بالعربون</b><span className="pill brand num">{p.depositPct}٪ = {sar(dep)}</span></div>
+      <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>حوّل العربون لحساب مناسبتي، واكتب الرقم المرجعي في التحويل. مناسبتي تحفظ حقك وحق التاجر، والباقي ({sar((b.clientPrice ?? 0) - dep)}) قبل المناسبة.</p>
+      {db.bank?.iban ? <div className="pay-rows">
+        <div><small>البنك</small><b>{db.bank.name}</b></div>
+        <div><small>اسم المستفيد</small><b>{db.bank.holder}</b></div>
+        <div><small>الآيبان</small><b className="num" dir="ltr">{db.bank.iban}</b><button className="icon-btn sm" aria-label="نسخ الآيبان" onClick={() => void copy(db.bank!.iban, "الآيبان")}><Icon name="Copy" size={14} /></button></div>
+        <div><small>الرقم المرجعي</small><b className="num" dir="ltr">{ref}</b><button className="icon-btn sm" aria-label="نسخ الرقم المرجعي" onClick={() => void copy(ref, "الرقم المرجعي")}><Icon name="Copy" size={14} /></button></div>
+      </div> : <div className="req-step"><Icon name="Info" size={15} /> بيانات الحساب توصلك من الإدارة في محادثة الطلب.</div>}
+      <button className="btn primary block" onClick={() => { apply(claimPaid(b.id)); toast("وصلنا إشعارك، ونأكد الاستلام قريب"); }}><Icon name="CheckCircle2" size={16} /> حوّلت العربون</button>
+    </div>
+  );
+}
 /* ───── الميزانية ───── */
 export function Budget() {
   const db = useDB();

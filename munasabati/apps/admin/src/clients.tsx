@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, forwardToVendor, markNotified, reassignBooking, rejectRequest, resolveCancel, fmt, normPhone, sar,
+  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, forwardToVendor, markNotified, reassignBooking, rejectRequest, resolveCancel, fmt, normPhone, sar, pricingOf, clientPriceFor, priceForClient, confirmPaid, markPayout, depositFor, today,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
 import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -212,9 +212,11 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
         {b.reassignedFrom && <span className="pill info">محوّل من الإدارة</span>}
         {b.rating && <span className={"pill " + (b.rating.stars >= 4 ? "ok" : b.rating.stars >= 3 ? "warn" : "bad")}>تقييم العميل {"★".repeat(b.rating.stars)}</span>}
         {b.vendorStatus && b.kind === "venue" && b.vendorStatus === "ready" && <span className="pill ok">القاعة بلّغت العميل إنها جاهزة</span>}
+        {!!b.leaks && <span className="pill bad"><Icon name="ShieldAlert" size={13} /> {b.leaks} محاولة مشاركة رقم أو حساب (انخفت)</span>}
         {b.vendorStatus && b.kind !== "venue" && <span className="pill ok">التاجر: {({ onway: "في الطريق", arrived: "وصل", setup: "يجهّز", ready: "جاهز" } as const)[b.vendorStatus]}</span>}
       </div>
       {b.status === "review" && <ReviewBox b={b} provider={provider} />}
+      <MoneyBox b={b} />
       {b.cancelRequest && <div className="card flat stack" style={{ background: "var(--surface-2)", borderColor: "var(--warn)" }}>
         <b><Icon name="CalendarX" size={16} /> التاجر يطلب إلغاء الحجز</b>
         <span className="muted" style={{ fontSize: 14 }}>السبب: {b.cancelRequest.reason}</span>
@@ -260,6 +262,42 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
         <Composer onSend={(t) => { apply(bookingMessage(b.id, "admin", t)); toast("أُرسلت للطرفين"); }} placeholder="رسالة من الإدارة للطرفين" />
       </div>
       <div className="field"><span className="label">تغيير الحالة</span><Segmented value={b.status} onChange={(v: BookingStatus) => { apply(adminUpdateBooking(b.id, { status: v })); toast("تم تحديث الحالة"); }} options={[["review", "للمراجعة"], ["new", "عند التاجر"], ["quoted", "عرض"], ["confirmed", "مؤكد"], ["declined", "مرفوض"]]} /></div>
+    </div>
+  );
+}
+
+/** فلوس الطلب: سعر التاجر الصافي، سعر العميل، ربح مناسبتي، والعربون والتحويل للتاجر */
+function MoneyBox({ b }: { b: Booking }) {
+  const db = useDB();
+  const toast = useToast();
+  const p = pricingOf(db);
+  const [price, setPrice] = useState(String(b.clientPrice ?? (b.quote ? clientPriceFor(b.quote, p) : "")));
+  if (!b.quote && !b.clientPrice) return null;
+  const margin = (b.clientPrice ?? 0) - (b.quote ?? 0);
+  const ended = b.date < today();
+  return (
+    <div className="card flat stack money-box">
+      <div className="money-row">
+        <div><small>سعر التاجر (صافي)</small><b className="num">{b.quote ? sar(b.quote) : "—"}</b></div>
+        <div><small>سعر العميل</small><b className="num">{b.clientPrice ? sar(b.clientPrice) : "ما اعتمد"}</b></div>
+        <div className={margin > 0 ? "win" : ""}><small>ربح مناسبتي</small><b className="num">{b.clientPrice && b.quote ? sar(margin) : "—"}</b></div>
+      </div>
+      {b.status === "quoted" && <div className="row wrap" style={{ ["--gap" as string]: "8px" }}>
+        <label className="sr" htmlFor={"cp" + b.id}>سعر العميل</label>
+        <input id={"cp" + b.id} className="input num grow" style={{ width: "auto", minWidth: 140 }} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} />
+        <button className="btn sm primary" disabled={!+price} onClick={() => { apply(priceForClient(b.id, +price)); toast("وصل السعر للعميل"); }}>{b.clientPrice ? "عدّل سعر العميل" : "أرسل السعر للعميل"}</button>
+      </div>}
+      {b.status === "confirmed" && <div className="row wrap" style={{ ["--gap" as string]: "8px" }}>
+        <span className="grow" style={{ fontSize: 14 }}>
+          {b.pay?.payoutAt ? <><Icon name="CheckCircle2" size={14} /> حوّلت للتاجر حقه</>
+            : b.pay?.stage === "paid" ? <><Icon name="ShieldCheck" size={14} /> العربون مستلم ({sar(depositFor(b, p))})</>
+            : b.pay?.stage === "claimed" ? <><Icon name="Bell" size={14} /> العميل يقول حوّل العربون {sar(depositFor(b, p))}، تأكد من الحساب (المرجع MNS-{b.id.slice(-6).toUpperCase()})</>
+            : <><Icon name="Clock" size={14} /> بانتظار عربون العميل ({sar(depositFor(b, p))})</>}
+        </span>
+        {b.pay?.stage === "claimed" && <button className="btn sm primary" onClick={() => { apply(confirmPaid(b.id)); toast("أكّدنا الاستلام وبلّغنا التاجر"); }}>أكّد استلام العربون</button>}
+        {b.pay?.stage !== "paid" && b.pay?.stage !== "claimed" && <button className="btn sm" onClick={() => { apply(confirmPaid(b.id)); toast("سجّلنا الاستلام"); }}>استلمت المبلغ</button>}
+        {b.pay?.stage === "paid" && !b.pay?.payoutAt && <button className="btn sm" disabled={!ended} title={ended ? "" : "بعد المناسبة"} onClick={() => { apply(markPayout(b.id)); toast("سجّلنا تحويل حق التاجر"); }}>حوّلت للتاجر {b.quote ? sar(b.quote) : ""}</button>}
+      </div>}
     </div>
   );
 }

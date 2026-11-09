@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { OCCASIONS, bookingMessage, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
+import { AGREEMENT_CLAUSES, OCCASIONS, acceptAgreement, bookingMessage, fmt, isoDay, pricingOf, sendQuote, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
 import { BRAND, Logo, LogoMark } from "./Logo";
 import { photoUrl } from "./media";
 import { BookingChat } from "./support";
-import { apply, repo, resizeImage } from "./data";
+import { apply, repo, resizeImage, useDB } from "./data";
 
 /* مكونات مشتركة بين بوابة الموردين وبوابة القاعات */
 
@@ -56,6 +56,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
   bookings: Booking[]; defaultQuote: (b: Booking) => number; describe?: (b: Booking) => ReactNode; quoteTemplate: (b: Booking) => string;
 }) {
   const toast = useToast();
+  const pr = pricingOf(useDB());
   const [filter, setFilter] = useState<"new" | "quoted" | "confirmed" | "declined" | "all">("new");
   const [quoting, setQuoting] = useState<Booking | null>(null);
   const [q, setQ] = useState({ amount: 0, msg: "" });
@@ -78,29 +79,29 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
               <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="PartyPopper" size={14} />{OCCASIONS.find((o) => o.id === b.occasion)?.name}</span>
               <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="CalendarDays" size={14} />{b.date}</span>
               <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="Users" size={14} />{fmt(b.guests)} ضيف</span>
-              <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="Phone" size={14} />{b.phone}</span>
+              <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="ShieldCheck" size={14} />التواصل عبر مناسبتي</span>
               {describe?.(b)}
             </div>
-            {b.budget ? <div className="client-budget"><Icon name="Wallet" size={16} /><span>ميزانية العميل لهذا البند</span><b className="num">{sar(b.budget)}</b></div> : null}
+            {b.budget ? <div className="client-budget"><Icon name="Wallet" size={16} /><span>الميزانية المتاحة لك (صافي)</span><b className="num">{sar(Math.round(b.budget / (1 + pr.feePct / 100) / 100) * 100)}</b></div> : null}
             {b.note && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}>{b.note}</div>}
             <div className="row"><BookingChat booking={b} me="provider" other={b.clientName} /></div>
             {b.status === "new" && <div className="row wrap">
               <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>
-              <button className="btn sm" onClick={() => { apply(setBookingStatus(b.id, "confirmed", { quote: defaultQuote(b), message: { from: "provider", text: "تم تأكيد الحجز" } })); toast("تم تأكيد الحجز"); }}>تأكيد مباشر</button>
               <button className="btn sm ghost" onClick={() => apply(setBookingStatus(b.id, "declined", { message: { from: "provider", text: "نعتذر، اليوم غير متاح" } }))}>اعتذار</button>
             </div>}
-            {b.status === "quoted" && <div className="row wrap"><span className="grow muted">عرضك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? 0)}</b> · بانتظار العميل</span><button className="btn sm" onClick={() => { apply(setBookingStatus(b.id, "confirmed")); toast("تم تأكيد الحجز"); }}>العميل وافق هاتفياً</button></div>}
-            {b.status === "confirmed" && <div className="muted">قيمة الحجز: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? b.estimate)}</b></div>}
+            {b.status === "quoted" && <div className="muted" style={{ fontSize: 14.5 }}>سعرك الصافي: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? 0)}</b> · مناسبتي ترسل العرض للعميل وتبلغك أول ما يأكد</div>}
+            {b.status === "confirmed" && <div className="muted">حقك الصافي: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? b.estimate)}</b></div>}
+            {b.status === "confirmed" && <PayState b={b} />}
             {b.status === "confirmed" && b.rating && <div className="pill ok" style={{ justifySelf: "start" }}>تقييم العميل لليلة: {"★".repeat(b.rating.stars)}</div>}
             {b.status === "confirmed" && !b.rating && <ConfirmedTools b={b} />}
           </motion.section>
         ))}
       </div>
       <Sheet open={!!quoting} onClose={() => setQuoting(null)} title={quoting ? `عرض سعر لـ ${quoting.clientName}` : ""}>
-        <form className="form" onSubmit={(e) => { e.preventDefault(); if (!quoting || !(q.amount > 0)) return; apply(setBookingStatus(quoting.id, "quoted", { quote: q.amount, message: { from: "provider", text: q.msg } })); setQuoting(null); toast("وصل العرض للعميل"); }}>
-          <div className="field"><label htmlFor="q-a">المبلغ (ر.س)</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
-          <div className="faint num" style={{ fontSize: 13 }}>شامل ضريبة القيمة المضافة 15%: {sar(q.amount * 1.15)}</div>
-          <div className="field"><label htmlFor="q-m">رسالة للعميل</label><textarea id="q-m" className="input" rows={4} value={q.msg} onChange={(e) => setQ({ ...q, msg: e.target.value })} /></div>
+        <form className="form" onSubmit={(e) => { e.preventDefault(); if (!quoting || !(q.amount > 0)) return; apply(sendQuote(quoting.id, q.amount, q.msg)); setQuoting(null); toast("وصل عرضك لمناسبتي، ونوصله للعميل"); }}>
+          <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5 }}><Icon name="ShieldCheck" size={14} /> اكتب <b>سعرك الصافي</b> (حقك كامل). مناسبتي تضيف خدمتها وترسل للعميل سعرها، وتحوّل لك حقك بعد المناسبة.</div>
+          <div className="field"><label htmlFor="q-a">سعرك الصافي (ر.س)</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
+          <div className="field"><label htmlFor="q-m">وصف العرض للعميل (بدون أرقام تواصل)</label><textarea id="q-m" className="input" rows={4} value={q.msg} onChange={(e) => setQ({ ...q, msg: e.target.value })} /></div>
           <button className="btn primary lg block" type="submit" disabled={!(q.amount > 0)}>إرسال العرض</button>
         </form>
       </Sheet>
@@ -296,4 +297,40 @@ export function RequestAlerts({ bookings, onOpen }: { bookings: Booking[]; onOpe
   useEffect(() => { const v = () => { if (!document.hidden) setUnseen(0); }; document.addEventListener("visibilitychange", v); return () => document.removeEventListener("visibilitychange", v); }, []);
   useEffect(() => { const base = document.title.replace(/^\(\d+\)\s*/, ""); document.title = (unseen ? `(${unseen}) ` : "") + base; }, [unseen]);
   return null;
+}
+
+/** حالة الدفع عند التاجر: العربون عند مناسبتي، وحقه يتحوّل بعد المناسبة (بدون مبالغ العميل) */
+export function PayState({ b }: { b: Booking }) {
+  const st = b.pay?.payoutAt ? "out" : b.pay?.stage ?? "due";
+  const map = {
+    due: ["neutral", "Clock", "مؤكد مبدئياً، بانتظار عربون العميل عبر مناسبتي"],
+    claimed: ["info", "Clock", "العميل حوّل العربون لمناسبتي، والإدارة تتأكد"],
+    paid: ["ok", "ShieldCheck", "العربون مستلم عبر مناسبتي. حقك مضمون ويتحوّل لك بعد المناسبة"],
+    out: ["ok", "CheckCircle2", "حوّلنا لك حقك عن هذا الحجز"],
+  } as const;
+  const [tone, ic, t] = map[st];
+  return <div className={"pay-state " + tone}><Icon name={ic} size={16} /> {t}</div>;
+}
+
+/** اتفاقية الشراكة: التاجر وصاحب القاعة يوقعونها قبل استقبال أي طلب */
+export function PartnerAgreementGate({ kind, id, name }: { kind: "supplier" | "venue"; id: string; name: string }) {
+  const toast = useToast();
+  const [ok, setOk] = useState(false);
+  const [by, setBy] = useState("");
+  const pr = pricingOf(useDB());
+  return (
+    <div className="agree">
+      <div className="agree-in">
+        <LogoMark size={70} animated />
+        <span className="live-pill" style={{ alignSelf: "center" }}>شراكة {name} مع مناسبتي</span>
+        <h1 className="display">اتفاقية الشراكة</h1>
+        <p className="muted">قبل ما توصلك طلبات العملاء، هذي قواعد الشراكة اللي تحمي حقك وحقنا وحق العميل. نسبة خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على سعرك للعميل، وسعرك يبقى صافي لك.</p>
+        <ol className="agree-list">{AGREEMENT_CLAUSES.map(([t, d]) => <li key={t}><b>{t}</b><span>{d}</span></li>)}</ol>
+        <label className="agree-check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> قرأت الاتفاقية وأوافق على كل بنودها</label>
+        <div className="field"><label htmlFor="ag-n">اسمك الكامل (توقيع)</label><input id="ag-n" className="input" value={by} onChange={(e) => setBy(e.target.value)} placeholder="الاسم كما في الهوية" /></div>
+        <button className="btn primary lg block" disabled={!ok || by.trim().length < 3} onClick={() => { apply(acceptAgreement(kind, id, by)); toast("وقّعت الاتفاقية. حياك في مناسبتي"); }}><Icon name="PenLine" size={17} /> وقّع وابدأ استقبال الطلبات</button>
+        <small className="faint">التوقيع يُحفظ في حسابك مع تاريخه.</small>
+      </div>
+    </div>
+  );
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
-  upsertSupplier, upsertVenue, today, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
+  upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, setPricing, setBank, hasAgreement, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady,
@@ -179,6 +179,7 @@ function Accounts({ kind, focus }: { kind: "supplier" | "venue"; focus?: string 
             <div className="stack" style={{ ["--gap" as string]: "6px", padding: "12px 14px 14px" }}>
               <div className="row between"><b className="display">{x.name}</b>{x.verified && <Icon name="BadgeCheck" size={17} className="brand" />}</div>
               <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>
+                <span className={"pill " + (hasAgreement(x) ? "ok" : "warn")} title={x.agreement ? `وقّعها ${x.agreement.by}` : ""}>{hasAgreement(x) ? "وقّع الاتفاقية" : "ما وقّع"}</span>
                 <span className={"pill " + (x.status === "suspended" ? "bad" : "ok")}>{x.status === "suspended" ? "معلّق" : "نشط"}</span>
                 <span className="tag">{x.city}</span><span className="tag num">{count(x)} طلب</span>
               </div>
@@ -305,6 +306,7 @@ function Settings() {
         <p className="muted" style={{ fontSize: 14 }}>يظهر لأي مستخدم يضغط «نسيت كلمة المرور»، فيراسلك وتعيّن له كلمة مرور جديدة من ملفه.</p>
         <div className="row"><label className="sr" htmlFor="sp">رقم واتساب الإدارة</label><input id="sp" className="input num grow" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={sp} onChange={(e) => setSp(e.target.value)} /><button className="btn primary" onClick={() => { apply(setSupportPhone(normPhone(sp))); toast("حفظنا رقم الإدارة"); }}>حفظ</button></div>
       </section>
+      <PricingSettings />
       <section className="card form">
         <h3 className="card-title">إعلان عام</h3>
         <p className="muted" style={{ fontSize: 14 }}>يظهر أعلى تطبيق العميل وبوابتي الموردين والقاعات.</p>
@@ -317,6 +319,35 @@ function Settings() {
         <p className="muted" style={{ fontSize: 14 }}>عند ربط Supabase تُطبَّق صلاحيات الإدارة من قاعدة البيانات: أي حساب بدور <b>admin</b> في جدول profiles يقدر يعلّق ويحذف ويعدّل كل الحسابات والطلبات (راجع supabase/schema.sql).</p>
       </section>
     </>
+  );
+}
+
+/** نسبة مناسبتي، الحد الأدنى، العربون، التسعير التلقائي، وحساب التحويل */
+function PricingSettings() {
+  const db = useDB();
+  const toast = useToast();
+  const cur = pricingOf(db);
+  const [p, setP] = useState({ ...cur });
+  const [bk, setBk] = useState({ name: db.bank?.name ?? "", holder: db.bank?.holder ?? "", iban: db.bank?.iban ?? "" });
+  const ex = clientPriceFor(20000, p);
+  return (
+    <section className="card form">
+      <h3 className="card-title">التسعير والتحويل</h3>
+      <p className="muted" style={{ fontSize: 14 }}>التاجر يرسل سعره الصافي، والعميل يشوف سعر مناسبتي. مثال: تاجر بـ{sar(20000)} ← العميل يشوف <b className="num">{sar(ex)}</b>، ولك <b className="num">{sar(ex - 20000)}</b>.</p>
+      <div className="grid-3">
+        <div className="field"><label htmlFor="pf">نسبة مناسبتي ٪</label><input id="pf" className="input num" type="number" min={0} max={60} value={p.feePct} onChange={(e) => setP({ ...p, feePct: +e.target.value })} /></div>
+        <div className="field"><label htmlFor="pm">أقل ربح للطلب (ر.س)</label><input id="pm" className="input num" type="number" min={0} value={p.minFee} onChange={(e) => setP({ ...p, minFee: +e.target.value })} /></div>
+        <div className="field"><label htmlFor="pd">العربون ٪</label><input id="pd" className="input num" type="number" min={0} max={100} value={p.depositPct} onChange={(e) => setP({ ...p, depositPct: +e.target.value })} /></div>
+      </div>
+      <label className="row" style={{ ["--gap" as string]: "8px", fontSize: 14.5 }}><input type="checkbox" checked={p.auto} onChange={(e) => setP({ ...p, auto: e.target.checked })} /> تسعير تلقائي: أول ما يرسل التاجر سعره، يوصل العميل سعر مناسبتي فوراً (بدون انتظار)</label>
+      <h3 className="card-title" style={{ marginTop: 8 }}>حساب مناسبتي لتحويل العربون</h3>
+      <div className="grid-3">
+        <div className="field"><label htmlFor="bn">البنك</label><input id="bn" className="input" value={bk.name} onChange={(e) => setBk({ ...bk, name: e.target.value })} placeholder="مثال: مصرف الراجحي" /></div>
+        <div className="field"><label htmlFor="bh">اسم المستفيد</label><input id="bh" className="input" value={bk.holder} onChange={(e) => setBk({ ...bk, holder: e.target.value })} /></div>
+        <div className="field"><label htmlFor="bi">الآيبان</label><input id="bi" className="input num" dir="ltr" value={bk.iban} onChange={(e) => setBk({ ...bk, iban: e.target.value })} placeholder="SA00 0000 0000 0000 0000 0000" /></div>
+      </div>
+      <div className="row"><button className="btn primary" onClick={() => { apply(setPricing(p)); if (bk.iban.trim()) apply(setBank(bk)); toast("حفظنا التسعير والحساب"); }}>حفظ</button></div>
+    </section>
   );
 }
 

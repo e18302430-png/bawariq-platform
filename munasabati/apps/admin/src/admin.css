@@ -84,3 +84,11 @@
 .la-split > div { background: var(--surface-2); border-radius: 16px; padding: 12px 14px; display: grid; gap: 2px; }
 .la-split small { color: var(--muted); font-size: 12.5px; }
 .la-split b { font-size: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } @media (max-width: 640px) { .grid-3 { grid-template-columns: 1fr; } }
+.money-box { background: var(--surface-2); gap: 10px; }
+.money-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.money-row > div { background: var(--surface); border-radius: 12px; padding: 8px 10px; display: grid; }
+.money-row small { color: var(--muted); font-size: 12.5px; }
+.money-row b { font-size: 16px; }
+.money-row .win b { color: var(--ok); }
+@media (max-width: 420px) { .money-row { grid-template-columns: 1fr; } }

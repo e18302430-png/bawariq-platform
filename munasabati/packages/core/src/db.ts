@@ -119,7 +119,8 @@ export const acceptQuote = (id: string, label: string): Mutation => (db) => {
   const b = db.bookings.find((x) => x.id === id);
   if (!b || b.status !== "quoted") return db;
   const next = setBookingStatus(id, "confirmed", { message: { from: "client", text: "تم قبول العرض" } })(db);
-  return { ...next, client: { ...next.client, budget: [...next.client.budget, { id: uid("b"), label, cat: b.kind, est: b.quote ?? b.estimate, paid: 0 }] } };
+  const price = b.clientPrice ?? b.quote ?? b.estimate;
+  return { ...next, bookings: next.bookings.map((x) => (x.id === id ? { ...x, pay: x.pay ?? { stage: "due" as const } } : x)), client: { ...next.client, budget: [...next.client.budget, { id: uid("b"), label, cat: b.kind, est: price, paid: 0 }] } };
 };
 
 export const upsertSupplier = (s: Supplier): Mutation => (db) => ({
@@ -172,9 +173,11 @@ export const reopenTicket = (id: string, from: "user" | "admin", text: string): 
 export const setTicketStatus = (id: string, status: Ticket["status"]): Mutation => (db) => ({ ...db, tickets: (db.tickets ?? []).map((t) => (t.id === id ? { ...t, status, updatedAt: Date.now() } : t)) });
 
 /* ───── محادثة الطلب بين العميل والتاجر ───── */
-export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => ({
-  ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, messages: [...b.messages, { from, text, at: Date.now() }] } : b)),
-});
+/** رسالة في الطلب: أرقام التواصل تنخفي تلقائياً (إلا من الإدارة)، والإدارة تتنبّه للمحاولة */
+export const bookingMessage = (id: string, from: Message["from"], text: string): Mutation => (db) => {
+  const m = from === "admin" ? { text, hit: false } : maskContacts(text);
+  return { ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, leaks: (b.leaks ?? 0) + (m.hit ? 1 : 0), messages: [...b.messages, { from, text: m.text, at: Date.now() }] } : b)) };
+};
 
 /* ───── حماية الالتزام: إلغاء الحجز المؤكد يمر بالإدارة، والإسناد لتاجر بديل ───── */
 export const requestCancel = (id: string, reason: string): Mutation => (db) => ({
@@ -244,6 +247,8 @@ export const adminDelete = (kind: "supplier" | "venue" | "booking", id: string):
     : { ...db, bookings: db.bookings.filter((b) => b.id !== id) };
 export const setAnnouncement = (text: string): Mutation => (db) => ({ ...db, announcement: text.trim() || undefined });
 export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, supportPhone: phone.replace(/\D/g, "") || undefined });
+export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: Math.max(0, Math.min(60, p.feePct)), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto } });
+export const setBank = (b: NonNullable<DB["bank"]>): Mutation => (db) => ({ ...db, bank: { name: b.name.trim(), holder: b.holder.trim(), iban: b.iban.replace(/\s/g, "").toUpperCase() } });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */
 export const isActive = (x: { status?: AccountStatus }) => x.status !== "suspended";
 
@@ -294,3 +299,81 @@ export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Gu
   const what = e.title.trim();
   return `يا هلا والله ${who} 🤍\nيشرّفنا حضورك في ${what}، ${inviteWhen(e.date, time)}.\nدعوتك هنا، افتحها وأكّد حضورك 👇\n${url}`;
 };
+
+/* ───── حماية المنصة: التسعير، الدفع عبر مناسبتي، الاتفاقية، وإخفاء أرقام التواصل ───── */
+export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 15, minFee: 300, depositPct: 30, auto: true };
+export const pricingOf = (db: Pick<DB, "pricing">) => ({ ...DEFAULT_PRICING, ...(db.pricing ?? {}) });
+/** سعر العميل من سعر التاجر الصافي: النسبة أو الحد الأدنى (الأكبر)، مقرّب لأقرب ١٠ */
+export const clientPriceFor = (net: number, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) =>
+  net > 0 ? Math.round(Math.max(net * (1 + p.feePct / 100), net + p.minFee) / 10) * 10 : 0;
+export const depositFor = (b: Pick<Booking, "clientPrice">, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) => Math.round(((b.clientPrice ?? 0) * p.depositPct) / 100 / 10) * 10;
+
+/** التاجر يرسل سعره الصافي. مع التسعير التلقائي يوصل العميل سعر مناسبتي على طول */
+export const sendQuote = (id: string, net: number, text: string): Mutation => (db) => {
+  const p = pricingOf(db);
+  return {
+    ...db,
+    bookings: db.bookings.map((b) => b.id !== id ? b : {
+      ...b, status: "quoted" as const, quote: net, clientPrice: p.auto ? clientPriceFor(net, p) : undefined,
+      messages: text.trim() ? [...b.messages, { from: "provider" as const, text: maskContacts(text).text, at: Date.now() }] : b.messages,
+    }),
+  };
+};
+/** الإدارة تعتمد سعر العميل (لو التسعير التلقائي مطفي، أو تبي تعدّله) */
+export const priceForClient = (id: string, price: number): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, clientPrice: Math.max(0, Math.round(price)), messages: [...b.messages, { from: "admin" as const, text: "عرض السعر جاهز، راجعه وأكّد حجزك.", at: Date.now() }] })),
+});
+/** العميل يقول إنه حوّل العربون */
+export const claimPaid = (id: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "claimed" as const, claimedAt: Date.now() } })),
+});
+/** الإدارة تأكد استلام العربون، والتاجر يتطمن إن الحجز مدفوع */
+export const confirmPaid = (id: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "paid" as const, paidAt: Date.now() }, messages: [...b.messages, { from: "admin" as const, text: "استلمنا العربون عبر مناسبتي، والحجز مؤكد ومضمون.", at: Date.now() }] })),
+});
+/** الإدارة حوّلت للتاجر مستحقاته (بعد ختم الليلة) */
+export const markPayout = (id: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "paid" }), payoutAt: Date.now() }, messages: [...b.messages, { from: "admin" as const, text: "حوّلنا لك مستحقاتك عن هذا الحجز. شكراً لك.", at: Date.now() }] })),
+});
+
+/** اتفاقية الشراكة: نسخة واحدة يوقعها كل تاجر وصاحب قاعة */
+export const AGREEMENT_VERSION = 1;
+export const AGREEMENT_CLAUSES: [string, string][] = [
+  ["التواصل عبر مناسبتي فقط", "كل تواصل مع عملاء مناسبتي يكون داخل المنصة. ما أطلب رقم العميل، وما أعطيه رقمي أو حساباتي، وما أتواصل معه من برّا."],
+  ["الدفع عبر مناسبتي فقط", "العميل يدفع لمناسبتي، ومناسبتي تحوّل لي سعري الصافي. ما أستلم أي مبلغ من العميل مباشرة."],
+  ["سعري صافي لي", "السعر اللي أرسله في العرض هو صافي حقي. مناسبتي تضيف خدمتها وتعرض على العميل سعرها."],
+  ["عدم التجاوز ١٢ شهر", "أي عميل وصلني عن طريق مناسبتي، ما أتعامل معه مباشرة لمدة ١٢ شهر من آخر حجز. لو صار، تستحق مناسبتي رسومها كاملة على هذا التعامل، ولها إيقاف حسابي."],
+  ["الالتزام بالحجز", "ألتزم بالحجز المؤكد. الإلغاء يمر بالإدارة، والإدارة تقدر تحوّل الطلب لتاجر بديل."],
+  ["المستحقات بعد المناسبة", "مستحقاتي تتحوّل لي بعد ما تنتهي المناسبة (ختم الليلة)، أو حسب الاتفاق مع الإدارة."],
+];
+export const acceptAgreement = (kind: "supplier" | "venue", id: string, by: string): Mutation => (db) => {
+  const agreement = { v: AGREEMENT_VERSION, at: Date.now(), by: by.trim() };
+  return kind === "supplier"
+    ? { ...db, suppliers: db.suppliers.map((s) => (s.id === id ? { ...s, agreement } : s)) }
+    : { ...db, venues: db.venues.map((v) => (v.id === id ? { ...v, agreement } : v)) };
+};
+export const hasAgreement = (x?: { agreement?: { v: number } }) => !!x?.agreement && x.agreement.v >= AGREEMENT_VERSION;
+
+/** يخفي أي رقم جوال أو بريد أو رابط أو حساب تواصل من رسائل العميل والتاجر */
+export function maskContacts(text: string): { text: string; hit: boolean } {
+  let hit = false;
+  const mark = "•••• (التواصل عبر مناسبتي)";
+  const rules: RegExp[] = [
+    /(?:https?:\/\/|www\.)\S+/gi,
+    /\b(?:wa\.me|t\.me|snapchat\.com|instagram\.com|tiktok\.com|x\.com|twitter\.com)\/?\S*/gi,
+    /[\w.+-]+@[\w-]+\.[\w.]+/g,
+    /(?:واتس(?:اب)?|وتس|whats?app|سناب(?:شات)?|snap(?:chat)?|انستا(?:قرام|غرام|جرام)?|insta(?:gram)?|تيك ?توك|tiktok|تلقرام|تيليجرام|telegram)\s*[:：]?\s*@?[\w.؀-ۿ-]{2,}/gi,
+    /@[A-Za-z0-9_.]{3,}/g,
+    /(?:\+|00)?[0-9٠-٩][0-9٠-٩\s\-–.]{6,}[0-9٠-٩]/g,
+  ];
+  let out = text;
+  for (const r of rules) out = out.replace(r, (m) => {
+    // الأرقام القصيرة (مبالغ، أعداد ضيوف) والتواريخ ما نخفيها: نخفي ٩ أرقام وأكثر (أرقام الجوال)
+    if (/^[+0-9٠-٩\s\-–.]+$/.test(m)) {
+      const digits = m.replace(/[^0-9٠-٩]/g, "");
+      if (digits.length < 9 || /^\s*[0-9٠-٩]{4}[-–.][0-9٠-٩]{1,2}[-–.][0-9٠-٩]{1,2}\s*$/.test(m)) return m;
+    }
+    hit = true; return mark;
+  });
+  return { text: out, hit };
+}
