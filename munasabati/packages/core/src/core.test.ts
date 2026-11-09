@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -234,5 +235,31 @@ describe("الإدارة وسيط الطلبات، ودعم بحالات واض�
     const last = after[after.length - 1];
     r.apply(learnPref(last, "like"));
     expect(suggestPlan(r.get()).find((l) => l.cat === "venue")!.picks[0].id).toBe(last);
+  });
+});
+
+describe("ليلة المناسبة: غرفة التنسيق وختم الليلة", () => {
+  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
+  it("كل طرف يرسل لغرفة التنسيق، والرسائل الفاضية ما تنحفظ", () => {
+    const r = base();
+    r.apply(postOp({ from: "men", text: "القسم امتلأ", kind: "alert" }));
+    r.apply(postOp({ from: "client", text: "ابدأوا العشاء" }));
+    r.apply(postOp({ from: "admin", text: "   " }));
+    const ops = r.get().ops!;
+    expect(ops.map((o) => [o.from, o.kind])).toEqual([["men", "alert"], ["client", "msg"]]);
+  });
+  it("ختم الليلة يحفظ الشكر والتقييم ويبلغ الفريق، والتراجع يرجعها مفتوحة", () => {
+    const r = base();
+    const v = r.get().venues[0];
+    r.apply(createBooking({ kind: "venue", targetId: v.id, hallId: v.halls[0].id, clientName: "سارة", phone: "0551234567", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
+    const b = r.get().bookings.find((x) => x.fromClient)!;
+    r.apply(endEvent({ thanks: "", ratings: { [b.id]: 9 } }));
+    const db = r.get();
+    expect(db.client.event!.endedAt).toBeTruthy();
+    expect(db.client.event!.thanks).toBe(DEFAULT_THANKS);
+    expect(db.bookings.find((x) => x.id === b.id)!.rating!.stars).toBe(5);
+    expect(db.ops!.at(-1)!.kind).toBe("done");
+    r.apply(reopenEvent());
+    expect(r.get().client.event!.endedAt).toBeUndefined();
   });
 });

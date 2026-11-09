@@ -540,3 +540,54 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .sugg-act { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
 .sugg-act .btn { flex: 1; }
 .req-step { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--muted); padding: 8px 12px; border-radius: 12px; background: var(--surface-2); }
+
+/* ───── كاميرا المنسق: مباشرة داخل الشاشة + شاشة إذن إلزامية ───── */
+.cam-live { position: relative; width: 100%; aspect-ratio: 4 / 3.4; border-radius: 26px; overflow: hidden; background: #000; border: 1px solid rgba(222,178,108,.3); box-shadow: 0 20px 60px -20px rgba(0,0,0,.8); }
+.cam-live video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-live .cam-frame { inset: 14% 20%; transition: transform .2s ease; }
+.cam-live .cam-frame.hit { transform: scale(1.06); }
+.cam-live .cam-frame.hit i { border-color: #3dd39b; }
+.cam-live .laser { position: absolute; left: 6%; right: 6%; height: 2px; background: #ff3d7f; box-shadow: 0 0 18px #ff3d7f; }
+.cam-bar { position: absolute; inset: auto 10px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 16px; background: rgba(0,0,0,.55); backdrop-filter: blur(10px); font-size: 13.5px; color: #fff; }
+.cam-bar .icon-btn { background: rgba(255,255,255,.12); color: #fff; border-color: transparent; }
+.cam-bar .icon-btn.on { background: #ffd66b; color: #2a1c05; }
+.cam-gate { border-radius: 26px; padding: 26px 20px; display: grid; justify-items: center; gap: 12px; text-align: center; background: linear-gradient(160deg, rgba(222,178,108,.16), rgba(0,0,0,.35)); border: 1px solid rgba(222,178,108,.35); }
+.cam-gate h2 { margin: 0; font-size: 22px; }
+.cam-gate p { margin: 0; opacity: .8; max-width: 34ch; line-height: 1.7; }
+.cam-gate-ico { width: 64px; height: 64px; border-radius: 22px; display: grid; place-items: center; background: #f6efe4; color: #2a1c05; box-shadow: 0 0 0 8px rgba(246,239,228,.08); animation: camPulse 1.8s ease-in-out infinite; }
+@keyframes camPulse { 50% { box-shadow: 0 0 0 16px rgba(246,239,228,0); } }
+.cam-steps { text-align: right; margin: 0; padding: 12px 30px 12px 14px; border-radius: 16px; background: rgba(0,0,0,.3); display: grid; gap: 8px; font-size: 14px; line-height: 1.6; width: 100%; max-width: 380px; }
+.cam-skip { color: rgba(246,239,228,.6); text-decoration: underline; text-underline-offset: 3px; }
+.station .scanner.compact { padding: 14px; gap: 12px; }
+.st-ended { gap: 16px; }
+.st-ended-ico { width: 84px; height: 84px; border-radius: 28px; display: grid; place-items: center; background: linear-gradient(135deg, #fff1c9, #e7c27a 45%, #b8863d); color: #3a2208; }
+.st-ended-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 420px; }
+.st-ended-stats div { padding: 12px; border-radius: 16px; background: rgba(255,236,200,.08); display: grid; }
+.st-ended-stats b { font-size: 24px; }
+.st-ended-stats small { opacity: .7; }
+
+/* ───── ختم الليلة ───── */
+.end-cta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.end-cta .grow { min-width: 200px; display: grid; gap: 2px; }
+.end-cta.hot { background: linear-gradient(135deg, #2a1220, #5a1730 55%, #8a5a22); color: #fff; border: 0; }
+.end-cta.hot .muted { color: rgba(255,255,255,.75); }
+.end-cta.hot .btn.primary { background: #fff; color: #3a1726; }
+.end-ico { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, #fff1c9, #e7c27a 45%, #b8863d); color: #3a2208; flex: none; }
+.end-done { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; background: linear-gradient(160deg, color-mix(in oklab, var(--brand) 9%, var(--surface)), var(--surface)); }
+.end-done .grow { min-width: 220px; }
+.stars { display: flex; gap: 2px; direction: ltr; }
+.stars button { background: none; border: 0; padding: 4px; color: var(--line, #ccc); cursor: pointer; }
+.stars button.on { color: #e3a821; }
+.stars button.on svg { fill: currentColor; }
+.end-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.end-confetti i { position: absolute; top: 0; width: 8px; height: 12px; border-radius: 2px; }
+
+/* ───── دعوة الضيف بعد ختم الليلة: رسالة شكر ───── */
+.gx-thanks { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; position: relative; overflow: hidden; background: #fbf7f0; }
+.gx-thanks-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .28; filter: saturate(.9); }
+.gx-thanks-in { position: relative; text-align: center; display: grid; justify-items: center; gap: 12px; max-width: 460px; padding: 34px 24px; border-radius: 30px; background: rgba(255,255,255,.82); backdrop-filter: blur(8px); box-shadow: 0 30px 80px -30px rgba(60,30,10,.35); color: #2b1d14; }
+.gx-thanks-in h1 { margin: 0; font-size: 30px; color: var(--wc-deep, #5a2a1a); }
+.gx-thanks-in p { margin: 0; font-size: 17px; line-height: 1.9; }
+.gx-thanks-in small { opacity: .7; font-size: 15px; }
+.gx-thanks-in .btn { margin-top: 8px; }
+.gx-thanks-came { font-size: 14px; color: var(--wc-deep, #5a2a1a); opacity: .8; margin-top: -6px; }

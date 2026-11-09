@@ -22,6 +22,7 @@ function deferredCloud(url: string, key: string, authMode: "phone" | "quick"): R
     door: {
       load: async (k) => (await ready).door!.load(k),
       checkIn: async (k, c) => (await ready).door!.checkIn(k, c),
+      post: async (k, f, t, kd) => (await ready).door!.post(k, f, t, kd),
     },
     invite: {
       load: async (c) => (await ready).invite!.load(c),

@@ -1,6 +1,6 @@
 import { createInitialDB, type CheckInResult, type Mutation } from "./db";
 import { SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
-import type { DB, Guest } from "./types";
+import type { DB, Guest, OpsMsg } from "./types";
 
 /**
  * مستودع البيانات: واجهة موحدة تعتمد عليها كل التطبيقات.
@@ -36,7 +36,7 @@ export interface AuthAdapter {
   signOut(): Promise<void>;
 }
 
-export interface DoorSnapshot { title: string; date: string; guests: Guest[]; program?: { title: string; time: string }[]; live?: number }
+export interface DoorSnapshot { title: string; date: string; guests: Guest[]; program?: { title: string; time: string }[]; live?: number; endedAt?: number; ops?: OpsMsg[] }
 /** دعوة الضيف عبر رابطه (بدون حساب): يرى دعوته فقط ويرد عليها */
 export interface InviteSnapshot { event: DB["client"]["event"]; invite: DB["client"]["invite"]; liveIndex?: number; host?: string; guest: Guest; venue?: { name: string; district: string; photos?: string[] } | null }
 export interface InviteAdapter {
@@ -46,6 +46,8 @@ export interface InviteAdapter {
 export interface DoorAdapter {
   load(key: string): Promise<DoorSnapshot | null>;
   checkIn(key: string, code: string): Promise<CheckInResult>;
+  /** رسالة من المنسق لغرفة التنسيق */
+  post(key: string, from: "all" | "men" | "women", text: string, kind: "msg" | "alert"): Promise<boolean>;
 }
 
 export interface Repository {

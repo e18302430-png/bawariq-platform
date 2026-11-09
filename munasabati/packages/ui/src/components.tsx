@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, animate, useDragControls } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Icon } from "./icons";
 import { photoUrl } from "./media";
 import { AnnouncementBar } from "./support";
@@ -68,7 +69,8 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     lockScroll();
     return () => { window.removeEventListener("keydown", k); unlockScroll(); };
   }, [open, onClose]);
-  return (
+  // نرسم النافذة مباشرة في body: حاوية الصفحة المتحركة (will-change) تكسر position: fixed فتطلع النافذة تحت الشاشة لما الصفحة متمررة
+  const node = (
     <AnimatePresence>
       {open && (
         <>
@@ -92,6 +94,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
       )}
     </AnimatePresence>
   );
+  return typeof document !== "undefined" ? createPortal(node, document.body) : node;
 }
 
 /* ───── مفتاح اختيار متعدد بمؤشر منزلق ───── */

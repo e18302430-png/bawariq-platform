@@ -460,3 +460,38 @@ html.scroll-locked, html.scroll-locked body { overflow: hidden !important; }
 html { scroll-padding-top: 76px; }
 body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) { .scroll-prog { transition: none; } }
+
+/* ───── غرفة التنسيق (العميل · المنسقون · الإدارة) ───── */
+.ops { border-radius: var(--r-lg, 22px); background: var(--surface); border: 1px solid var(--line); padding: 16px; display: grid; gap: 12px; }
+.ops.dark { background: rgba(0,0,0,.35); border-color: rgba(222,178,108,.22); color: #f6efe4; }
+.ops-head { display: flex; align-items: center; gap: 10px; }
+.ops-head .grow { display: grid; min-width: 0; }
+.ops-head small { opacity: .7; font-size: 12.5px; }
+.ops-live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: color-mix(in oklab, #e5484d 14%, transparent); color: #e5484d; flex: none; }
+.ops-who { display: flex; }
+.ops-who .ops-dot { margin-inline-start: -6px; box-shadow: 0 0 0 2px var(--surface); }
+.ops.dark .ops-who .ops-dot { box-shadow: 0 0 0 2px #15110d; }
+.ops-dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #fff; }
+.ops-dot.c { background: #7a1f3f; } .ops-dot.a { background: #2b59c3; } .ops-dot.g { background: #b8863d; } .ops-dot.m { background: #2f7d6d; } .ops-dot.w { background: #b4487d; }
+.ops-list { max-height: 300px; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 8px; align-content: start; padding-inline-end: 2px; }
+.ops-msg { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 14px; background: var(--surface-2); }
+.ops.dark .ops-msg { background: rgba(255,236,200,.07); }
+.ops-msg.me { background: color-mix(in oklab, var(--brand) 9%, var(--surface)); }
+.ops.dark .ops-msg.me { background: rgba(222,178,108,.16); }
+.ops-msg.alert { background: color-mix(in oklab, #e5484d 13%, var(--surface)); outline: 1.5px solid color-mix(in oklab, #e5484d 45%, transparent); }
+.ops.dark .ops-msg.alert { background: rgba(229,72,77,.18); }
+.ops-msg.alert .ops-dot { background: #e5484d; }
+.ops-msg.done { background: linear-gradient(135deg, #fff1c9, #f3dca6); color: #3a2208; }
+.ops-msg small { font-size: 11.5px; opacity: .7; }
+.ops-msg p { margin: 2px 0 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.ops-empty { margin: 0; opacity: .65; font-size: 13.5px; }
+.ops-quick { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.ops-quick .chip { flex: none; white-space: nowrap; }
+.ops-quick .chip.alert { color: #c3373c; border-color: color-mix(in oklab, #e5484d 40%, transparent); }
+.ops.dark .chip { background: rgba(255,255,255,.06); color: #f6efe4; border-color: rgba(255,255,255,.14); }
+.ops.dark .chip.alert { color: #ff8a8e; }
+.ops-form { display: flex; gap: 8px; align-items: center; }
+.ops-form .icon-btn.on { background: #e5484d; color: #fff; border-color: #e5484d; }
+.ops.dark .input { background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.14); }
+.ops.dark .icon-btn { background: rgba(255,255,255,.06); color: #f6efe4; border-color: rgba(255,255,255,.14); }
+.ops.dark .ops-msg.done { color: #3a2208; }

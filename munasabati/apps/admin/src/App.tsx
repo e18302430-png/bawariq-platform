@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
-  upsertSupplier, upsertVenue, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
+  upsertSupplier, upsertVenue, today, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
-  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useToast, Splash, useReady,
+  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady,
 } from "@munasabati/ui";
 import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
+import { OpsRoom, liveRooms, openAlerts } from "./ops";
 
 /*
   لوحة إدارة مناسبتي (مخفية، بدون روابط من أي تطبيق).
@@ -358,8 +359,10 @@ function Panel() {
   }, []);
   const go = (t: string, id?: string) => { setFocus(id); setTab(t); window.scrollTo({ top: 0 }); };
   const live = useLive(db);
+  useOpsAlerts(db.ops ?? [], "admin");
   const tabs = [
     { id: "overview", label: "نظرة عامة", icon: "LayoutDashboard" },
+    { id: "ops", label: "العمليات", icon: "Radio", count: openAlerts(db) || liveRooms(db).filter((r) => !r.data.event!.endedAt && r.data.event!.date === today()).length },
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "review").length },
     { id: "clients", label: "العملاء", icon: "Users" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open" || t.status === "reopened").length },
@@ -374,6 +377,7 @@ function Panel() {
       <AnimatePresence mode="wait">
         <motion.div key={tab + (focus ?? "")} className="page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
           {tab === "overview" && <Overview go={go} live={live.feed} />}
+          {tab === "ops" && <OpsRoom />}
           {tab === "bookings" && <Bookings focus={focus} go={go} />}
           {tab === "clients" && <Clients focus={focus} go={go} />}
           {tab === "support" && <Support focus={focus} />}

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type Guest, type InviteSnapshot, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
+  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type DoorSnapshot, type Guest, type OpsMsg, type InviteSnapshot, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 
 /**
@@ -47,7 +47,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   async function load() {
     const { data: s } = await sb.auth.getSession();
     user = s.session?.user ? { id: s.session.user.id, phone: s.session.user.phone || (s.session.user.user_metadata?.phone as string | undefined) || "", anon: !!s.session.user.is_anonymous } : null;
-    const [sup, ven, bk, space, busy, tk, st] = await Promise.all([
+    const [sup, ven, bk, space, busy, tk, st, ops] = await Promise.all([
       sb.from("suppliers").select("id, owner_id, data"),
       sb.from("venues").select("id, owner_id, data"),
       user ? sb.from("bookings").select("id, data, status").order("created_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Booking; status: string }[], error: null }),
@@ -55,6 +55,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       sb.from("busy_days").select("kind, target_id, hall_id, event_date"),
       user ? sb.from("tickets").select("id, data, status").order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as { id: string; data: Ticket; status: Ticket["status"] }[], error: null }),
       sb.from("settings").select("key, value").in("key", ["announcement", "support_phone"]),
+      user ? sb.from("event_ops").select("id, owner, data").order("created_at", { ascending: false }).limit(400) : Promise.resolve({ data: [] as { id: string; owner: string; data: OpsMsg }[], error: null }),
     ]);
     // الإدارة: كل مساحات العملاء (سياسة RLS تسمح بها للمدير فقط)
     const role = user ? (await sb.from("profiles").select("role").eq("id", user.id).maybeSingle()).data?.role : null;
@@ -78,6 +79,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       tickets: ((tk.data ?? []) as { id: string; data: Ticket; status: Ticket["status"] }[]).map((r) => ({ ...r.data, id: r.id, status: r.status })),
       announcement: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "announcement")?.value || undefined,
       supportPhone: ((st.data ?? []) as { key: string; value: string }[]).find((r) => r.key === "support_phone")?.value || undefined,
+      ops: ((ops.data ?? []) as { id: string; owner: string; data: OpsMsg }[]).map((r) => ({ ...r.data, id: r.id, owner: r.owner })).reverse(),
       clients: allSpaces ? (allSpaces as { user_id: string; data: ClientSpace; updated_at: string }[]).map((r) => ({ id: r.user_id, data: r.data, updatedAt: Date.parse(r.updated_at) })) : undefined,
     };
     loaded = true;
@@ -124,6 +126,11 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       for (const c of next.clients.filter((x) => prev.clients!.find((y) => y.id === x.id) !== x)) jobs.push(sb.from("client_spaces").update({ data: c.data, updated_at: new Date().toISOString() }).eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
       for (const c of prev.clients.filter((p) => !next.clients!.some((n) => n.id === p.id))) jobs.push(sb.from("client_spaces").delete().eq("user_id", c.id).then(({ error }) => { if (error) throw error; }));
     }
+    // رسائل غرفة التنسيق: تُضاف فقط (ما تتعدل)
+    for (const o of (next.ops ?? []).filter((x) => !(prev.ops ?? []).some((y) => y.id === x.id))) {
+      const { owner, id, ...data } = o;
+      jobs.push(sb.from("event_ops").insert({ id, owner: owner ?? uid, data }).then(({ error }) => { if (error) throw error; }));
+    }
     if (prev.supportPhone !== next.supportPhone) jobs.push(sb.from("settings").upsert({ key: "support_phone", value: next.supportPhone ?? "" }).then(({ error }) => { if (error) throw error; }));
     if (prev.announcement !== next.announcement) jobs.push(sb.from("settings").upsert({ key: "announcement", value: next.announcement ?? "" }).then(({ error }) => { if (error) throw error; }));
     await Promise.all(jobs).then(() => { lastError = null; }, fail("تعذّر الحفظ"));
@@ -132,7 +139,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   // تحديث لحظي: أي تغيير على الطلبات المسموح بها يعيد تحميلها
   sb.channel("live").on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => { void load(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => { void load(); })
-    .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); }).subscribe();
+    .on("postgres_changes", { event: "*", schema: "public", table: "client_spaces" }, () => { void load(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "event_ops" }, () => { void load(); }).subscribe();
   let recovering = false;
   sb.auth.onAuthStateChange((event) => { if (event === "PASSWORD_RECOVERY") recovering = true; void load(); });
   void load().catch((e) => { loaded = true; fail("تعذّر الاتصال")(e); emit(); });
@@ -225,7 +233,11 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     async load(key: string) {
       const { data, error } = await sb.rpc("door_load", { k: key });
       if (error || !data) return null;
-      return data as { title: string; date: string; guests: Guest[] };
+      return data as DoorSnapshot;
+    },
+    async post(key: string, from: "all" | "men" | "women", text: string, kind: "msg" | "alert") {
+      const { data, error } = await sb.rpc("door_post", { k: key, f: from, t: text, kd: kind });
+      return !error && !!data;
     },
     async checkIn(key: string, code: string) {
       const { data, error } = await sb.rpc("door_checkin", { k: key, c: code });

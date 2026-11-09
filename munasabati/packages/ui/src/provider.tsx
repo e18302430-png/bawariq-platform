@@ -90,7 +90,8 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
             </div>}
             {b.status === "quoted" && <div className="row wrap"><span className="grow muted">عرضك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? 0)}</b> · بانتظار العميل</span><button className="btn sm" onClick={() => { apply(setBookingStatus(b.id, "confirmed")); toast("تم تأكيد الحجز"); }}>العميل وافق هاتفياً</button></div>}
             {b.status === "confirmed" && <div className="muted">قيمة الحجز: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? b.estimate)}</b></div>}
-            {b.status === "confirmed" && <ConfirmedTools b={b} />}
+            {b.status === "confirmed" && b.rating && <div className="pill ok" style={{ justifySelf: "start" }}>تقييم العميل لليلة: {"★".repeat(b.rating.stars)}</div>}
+            {b.status === "confirmed" && !b.rating && <ConfirmedTools b={b} />}
           </motion.section>
         ))}
       </div>
@@ -258,7 +259,7 @@ export function NextAction({ items }: { items: ActionItem[] }) {
 
 /* ───── تنبيه التاجر وصاحب القاعة لحظياً: طلب جديد من الإدارة أو رسالة جديدة (صوت + إشعار + عدّاد على التبويب) ───── */
 let alertCtx: AudioContext | null = null;
-function ding() {
+export function ding() {
   try {
     const W = window as unknown as { webkitAudioContext?: typeof AudioContext };
     alertCtx ??= new (window.AudioContext || W.webkitAudioContext!)();

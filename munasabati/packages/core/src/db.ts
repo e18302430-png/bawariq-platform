@@ -1,6 +1,6 @@
 import { SAMPLE_GUESTS, SAMPLE_TASKS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
 import { splitBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
-import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, Relation, Supplier, Task, Ticket, Venue } from "./types";
+import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, OpsMsg, Relation, Supplier, Task, Ticket, Venue } from "./types";
 
 /* ───────────────── البيانات الأولية ───────────────── */
 
@@ -243,3 +243,31 @@ export const setAnnouncement = (text: string): Mutation => (db) => ({ ...db, ann
 export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, supportPhone: phone.replace(/\D/g, "") || undefined });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */
 export const isActive = (x: { status?: AccountStatus }) => x.status !== "suspended";
+
+/* ───── غرفة التنسيق وختم الليلة ───── */
+export const OPS_NAME: Record<OpsMsg["from"], string> = { client: "صاحب المناسبة", admin: "إدارة مناسبتي", all: "المنسق العام", men: "منسق الرجال", women: "منسقة النساء" };
+/** رسائل جاهزة بضغطة لكل طرف */
+export const OPS_QUICK: Record<"coord" | "client" | "admin", [string, OpsMsg["kind"]][]> = {
+  coord: [["القسم امتلأ تقريباً", "alert"], ["نحتاج كراسي إضافية", "alert"], ["وصل ضيف كبير", "msg"], ["الضيوف اكتملوا تقريباً، نبدأ العشاء؟", "msg"], ["أحتاج مساعدة عند الباب", "alert"]],
+  client: [["ابدأوا العشاء", "msg"], ["تأخير ١٥ دقيقة", "msg"], ["رحّبوا بكبار الضيوف عند الباب", "msg"], ["شكراً لكم، شغل ممتاز", "msg"]],
+  admin: [["الإدارة تتابع معكم الآن", "msg"], ["تواصلنا مع المورد وهو في الطريق", "msg"], ["تم حل المشكلة", "msg"]],
+};
+export const postOp = (m: { from: OpsMsg["from"]; text: string; kind?: OpsMsg["kind"]; owner?: string }): Mutation => (db) => {
+  const text = m.text.trim().slice(0, 280);
+  if (!text) return db;
+  return { ...db, ops: [...(db.ops ?? []), { id: uid("op"), owner: m.owner, from: m.from, text, kind: m.kind ?? "msg", at: Date.now() }].slice(-300) };
+};
+export const DEFAULT_THANKS = "شكراً من القلب على حضوركم ومشاركتكم فرحتنا. نورتوا ليلتنا، وجعلها الله في ميزان حسناتكم.";
+/** ختم الليلة: يحفظ رسالة الشكر وتقييمات الموردين، ويبلغ المنسقين والإدارة */
+export const endEvent = (o: { thanks: string; ratings: Record<string, number> }): Mutation => (db) => {
+  if (!db.client.event) return db;
+  const at = Date.now();
+  const next: DB = {
+    ...db,
+    client: { ...db.client, event: { ...db.client.event, endedAt: at, thanks: o.thanks.trim() || DEFAULT_THANKS } },
+    bookings: db.bookings.map((b) => (o.ratings[b.id] ? { ...b, rating: { stars: Math.max(1, Math.min(5, Math.round(o.ratings[b.id]))), at } } : b)),
+  };
+  return postOp({ from: "client", text: "انتهت الليلة. شكراً لكل الفريق على تعبكم 🤍", kind: "done" })(next);
+};
+/** تراجع عن ختم الليلة (لو ضغطها بالغلط) */
+export const reopenEvent = (): Mutation => (db) => (db.client.event ? { ...db, client: { ...db.client, event: { ...db.client.event, endedAt: undefined } } } : db);

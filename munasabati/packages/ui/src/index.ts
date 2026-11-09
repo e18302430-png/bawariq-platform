@@ -8,3 +8,4 @@ export * from "./auth";
 export * from "./media";
 export * from "./resilience";
 export * from "./support";
+export * from "./ops";

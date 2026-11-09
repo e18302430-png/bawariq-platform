@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
-  type CheckInResult, type DoorSnapshot,
+  acceptQuote, addBudget, addTask, checkIn, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  type CheckInResult, type DoorSnapshot, type OpsMsg,
 } from "@munasabati/core";
-import { BookingChat, Counter, Empty, Icon, Sheet, StatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
+import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
 /* ───── الحجوزات ───── */
@@ -227,6 +227,8 @@ function NightOps() {
   const noShow = yes.filter((g) => !g.checkedIn);
   const sum = (l: typeof yes) => l.reduce((a, g) => a + g.count, 0);
   const diets = db.client.guests.filter((g) => g.diet);
+  const ops = db.ops ?? [];
+  useOpsAlerts(ops, "client");
   return (
     <>
       {program.length > 0 && <section className="card stack">
@@ -237,6 +239,11 @@ function NightOps() {
           <button className="btn sm primary grow" disabled={li >= program.length - 1} onClick={() => { apply(setLiveIndex(li + 1)); toast(`بدأت: ${program[li + 1].title}`); }}>ابدأ الفقرة التالية <Icon name="ArrowLeft" size={15} /></button>
         </div>
       </section>}
+
+      <EndNight />
+
+      <OpsFeed ops={ops} me="client" quick={OPS_QUICK.client} onSend={(text, kind) => apply(postOp({ from: "client", text, kind }))}
+        sub={db.client.doorKey ? "أنت والإدارة والمنسق العام ومنسقو الأقسام في مكان واحد" : "فعّل الاستقبال الذكي تحت عشان ينضم لك المنسقون"} />
 
       {vendors.length > 0 && <section className="card">
         <div className="section-title"><h3>الموردين الليلة</h3></div>
@@ -253,7 +260,7 @@ function NightOps() {
         <div className="list">{diets.map((g) => <div key={g.id} className="list-row"><div className="t"><b>{g.name}</b><small>{g.diet}</small></div></div>)}</div>
       </section>}
 
-      {past && <section className="card stack">
+      {(past || e.endedAt) && <section className="card stack">
         <h3 className="display" style={{ margin: 0 }}>تقرير ليلتك</h3>
         <div className="la-split">
           <div><small>حضروا</small><b className="num">{sum(came)}</b></div>
@@ -276,6 +283,85 @@ function NightOps() {
   );
 }
 
+/* ───── ختم الليلة بعد العشاء: شكر الضيوف، تقييم الموردين، وإبلاغ الفريق ───── */
+function EndNight() {
+  const db = useDB();
+  const toast = useToast();
+  const e = db.client.event!;
+  const program = db.client.invite.program ?? [];
+  const li = Math.min(db.client.liveIndex ?? 0, Math.max(0, program.length - 1));
+  const vendors = db.bookings.filter((b) => b.fromClient && b.status === "confirmed");
+  const name = (kind: string, id: string) => (kind === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((s) => s.id === id)?.name) ?? "";
+  const [open, setOpen] = useState(false);
+  const [party, setParty] = useState(false);
+  const [thanks, setThanks] = useState(e.thanks ?? DEFAULT_THANKS);
+  const [rate, setRate] = useState<Record<string, number>>(() => Object.fromEntries(vendors.map((b) => [b.id, b.rating?.stars ?? 5])));
+  const came = db.client.guests.filter((g) => g.checkedIn).reduce((a, g) => a + g.count, 0);
+  const dinner = program.findIndex((p) => /عشاء|العشا/.test(p.title));
+  const afterDinner = (dinner >= 0 && li >= dinner) || (program.length > 0 && li >= program.length - 1) || e.date <= today();
+  const host = db.client.profile?.name ?? "";
+  const shareThanks = async () => {
+    const text = `${e.thanks ?? thanks}${host ? `\n— ${host}` : ""}`;
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch { return; }
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  };
+  const finish = () => { apply(endEvent({ thanks, ratings: rate })); setOpen(false); setParty(true); setTimeout(() => setParty(false), 4200); };
+
+  if (e.endedAt) return (
+    <section className="card end-done">
+      <AnimatePresence>{party && <Confetti />}</AnimatePresence>
+      <span className="end-ico"><Icon name="PartyPopper" size={26} /></span>
+      <div className="grow">
+        <span className="eyebrow">ختمنا الليلة</span>
+        <h3 className="display" style={{ margin: "2px 0 6px" }}>مبروك، انتهت ليلتك على خير</h3>
+        <p className="muted" style={{ margin: 0, fontSize: 14 }}>حضر <b className="num">{fmt(came)}</b> ضيف. دعوة كل ضيف صارت تعرض رسالة شكرك، وشاشات المنسقين توقفت، والإدارة وصلها الختم.</p>
+      </div>
+      <div className="row wrap" style={{ ["--gap" as string]: "8px" }}>
+        <button className="btn primary" onClick={() => void shareThanks()}><Icon name="Send" size={16} /> أرسل الشكر للضيوف</button>
+        <button className="btn ghost sm" onClick={() => { apply(reopenEvent()); toast("رجّعنا الليلة مفتوحة"); }}>تراجع عن الختم</button>
+      </div>
+    </section>
+  );
+
+  return (
+    <>
+      <section className={"card end-cta" + (afterDinner ? " hot" : "")}>
+        <span className="end-ico"><Icon name="Moon" size={24} /></span>
+        <div className="grow">
+          <b className="display">{afterDinner ? "خلص العشاء؟ اختم ليلتك" : "ختم الليلة (بعد العشاء)"}</b>
+          <small className="muted">رسالة شكر توصل لكل ضيف في دعوته، تقييم سريع للموردين، وتبليغ المنسقين والإدارة إن الليلة انتهت.</small>
+        </div>
+        <button className={"btn" + (afterDinner ? " primary" : "")} onClick={() => setOpen(true)}><Icon name="Sparkles" size={16} /> اختم الليلة</button>
+      </section>
+      <Sheet open={open} onClose={() => setOpen(false)} title="ختم الليلة">
+        <div className="stack">
+          <div className="la-split">
+            <div><small>حضروا</small><b className="num">{fmt(came)}</b></div>
+            <div><small>كبار الضيوف</small><b className="num">{db.client.guests.filter((g) => g.vip && g.checkedIn).length} / {db.client.guests.filter((g) => g.vip).length}</b></div>
+          </div>
+          {vendors.length > 0 && <div className="field"><span className="label">كيف كانوا الليلة؟ (يوصل تقييمك للإدارة)</span>
+            <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><div className="t"><b>{name(b.kind, b.targetId)}</b></div>
+              <div className="stars" role="radiogroup" aria-label={"تقييم " + name(b.kind, b.targetId)}>{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={rate[b.id] === n} className={n <= (rate[b.id] ?? 0) ? "on" : ""} onClick={() => setRate({ ...rate, [b.id]: n })} aria-label={`${n} من 5`}><Icon name="Star" size={20} /></button>)}</div>
+            </div>)}</div>
+          </div>}
+          <div className="field"><label htmlFor="th">رسالة الشكر لضيوفك</label><textarea id="th" className="input" rows={4} value={thanks} onChange={(ev) => setThanks(ev.target.value)} /><small className="faint">تظهر لكل ضيف لما يفتح رابط دعوته.</small></div>
+          <button className="btn primary lg block" onClick={finish}><Icon name="PartyPopper" size={18} /> اختم الليلة</button>
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+function Confetti() {
+  const bits = Array.from({ length: 36 }, (_, i) => i);
+  const colors = ["#b8863d", "#e7c27a", "#7a1f3f", "#f4d6df", "#3dd39b", "#ffffff"];
+  return (
+    <motion.div className="end-confetti" aria-hidden="true" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      {bits.map((i) => <motion.i key={i} style={{ left: `${(i * 29) % 100}%`, background: colors[i % colors.length] }} initial={{ y: -20, rotate: 0, opacity: 1 }} animate={{ y: 420, rotate: 360 + i * 40, opacity: [1, 1, 0] }} transition={{ duration: 2.4 + (i % 5) * 0.3, delay: (i % 7) * 0.08, ease: "easeIn" }} />)}
+    </motion.div>
+  );
+}
+
 /* ───── شاشة المنسق عند الباب (رابط مستقل يفتحه المنسق على جواله) ───── */
 const beep = (ok: boolean) => {
   try {
@@ -292,16 +378,21 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
   const [remote, setRemote] = useState<DoorSnapshot | null | undefined>(undefined);
   const [code, setCode] = useState("");
   const [q, setQ] = useState("");
-  const [cam, setCam] = useState(false);
+  const [manual, setManual] = useState(false);
   const [res, setRes] = useState<(CheckInResult & { at: number }) | null>(null);
+  const me: "all" | "men" | "women" = section ?? "all";
+  const pull = useRef<() => void>(() => {});
   useEffect(() => {
     if (local || !repo.door) return;
     let alive = true;
-    const pull = () => repo.door!.load(k).then((s) => alive && setRemote(s)).catch(() => alive && setRemote(null));
-    void pull(); const t = setInterval(pull, 5000);
+    pull.current = () => { void repo.door!.load(k).then((s) => alive && setRemote(s)).catch(() => alive && setRemote(null)); };
+    pull.current(); const t = setInterval(() => pull.current(), 4000);
     return () => { alive = false; clearInterval(t); };
   }, [k, local]);
   useEffect(() => { document.title = "استقبال الضيوف · مناسبتي"; }, []);
+
+  const ops = (local ? db.ops ?? [] : remote?.ops ?? []);
+  useOpsAlerts(ops, me);
 
   const valid = local || (remote !== null && !!repo.door);
   if (!valid || (!local && remote === undefined && repo.door)) {
@@ -316,6 +407,7 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
     );
   }
   const title = local ? db.client.event?.title ?? "المناسبة" : remote!.title;
+  const endedAt = local ? db.client.event?.endedAt : remote!.endedAt;
   const guests = local ? db.client.guests : remote!.guests;
   const program = local ? db.client.invite.program ?? [] : remote!.program ?? [];
   const live = program[Math.min(local ? db.client.liveIndex ?? 0 : remote!.live ?? 0, Math.max(0, program.length - 1))];
@@ -323,6 +415,24 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
   const inside = mine.filter((g) => g.checkedIn);
   const expected = mine.filter((g) => g.status === "yes");
   const sum = (l: typeof guests) => l.reduce((a, g) => a + g.count, 0);
+  const post = async (text: string, kind: OpsMsg["kind"]) => {
+    if (local) { apply(postOp({ from: me, text, kind })); return; }
+    const ok = await repo.door!.post(k, me, text, kind === "alert" ? "alert" : "msg");
+    if (ok) pull.current();
+  };
+
+  // ختم الليلة: الشاشة تتحول لملخص وتتوقف الكاميرا
+  if (endedAt) {
+    return (
+      <div className="station center st-ended">
+        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 18 }} className="st-ended-ico"><Icon name="PartyPopper" size={44} /></motion.div>
+        <h1 className="display">انتهت الليلة</h1>
+        <p>شكراً على تعبك{section ? ` في ${SEC[section]}` : ""}. صاحب المناسبة ختم الليلة.</p>
+        <div className="st-ended-stats num"><div><b>{sum(inside)}</b><small>دخلوا</small></div><div><b>{sum(expected)}</b><small>مؤكد</small></div><div><b>{inside.filter((g) => g.vip).length}</b><small>كبار الضيوف</small></div></div>
+        <div style={{ width: "100%", maxWidth: 520 }}><OpsFeed dark ops={ops} me={me} quick={[["شكراً، تشرفنا بخدمتكم", "msg"]]} onSend={post} title="غرفة التنسيق" /></div>
+      </div>
+    );
+  }
 
   const scan = async (raw: string, force = false) => {
     if (!raw.trim()) return;
@@ -334,33 +444,35 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
     beep(result.ok);
     try { navigator.vibrate?.(result.ok ? 70 : [40, 60, 40]); } catch { /* */ }
     setRes({ ...result, at: Date.now() }); setCode("");
+    // ضيف كبير وصل: ننبه صاحب المناسبة والفريق تلقائياً
+    if (result.ok && result.guest.vip) void post(`وصل ضيف كبير: ${result.guest.name} (${SEC[result.guest.section]})`, "msg");
   };
   const found = q.trim() ? mine.filter((g) => g.name.includes(q.trim()) && !g.checkedIn).slice(0, 6) : [];
 
   return (
     <div className="station">
       <header className="st-head">
-        <div><span className="st-eyebrow"><span className="live-dot-c" /> استقبال الضيوف{section ? ` · ${SEC[section]}` : ""}</span><h1 className="display">{title}</h1></div>
+        <div><span className="st-eyebrow"><span className="live-dot-c" /> {section ? `استقبال ${SEC[section]}` : "المنسق العام · كل الأقسام"}</span><h1 className="display">{title}</h1></div>
         <div className="st-count num"><b><Counter value={sum(inside)} /></b><small>من {sum(expected)}</small></div>
       </header>
       {live && <div className="st-now"><Icon name="Radio" size={15} /> الآن: <b>{live.title}</b></div>}
 
-      <section className="scanner">
-        <div className="frame-box"><i /><i /><i /><i /><motion.span className="laser" animate={{ top: ["12%", "86%", "12%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
-        <button className="btn white lg" onClick={() => setCam(true)}><Icon name="Camera" size={18} /> امسح دعوة الضيف</button>
-        <form className="row" style={{ width: "100%", maxWidth: 360 }} onSubmit={(e) => { e.preventDefault(); void scan(code); }}>
+      {manual ? null : <CameraGate onCode={(c) => { void scan(c); }} onManual={() => setManual(true)} />}
+
+      <section className="scanner compact">
+        {manual && <button className="btn white" onClick={() => setManual(false)}><Icon name="Camera" size={17} /> رجّع الكاميرا</button>}
+        <form className="row" style={{ width: "100%", maxWidth: 420 }} onSubmit={(e) => { e.preventDefault(); void scan(code); }}>
           <label className="sr" htmlFor="sc">رمز الدعوة</label>
           <input id="sc" className="input num grow" placeholder="أو اكتب رمز الدعوة" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" />
           <button className="btn glass" type="submit">تحقق</button>
         </form>
-        {cam && <CameraScanner onCode={(c) => { void scan(c); }} onClose={() => setCam(false)} />}
         <AnimatePresence mode="wait">
           {res && (
             <motion.div key={res.at} className={"scan-res " + (res.ok ? "ok" : res.reason === "section" ? "warn" : "bad")} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 26 }}>
               <Icon name={res.ok ? "CheckCircle2" : res.reason === "section" ? "ArrowLeftRight" : "XCircle"} size={30} style={{ color: res.ok ? "#3dd39b" : res.reason === "section" ? "#ffc35c" : "#ff6b62" }} />
               <div className="grow">
                 <b className="display">{res.ok ? `أهلاً ${res.guest.name}` : res.reason === "section" ? `${res.guest!.name}: ضيف ${SEC[res.guest!.section]}` : `${res.guest?.name ?? ""} ${REASON[res.reason]}`}</b>
-                {res.ok && res.guest.vip && <div className="st-vip"><Icon name="Star" size={13} /> ضيف كبير: رحّب فيه وبلّغ صاحب المناسبة</div>}
+                {res.ok && res.guest.vip && <div className="st-vip"><Icon name="Star" size={13} /> ضيف كبير: رحّب فيه، وبلّغنا صاحب المناسبة تلقائياً</div>}
                 {res.guest && <div style={{ fontSize: 13, opacity: 0.8 }}>{!res.ok && res.reason === "section" ? `وجّهه لمدخل ${SEC[res.guest.section]}` : `${SEC[res.guest.section]} · ${res.guest.count} ${res.guest.count > 1 ? "أشخاص" : "شخص"}`}</div>}
               </div>
               {!res.ok && res.reason === "section" && <button className="btn sm white" onClick={() => void scan(res.guest!.code, true)}>دخّله هنا</button>}
@@ -368,6 +480,8 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
           )}
         </AnimatePresence>
       </section>
+
+      <OpsFeed dark ops={ops} me={me} quick={OPS_QUICK.coord} onSend={post} sub="صاحب المناسبة والإدارة وباقي المنسقين يشوفون رسالتك فوراً" />
 
       <section className="st-card">
         <label className="st-label" htmlFor="st-q"><Icon name="Search" size={15} /> ضيف نسي جواله؟ ابحث باسمه</label>
@@ -386,39 +500,144 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
   );
 }
 
-/* ───── مسح QR بالكاميرا (BarcodeDetector المدمج في المتصفح، بدون مكتبات) ───── */
+/* ───── الكاميرا عند المنسق: نطلب الإذن أول ما تفتح الشاشة، وما نكمل بدونها ─────
+   المسح يشتغل على كل الجوالات: BarcodeDetector المدمج (Chrome/Android) وإلا مكتبة jsQR (آيفون وغيره) */
+type CamState = "starting" | "ask" | "denied" | "unsupported" | "insecure" | "live" | "error";
 type Detector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
-function CameraScanner({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) {
+const UA = typeof navigator !== "undefined" ? navigator.userAgent : "";
+const IOS = /iPhone|iPad|iPod/i.test(UA) || (/Macintosh/.test(UA) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
+const IN_APP = /FBAN|FBAV|Instagram|Snapchat|Line\/|TikTok|; wv\)/i.test(UA);
+
+function CameraGate({ onCode, onManual }: { onCode: (code: string) => void; onManual: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
-  const [err, setErr] = useState("");
+  const [state, setState] = useState<CamState>("starting");
+  const [torch, setTorch] = useState<null | boolean>(null);
+  const [hit, setHit] = useState(0);
+  const stream = useRef<MediaStream | null>(null);
   const last = useRef({ code: "", at: 0 });
+  const cb = useRef(onCode); cb.current = onCode;
+
+  const stop = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; };
+  const start = async () => {
+    if (!window.isSecureContext) { setState("insecure"); return; }
+    if (!navigator.mediaDevices?.getUserMedia) { setState("unsupported"); return; }
+    setState("starting");
+    try {
+      stop();
+      const s = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+      stream.current = s;
+      const v = video.current; if (v) { v.srcObject = s; v.setAttribute("playsinline", "true"); await v.play().catch(() => {}); }
+      const track = s.getVideoTracks()[0];
+      const caps = (track.getCapabilities?.() ?? {}) as { torch?: boolean; focusMode?: string[] };
+      setTorch(caps.torch ? false : null);
+      if (caps.focusMode?.includes("continuous")) void track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => {});
+      setState("live");
+    } catch (e) {
+      const n = (e as DOMException)?.name;
+      setState(n === "NotAllowedError" || n === "SecurityError" ? "denied" : n === "NotFoundError" || n === "OverconstrainedError" ? "unsupported" : "error");
+    }
+  };
+
+  // أول ما تفتح الشاشة: نطلب الكاميرا مباشرة (المتصفح يعرض نافذة الإذن)
   useEffect(() => {
-    let stream: MediaStream | null = null, timer = 0, alive = true;
-    const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector;
-    if (!BD) { setErr("المسح بالكاميرا يحتاج متصفح Chrome على الجوال. استخدم إدخال الرمز يدوياً."); return; }
-    const detector = new BD({ formats: ["qr_code"] });
-    navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment" }, audio: false }).then((s) => {
-      if (!alive) { s.getTracks().forEach((t) => t.stop()); return; }
-      stream = s; const v = video.current!; v.srcObject = s; void v.play();
-      const tick = async () => {
-        if (!alive) return;
-        try {
-          const found = await detector.detect(v);
-          const raw = found[0]?.rawValue;
-          if (raw && (raw !== last.current.code || Date.now() - last.current.at > 2500)) { last.current = { code: raw, at: Date.now() }; onCode(raw); }
-        } catch { /* إطار غير جاهز */ }
-        timer = window.setTimeout(tick, 280);
-      };
-      void tick();
-    }).catch(() => setErr("ما قدرنا نفتح الكاميرا. اسمح للمتصفح باستخدامها أو أدخل الرمز يدوياً."));
-    return () => { alive = false; clearTimeout(timer); stream?.getTracks().forEach((t) => t.stop()); };
+    let perm: PermissionStatus | null = null;
+    const onPerm = () => { if (perm?.state === "granted") void start(); else if (perm?.state === "denied") { stop(); setState("denied"); } };
+    void (async () => {
+      try { perm = await navigator.permissions?.query({ name: "camera" as PermissionName }); perm?.addEventListener("change", onPerm); } catch { /* سفاري القديم */ }
+      if (perm?.state === "denied") setState("denied"); else void start();
+    })();
+    // الجوال يقفل الكاميرا لما تطلع من الصفحة: نرجعها تلقائياً لما ترجع
+    const vis = () => { if (document.hidden) stop(); else if (perm?.state !== "denied") void start(); };
+    document.addEventListener("visibilitychange", vis);
+    return () => { stop(); perm?.removeEventListener("change", onPerm); document.removeEventListener("visibilitychange", vis); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // قراءة الرمز من الفيديو
+  useEffect(() => {
+    if (state !== "live") return;
+    let alive = true, timer = 0;
+    const W = window as unknown as { BarcodeDetector?: (new (o: { formats: string[] }) => Detector) & { getSupportedFormats?: () => Promise<string[]> } };
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let detect: ((v: HTMLVideoElement) => Promise<string | undefined>) | null = null;
+    void (async () => {
+      const formats = await W.BarcodeDetector?.getSupportedFormats?.().catch(() => []) ?? [];
+      if (W.BarcodeDetector && formats.includes("qr_code")) {
+        const d = new W.BarcodeDetector({ formats: ["qr_code"] });
+        detect = async (v) => (await d.detect(v))[0]?.rawValue;
+      } else {
+        const jsQR = (await import("jsqr")).default;
+        let turn = 0;
+        detect = async (v) => {
+          if (!ctx || !v.videoWidth) return undefined;
+          // نبدّل بين الإطار كامل (رمز قريب يملأ الشاشة) والمربع اللي في النص مكبّر (رمز بعيد)
+          const vw = v.videoWidth, vh = v.videoHeight, full = turn++ % 2 === 0;
+          const side = full ? 0 : Math.min(vw, vh) * 0.62;
+          const [sx, sy, sw, sh] = full ? [0, 0, vw, vh] : [(vw - side) / 2, (vh - side) / 2, side, side];
+          const k = Math.min(1, 640 / Math.max(sw, sh)), w = Math.round(sw * k), h = Math.round(sh * k);
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
+          return jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "attemptBoth" })?.data;
+        };
+      }
+      const tick = async () => {
+        if (!alive) return;
+        const v = video.current;
+        if (v && v.readyState >= 2 && detect) {
+          try {
+            const raw = await detect(v);
+            if (raw && (raw !== last.current.code || Date.now() - last.current.at > 2500)) { last.current = { code: raw, at: Date.now() }; setHit(Date.now()); cb.current(raw); }
+          } catch { /* إطار غير جاهز */ }
+        }
+        timer = window.setTimeout(tick, 180);
+      };
+      void tick();
+    })();
+    return () => { alive = false; clearTimeout(timer); };
+  }, [state]);
+
+  const toggleTorch = () => {
+    const track = stream.current?.getVideoTracks()[0]; if (!track || torch === null) return;
+    void track.applyConstraints({ advanced: [{ torch: !torch } as MediaTrackConstraintSet] }).then(() => setTorch(!torch)).catch(() => setTorch(null));
+  };
+
+  if (state === "live" || state === "starting") return (
+    <section className="cam-live">
+      <video ref={video} playsInline muted autoPlay />
+      <div className={"cam-frame" + (hit && Date.now() - hit < 700 ? " hit" : "")} aria-hidden="true"><i /><i /><i /><i /><motion.span className="laser" animate={{ top: ["14%", "84%", "14%"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} /></div>
+      <div className="cam-bar">
+        <span>{state === "starting" ? "نشغّل الكاميرا…" : "وجّه الكاميرا على رمز الدعوة"}</span>
+        {torch !== null && <button className={"icon-btn sm" + (torch ? " on" : "")} onClick={toggleTorch} aria-pressed={torch} aria-label="الفلاش"><Icon name={torch ? "FlashlightOff" : "Flashlight"} size={16} /></button>}
+      </div>
+    </section>
+  );
+
+  // شاشة إلزامية: المنسق لازم يسمح بالكاميرا
   return (
-    <div className="cam">
-      {err ? <p className="cam-err">{err}</p> : <video ref={video} playsInline muted />}
-      <div className="cam-frame" aria-hidden="true"><i /><i /><i /><i /></div>
-      <button className="btn white sm cam-close" onClick={onClose}><Icon name="X" size={15} /> إغلاق الكاميرا</button>
-    </div>
+    <section className="cam-gate">
+      <video ref={video} playsInline muted hidden />
+      <span className="cam-gate-ico"><Icon name={state === "denied" ? "CameraOff" : "Camera"} size={30} /></span>
+      <h2 className="display">{state === "denied" ? "الكاميرا مقفلة" : state === "insecure" ? "افتح الرابط الآمن" : state === "unsupported" ? "ما لقينا كاميرا" : "شاشة الاستقبال تحتاج الكاميرا"}</h2>
+      <p>{state === "denied" ? "عشان تمسح دعوات الضيوف بسرعة، لازم تسمح للمتصفح بالكاميرا:" : state === "insecure" ? "الكاميرا تشتغل فقط على رابط يبدأ بـ https. افتح الرابط اللي وصلك كما هو." : state === "unsupported" ? "هذا الجهاز أو المتصفح ما فيه كاميرا متاحة. جرّب جوال ثاني أو متصفح Chrome أو Safari." : "اضغط الزر وبعدين «سماح» في النافذة اللي تطلع."}</p>
+      {state === "denied" && <ol className="cam-steps">
+        {IN_APP && <li>أنت فاتح الرابط من داخل تطبيق. افتحه في <b>{IOS ? "Safari" : "Chrome"}</b> من قائمة المشاركة أو ⋮</li>}
+        {IOS ? <>
+          <li>اضغط <b>«aA»</b> أو أيقونة الإعدادات يسار شريط العنوان</li>
+          <li>اختر <b>إعدادات موقع الويب</b> ثم <b>الكاميرا ← سماح</b></li>
+          <li>أو من <b>الإعدادات ← Safari ← الكاميرا ← سماح</b></li>
+        </> : <>
+          <li>اضغط <b>القفل 🔒</b> أو أيقونة الإعدادات جنب الرابط</li>
+          <li>اختر <b>الأذونات ← الكاميرا ← سماح</b></li>
+        </>}
+        <li>ارجع هنا واضغط الزر تحت</li>
+      </ol>}
+      <div className="stack" style={{ width: "100%", maxWidth: 340 }}>
+        {state === "denied" && IOS
+          ? <button className="btn white lg block" onClick={() => location.reload()}><Icon name="RotateCcw" size={18} /> سمحت، حدّث الصفحة</button>
+          : <button className="btn white lg block" onClick={() => void start()}><Icon name="Camera" size={18} /> {state === "denied" ? "سمحت، جرّب مرة ثانية" : "اسمح بالكاميرا"}</button>}
+        <button className="btn ghost sm cam-skip" onClick={onManual}>الكاميرا خربانة؟ استقبل بكتابة الرمز أو اسم الضيف</button>
+      </div>
+    </section>
   );
 }

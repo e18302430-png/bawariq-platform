@@ -137,6 +137,8 @@ export interface Booking {
   notifiedAt?: number;
   /** حالة التاجر يوم المناسبة */
   vendorStatus?: VendorStatus;
+  /** تقييم العميل بعد ختم الليلة */
+  rating?: { stars: number; note?: string; at: number };
 }
 
 export interface ClientEvent {
@@ -154,6 +156,10 @@ export interface ClientEvent {
   style?: StyleId[];
   /** من وين جاء العميل (مثلاً invite = من دعوة ضيف) */
   source?: "invite" | "direct";
+  /** وقت ختم الليلة: بعدها تتحول الدعوات لرسالة شكر وتتوقف شاشات المنسقين */
+  endedAt?: number;
+  /** رسالة الشكر للضيوف (تظهر في دعوة كل ضيف بعد ختم الليلة) */
+  thanks?: string;
 }
 
 export type StyleId = "royal" | "najdi" | "modern" | "nature" | "cinema" | "cozy";
@@ -245,8 +251,23 @@ export interface ClientRecord {
   updatedAt?: number;
 }
 
+/** غرفة التنسيق ليلة المناسبة: العميل والإدارة والمنسق العام ومنسقو الأقسام */
+export type OpsFrom = "client" | "admin" | "all" | "men" | "women";
+export interface OpsMsg {
+  id: string;
+  /** صاحب المناسبة (سحابياً: معرّف حساب العميل) */
+  owner?: string;
+  from: OpsFrom;
+  text: string;
+  /** msg رسالة · alert تنبيه عاجل · done ختم الليلة */
+  kind: "msg" | "alert" | "done";
+  at: number;
+}
+
 export interface DB {
   version: 2;
+  /** غرفة التنسيق: رسائل ليلة المناسبة */
+  ops?: OpsMsg[];
   /** رقم واتساب الإدارة (لمن نسي كلمة المرور أو يحتاج مساعدة) */
   supportPhone?: string;
   /** للإدارة فقط: مساحات كل العملاء (في الوضع المحلي تُشتق من db.client) */

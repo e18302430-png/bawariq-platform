@@ -377,6 +377,21 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
   const after = ev.date < today();
   const open = () => { if (stage !== "envelope") return; setStage("opening"); setTimeout(() => setStage("open"), 1150); };
 
+  // بعد ختم الليلة: الدعوة تتحول لرسالة شكر من صاحب المناسبة
+  if (ev.endedAt) return (
+    <div className="gx gx-thanks" style={{ ["--wc-tint" as string]: wc.tint, ["--wc-deep" as string]: wc.deep }}>
+      <img className="gx-thanks-bg" src={wc.img} alt="" />
+      <motion.div className="gx-thanks-in" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+        <Monogram initials={info.initials} size={92} color={wc.deep} />
+        <div className="gx-orn" aria-hidden="true">✦</div>
+        <h1 className="display">شكراً {g.name.split("،")[0].trim()}</h1>{g.checkedIn && <div className="gx-thanks-came">تشرفنا بحضورك</div>}
+        <p>{ev.thanks}</p>
+        {db.client.profile?.name && <small>— {db.client.profile.name}</small>}
+        <a className="btn" href={`#start-${ev.occasion}`}>عندك مناسبة؟ ابدأها مع مناسبتي</a>
+      </motion.div>
+    </div>
+  );
+
   return (
     <div className="gx" style={{ ["--wc-tint" as string]: wc.tint, ["--wc-deep" as string]: wc.deep }}>
       <AnimatePresence>

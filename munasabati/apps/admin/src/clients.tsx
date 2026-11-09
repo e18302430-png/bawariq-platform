@@ -210,6 +210,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
       <div className="row wrap" style={{ ["--gap" as string]: "6px" }}>
         {b.fromPlan && <span className="pill brand">من الخطة المقترحة</span>}
         {b.reassignedFrom && <span className="pill info">محوّل من الإدارة</span>}
+        {b.rating && <span className={"pill " + (b.rating.stars >= 4 ? "ok" : b.rating.stars >= 3 ? "warn" : "bad")}>تقييم العميل {"★".repeat(b.rating.stars)}</span>}
         {b.vendorStatus && b.kind === "venue" && b.vendorStatus === "ready" && <span className="pill ok">القاعة بلّغت العميل إنها جاهزة</span>}
         {b.vendorStatus && b.kind !== "venue" && <span className="pill ok">التاجر: {({ onway: "في الطريق", arrived: "وصل", setup: "يجهّز", ready: "جاهز" } as const)[b.vendorStatus]}</span>}
       </div>
