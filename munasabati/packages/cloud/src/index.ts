@@ -95,11 +95,15 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     const diff = <T extends { id: string }>(a: T[], b: T[]) => b.filter((x) => a.find((y) => y.id === x.id) !== x);
     for (const s of diff(prev.suppliers, next.suppliers)) {
       const isNew = !prev.suppliers.some((x) => x.id === s.id);
-      jobs.push(sb.from("suppliers").upsert({ id: s.id, data: s, status: s.status ?? "active", updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+      const row = { id: s.id, data: s, status: s.status ?? "active", updated_at: new Date().toISOString() };
+      // تعديل صف موجود = update (مو upsert): upsert يمر على شرط الإضافة في RLS ويُرفض لغير المالك الأصلي
+      jobs.push((isNew ? sb.from("suppliers").insert({ ...row, owner_id: uid }) : sb.from("suppliers").update(row).eq("id", s.id)).then(({ error }) => { if (error) throw error; }));
     }
     for (const v of diff(prev.venues, next.venues)) {
       const isNew = !prev.venues.some((x) => x.id === v.id);
-      jobs.push(sb.from("venues").upsert({ id: v.id, data: v, status: v.status ?? "active", updated_at: new Date().toISOString(), ...(isNew ? { owner_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+      const row = { id: v.id, data: v, status: v.status ?? "active", updated_at: new Date().toISOString() };
+      // تعديل صف موجود = update (مو upsert): upsert يمر على شرط الإضافة في RLS ويُرفض لغير المالك الأصلي
+      jobs.push((isNew ? sb.from("venues").insert({ ...row, owner_id: uid }) : sb.from("venues").update(row).eq("id", v.id)).then(({ error }) => { if (error) throw error; }));
     }
     for (const b of diff(prev.bookings, next.bookings).filter((x) => !x.id.startsWith("busy-"))) {
       const isNew = !prev.bookings.some((x) => x.id === b.id);
@@ -107,7 +111,9 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       jobs.push((isNew ? sb.from("bookings").insert({ ...row, client_id: uid }) : sb.from("bookings").update(row).eq("id", b.id)).then(({ error }) => { if (error) throw error; }));
     }
     for (const t of diff(prev.tickets ?? [], next.tickets ?? [])) {
-      jobs.push(sb.from("tickets").upsert({ id: t.id, status: t.status, data: t, updated_at: new Date().toISOString(), ...(!(prev.tickets ?? []).some((x) => x.id === t.id) ? { user_id: uid } : {}) }).then(({ error }) => { if (error) throw error; }));
+      const isNew = !(prev.tickets ?? []).some((x) => x.id === t.id);
+      const row = { id: t.id, status: t.status, data: t, updated_at: new Date().toISOString() };
+      jobs.push((isNew ? sb.from("tickets").insert({ ...row, user_id: uid }) : sb.from("tickets").update(row).eq("id", t.id)).then(({ error }) => { if (error) throw error; }));
     }
     for (const kind of ["suppliers", "venues"] as const) {
       for (const x of (prev[kind] as { id: string }[]).filter((p) => !(next[kind] as { id: string }[]).some((n) => n.id === p.id))) jobs.push(sb.from(kind).delete().eq("id", x.id).then(({ error }) => { if (error) throw error; }));

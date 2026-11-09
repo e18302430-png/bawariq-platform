@@ -95,11 +95,11 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
         ))}
       </div>
       <Sheet open={!!quoting} onClose={() => setQuoting(null)} title={quoting ? `عرض سعر لـ ${quoting.clientName}` : ""}>
-        <form className="form" onSubmit={(e) => { e.preventDefault(); if (!quoting) return; apply(setBookingStatus(quoting.id, "quoted", { quote: q.amount, message: { from: "provider", text: q.msg } })); setQuoting(null); toast("وصل العرض للعميل"); }}>
-          <div className="field"><label htmlFor="q-a">المبلغ (ر.س)</label><input id="q-a" type="number" min={0} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount} onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
+        <form className="form" onSubmit={(e) => { e.preventDefault(); if (!quoting || !(q.amount > 0)) return; apply(setBookingStatus(quoting.id, "quoted", { quote: q.amount, message: { from: "provider", text: q.msg } })); setQuoting(null); toast("وصل العرض للعميل"); }}>
+          <div className="field"><label htmlFor="q-a">المبلغ (ر.س)</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
           <div className="faint num" style={{ fontSize: 13 }}>شامل ضريبة القيمة المضافة 15%: {sar(q.amount * 1.15)}</div>
           <div className="field"><label htmlFor="q-m">رسالة للعميل</label><textarea id="q-m" className="input" rows={4} value={q.msg} onChange={(e) => setQ({ ...q, msg: e.target.value })} /></div>
-          <button className="btn primary lg block" type="submit">إرسال العرض</button>
+          <button className="btn primary lg block" type="submit" disabled={!(q.amount > 0)}>إرسال العرض</button>
         </form>
       </Sheet>
     </>

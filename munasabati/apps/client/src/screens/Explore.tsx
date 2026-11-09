@@ -146,7 +146,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
           <p className="muted" style={{ fontSize: 15.5 }}>{v.about}</p>
 
           {venue && <section className="card">
-            <div className="section-title"><h3>اختر القاعة</h3><span className="faint" style={{ fontSize: 12.5 }}>السعر يتغير في الويكند</span></div>
+            <div className="section-title"><h3>اختر القاعة</h3><span className="faint" style={{ fontSize: 12.5 }}>السعر يوصلك في عرض خاص</span></div>
             <div className="stack" style={{ ["--gap" as string]: "10px" }}>
               {venue.halls.map((h) => (
                 <button key={h.id} className={"hall-opt" + (hallId === h.id ? " on" : "")} onClick={() => setHallId(h.id)} aria-pressed={hallId === h.id}>
