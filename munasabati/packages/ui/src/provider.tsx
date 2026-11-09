@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { OCCASIONS, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
+import { OCCASIONS, bookingMessage, fmt, isoDay, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
@@ -155,9 +155,14 @@ export function ConfirmedTools({ b }: { b: Booking }) {
   const [reason, setReason] = useState("");
   return (
     <div className="stack" style={{ ["--gap" as string]: "10px" }}>
-      <div className="field"><span className="label">حالتك يوم المناسبة (يشوفها العميل لحظياً)</span>
+      {b.kind === "venue" ? (
+        // القاعة جاهزة أصلاً: ما فيه «طلعنا/وصلنا»، بس رسالة للعميل إن القاعة جاهزة لاستقبالهم
+        b.vendorStatus === "ready"
+          ? <div className="row" style={{ ["--gap" as string]: "8px", color: "var(--ok)", fontSize: 14 }}><Icon name="CheckCircle2" size={17} /> بلّغت العميل إن القاعة جاهزة</div>
+          : <button className="btn sm primary" style={{ justifySelf: "start" }} onClick={() => { apply(setVendorStatus(b.id, "ready")); apply(bookingMessage(b.id, "provider", "القاعة جاهزة لاستقبالكم، حياكم الله ✨")); toast("وصلت رسالة «القاعة جاهزة» للعميل"); }}><Icon name="Send" size={15} /> أرسل للعميل: القاعة جاهزة</button>
+      ) : <div className="field"><span className="label">حالتك يوم المناسبة (يشوفها العميل لحظياً)</span>
         <div className="vstat">{VSTEPS.map(([k, l, ic]) => <button key={k} className={b.vendorStatus === k ? "on" : ""} aria-pressed={b.vendorStatus === k} onClick={() => { apply(setVendorStatus(b.id, k)); toast(`تم: ${l}`); }}><Icon name={ic} size={16} />{l}</button>)}</div>
-      </div>
+      </div>}
       {b.cancelRequest ? <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>طلب الإلغاء عند الإدارة</b><div className="muted">الحجز قائم لين قرار الإدارة. السبب: {b.cancelRequest.reason}</div></div>
         : cancel ? <form className="row wrap" onSubmit={(e) => { e.preventDefault(); if (reason.trim().length < 3) return; apply(requestCancel(b.id, reason.trim())); setCancel(false); toast("أرسلنا طلب الإلغاء للإدارة"); }}>
           <label className="sr" htmlFor={"cr" + b.id}>سبب الإلغاء</label>

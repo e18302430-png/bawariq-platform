@@ -27,7 +27,7 @@ export function Bookings() {
             </div>
             {b.note && <div className="muted" style={{ fontSize: 13.5 }}>{b.note}</div>}
             {b.cancelRequest && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>التاجر طلب إلغاء الحجز</b><div className="muted">الإدارة تراجع الطلب الآن، وحجزك قائم لين قرارها. لو تمت الموافقة نرشّح لك بديلاً مباشرة.</div></div>}
-            {b.status === "confirmed" && b.vendorStatus && <div className="vstat-view"><Icon name="Radio" size={15} /> حالة التاجر: <b>{VLABEL[b.vendorStatus]}</b></div>}
+            {b.status === "confirmed" && b.vendorStatus && (b.kind !== "venue" || b.vendorStatus === "ready") && <div className="vstat-view"><Icon name="Radio" size={15} /> {b.kind === "venue" ? <b>القاعة جاهزة لاستقبالكم</b> : <>حالة التاجر: <b>{VLABEL[b.vendorStatus]}</b></>}</div>}
             <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
             {b.messages.filter((m) => m.from !== "client").map((m, i) => <div key={i} className={"card flat tight" + (m.from === "admin" ? " admin-note" : "")} style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: m.from === "admin" ? "var(--brand)" : "var(--muted)" }}>{m.from === "admin" ? "إدارة مناسبتي" : `رد ${nameOf(b.kind, b.targetId)}`}</b>{m.text}</div>)}
             {b.status === "quoted" && (
@@ -240,7 +240,7 @@ function NightOps() {
 
       {vendors.length > 0 && <section className="card">
         <div className="section-title"><h3>الموردين الليلة</h3></div>
-        <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.vendorStatus ? VLABEL[b.vendorStatus] : "لم يحدّث حالته بعد"}</small></div><span className={"pill " + (b.vendorStatus === "ready" ? "ok" : b.vendorStatus ? "info" : "neutral")}>{b.vendorStatus === "ready" ? "جاهز" : b.vendorStatus ? "في الطريق للجاهزية" : "بانتظار"}</span></div>)}</div>
+        <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.kind === "venue" ? (b.vendorStatus === "ready" ? "القاعة جاهزة لاستقبالكم" : "محجوزة لك") : b.vendorStatus ? VLABEL[b.vendorStatus] : "لم يحدّث حالته بعد"}</small></div><span className={"pill " + (b.vendorStatus === "ready" ? "ok" : b.vendorStatus ? "info" : "neutral")}>{b.vendorStatus === "ready" ? (b.kind === "venue" ? "جاهزة" : "جاهز") : b.kind === "venue" ? "مؤكدة" : b.vendorStatus ? "في الطريق للجاهزية" : "بانتظار"}</span></div>)}</div>
       </section>}
 
       {vips.length > 0 && <section className="card">
