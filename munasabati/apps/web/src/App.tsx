@@ -346,9 +346,24 @@ export default function App() {
       <ScrollNav bottom="24px" />
       <footer className="container footer">
         <div className="row"><Logo size={24} /><span>{BRAND.goal}</span></div>
-        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./privacy.html">الخصوصية والشروط</a></nav>
+        <LegalFooter />
+        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./privacy.html">الخصوصية والشروط</a><a href="./cancellation.html">سياسة الإلغاء</a></nav>
         <ThemeToggle />
       </footer>
     </>
   );
+}
+
+/** بيانات المنشأة النظامية من إعدادات الإدارة (قراءة عامة، بدون تحميل بقية البيانات) */
+function LegalFooter() {
+  const [line, setLine] = useState("");
+  useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL as string | undefined, key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+    if (!url || !key) return;
+    fetch(`${url}/rest/v1/settings?key=eq.legal&select=value`, { headers: { apikey: key } }).then((r) => r.json()).then((rows: { value: string }[]) => {
+      const l = rows?.[0] && JSON.parse(rows[0].value);
+      if (l?.entity) setLine([l.entity, l.cr && `سجل تجاري ${l.cr}`, l.vat && `الرقم الضريبي ${l.vat}`, l.address].filter(Boolean).join(" · "));
+    }).catch(() => {});
+  }, []);
+  return line ? <small className="legal-line" style={{ display: "block" }}>{line}</small> : null;
 }

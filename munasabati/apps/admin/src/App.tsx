@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
-  upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, setPricing, setBank, hasAgreement, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
+  upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, setPricing, setBank, setLegal, hasAgreement, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady,
@@ -306,6 +306,7 @@ function Settings() {
         <p className="muted" style={{ fontSize: 14 }}>يظهر لأي مستخدم يضغط «نسيت كلمة المرور»، فيراسلك وتعيّن له كلمة مرور جديدة من ملفه.</p>
         <div className="row"><label className="sr" htmlFor="sp">رقم واتساب الإدارة</label><input id="sp" className="input num grow" dir="ltr" style={{ textAlign: "right" }} inputMode="tel" placeholder="05xxxxxxxx" value={sp} onChange={(e) => setSp(e.target.value)} /><button className="btn primary" onClick={() => { apply(setSupportPhone(normPhone(sp))); toast("حفظنا رقم الإدارة"); }}>حفظ</button></div>
       </section>
+      <LegalSettings />
       <PricingSettings />
       <section className="card form">
         <h3 className="card-title">إعلان عام</h3>
@@ -319,6 +320,27 @@ function Settings() {
         <p className="muted" style={{ fontSize: 14 }}>عند ربط Supabase تُطبَّق صلاحيات الإدارة من قاعدة البيانات: أي حساب بدور <b>admin</b> في جدول profiles يقدر يعلّق ويحذف ويعدّل كل الحسابات والطلبات (راجع supabase/schema.sql).</p>
       </section>
     </>
+  );
+}
+
+/** بيانات المنشأة النظامية: تظهر أسفل كل التطبيقات والصفحات (نظام التجارة الإلكترونية) */
+function LegalSettings() {
+  const db = useDB();
+  const toast = useToast();
+  const [l, setL] = useState({ entity: db.legal?.entity ?? "", cr: db.legal?.cr ?? "", vat: db.legal?.vat ?? "", address: db.legal?.address ?? "", email: db.legal?.email ?? "" });
+  return (
+    <section className="card form">
+      <h3 className="card-title">بيانات المنشأة النظامية</h3>
+      <p className="muted" style={{ fontSize: 14 }}>نظام التجارة الإلكترونية يطلب ظهور اسم المنشأة ورقم السجل التجاري والرقم الضريبي (لو مسجّل) والعنوان. تظهر أسفل كل التطبيقات وصفحات الشروط.</p>
+      <div className="grid-3">
+        <div className="field"><label htmlFor="le">اسم المنشأة كما في السجل</label><input id="le" className="input" value={l.entity} onChange={(e) => setL({ ...l, entity: e.target.value })} placeholder="مؤسسة ... للتجارة" /></div>
+        <div className="field"><label htmlFor="lc">رقم السجل التجاري</label><input id="lc" className="input num" dir="ltr" inputMode="numeric" value={l.cr} onChange={(e) => setL({ ...l, cr: e.target.value })} /></div>
+        <div className="field"><label htmlFor="lv">الرقم الضريبي (اختياري)</label><input id="lv" className="input num" dir="ltr" inputMode="numeric" value={l.vat} onChange={(e) => setL({ ...l, vat: e.target.value })} placeholder="لو مسجّل في الضريبة" /></div>
+        <div className="field"><label htmlFor="la">العنوان</label><input id="la" className="input" value={l.address} onChange={(e) => setL({ ...l, address: e.target.value })} placeholder="الدمام، حي ..." /></div>
+        <div className="field"><label htmlFor="lm">بريد التواصل</label><input id="lm" className="input" dir="ltr" type="email" value={l.email} onChange={(e) => setL({ ...l, email: e.target.value })} /></div>
+      </div>
+      <div className="row"><button className="btn primary" disabled={!l.entity.trim()} onClick={() => { apply(setLegal(l)); toast("حفظنا بيانات المنشأة، وتظهر أسفل كل الصفحات"); }}>حفظ</button></div>
+    </section>
   );
 }
 

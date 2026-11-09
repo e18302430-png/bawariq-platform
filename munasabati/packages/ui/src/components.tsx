@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValue, animate, useDragControls } fro
 import { createPortal } from "react-dom";
 import { Icon } from "./icons";
 import { photoUrl } from "./media";
+import { useDB } from "./data";
 import { AnnouncementBar } from "./support";
 import { BRAND, LogoMark } from "./Logo";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
@@ -306,13 +307,13 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
             </div>
           ))}
         </nav>
-        <div className="side-foot">{footer}</div>
+        <div className="side-foot">{footer}<LegalLine /></div>
       </aside>
       <div className="shell-main">
         <header className={"appbar" + (scrolled ? " scrolled" : "")}>
           <span ref={prog} className="scroll-prog" aria-hidden="true" />
           <div className="container appbar-in">
-            <div className="logo mobile-only"><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
+            <div className="logo mobile-only row" style={{ ["--gap" as string]: "8px" }}><LogoMark size={26} /><span>مناسبتي <span className="faint" style={{ fontSize: 12, fontWeight: 500 }}>{portal}</span></span></div>
             <div className="grow" />
             {actions}
             <ThemeToggle />
@@ -350,7 +351,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
             </div>
           ))}
         </div>
-        {footer && <div style={{ display: "grid", gap: 8, marginTop: 16 }}>{footer}</div>}
+        <div style={{ display: "grid", gap: 8, marginTop: 16 }}>{footer}<LegalLine /></div>
       </Sheet>
     </div>
   );
@@ -386,6 +387,18 @@ export function Splash({ dark = false }: { dark?: boolean }) {
       <b>{BRAND.name}</b>
       <small>{BRAND.goal}</small>
       <i aria-hidden="true"><span /></i>
+    </div>
+  );
+}
+
+/** بيانات المنشأة النظامية وروابط الشروط: تظهر في كل التطبيقات (نظام التجارة الإلكترونية) */
+export function LegalLine() {
+  const l = useDB().legal;
+  const base = typeof location !== "undefined" && /\/(client|vendors|venues|admin)\//.test(location.pathname) ? "../" : "./";
+  return (
+    <div className="legal-line">
+      {l?.entity && <span>{l.entity}{l.cr ? ` · سجل تجاري ${l.cr}` : ""}{l.vat ? ` · الرقم الضريبي ${l.vat}` : ""}{l.address ? ` · ${l.address}` : ""}</span>}
+      <span><a href={base + "privacy.html"} target="_blank" rel="noreferrer">الخصوصية والشروط</a> · <a href={base + "cancellation.html"} target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></span>
     </div>
   );
 }

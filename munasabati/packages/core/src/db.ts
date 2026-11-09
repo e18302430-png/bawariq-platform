@@ -247,6 +247,9 @@ export const adminDelete = (kind: "supplier" | "venue" | "booking", id: string):
     : { ...db, bookings: db.bookings.filter((b) => b.id !== id) };
 export const setAnnouncement = (text: string): Mutation => (db) => ({ ...db, announcement: text.trim() || undefined });
 export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, supportPhone: phone.replace(/\D/g, "") || undefined });
+export const setLegal = (l: NonNullable<DB["legal"]>): Mutation => (db) => ({ ...db, legal: { entity: l.entity.trim(), cr: l.cr.replace(/\D/g, ""), vat: l.vat.replace(/\D/g, ""), address: l.address.trim(), email: l.email.trim() } });
+/** نسخة الشروط اللي يوافق عليها المستخدم وقت إنشاء الحساب */
+export const TERMS_VERSION = 1;
 export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: Math.max(0, Math.min(60, p.feePct)), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto } });
 export const setBank = (b: NonNullable<DB["bank"]>): Mutation => (db) => ({ ...db, bank: { name: b.name.trim(), holder: b.holder.trim(), iban: b.iban.replace(/\s/g, "").toUpperCase() } });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */

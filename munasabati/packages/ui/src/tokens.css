@@ -521,3 +521,8 @@ body { overflow-x: clip; }
 .agree-list li span { color: var(--muted); }
 .agree-check { display: flex; gap: 10px; align-items: center; font-weight: 600; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1.5px solid var(--line); cursor: pointer; }
 .agree-check input { width: 20px; height: 20px; accent-color: var(--brand); }
+.legal-line { display: grid; gap: 4px; font-size: 11.5px; line-height: 1.6; color: var(--muted); padding-top: 8px; }
+.legal-line a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.auth-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.auth-consent input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--brand); flex: none; }
+.auth-consent a { color: var(--brand); }

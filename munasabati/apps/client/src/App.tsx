@@ -93,6 +93,7 @@ function Main() {
         <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
         {isCloud && hasAccount() && <LogoutButton />}
         <ResetButton />
+        {isCloud && hasAccount() && <DeleteAccount />}
         <a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a>
       </>}
     >
@@ -127,6 +128,24 @@ function LogoutButton() {
     ? <div className="stack" style={{ ["--gap" as string]: "6px" }}><small className="muted" style={{ fontSize: 12.5 }}>مناسبتك محفوظة في حسابك. ترجع تدخل برقمك{phone ? ` ${phone}` : ""} وكلمة المرور.</small>
         <div className="row"><button className="btn sm grow" onClick={() => { void repo.auth?.signOut().then(() => { location.hash = ""; location.reload(); }); }}>تأكيد الخروج</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div></div>
     : <button className="btn sm ghost" onClick={() => setAsk(true)}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>;
+}
+
+/** حذف الحساب وكل البيانات الشخصية نهائياً (حق المستخدم) */
+function DeleteAccount() {
+  const [ask, setAsk] = useState(false);
+  const [word, setWord] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  if (!ask) return <button className="btn sm ghost" style={{ color: "var(--bad)" }} onClick={() => setAsk(true)}><Icon name="UserX" size={15} /> احذف حسابي وبياناتي</button>;
+  return (
+    <div className="stack" style={{ ["--gap" as string]: "6px" }}>
+      <small style={{ fontSize: 12.5, color: "var(--bad)" }}>ينحذف حسابك ومناسبتك وضيوفك ودعواتك نهائياً، وما نقدر نرجعها. حجوزاتك مع التجار تبقى بدون اسمك ورقمك.</small>
+      <label className="sr" htmlFor="del-w">اكتب «احذف» للتأكيد</label>
+      <input id="del-w" className="input" placeholder="اكتب: احذف" value={word} onChange={(e) => setWord(e.target.value)} />
+      {err && <small style={{ color: "var(--bad)" }}>{err}</small>}
+      <div className="row"><button className="btn sm grow" style={{ color: "var(--bad)" }} disabled={word.trim() !== "احذف" || busy} onClick={() => { setBusy(true); setErr(""); void repo.auth?.deleteAccount?.().then(() => { location.hash = ""; location.reload(); }, (e: Error) => { setErr(e.message); setBusy(false); }); }}>{busy ? "لحظة…" : "احذف نهائياً"}</button><button className="btn sm ghost" onClick={() => { setAsk(false); setWord(""); }}>إلغاء</button></div>
+    </div>
+  );
 }
 
 function ResetButton() {

@@ -283,6 +283,8 @@ export interface DB {
   version: 2;
   /** سياسة التسعير: نسبة مناسبتي، الحد الأدنى، العربون، والتسعير التلقائي */
   pricing?: { feePct: number; minFee: number; depositPct: number; auto: boolean };
+  /** بيانات المنشأة النظامية (نظام التجارة الإلكترونية يطلب ظهورها في المنصة) */
+  legal?: { entity: string; cr: string; vat: string; address: string; email: string };
   /** حساب مناسبتي البنكي لتحويل العربون */
   bank?: { name: string; iban: string; holder: string };
   /** غرفة التنسيق: رسائل ليلة المناسبة */

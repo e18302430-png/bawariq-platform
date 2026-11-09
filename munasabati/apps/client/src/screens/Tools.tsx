@@ -64,7 +64,7 @@ function PayBox({ b, name }: { b: Booking; name: string }) {
   return (
     <div className="paybox">
       <div className="row between wrap"><b className="display">ثبّت حجزك بالعربون</b><span className="pill brand num">{p.depositPct}٪ = {sar(dep)}</span></div>
-      <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>حوّل العربون لحساب مناسبتي، واكتب الرقم المرجعي في التحويل. مناسبتي تحفظ حقك وحق التاجر، والباقي ({sar((b.clientPrice ?? 0) - dep)}) قبل المناسبة.</p>
+      <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>حوّل العربون لحساب مناسبتي، واكتب الرقم المرجعي في التحويل. مناسبتي تحفظ حقك وحق التاجر، والباقي ({sar((b.clientPrice ?? 0) - dep)}) قبل المناسبة. <a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></p>
       {db.bank?.iban ? <div className="pay-rows">
         <div><small>البنك</small><b>{db.bank.name}</b></div>
         <div><small>اسم المستفيد</small><b>{db.bank.holder}</b></div>
