@@ -149,6 +149,8 @@ export interface Booking {
   pay?: { stage: "due" | "claimed" | "paid"; claimedAt?: number; paidAt?: number; payoutAt?: number };
   /** محاولات مشاركة رقم أو حساب في المحادثة (انخفت تلقائياً) */
   leaks?: number;
+  /** متابعة منسق مناسبتي ليلة المناسبة: العميل يشوف حالة المورد بعد تأكيد المنسق فقط */
+  check?: { state: "arrived" | "ready" | "issue"; note?: string; at: number };
 }
 
 export interface ClientEvent {
@@ -168,6 +170,8 @@ export interface ClientEvent {
   place?: "hall" | "istiraha" | "home";
   /** من وين جاء العميل (مثلاً invite = من دعوة ضيف) */
   source?: "invite" | "direct";
+  /** منسق مناسبتي (من فريق الإدارة) المعيّن لهذي المناسبة */
+  coordinator?: { name: string; phone: string; at: number };
   /** وقت ختم الليلة: بعدها تتحول الدعوات لرسالة شكر وتتوقف شاشات المنسقين */
   endedAt?: number;
   /** رسالة الشكر للضيوف (تظهر في دعوة كل ضيف بعد ختم الليلة) */
@@ -282,7 +286,7 @@ export interface PartnerAgreement { v: number; at: number; by: string }
 export interface DB {
   version: 2;
   /** سياسة التسعير: نسبة مناسبتي، الحد الأدنى، العربون، والتسعير التلقائي */
-  pricing?: { feePct: number; minFee: number; depositPct: number; auto: boolean };
+  pricing?: { feePct: number; minFee: number; depositPct: number; auto: boolean; steps?: { from: string; feePct: number }[] };
   /** بيانات المنشأة النظامية (نظام التجارة الإلكترونية يطلب ظهورها في المنصة) */
   legal?: { entity: string; cr: string; vat: string; address: string; email: string };
   /** حساب مناسبتي البنكي لتحويل العربون */

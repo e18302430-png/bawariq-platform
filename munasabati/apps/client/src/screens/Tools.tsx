@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
-  type Booking, type CheckInResult, type DoorSnapshot, type OpsMsg,
+  acceptQuote, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, coordCheck, CHECK_LABEL, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  type Booking, type CheckInResult, type DoorSnapshot, type DoorVendor, type OpsMsg,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
 import { go } from "../nav";
@@ -27,7 +27,7 @@ export function Bookings() {
             </div>
             {b.note && <div className="muted" style={{ fontSize: 13.5 }}>{b.note}</div>}
             {b.cancelRequest && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>التاجر طلب إلغاء الحجز</b><div className="muted">الإدارة تراجع الطلب الآن، وحجزك قائم لين قرارها. لو تمت الموافقة نرشّح لك بديلاً مباشرة.</div></div>}
-            {b.status === "confirmed" && b.vendorStatus && (b.kind !== "venue" || b.vendorStatus === "ready") && <div className="vstat-view"><Icon name="Radio" size={15} /> {b.kind === "venue" ? <b>القاعة جاهزة لاستقبالكم</b> : <>حالة التاجر: <b>{VLABEL[b.vendorStatus]}</b></>}</div>}
+            {b.status === "confirmed" && b.check && <div className="vstat-view"><Icon name="ShieldCheck" size={15} /> منسق مناسبتي أكّد: <b>{CHECK_LABEL[b.check.state]}</b>{b.check.note ? ` · ${b.check.note}` : ""}</div>}
             <div className="row"><BookingChat booking={b} me="client" other={nameOf(b.kind, b.targetId)} /></div>
             {b.messages.filter((m) => m.from !== "client").map((m, i) => <div key={i} className={"card flat tight" + (m.from === "admin" ? " admin-note" : "")} style={{ background: "var(--surface-2)", fontSize: 14 }}><b className="display" style={{ fontSize: 12.5, display: "block", color: m.from === "admin" ? "var(--brand)" : "var(--muted)" }}>{m.from === "admin" ? "إدارة مناسبتي" : `رد ${nameOf(b.kind, b.targetId)}`}</b>{m.text}</div>)}
             {b.status === "quoted" && !b.clientPrice && <div className="req-step"><Icon name="Hourglass" size={15} /> وصلنا عرض التاجر، ونجهّز لك سعر مناسبتي النهائي.</div>}
@@ -200,10 +200,15 @@ export function Door() {
         </div>
       </section>
 
+      {db.client.event?.coordinator ? <section className="card coord-card">
+        <span className="avatar"><Icon name="BadgeCheck" size={20} /></span>
+        <div className="grow"><span className="eyebrow">منسق مناسبتي معك ليلة المناسبة</span><b className="display" style={{ display: "block", fontSize: 19 }}>{db.client.event.coordinator.name}</b><small className="muted">يتابع وصول الموردين وجاهزيتهم، ويستقبل ضيوفك، والإدارة معه لحظة بلحظة.</small></div>
+      </section> : <section className="card coord-card"><span className="avatar"><Icon name="BadgeCheck" size={20} /></span><div className="grow"><b className="display" style={{ display: "block" }}>منسق مناسبتي</b><small className="muted">الإدارة تعيّن لك منسق من فريقها قبل المناسبة، يتابع الموردين ويستقبل ضيوفك.</small></div></section>}
+
       <NightOps />
 
       <section className="card stack">
-        <div><h3 className="display" style={{ margin: 0 }}>روابط المنسقين</h3><p className="muted" style={{ margin: "4px 0 0", fontSize: 14 }}>أرسل الرابط للمنسق أو الحارس. يفتح عنده شاشة استقبال فيها مسح بالكاميرا وقائمة الضيوف فقط، بدون ميزانيتك أو طلباتك.</p></div>
+        <div><h3 className="display" style={{ margin: 0 }}>روابط الاستقبال للأقسام</h3><p className="muted" style={{ margin: "4px 0 0", fontSize: 14 }}>أرسل الرابط للمنسق أو الحارس. يفتح عنده شاشة استقبال فيها مسح بالكاميرا وقائمة الضيوف فقط، بدون ميزانيتك أو طلباتك.</p></div>
         {!key ? <button className="btn primary lg block" onClick={() => { apply(enableDoor()); toast("جهّزنا روابط الاستقبال"); }}><Icon name="ScanLine" size={18} /> فعّل الاستقبال الذكي</button> : <>
           <div className="list">{links.map(([label, sec, ic]) => (
             <div key={label} className="list-row door-link">
@@ -275,7 +280,7 @@ function NightOps() {
 
       {vendors.length > 0 && <section className="card">
         <div className="section-title"><h3>الموردين الليلة</h3></div>
-        <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.kind === "venue" ? (b.vendorStatus === "ready" ? "القاعة جاهزة لاستقبالكم" : "محجوزة لك") : b.vendorStatus ? VLABEL[b.vendorStatus] : "لم يحدّث حالته بعد"}</small></div><span className={"pill " + (b.vendorStatus === "ready" ? "ok" : b.vendorStatus ? "info" : "neutral")}>{b.vendorStatus === "ready" ? (b.kind === "venue" ? "جاهزة" : "جاهز") : b.kind === "venue" ? "مؤكدة" : b.vendorStatus ? "في الطريق للجاهزية" : "بانتظار"}</span></div>)}</div>
+        <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.check ? `منسق مناسبتي أكّد: ${CHECK_LABEL[b.check.state]}${b.check.note ? ` · ${b.check.note}` : ""}` : "بانتظار تأكيد منسق مناسبتي"}</small></div><span className={"pill " + (b.check?.state === "ready" ? "ok" : b.check?.state === "issue" ? "bad" : b.check ? "info" : "neutral")}>{b.check ? CHECK_LABEL[b.check.state] : "لم يتأكد"}</span></div>)}</div>
       </section>}
 
       {vips.length > 0 && <section className="card">
@@ -435,6 +440,17 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
     );
   }
   const title = local ? db.client.event?.title ?? "المناسبة" : remote!.title;
+  const coord = local ? db.client.event?.coordinator : remote!.coordinator;
+  // موردين الليلة: من الحجوزات المؤكدة (الاسم والحالة فقط)
+  const vendors: DoorVendor[] = local
+    ? db.bookings.filter((b) => b.fromClient && b.status === "confirmed").map((b) => ({ id: b.id, kind: b.kind, name: (b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId)?.name : db.suppliers.find((x) => x.id === b.targetId)?.name) ?? "", cat: b.cat, vendorStatus: b.vendorStatus, check: b.check }))
+    : remote!.vendors ?? [];
+  const doCheck = async (id: string, state: "arrived" | "ready" | "issue", note?: string) => {
+    const name = vendors.find((v) => v.id === id)?.name ?? "المورد";
+    if (local) { apply(coordCheck(id, state, name, note)); return; }
+    const ok = await repo.door!.check(k, id, state, note);
+    if (ok) pull.current();
+  };
   const endedAt = local ? db.client.event?.endedAt : remote!.endedAt;
   const guests = local ? db.client.guests : remote!.guests;
   const program = local ? db.client.invite.program ?? [] : remote!.program ?? [];
@@ -480,7 +496,7 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
   return (
     <div className="station">
       <header className="st-head">
-        <div><span className="st-eyebrow"><span className="live-dot-c" /> {section ? `استقبال ${SEC[section]}` : "المنسق العام · كل الأقسام"}</span><h1 className="display">{title}</h1></div>
+        <div><span className="st-eyebrow"><span className="live-dot-c" /> {section ? `استقبال ${SEC[section]}` : coord ? `منسق مناسبتي · ${coord.name}` : "منسق مناسبتي · كل الأقسام"}</span><h1 className="display">{title}</h1></div>
         <div className="st-count num"><b><Counter value={sum(inside)} /></b><small>من {sum(expected)}</small></div>
       </header>
       {live && <div className="st-now"><Icon name="Radio" size={15} /> الآن: <b>{live.title}</b></div>}
@@ -509,6 +525,8 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
         </AnimatePresence>
       </section>
 
+      {vendors.length > 0 && <VendorChecks vendors={vendors} onCheck={doCheck} />}
+
       <OpsFeed dark ops={ops} me={me} quick={OPS_QUICK.coord} onSend={post} sub="صاحب المناسبة والإدارة وباقي المنسقين يشوفون رسالتك فوراً" />
 
       <section className="st-card">
@@ -525,6 +543,36 @@ export function DoorStation({ k, section }: { k: string; section?: "men" | "wome
       </section>
       <p className="st-foot">شاشة استقبال من <b>مناسبتي</b> · لا تعرض أي بيانات مالية</p>
     </div>
+  );
+}
+
+/* ───── المنسق يتابع الموردين: وصل، جاهز، أو فيه ملاحظة. العميل يشوف الحالة بعد تأكيده ───── */
+function VendorChecks({ vendors, onCheck }: { vendors: DoorVendor[]; onCheck: (id: string, s: "arrived" | "ready" | "issue", note?: string) => void | Promise<void> }) {
+  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const done = vendors.filter((v) => v.check?.state === "ready").length;
+  return (
+    <section className="st-card vchecks">
+      <div className="row between"><span className="st-label"><Icon name="ClipboardCheck" size={15} /> موردين الليلة</span><span className="num" style={{ fontSize: 13, opacity: 0.8 }}>{done} من {vendors.length} جاهز</span></div>
+      <div className="list">{vendors.map((v) => (
+        <div key={v.id} className={"vcheck " + (v.check?.state ?? "")}>
+          <div className="row" style={{ ["--gap" as string]: "10px" }}>
+            <span className="avatar"><Icon name={v.kind === "venue" ? "Building2" : "Store"} size={16} /></span>
+            <div className="t grow"><b>{v.name}</b><small>{v.check ? `${CHECK_LABEL[v.check.state]}${v.check.note ? ` · ${v.check.note}` : ""}` : v.vendorStatus ? `التاجر يقول: ${VLABEL[v.vendorStatus]} (أكّد بنفسك)` : "ما وصل للحين"}</small></div>
+          </div>
+          <div className="row" style={{ ["--gap" as string]: "6px" }}>
+            <button className={"btn sm" + (v.check?.state === "arrived" ? " white" : " glass")} onClick={() => void onCheck(v.id, "arrived")}>وصل</button>
+            <button className={"btn sm" + (v.check?.state === "ready" ? " white" : " glass")} onClick={() => void onCheck(v.id, "ready")}>جاهز</button>
+            <button className={"btn sm" + (v.check?.state === "issue" ? " white" : " glass")} onClick={() => { setNoteFor(v.id); setNote(""); }}>ملاحظة</button>
+          </div>
+          {noteFor === v.id && <form className="row" style={{ ["--gap" as string]: "6px" }} onSubmit={(e) => { e.preventDefault(); void onCheck(v.id, "issue", note); setNoteFor(null); }}>
+            <label className="sr" htmlFor={"vn" + v.id}>الملاحظة</label>
+            <input id={"vn" + v.id} className="input grow" placeholder="مثلاً: متأخر ٢٠ دقيقة، ناقص كراسي" value={note} onChange={(e) => setNote(e.target.value)} autoFocus />
+            <button className="btn sm white" type="submit">أرسل</button>
+          </form>}
+        </div>
+      ))}</div>
+    </section>
   );
 }
 

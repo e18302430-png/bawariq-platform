@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { OPS_QUICK, fmt, normPhone, postOp, shiftDate, spaces, today, type ClientRecord, type DB, type OpsMsg } from "@munasabati/core";
-import { Empty, Icon, OpsFeed, apply, useDB } from "@munasabati/ui";
+import { CHECK_LABEL, OPS_QUICK, adminAssignCoordinator, fmt, normPhone, postOp, shiftDate, spaces, today, type ClientRecord, type DB, type OpsMsg } from "@munasabati/core";
+import { Empty, Icon, OpsFeed, apply, useDB, useToast } from "@munasabati/ui";
 
 /*
   غرفة العمليات: كل مناسبة الليلة (أو قريبة) مع الحضور لحظياً، البرنامج، الموردين،
@@ -70,12 +70,41 @@ function Room({ r }: { r: ClientRecord }) {
             : live ? <div className="st-now light"><Icon name="Radio" size={15} /> الآن: <b>{live.title}</b></div> : null}
           {!c.doorKey && !e.endedAt && <small className="faint">ما فعّل الاستقبال الذكي للحين، فالمنسقون ما انضموا.</small>}
         </section>
+        <CoordinatorBox r={r} />
         {vendors.length > 0 && <section className="card">
           <div className="section-title"><h3>موردين الليلة</h3></div>
-          <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.rating ? `تقييم العميل ${"★".repeat(b.rating.stars)}` : b.vendorStatus === "ready" ? "جاهز" : b.vendorStatus ? "يجهّز" : "مؤكد"}</small></div></div>)}</div>
+          <div className="list">{vendors.map((b) => <div key={b.id} className="list-row"><span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span><div className="t"><b>{name(b.kind, b.targetId)}</b><small>{b.rating ? `تقييم العميل ${"★".repeat(b.rating.stars)}` : b.check ? `المنسق: ${CHECK_LABEL[b.check.state]}${b.check.note ? ` · ${b.check.note}` : ""}` : b.vendorStatus ? `التاجر يقول: ${b.vendorStatus === "ready" ? "جاهز" : "في الطريق"} (ما أكده المنسق)` : "بانتظار المنسق"}</small></div></div>)}</div>
         </section>}
       </div>
       <OpsFeed ops={opsOf(db, r)} me="admin" quick={OPS_QUICK.admin} onSend={send} sub="رسالتك توصل لصاحب المناسبة وكل المنسقين فوراً" />
     </div>
+  );
+}
+
+/** منسق مناسبتي: الإدارة تعيّنه وترسل له رابط شاشته (يمسح الدعوات ويأكد الموردين) */
+function CoordinatorBox({ r }: { r: ClientRecord }) {
+  const toast = useToast();
+  const c = r.data.event?.coordinator;
+  const [f, setF] = useState({ name: c?.name ?? "", phone: c?.phone ?? "" });
+  const key = r.data.doorKey;
+  const link = key ? `${location.origin}/client/#door-${key}` : "";
+  const msg = encodeURIComponent(`حياك الله ${f.name.split(" ")[0] || ""}، أنت منسق مناسبتي لـ«${r.data.event?.title ?? "المناسبة"}» يوم ${r.data.event?.date ?? ""}. هذا رابط شاشتك (افتحه من Chrome أو Safari واسمح بالكاميرا):\n${link}`);
+  const copy = async () => { try { await navigator.clipboard.writeText(link); toast("نسخنا رابط المنسق"); } catch { toast(link); } };
+  return (
+    <section className="card stack">
+      <div className="row between wrap"><h3 className="card-title" style={{ margin: 0 }}><Icon name="BadgeCheck" size={17} /> منسق مناسبتي</h3>{c ? <span className="pill ok">معيّن: {c.name}</span> : <span className="pill warn">ما عيّنت منسق</span>}</div>
+      <div className="coord-form">
+        <label className="sr" htmlFor={"cn" + r.id}>اسم المنسق</label>
+        <input id={"cn" + r.id} className="input" placeholder="اسم المنسق" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        <label className="sr" htmlFor={"cp" + r.id}>جوال المنسق</label>
+        <input id={"cp" + r.id} className="input num" dir="ltr" inputMode="tel" placeholder="05xxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+        <button className="btn sm primary" disabled={f.name.trim().length < 2} onClick={() => { apply(adminAssignCoordinator(r.id, f)); toast("عيّنا المنسق وجهّزنا رابط شاشته"); }}>{c ? "تحديث" : "عيّن المنسق"}</button>
+      </div>
+      {c && key && <div className="row wrap" style={{ ["--gap" as string]: "8px" }}>
+        <button className="btn sm" onClick={() => void copy()}><Icon name="Copy" size={15} /> انسخ رابط شاشة المنسق</button>
+        {c.phone && <a className="btn sm" href={`https://wa.me/966${normPhone(c.phone).replace(/^0/, "")}?text=${msg}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> أرسله له بواتساب</a>}
+      </div>}
+      <small className="faint">المنسق يمسح دعوات الضيوف، ويأكد وصول كل مورد وجاهزيته. العميل يشوف حالة المورد بعد تأكيد المنسق فقط، وأنت تشوف كل شي هنا لحظياً.</small>
+    </section>
   );
 }

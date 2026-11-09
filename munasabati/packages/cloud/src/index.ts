@@ -268,6 +268,10 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       if (error || !data) return null;
       return data as DoorSnapshot;
     },
+    async check(key: string, bookingId: string, state: "arrived" | "ready" | "issue", note?: string) {
+      const { data, error } = await sb.rpc("door_check", { k: key, bid: bookingId, st: state, note: note ?? null });
+      return !error && !!data;
+    },
     async post(key: string, from: "all" | "men" | "women", text: string, kind: "msg" | "alert") {
       const { data, error } = await sb.rpc("door_post", { k: key, f: from, t: text, kd: kind });
       return !error && !!data;

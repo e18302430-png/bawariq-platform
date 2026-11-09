@@ -3,7 +3,7 @@
   ترى بيانات كل عميل كاملة (المناسبة، الميزانية، الضيوف، الطلبات، التذاكر) ولها حق التعديل والحذف على كل شيء.
 */
 import { normPhone } from "./calc";
-import type { Mutation } from "./db";
+import { newDoorKey, type Mutation } from "./db";
 import type { Booking, ClientEvent, ClientRecord, DB, Ticket } from "./types";
 
 export interface AdminClient {
@@ -97,3 +97,7 @@ export const adminDeleteClient = (c: Pick<AdminClient, "phone" | "spaceId" | "bo
 export const adminUpdateBooking = (id: string, patch: Partial<Pick<Booking, "date" | "guests" | "budget" | "quote" | "note" | "status" | "clientName" | "phone" | "city">>): Mutation => (db) => ({
   ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, ...patch, ...(patch.phone ? { phone: normPhone(patch.phone) } : {}) } : b)),
 });
+
+/** الإدارة تعيّن منسق مناسبتي لمناسبة عميل (ويتجهز رابط شاشة المنسق) */
+export const adminAssignCoordinator = (spaceId: string, c: { name: string; phone: string }): Mutation => (db) =>
+  patchSpace(db, spaceId, (cl) => (cl.event ? { ...cl, doorKey: cl.doorKey ?? newDoorKey(), event: { ...cl.event, coordinator: { name: c.name.trim(), phone: c.phone.replace(/\D/g, ""), at: Date.now() } } } : cl));

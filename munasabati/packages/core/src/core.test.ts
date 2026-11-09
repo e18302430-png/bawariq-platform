@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -329,5 +329,32 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
     expect(hasAgreement(s)).toBe(false);
     r.apply(acceptAgreement("supplier", s.id, "محمد"));
     expect(hasAgreement(r.get().suppliers.find((x) => x.id === s.id))).toBe(true);
+  });
+});
+
+describe("جدول النسبة ومنسق مناسبتي", () => {
+  it("١٠٪ أول شهرين، ثم ١٥٪، ثم ١٨٪", () => {
+    const steps = launchSteps("2027-01-01");
+    expect(steps.map((s) => [s.from, s.feePct])).toEqual([["2027-01-01", 10], ["2027-03-01", 15], ["2027-05-01", 18]]);
+    const p = { feePct: 15, steps };
+    expect(feeOn(p, "2027-02-15")).toBe(10);
+    expect(feeOn(p, "2027-04-10")).toBe(15);
+    expect(feeOn(p, "2027-08-01")).toBe(18);
+    expect(feeOn(p, "2026-12-01")).toBe(15);
+  });
+  it("المنسق يأكد حالة المورد، وتنكتب في غرفة التنسيق", () => {
+    const r = createMemoryRepository();
+    r.apply(createEvent({ occasion: "wedding", city: "الدمام", date: "2027-03-01", guests: 200, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false }));
+    const s = r.get().suppliers[0];
+    r.apply(createBooking({ kind: "supplier", targetId: s.id, clientName: "سارة", phone: "0551234567", occasion: "wedding", city: "الدمام", date: "2027-03-01", guests: 200, note: "", estimate: 0, fromClient: true }));
+    const id = r.get().bookings.find((b) => b.fromClient)!.id;
+    r.apply(coordCheck(id, "issue", s.name, "متأخر ٢٠ دقيقة"));
+    const b = r.get().bookings.find((x) => x.id === id)!;
+    expect(b.check!.state).toBe("issue");
+    expect(r.get().ops!.at(-1)!.kind).toBe("alert");
+    expect(r.get().ops!.at(-1)!.from).toBe("all");
+    r.apply(assignCoordinatorLocal({ name: "فهد", phone: "0550000000" }));
+    expect(r.get().client.event!.coordinator!.name).toBe("فهد");
+    expect(r.get().client.doorKey).toBeTruthy();
   });
 });

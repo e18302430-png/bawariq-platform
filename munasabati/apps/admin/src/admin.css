@@ -92,3 +92,4 @@
 .money-row b { font-size: 16px; }
 .money-row .win b { color: var(--ok); }
 @media (max-width: 420px) { .money-row { grid-template-columns: 1fr; } }
+.coord-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; } @media (max-width: 560px) { .coord-form { grid-template-columns: 1fr; } }

@@ -250,13 +250,13 @@ export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, su
 export const setLegal = (l: NonNullable<DB["legal"]>): Mutation => (db) => ({ ...db, legal: { entity: l.entity.trim(), cr: l.cr.replace(/\D/g, ""), vat: l.vat.replace(/\D/g, ""), address: l.address.trim(), email: l.email.trim() } });
 /** نسخة الشروط اللي يوافق عليها المستخدم وقت إنشاء الحساب */
 export const TERMS_VERSION = 1;
-export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: Math.max(0, Math.min(60, p.feePct)), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto } });
+export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: Math.max(0, Math.min(60, p.feePct)), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto, steps: (p.steps ?? []).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.from) && s.feePct >= 0 && s.feePct <= 60).sort((a, b) => a.from.localeCompare(b.from)) } });
 export const setBank = (b: NonNullable<DB["bank"]>): Mutation => (db) => ({ ...db, bank: { name: b.name.trim(), holder: b.holder.trim(), iban: b.iban.replace(/\s/g, "").toUpperCase() } });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */
 export const isActive = (x: { status?: AccountStatus }) => x.status !== "suspended";
 
 /* ───── غرفة التنسيق وختم الليلة ───── */
-export const OPS_NAME: Record<OpsMsg["from"], string> = { client: "صاحب المناسبة", admin: "إدارة مناسبتي", all: "المنسق العام", men: "منسق الرجال", women: "منسقة النساء" };
+export const OPS_NAME: Record<OpsMsg["from"], string> = { client: "صاحب المناسبة", admin: "إدارة مناسبتي", all: "منسق مناسبتي", men: "منسق الرجال", women: "منسقة النساء" };
 /** رسائل جاهزة بضغطة لكل طرف */
 export const OPS_QUICK: Record<"coord" | "client" | "admin", [string, OpsMsg["kind"]][]> = {
   coord: [["القسم امتلأ تقريباً", "alert"], ["نحتاج كراسي إضافية", "alert"], ["وصل ضيف كبير", "msg"], ["الضيوف اكتملوا تقريباً، نبدأ العشاء؟", "msg"], ["أحتاج مساعدة عند الباب", "alert"]],
@@ -305,7 +305,15 @@ export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Gu
 
 /* ───── حماية المنصة: التسعير، الدفع عبر مناسبتي، الاتفاقية، وإخفاء أرقام التواصل ───── */
 export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 15, minFee: 300, depositPct: 30, auto: true };
-export const pricingOf = (db: Pick<DB, "pricing">) => ({ ...DEFAULT_PRICING, ...(db.pricing ?? {}) });
+/** النسبة السارية اليوم: جدول النسبة (مثلاً ١٠٪ ثم ١٥٪ ثم ١٨٪) يغلب النسبة الثابتة */
+export const feeOn = (p: Pick<NonNullable<DB["pricing"]>, "feePct" | "steps">, day = isoDay(new Date())) =>
+  [...(p.steps ?? [])].filter((s) => s.from <= day).sort((a, b) => b.from.localeCompare(a.from))[0]?.feePct ?? p.feePct;
+export const pricingOf = (db: Pick<DB, "pricing">) => { const p = { ...DEFAULT_PRICING, ...(db.pricing ?? {}) }; return { ...p, feePct: feeOn(p) }; };
+/** خطة الإطلاق: ١٠٪ أول شهرين، ثم ١٥٪ شهرين، ثم ١٨٪ */
+export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number }[] => {
+  const add = (m: number) => { const d = new Date(start + "T12:00:00"); d.setMonth(d.getMonth() + m); return isoDay(d); };
+  return [{ from: start, feePct: 10 }, { from: add(2), feePct: 15 }, { from: add(4), feePct: 18 }];
+};
 /** سعر العميل من سعر التاجر الصافي: النسبة أو الحد الأدنى (الأكبر)، مقرّب لأقرب ١٠ */
 export const clientPriceFor = (net: number, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) =>
   net > 0 ? Math.round(Math.max(net * (1 + p.feePct / 100), net + p.minFee) / 10) * 10 : 0;
@@ -380,3 +388,18 @@ export function maskContacts(text: string): { text: string; hit: boolean } {
   });
   return { text: out, hit };
 }
+
+/* ───── منسق مناسبتي: تابع للإدارة، يتابع الموردين ليلة المناسبة ───── */
+export const CHECK_LABEL: Record<NonNullable<Booking["check"]>["state"], string> = { arrived: "وصل", ready: "جاهز", issue: "فيه ملاحظة" };
+/** المنسق يأكد حالة المورد. العميل يشوفها بعد تأكيده، والإدارة والعميل يتبلغون في غرفة التنسيق */
+export const coordCheck = (id: string, state: NonNullable<Booking["check"]>["state"], name: string, note?: string): Mutation => (db) => {
+  const next: DB = { ...db, bookings: db.bookings.map((b) => (b.id === id ? { ...b, check: { state, note: note?.trim() || undefined, at: Date.now() } } : b)) };
+  const text = `${name}: ${CHECK_LABEL[state]}${note?.trim() ? ` · ${note.trim()}` : ""}`;
+  return postOp({ from: "all", text, kind: state === "issue" ? "alert" : "msg" })(next);
+};
+/** الإدارة تعيّن منسق مناسبتي، وتجهز رابط شاشته (مفتاح الباب) لو ما كان موجود */
+export const assignCoordinatorLocal = (c: { name: string; phone: string }): Mutation => (db) => {
+  if (!db.client.event) return db;
+  return { ...db, client: { ...db.client, doorKey: db.client.doorKey ?? doorKeyGen(), event: { ...db.client.event, coordinator: { name: c.name.trim(), phone: c.phone.replace(/\D/g, ""), at: Date.now() } } } };
+};
+export const newDoorKey = () => doorKeyGen();

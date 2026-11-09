@@ -599,3 +599,9 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .pay-rows small { color: var(--muted); }
 .pay-rows b { overflow-wrap: anywhere; }
 .pay-ok { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: color-mix(in oklab, var(--ok) 13%, var(--surface)); color: var(--ok); font-size: 14px; font-weight: 600; }
+.coord-card { display: flex; gap: 14px; align-items: center; background: linear-gradient(135deg, color-mix(in oklab, var(--brand) 8%, var(--surface)), var(--surface)); }
+.vchecks .vcheck { display: grid; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.vchecks .vcheck:last-child { border-bottom: 0; }
+.vchecks .vcheck.ready .avatar { background: #3dd39b; color: #06231a; }
+.vchecks .vcheck.issue .avatar { background: #ff6b62; color: #2a0705; }
+.vchecks .vcheck.arrived .avatar { background: #ffc35c; color: #2a1c05; }
