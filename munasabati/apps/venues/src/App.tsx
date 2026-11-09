@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { AppShell, BRAND, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -20,7 +20,7 @@ function Login() {
     apply(upsertVenue(v)); apply(setSession({ venueId: v.id })); toast("تم تسجيل قاعتك");
   };
   return (
-    <Gate palette={PALETTE} eyebrow="بوابة أصحاب القاعات" title={<>قاعتك محجوزة<br />طول الموسم.</>} lead="أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند، واستقبل طلبات الحجز من العرسان مباشرة."
+    <Gate palette={PALETTE} tagline={BRAND.portals.venues} eyebrow="بوابة أصحاب القاعات" title={<>قاعتك محجوزة<br />طول الموسم.</>} lead="أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند، واستقبل طلبات الحجز من العرسان مباشرة."
       features={[["Building2", "أكثر من قاعة", "لكل قاعة قسم رجال وقسم نساء وسعة وسعر"], ["CalendarRange", "تقويم إشغال", "أغلق أيام الصيانة والحجوزات الخارجية بضغطة"], ["TrendingUp", "تسعير الويكند", "سعر مختلف للخميس والجمعة والسبت تلقائياً"]]}>
       {signedIn && <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة قاعتك." : "ادخل بحساب تجريبي أو سجّل قاعتك."}</p></div>}
       {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>

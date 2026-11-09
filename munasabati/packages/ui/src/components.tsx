@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Icon } from "./icons";
 import { photoUrl } from "./media";
 import { AnnouncementBar } from "./support";
+import { BRAND, LogoMark } from "./Logo";
 import { isoDay, seeded, type BookingStatus } from "@munasabati/core";
 
 /* ───── عدّاد رقمي متحرك ───── */
@@ -290,7 +291,7 @@ export function AppShell({ portal, tabs, active, onChange, actions, children, fo
   return (
     <div className="shell">
       <aside className="shell-side" aria-label="القائمة">
-        <div className="logo"><span>مناسبتي<span className="portal">{portal}</span></span></div>
+        <div className="logo"><LogoMark size={34} /><span>{BRAND.name}<span className="portal">{portal}</span></span></div>
         {sideTop}
         <nav className="side-nav">
           {grouped(tabs).map((g, gi) => (
@@ -381,7 +382,9 @@ export function Media({ photos, seed, hue, kind = "venue", alt = "", small = tru
 export function Splash({ dark = false }: { dark?: boolean }) {
   return (
     <div className={"splash" + (dark ? " dark" : "")} role="status" aria-label="جاري التحميل">
-      <b>مناسبتي</b>
+      <span className="splash-mark"><LogoMark size={92} animated /></span>
+      <b>{BRAND.name}</b>
+      <small>{BRAND.goal}</small>
       <i aria-hidden="true"><span /></i>
     </div>
   );

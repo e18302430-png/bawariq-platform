@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CITIES, OCCASIONS, TIERS, BUDGET_SPLIT, STYLES, createEvent, daysUntil, fmt, suggestPlan, shiftDate, today,
-  type OccasionId, type StyleId, type TierId,
+  CITIES, OCCASIONS, TIERS, PLACE_LABEL, STYLES, createEvent, daysUntil, fmt, profileOf, splitBudget, suggestPlan, shiftDate, today,
+  type OccasionId, type Place, type StyleId, type TierId,
 } from "@munasabati/core";
-import { Counter, Icon, Media, MeshGradient, PhoneAuth, apply, hasAccount, isCloud, repo, useDB } from "@munasabati/ui";
+import { Counter, Icon, LogoMark, Media, MeshGradient, PhoneAuth, apply, hasAccount, isCloud, repo, useDB } from "@munasabati/ui";
 
-const OCC_ICON: Record<OccasionId, string> = { wedding: "Gem", milka: "Heart", grad: "GraduationCap", aqiqa: "Baby", family: "Users", corp: "Briefcase" };
+const OCC_ICON: Record<OccasionId, string> = { wedding: "Gem", milka: "Heart", grad: "GraduationCap", aqiqa: "Baby", birthday: "Cake", family: "Users", corp: "Briefcase" };
+/** ترحيب يناسب كل مناسبة */
+const CHEER: Record<OccasionId, string> = { wedding: "مبروك مقدماً 🤍", milka: "مبروك مقدماً 🤍", grad: "ألف مبروك التخرّج 🎓", aqiqa: "يتربّى في عزّكم 🤍", birthday: "كل عام وأنتم بخير 🎈", family: "حيّاكم الله 🤍", corp: "خلّنا نرتّبها باحتراف" };
+const PLACE_ICON: Record<Place, string> = { hall: "Building2", istiraha: "TreePalm", home: "Home" };
 const greeting = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "صباح الخير" : h < 17 ? "نهارك سعيد" : "مساء الخير"; };
 const STEPS = 9;
 
@@ -36,12 +39,15 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
   const [step, setStep] = useState(0);
   const [needAuth, setNeedAuth] = useState(false);
   const [login, setLogin] = useState(false);
-  const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, style: [] as StyleId[], city: "الرياض", date: shiftDate(today(), 75), guests: 450, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
+  const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, place: profileOf(preset).places[0] as Place, style: [] as StyleId[], city: "الرياض", date: shiftDate(today(), 75), guests: profileOf(preset).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
+  const prof = profileOf(f.occasion);
+  // اختيار المناسبة يجهّز كل شي عليها: العدد المتوقع ونوع المكان
+  const pickOccasion = (id: OccasionId) => { const p = profileOf(id); setF((x) => ({ ...x, occasion: id, place: p.places[0], guests: p.guests.def })); };
   const budget = +f.budget.replace(/\D/g, "") || 0;
   // معاينة الخطة المقترحة قبل الحفظ: نفس محرك الاقتراح على مناسبة مؤقتة
-  const preview = useMemo(() => suggestPlan({ ...db, client: { ...db.client, budget: [], event: { id: "tmp", occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, title: "", budget: budget || undefined, style: f.style } } }, { budget: budget || undefined, style: f.style }), [db, f.occasion, f.city, f.date, f.guests, f.menRatio, f.tier, budget, f.style]);
+  const preview = useMemo(() => suggestPlan({ ...db, client: { ...db.client, budget: [], event: { id: "tmp", occasion: f.occasion, place: f.place, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, title: "", budget: budget || undefined, style: f.style } } }, { budget: budget || undefined, style: f.style }), [db, f.occasion, f.place, f.city, f.date, f.guests, f.menRatio, f.tier, budget, f.style]);
 
   useEffect(() => {
     if (step !== 7) return;
@@ -56,7 +62,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
     create(demo);
   };
   const create = (demo: boolean) => apply(createEvent({ samples: !isCloud,
-    occasion: f.occasion, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, budget: budget || undefined, style: f.style.length ? f.style : undefined, source: source ?? "direct",
+    occasion: f.occasion, place: f.place, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, budget: budget || undefined, style: f.style.length ? f.style : undefined, source: source ?? "direct",
     title: `${occ.name} ${demo ? "عبدالله" : f.name.split(" ")[0]}`.trim(), hostName: demo ? "عبدالله" : f.name.trim() || "ضيفنا", phone: f.phone,
   }));
 
@@ -70,7 +76,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
           {Array.from({ length: STEPS }, (_, i) => <i key={i}><motion.b initial={false} animate={{ scaleX: i <= step ? 1 : 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} /></i>)}
         </div>
         <div className="onb-top">
-          {step > 0 && step !== 7 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo">مناسبتي</div>}
+          {step > 0 && step !== 7 ? <button className="btn glass sm" onClick={back} aria-label="رجوع"><Icon name="ArrowRight" size={16} /></button> : <div className="logo row" style={{ ["--gap" as string]: "8px" }}><LogoMark size={28} mono="#fff" />مناسبتي</div>}
           <div className="grow" />
           {step < 7 && !isCloud && <button className="btn glass sm" onClick={() => finish(true)}>جرّب لوحة تجريبية</button>}
         </div>
@@ -78,16 +84,18 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
         <AnimatePresence mode="wait">
           <motion.div key={step} className="onb-body" initial={{ opacity: 0, y: 26, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -18, filter: "blur(6px)" }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
             {step === 0 && <>
+              <span className="onb-mark"><LogoMark size={86} animated /></span>
               <span className="onb-sub">{greeting()} 👋</span>
-              <h1 className="onb-q" style={{ fontSize: "clamp(40px, 11vw, 64px)" }}>حيّاك في<br />مناسبتي.</h1>
-              <p className="onb-sub" style={{ maxWidth: "34ch" }}>اختر ذوقك واكتب ميزانيتك، ونقترح لك كل شيء: القاعة، والكوشة، والتصوير، والضيافة، وأنسب القاعات في مدينتك.</p>
+              <h1 className="onb-q" style={{ fontSize: "clamp(40px, 11vw, 64px)" }}>مناسبتك<br />علينا.</h1>
+              <span className="onb-goal"><Icon name="Sparkles" size={14} /> من الفكرة لآخر ضيف</span>
+              <p className="onb-sub" style={{ maxWidth: "34ch" }}>زواج، ملكة، تخرّج، عقيقة، عيد ميلاد، عزيمة أو حفلة شركة. قل لنا وش مناسبتك وميزانيتك، والباقي علينا: نجيب لك أفضل الموردين بعروض حقيقية، ونمسك معك الليلة لآخر ضيف.</p>
             </>}
 
             {step === 1 && <>
               <h2 className="onb-q">وش المناسبة اللي<br />نجهز لها؟</h2>
               <div className="onb-grid">
                 {OCCASIONS.map((o) => (
-                  <button key={o.id} className={"onb-opt" + (f.occasion === o.id ? " on" : "")} onClick={() => { set("occasion", o.id); setTimeout(next, 320); }} aria-pressed={f.occasion === o.id}>
+                  <button key={o.id} className={"onb-opt" + (f.occasion === o.id ? " on" : "")} onClick={() => { pickOccasion(o.id); setTimeout(next, 320); }} aria-pressed={f.occasion === o.id}>
                     <span className="oi"><Icon name={OCC_ICON[o.id]} size={20} /></span><b>{o.name}</b><small>{o.hint}</small>
                   </button>
                 ))}
@@ -95,7 +103,9 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
             </>}
 
             {step === 2 && <>
-              <h2 className="onb-q">مبروك مقدماً 🤍<br />وين ومتى؟</h2>
+              <h2 className="onb-q">{CHEER[f.occasion]}<br />وين ومتى؟</h2>
+              <span className="onb-goal"><Icon name="Target" size={14} /> {prof.goal}</span>
+              <div className="onb-chips" role="group" aria-label="مكان المناسبة">{prof.places.map((p) => <button key={p} className={"onb-chip" + (f.place === p ? " on" : "")} onClick={() => set("place", p)} aria-pressed={f.place === p}><Icon name={PLACE_ICON[p]} size={14} /> {PLACE_LABEL[p]}</button>)}</div>
               <div className="onb-chips">{CITIES.map((c) => <button key={c} className={"onb-chip" + (f.city === c ? " on" : "")} onClick={() => set("city", c)} aria-pressed={f.city === c}>{c}</button>)}</div>
               <label className="sr" htmlFor="o-date">تاريخ المناسبة</label>
               <input id="o-date" type="date" className="onb-input num" value={f.date} min={today()} onChange={(e) => e.target.value && set("date", e.target.value)} />
@@ -106,10 +116,12 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
               <h2 className="onb-q">كم ضيف تتوقع؟</h2>
               <div className="onb-big num"><Counter value={f.guests} /></div>
               <label className="sr" htmlFor="o-g">عدد الضيوف</label>
-              <input id="o-g" type="range" min={50} max={1500} step={10} value={f.guests} onChange={(e) => set("guests", +e.target.value)} />
-              <label htmlFor="o-r" style={{ fontSize: 13, opacity: 0.85 }}>نسبة الرجال والنساء</label>
-              <input id="o-r" type="range" min={0.1} max={0.9} step={0.05} value={f.menRatio} onChange={(e) => set("menRatio", +e.target.value)} />
-              <Seats guests={f.guests} menRatio={f.menRatio} />
+              <input id="o-g" type="range" min={prof.guests.min} max={prof.guests.max} step={prof.guests.step} value={f.guests} onChange={(e) => set("guests", +e.target.value)} />
+              {prof.sections && <>
+                <label htmlFor="o-r" style={{ fontSize: 13, opacity: 0.85 }}>نسبة الرجال والنساء</label>
+                <input id="o-r" type="range" min={0.1} max={0.9} step={0.05} value={f.menRatio} onChange={(e) => set("menRatio", +e.target.value)} />
+                <Seats guests={f.guests} menRatio={f.menRatio} />
+              </>}
             </>}
 
             {step === 4 && <>
@@ -117,17 +129,17 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
               <p className="onb-sub" style={{ marginTop: -6 }}>أنت تحددها، ونحن نوزعها على البنود ونرشّح لك ما يناسبها.</p>
               <label className="sr" htmlFor="o-b">الميزانية بالريال</label>
               <div className="budget-input">
-                <input id="o-b" className="onb-input num" inputMode="numeric" placeholder="اكتب ميزانيتك" value={budget ? fmt(budget) : ""} onChange={(e) => set("budget", e.target.value.replace(/\D/g, "").slice(0, 9))} autoFocus />
+                <input id="o-b" className="onb-input num" inputMode="numeric" placeholder={`مثلاً ${fmt(prof.budgetHint)}`} value={budget ? fmt(budget) : ""} onChange={(e) => set("budget", e.target.value.replace(/\D/g, "").slice(0, 9))} autoFocus />
                 <span>ر.س</span>
               </div>
               <div className="split-bars" aria-hidden={!budget}>
-                {BUDGET_SPLIT.map((l) => (
+                {(() => { const lines = splitBudget(budget || 100000, f.occasion, f.place).slice(0, 7); const top = Math.max(...lines.map((l) => l.est), 1); return lines.map((l) => (
                   <div key={l.cat} className="split-row">
                     <span>{l.label}</span>
-                    <i><motion.b initial={false} animate={{ scaleX: budget ? l.pct / 0.35 : 0.04 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} /></i>
-                    <b className="num">{budget ? fmt(Math.round((budget * l.pct) / 100) * 100) : "—"}</b>
+                    <i><motion.b initial={false} animate={{ scaleX: budget ? l.est / top : 0.04 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} /></i>
+                    <b className="num">{budget ? fmt(l.est) : "—"}</b>
                   </div>
-                ))}
+                )); })()}
               </div>
               <div className="onb-chips">
                 {TIERS.map((t) => <button key={t.id} className={"onb-chip" + (f.tier === t.id ? " on" : "")} onClick={() => set("tier", t.id)} aria-pressed={f.tier === t.id}><Icon name={t.id === "lux" ? "Crown" : t.id === "mid" ? "Sparkles" : "Leaf"} size={14} /> {t.name}</button>)}
@@ -161,11 +173,12 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
             {step === 7 && <div className="stack" style={{ justifyItems: "center", textAlign: "center", ["--gap" as string]: "22px" }}>
               <div className="gen-orb" />
               <h2 className="onb-q" style={{ fontSize: 30 }}>نجهز خطتك يا {f.name.split(" ")[0]}…</h2>
-              <motion.div className="onb-sub" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }} transition={{ duration: 1.8, times: [0, 0.2, 0.8, 1] }}>نوزع ميزانيتك ونحسب الضيافة ونطابق القاعات في {f.city}</motion.div>
+              <motion.div className="onb-sub" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }} transition={{ duration: 1.8, times: [0, 0.2, 0.8, 1] }}>نوزع ميزانيتك على بنود {occ.name} ونطابق أفضل الموردين في {f.city}</motion.div>
             </div>}
 
             {step === 8 && <>
-              <h2 className="onb-q" style={{ fontSize: "clamp(28px, 7vw, 40px)" }}>خطتك جاهزة ✨</h2>
+              <h2 className="onb-q" style={{ fontSize: "clamp(28px, 7vw, 40px)" }}>خطة {occ.name} جاهزة ✨</h2>
+              <span className="onb-goal"><Icon name="Target" size={14} /> {prof.goal}</span>
               <div className="plan-tiles">
                 <div className="plan-tile wide"><small>ميزانيتك</small>{budget ? <b className="num"><Counter value={budget} /> <span style={{ fontSize: 15 }}>ر.س</span></b> : <b style={{ fontSize: 18 }}>تحددها لاحقاً</b>}</div>
                 <div className="plan-tile"><small>باقي على الموعد</small><b><Counter value={daysUntil(f.date)} /> يوم</b></div>

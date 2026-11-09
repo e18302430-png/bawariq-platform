@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { AppShell, BRAND, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -20,7 +20,7 @@ function Login() {
     apply(upsertSupplier(s)); apply(setSession({ supplierId: s.id })); toast("تم إنشاء حسابك");
   };
   return (
-    <Gate palette={PALETTE} eyebrow="بوابة الموردين" title={<>طلبات جاهزة،<br />تصلك مباشرة.</>} lead="لمزودي الكوشة والتصوير والصوت والإضاءة والبث المباشر والضيافة والخيام والمولدات والاستيدج."
+    <Gate palette={PALETTE} tagline={BRAND.portals.vendors} eyebrow="بوابة الموردين" title={<>طلبات جاهزة،<br />تصلك مباشرة.</>} lead="لمزودي الكوشة والتصوير والصوت والإضاءة والبث المباشر والضيافة والخيام والمولدات والاستيدج."
       features={[["Inbox", "صندوق طلبات", "التاريخ وعدد الضيوف ونوع المناسبة في كل طلب"], ["Package", "باقاتك بأسعارك", "عدّلها متى ما تبي وتظهر للعميل فوراً"], ["TrendingUp", "تقارير الإيرادات", "معدل التحويل ومتوسط قيمة الحجز"]]}>
       {signedIn && <div><h2 style={{ fontSize: 26, fontWeight: 800 }}>أهلاً بك</h2><p className="muted">{isCloud ? "سجّل دخولك برقم جوالك لإدارة نشاطك." : "ادخل بحساب تجريبي أو سجّل نشاطك."}</p></div>}
       {!signedIn ? <PhoneAuth initialMode="login" onDone={() => force((x) => x + 1)} /> : <>

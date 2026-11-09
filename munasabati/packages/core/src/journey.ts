@@ -1,4 +1,5 @@
 import { daysUntil } from "./calc";
+import { profileOf } from "./occasions";
 import type { CategoryId, DB } from "./types";
 
 /**
@@ -45,16 +46,18 @@ export function journey(db: DB, now = Date.now()): Stage[] {
   const vQuoted = venue.find((b) => b.status === "quoted");
   const vNew = venue.find((b) => b.status === "new" || b.status === "review");
   const vName = (id: string) => db.venues.find((v) => v.id === id)?.name ?? "القاعة";
-  stages.push(vConfirmed
-    ? { id: "venue", n: 2, title: "القاعة", status: "done", progress: 1, summary: `${vName(vConfirmed.targetId)} · محجوزة` }
+  const vTitle = e ? profileOf(e.occasion).venueLabel : "القاعة";
+  if (e?.place === "home") stages.push({ id: "venue", n: 2, title: "المكان", status: "done", progress: 1, summary: "المناسبة في البيت، ونجهّز لك الباقي" });
+  else stages.push(vConfirmed
+    ? { id: "venue", n: 2, title: vTitle, status: "done", progress: 1, summary: `${vName(vConfirmed.targetId)} · محجوزة` }
     : vQuoted
-      ? { id: "venue", n: 2, title: "القاعة", status: "active", progress: 0.66, summary: `وصلك عرض سعر من ${vName(vQuoted.targetId)}`, cta: { label: "راجع العرض واقبله", route: "bookings" } }
+      ? { id: "venue", n: 2, title: vTitle, status: "active", progress: 0.66, summary: `وصلك عرض سعر من ${vName(vQuoted.targetId)}`, cta: { label: "راجع العرض واقبله", route: "bookings" } }
       : vNew
-        ? { id: "venue", n: 2, title: "القاعة", status: "waiting", progress: 0.33, summary: vNew.status === "review" ? `طلبك لـ ${vName(vNew.targetId)} عند الإدارة، وبنطلب لك عرض السعر` : `طلبنا عرض سعر من ${vName(vNew.targetId)}، وبيوصلك هنا`, cta: { label: "تابع طلباتك", route: "bookings" } }
-        : { id: "venue", n: 2, title: "القاعة", status: "todo", progress: 0, summary: "اقترحنا لك قاعات على ذوقك وميزانيتك، اختر اللي يعجبك", cta: { label: "اختر من اقتراحاتك", route: "plan" } });
+        ? { id: "venue", n: 2, title: vTitle, status: "waiting", progress: 0.33, summary: vNew.status === "review" ? `طلبك لـ ${vName(vNew.targetId)} عند الإدارة، وبنطلب لك عرض السعر` : `طلبنا عرض سعر من ${vName(vNew.targetId)}، وبيوصلك هنا`, cta: { label: "تابع طلباتك", route: "bookings" } }
+        : { id: "venue", n: 2, title: vTitle, status: "todo", progress: 0, summary: "اقترحنا لك قاعات على ذوقك وميزانيتك، اختر اللي يعجبك", cta: { label: "اختر من اقتراحاتك", route: "plan" } });
 
   const supplierCats = (id: string) => db.suppliers.find((s) => s.id === id)?.cats ?? [];
-  const checklist = ESSENTIALS.map(({ cat, label }) => {
+  const checklist = (e ? profileOf(e.occasion).essentials : ESSENTIALS).map(({ cat, label }) => {
     const rel = sup.filter((b) => (b.cat ? b.cat === cat : supplierCats(b.targetId).includes(cat)));
     const state = rel.some((b) => b.status === "confirmed") ? "confirmed" : rel.some((b) => b.status !== "declined") ? "pending" : "none";
     return { cat, label, state } as const;

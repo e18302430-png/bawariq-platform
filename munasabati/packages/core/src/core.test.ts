@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -62,7 +62,7 @@ describe("رحلة الحجز بين العميل والمورد", () => {
     repo.apply(setTotalBudget(200000, true));
     const db = repo.get();
     expect(db.client.event!.budget).toBe(200000);
-    expect(db.client.budget.find((l) => l.cat === "venue")!.est).toBe(70000);
+    expect(db.client.budget.find((l) => l.cat === "venue")!.est).toBe(64000);
   });
 });
 
@@ -173,7 +173,7 @@ describe("الخطة المقترحة وحماية العميل", () => {
     const plan = suggestPlan(repo.get());
     const venue = plan.find((l) => l.cat === "venue")!;
     expect(venue.picks[0].city).toBe("الرياض");
-    expect(venue.budget).toBe(70000);
+    expect(venue.budget).toBe(64000);
     const hosp = plan.find((l) => l.cat === "hosp")!;
     expect(hosp.picks.length).toBeGreaterThan(0);
     const chosen = plan.filter((l) => l.picks[0]).map((l) => ({ line: l, pick: l.picks[0] }));
@@ -274,5 +274,21 @@ describe("رسالة الدعوة في الواتساب", () => {
     expect(m).toContain("السبت");
     expect(m.endsWith("https://x.app/i/ABC123")).toBe(true);
     expect(normCode("https://x.app/i/abc123")).toBe("ABC123");
+  });
+});
+
+describe("كل مناسبة لها نظامها", () => {
+  it("توزيع كل مناسبة مجموعه ١٠٠٪، والبنود والبرنامج على نوعها", () => {
+    for (const p of Object.values(OCCASION_PROFILES)) expect(Math.round(p.split.reduce((a, l) => a + l.pct, 0) * 100)).toBe(100);
+    const r = createMemoryRepository();
+    r.apply(createEvent({ occasion: "birthday", place: "home", city: "الدمام", date: "2027-03-10", guests: 30, menRatio: 0.5, tier: "mid", title: "عيد ميلاد", hostName: "نورة", budget: 6000, samples: false }));
+    const db = r.get();
+    expect(db.client.budget.some((l) => l.cat === "venue")).toBe(false);
+    expect(db.client.budget.reduce((a, l) => a + l.est, 0)).toBeGreaterThan(5800);
+    expect(db.client.invite.program!.some((p) => p.title.includes("الكيك"))).toBe(true);
+    const cats = suggestPlan(db).map((l) => l.cat);
+    expect(cats[0]).toBe("kosha");
+    expect(cats).toContain("cake");
+    expect(cats).not.toContain("venue");
   });
 });

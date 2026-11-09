@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { OCCASIONS, type Occasion } from "@munasabati/core";
-import { Icon, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { BRAND, Icon, Logo, LogoMark, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
@@ -171,13 +171,13 @@ function Hero({ occ }: { occ: Occasion }) {
         <div className="hero-video-box"><LiveFilm onReady={onFilmReady} /></div>
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
-          <div className="logo">مناسبتي</div>
+          <div className="logo"><Logo size={28} light animated /></div>
           <div className="links"><a href="#story">كيف تعمل</a><a href={LINKS.vendors}>للموردين</a><a href={LINKS.venues}>للقاعات</a></div>
           <div style={{ flex: 1 }} />
           <a className="btn glass sm" href={LINKS.client}>ادخل التطبيق</a>
         </nav>
         <div className="hero-body">
-          <span className="live"><i /> منصة المناسبات السعودية</span>
+          <span className="live"><i /> {BRAND.goal}</span>
           <h1>
             <span className="word-slot">
               <AnimatePresence mode="wait" initial={!SSG}>
@@ -334,7 +334,7 @@ export default function App() {
       <Portals occ={occ} />
       <section className="container" style={{ paddingBottom: 20 }}>
         <Reveal className="final lux">
-          <div className="lux-seal" aria-hidden="true"><span>مناسبتي</span></div>
+          <div className="lux-seal" aria-hidden="true"><LogoMark size={64} animated /></div>
           <span className="lux-eyebrow">✦ مجاناً لأصحاب المناسبات ✦</span>
           <h2>جاهز؟<br /><span className="gold-text">خلّنا نبدأ فرحتك.</span></h2>
           <div className="hero-cta" style={{ justifyContent: "center" }}>
@@ -345,7 +345,7 @@ export default function App() {
       </section>
       <ScrollNav bottom="24px" />
       <footer className="container footer">
-        <div className="row"><b className="display" style={{ color: "var(--ink)" }}>مناسبتي</b><span>منصة المناسبات السعودية · مجانية لأصحاب المناسبات</span></div>
+        <div className="row"><Logo size={24} /><span>{BRAND.goal}</span></div>
         <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./privacy.html">الخصوصية والشروط</a></nav>
         <ThemeToggle />
       </footer>

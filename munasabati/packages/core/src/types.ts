@@ -1,7 +1,7 @@
 /** نموذج النطاق (Domain Model) المشترك بين كل تطبيقات مناسبتي */
 
-export type OccasionId = "wedding" | "milka" | "grad" | "aqiqa" | "family" | "corp";
-export type CategoryId = "kosha" | "tents" | "photo" | "av" | "live" | "hosp" | "power" | "stage";
+export type OccasionId = "wedding" | "milka" | "grad" | "aqiqa" | "birthday" | "family" | "corp";
+export type CategoryId = "kosha" | "tents" | "photo" | "av" | "live" | "hosp" | "power" | "stage" | "cake" | "coffee" | "beauty" | "gifts";
 export type Section = "men" | "women";
 export type TierId = "eco" | "mid" | "lux";
 /** review = عند الإدارة للمراجعة (التاجر ما يشوفه) · new = أرسلته الإدارة للتاجر يطلب عرض سعر */
@@ -154,6 +154,8 @@ export interface ClientEvent {
   budget?: number;
   /** طابع الإلهام الذي اختاره العميل (يوجّه الاقتراحات) */
   style?: StyleId[];
+  /** وين المناسبة: قاعة أو استراحة أو في البيت (في البيت = ما نقترح قاعات) */
+  place?: "hall" | "istiraha" | "home";
   /** من وين جاء العميل (مثلاً invite = من دعوة ضيف) */
   source?: "invite" | "direct";
   /** وقت ختم الليلة: بعدها تتحول الدعوات لرسالة شكر وتتوقف شاشات المنسقين */

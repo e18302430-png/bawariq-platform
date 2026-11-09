@@ -4,6 +4,7 @@ import { OCCASIONS, bookingMessage, fmt, isoDay, requestCancel, sar, setBookingS
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
+import { BRAND, Logo, LogoMark } from "./Logo";
 import { photoUrl } from "./media";
 import { BookingChat } from "./support";
 import { apply, repo, resizeImage } from "./data";
@@ -176,14 +177,15 @@ export function ConfirmedTools({ b }: { b: Booking }) {
 }
 
 /** شاشة الدخول للبوابات: هوية بصرية حية ونموذج تسجيل */
-export function Gate({ palette, eyebrow, title, lead, features, children }: { palette: [string, string, string, string]; eyebrow: string; title: ReactNode; lead: string; features: [string, string, string][]; children: ReactNode }) {
+export function Gate({ palette, eyebrow, title, lead, features, children, tagline }: { tagline?: string; palette: [string, string, string, string]; eyebrow: string; title: ReactNode; lead: string; features: [string, string, string][]; children: ReactNode }) {
   return (
     <div className="gate">
       <div className="gate-art">
         <MeshGradient palette={palette} />
         <div className="gate-art-in">
-          <div className="row" style={{ fontFamily: "var(--f-display)", fontWeight: 800, fontSize: 20 }}>مناسبتي</div>
+          <Logo size={34} sub={tagline ?? BRAND.goal} animated light />
           <div className="stack" style={{ ["--gap" as string]: "16px" }}>
+            <span className="gate-mark" aria-hidden="true"><LogoMark size={104} animated /></span>
             <span className="live-pill">{eyebrow}</span>
             <h1 className="gate-title">{title}</h1>
             <p style={{ opacity: 0.88, fontSize: 16.5, maxWidth: "40ch" }}>{lead}</p>

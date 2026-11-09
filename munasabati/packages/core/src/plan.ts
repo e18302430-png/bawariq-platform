@@ -5,6 +5,8 @@
 */
 import { busyDays, hallCapacity, hallPrice, isWeekend, splitBudget } from "./calc";
 import { createBooking, type Mutation } from "./db";
+import { CATEGORIES } from "./catalog";
+import { profileOf } from "./occasions";
 import type { Booking, CategoryId, DB, StyleId, Supplier, Venue } from "./types";
 
 export interface Style { id: StyleId; name: string; hint: string; photo: string; words: string[] }
@@ -18,6 +20,7 @@ export const STYLES: Style[] = [
 ];
 
 /** البنود التي نقترح لها (القاعة + خدمات الموردين) */
+/** بنود الزواج الافتراضية (للتوافق). خطة كل مناسبة تنبني من ملفها في occasions.ts */
 export const PLAN_CATS: { cat: "venue" | CategoryId; label: string; icon: string }[] = [
   { cat: "venue", label: "القاعة", icon: "Building2" },
   { cat: "hosp", label: "العشاء والضيافة", icon: "Coffee" },
@@ -124,11 +127,15 @@ export function suggestPlan(db: DB, opts?: { budget?: number; style?: StyleId[] 
   if (!e) return [];
   const total = opts?.budget ?? e.budget;
   const styles = opts?.style ?? e.style ?? [];
-  const split = splitBudget(total);
+  const prof = profileOf(e.occasion);
+  const split = splitBudget(total, e.occasion, e.place);
   const alloc = (cat: string) => db.client.budget.find((l) => l.cat === cat && l.est > 0)?.est ?? split.find((l) => l.cat === cat)?.est ?? undefined;
   // تنويع: نفس المورد ما يتصدر أكثر من بند إذا فيه بديل مناسب
   const used = new Set<string>();
-  return PLAN_CATS.map(({ cat, label, icon }) => {
+  // بنود هذي المناسبة بالذات، مرتبة حسب أهميتها في ميزانيتها (وبدون قاعة لو المناسبة في البيت)
+  const cats = prof.split.filter((l) => l.cat !== "other" && !(l.cat === "venue" && e.place === "home"))
+    .map((l) => ({ cat: l.cat as "venue" | CategoryId, label: l.label, icon: l.cat === "venue" ? "Building2" : CATEGORIES.find((c) => c.id === l.cat)?.icon ?? "Sparkles" }));
+  return cats.map(({ cat, label, icon }) => {
     const budget = total ? (opts?.budget ? split.find((l) => l.cat === cat)?.est : alloc(cat)) || undefined : undefined;
     const ranked = cat === "venue" ? rankVenues(db, e.city, e.guests, e.date, styles, budget) : rankSuppliers(db, cat, e.city, styles, budget);
     const fresh = ranked.filter((p) => !used.has(p.id)), seen = ranked.filter((p) => used.has(p.id));

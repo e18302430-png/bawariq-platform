@@ -1,5 +1,6 @@
-import { SAMPLE_GUESTS, SAMPLE_TASKS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
+import { SAMPLE_GUESTS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
 import { splitBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
+import { profileOf } from "./occasions";
 import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, OpsMsg, Relation, Supplier, Task, Ticket, Venue } from "./types";
 
 /* ───────────────── البيانات الأولية ───────────────── */
@@ -53,8 +54,10 @@ export const createEvent = (input: NewEventInput): Mutation => (db) => {
       profile: { name: hostName, phone },
       event: { id: uid("e"), ...ev },
       guests,
-      tasks: SAMPLE_TASKS.map(([title, who, before, done]) => ({ id: uid("t"), title, who, due: shiftDate(ev.date, -before), done })),
-      budget: splitBudget(ev.budget).map((l) => ({ id: uid("b"), ...l, paid: 0 })),
+      tasks: profileOf(ev.occasion).tasks.map(([title, who, before]) => ({ id: uid("t"), title, who, due: shiftDate(ev.date, -before), done: false })),
+      budget: splitBudget(ev.budget, ev.occasion, ev.place).map((l) => ({ id: uid("b"), ...l, paid: 0 })),
+      // الدعوة والبرنامج على نوع المناسبة
+      invite: { ...DEFAULT_INVITE, message: profileOf(ev.occasion).inviteMessage, program: profileOf(ev.occasion).program, time: profileOf(ev.occasion).program[0]?.time ?? DEFAULT_INVITE.time },
     },
   };
 };
@@ -138,7 +141,7 @@ export const setTotalBudget = (total: number | undefined, redistribute = false):
   if (!db.client.event) return db;
   const event = { ...db.client.event, budget: total && total > 0 ? total : undefined };
   if (!redistribute) return { ...db, client: { ...db.client, event } };
-  const split = splitBudget(event.budget);
+  const split = splitBudget(event.budget, event.occasion, event.place);
   const lines = db.client.budget.map((l) => { const s = split.find((x) => x.cat === l.cat); return s ? { ...l, est: s.est } : l; });
   const missing = split.filter((s) => !lines.some((l) => l.cat === s.cat)).map((s) => ({ id: uid("b"), ...s, paid: 0 }));
   return { ...db, client: { ...db.client, event, budget: [...lines, ...missing] } };

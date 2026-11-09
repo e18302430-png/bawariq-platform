@@ -6,3 +6,4 @@ export * from "./repository";
 export * from "./journey";
 export * from "./admin";
 export * from "./plan";
+export * from "./occasions";

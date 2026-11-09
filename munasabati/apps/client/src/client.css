@@ -591,3 +591,5 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .gx-thanks-in small { opacity: .7; font-size: 15px; }
 .gx-thanks-in .btn { margin-top: 8px; }
 .gx-thanks-came { font-size: 14px; color: var(--wc-deep, #5a2a1a); opacity: .8; margin-top: -6px; }
+.onb-goal { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.14); backdrop-filter: blur(6px); align-self: flex-start; line-height: 1.5; }
+.onb-mark { display: block; margin-bottom: 6px; filter: drop-shadow(0 14px 30px rgba(0,0,0,.25)); }

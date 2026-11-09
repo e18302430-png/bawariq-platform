@@ -1,3 +1,5 @@
+import { profileOf, type Place } from "./occasions";
+import type { OccasionId } from "./types";
 import { TIERS } from "./catalog";
 import type { Booking, Hall, TierId, Venue } from "./types";
 
@@ -56,9 +58,14 @@ export const BUDGET_SPLIT: { cat: string; label: string; pct: number }[] = [
   { cat: "av", label: "الصوت والإضاءة", pct: 0.06 },
   { cat: "other", label: "الدعوات والهدايا والطوارئ", pct: 0.09 },
 ];
-export function splitBudget(total?: number) {
+/** توزيع الميزانية حسب نوع المناسبة (الزواج افتراضياً) */
+export function splitBudget(total?: number, occasion?: OccasionId, place?: Place) {
   const t = Math.max(0, total ?? 0);
-  return BUDGET_SPLIT.map(({ cat, label, pct }) => ({ cat, label, est: Math.round((t * pct) / 100) * 100 }));
+  const split = occasion ? profileOf(occasion).split : BUDGET_SPLIT;
+  // في البيت: ما فيه قاعة، ونوزع نصيبها على باقي البنود بنفس نسبها
+  const lines = place === "home" ? split.filter((l) => l.cat !== "venue") : split;
+  const sum = lines.reduce((a, l) => a + l.pct, 0) || 1;
+  return lines.map(({ cat, label, pct }) => ({ cat, label, est: Math.round((t * pct) / sum / 100) * 100 }));
 }
 /** ميزانية العميل المخصصة لفئة (القاعة أو خدمة مورد) */
 export function budgetFor(lines: { cat: string; est: number }[], cat: string) {
