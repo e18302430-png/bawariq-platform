@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AppShell, ErrorBoundary, Icon, ScreenSkeleton, ToastProvider, repo, useDB, type ShellTab, Splash, useReady } from "@munasabati/ui";
+import { AppShell, ErrorBoundary, Icon, ScreenSkeleton, ToastProvider, hasAccount, isCloud, repo, useDB, type ShellTab, Splash, useReady } from "@munasabati/ui";
 import { go } from "./nav";
 import type { OccasionId } from "@munasabati/core";
 
@@ -91,6 +91,7 @@ function Main() {
       sideTop={<a className="side-event" href="#home" style={{ background: "linear-gradient(135deg, #3a1726, #7a1f3f 55%, #b8863d)" }}><small>مناسبتك</small><b>{ev.title}</b><span className="se-days"><strong className="num">{daysLeft}</strong><small>يوم باقي · {ev.city}</small></span></a>}
       footer={<>
         <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
+        {isCloud && hasAccount() && <LogoutButton />}
         <ResetButton />
         <a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a>
       </>}
@@ -118,10 +119,21 @@ function Main() {
   );
 }
 
+/** تسجيل الخروج: بياناته محفوظة في حسابه، ويرجع يدخل برقم جواله وكلمة المرور من أي جهاز */
+function LogoutButton() {
+  const [ask, setAsk] = useState(false);
+  const phone = repo.auth?.user()?.phone;
+  return ask
+    ? <div className="stack" style={{ ["--gap" as string]: "6px" }}><small className="muted" style={{ fontSize: 12.5 }}>مناسبتك محفوظة في حسابك. ترجع تدخل برقمك{phone ? ` ${phone}` : ""} وكلمة المرور.</small>
+        <div className="row"><button className="btn sm grow" onClick={() => { void repo.auth?.signOut().then(() => { location.hash = ""; location.reload(); }); }}>تأكيد الخروج</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div></div>
+    : <button className="btn sm ghost" onClick={() => setAsk(true)}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>;
+}
+
 function ResetButton() {
   const [ask, setAsk] = useState(false);
   return ask
-    ? <div className="row"><button className="btn sm grow" style={{ color: "var(--bad)" }} onClick={() => { repo.reset(); go("home"); }}>تأكيد البدء من جديد</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div>
+    ? <div className="stack" style={{ ["--gap" as string]: "6px" }}><small style={{ fontSize: 12.5, color: "var(--bad)" }}>تنحذف مناسبتك الحالية وضيوفها نهائياً، وتبدأ مناسبة جديدة بنفس الحساب.</small>
+        <div className="row"><button className="btn sm grow" style={{ color: "var(--bad)" }} onClick={() => { repo.reset(); go("home"); }}>تأكيد الحذف والبدء من جديد</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div></div>
     : <button className="btn sm ghost" onClick={() => setAsk(true)}><Icon name="RotateCcw" size={15} /> ابدأ مناسبة جديدة</button>;
 }
 

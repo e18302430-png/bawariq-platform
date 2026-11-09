@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, greetingFor, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
-import { DBProvider, Empty, Icon, QR, Segmented, Splash, apply, photoUrl, repo, useDB, useToast } from "@munasabati/ui";
+import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
+import { DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
 import diriyah from "../assets/invite/diriyah.webp";
@@ -12,9 +12,11 @@ import arch from "../assets/invite/arch.webp";
 
 /* ═══════════ الدعوات: لوحات مائية سعودية + ظرف بختم + اكشط لتكشف ═══════════ */
 
-export const inviteUrl = (code: string) => `${location.href.split("#")[0]}#invite-${code}`;
-/** رسالة الواتساب: رابط الدعوة فقط، بدون أي نص إضافي */
-export const waLink = (g: Pick<Guest, "phone" | "code">) => `https://wa.me/${g.phone ? "966" + g.phone.replace(/^0/, "") : ""}?text=${encodeURIComponent(inviteUrl(g.code))}`;
+/** رابط الدعوة: سحابياً رابط قصير (/i/رمز) يعرض في الواتساب بطاقة بعنوان «دعوة لزواج فيصل»، ومحلياً رابط الصفحة نفسها */
+export const inviteUrl = (code: string) => (isCloud ? `${location.origin}/i/${code}` : `${location.href.split("#")[0]}#invite-${code}`);
+/** رسالة الواتساب: ترحيب سعودي قصير باسم الضيف والمناسبة وموعدها، ثم رابط الدعوة */
+export const inviteText = (db: DB, g: Guest) => (db.client.event ? inviteMessage(db.client.event, g, inviteUrl(g.code), db.client.invite.time) : inviteUrl(g.code));
+export const waLink = (db: DB, g: Guest) => `https://wa.me/${g.phone ? "966" + g.phone.replace(/^0/, "") : ""}?text=${encodeURIComponent(inviteText(db, g))}`;
 
 const WATERCOLOR: Partial<Record<InviteTemplate, { img: string; sm: string; tint: string; deep: string }>> = {
   balad: { img: balad, sm: baladSm, tint: "#5f8e93", deep: "#2f4f53" },
@@ -248,10 +250,10 @@ export function Invites() {
   const program = invite.program?.length ? invite.program : DEFAULT_PROGRAM;
   const setInv = (patch: Partial<typeof invite>) => apply(patchClient({ invite: { ...invite, ...patch } }));
   const copy = async (g: Guest) => {
-    const url = inviteUrl(g.code);
-    // على الجوال: قائمة المشاركة الأصلية (واتساب، رسائل، سناب…)، وإلا نسخ الرابط
-    try { if (navigator.share) { await navigator.share({ url }); return; } } catch { /* أُلغيت المشاركة */ return; }
-    try { await navigator.clipboard.writeText(url); toast("تم نسخ الرابط"); } catch { toast(g.code); }
+    const text = inviteText(db, g);
+    // على الجوال: قائمة المشاركة الأصلية (واتساب، رسائل، سناب…)، وإلا نسخ الرسالة مع الرابط
+    try { if (navigator.share) { await navigator.share({ text }); return; } } catch { /* أُلغيت المشاركة */ return; }
+    try { await navigator.clipboard.writeText(text); toast("نسخنا الدعوة، الصقها في الواتساب"); } catch { toast(g.code); }
   };
   const sample = db.client.guests[0];
 
@@ -330,7 +332,7 @@ export function Invites() {
           <div key={g.id} className="list-row">
             <span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span>
             <div className="t"><b>{g.name}</b><small style={{ color: g.status === "yes" ? "var(--ok)" : g.status === "no" ? "var(--bad)" : undefined }}>{g.status === "yes" ? "سيحضر" : g.status === "no" ? "اعتذر" : "لم يرد"}</small></div>
-            <a className="btn sm wa-btn" href={waLink(g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>
+            <a className="btn sm wa-btn" href={waLink(db, g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>
             <button className="icon-btn sm" aria-label={"خيارات دعوة " + g.name} aria-expanded={rowAsk === g.id} onClick={() => setRowAsk(rowAsk === g.id ? null : g.id)}><Icon name={rowAsk === g.id ? "X" : "MoreHorizontal"} size={15} /></button>
             {rowAsk === g.id && <div className="inv-row-menu">
               <button className="btn sm" onClick={() => { void copy(g); setRowAsk(null); }}><Icon name="Share2" size={14} /> مشاركة الرابط</button>

@@ -82,7 +82,7 @@ export function Guests() {
           {edit.diet && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}><b>ملاحظة أكل:</b> {edit.diet}</div>}
           <div className="row"><span className="muted grow">رمز الدخول</span><b className="num" style={{ letterSpacing: ".25em" }}>{edit.code}</b></div>
           <div className="row">
-            <a className="btn grow" href={waLink(edit)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={16} /> إرسال واتساب</a>
+            <a className="btn grow" href={waLink(db, edit)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={16} /> إرسال واتساب</a>
             <a className="btn grow" href={"#invite-" + edit.code}><Icon name="Eye" size={16} /> صفحة الضيف</a>
           </div>
           <button className="btn ghost" style={{ color: "var(--bad)" }} onClick={() => { apply(removeGuest(edit.id)); setEdit(null); }}><Icon name="Trash2" size={16} /> حذف الضيف</button>

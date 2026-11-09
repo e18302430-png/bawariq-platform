@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, inviteTitle, inviteMessage, normCode,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -261,5 +261,18 @@ describe("ليلة المناسبة: غرفة التنسيق وختم الليل
     expect(db.ops!.at(-1)!.kind).toBe("done");
     r.apply(reopenEvent());
     expect(r.get().client.event!.endedAt).toBeUndefined();
+  });
+});
+
+describe("رسالة الدعوة في الواتساب", () => {
+  it("العنوان «دعوة لزواج فيصل» والرسالة فيها اسم الضيف والموعد والرابط", () => {
+    expect(inviteTitle("زواج فيصل")).toBe("دعوة لزواج فيصل");
+    expect(inviteTitle("الملكة")).toBe("دعوة للملكة");
+    const m = inviteMessage({ title: "زواج فيصل", date: "2027-01-23" }, { name: "أبو سعد، محمد", section: "men" }, "https://x.app/i/ABC123", "20:30");
+    expect(m).toContain("يا هلا والله أبو سعد");
+    expect(m).toContain("زواج فيصل");
+    expect(m).toContain("السبت");
+    expect(m.endsWith("https://x.app/i/ABC123")).toBe(true);
+    expect(normCode("https://x.app/i/abc123")).toBe("ABC123");
   });
 });

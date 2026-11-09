@@ -76,7 +76,7 @@ export const removeGuest = (id: string): Mutation => (db) => ({ ...db, client: {
 
 /** مسح رمز الدخول عند البوابة */
 export type CheckInResult = { ok: true; guest: Guest } | { ok: false; reason: "unknown" | "already" | "declined" | "section"; guest?: Guest };
-export const normCode = (raw: string) => raw.trim().toUpperCase().replace(/^.*#INVITE-/, "").replace(/^MNS-/, "");
+export const normCode = (raw: string) => raw.trim().toUpperCase().replace(/^.*#INVITE-/, "").replace(/^.*\/I\//, "").replace(/^MNS-/, "");
 /** تسجيل دخول ضيف عند الباب. section: قسم المنسق (ضيف القسم الآخر يُوجَّه بدل تسجيله) */
 export function checkIn(db: DB, raw: string, section?: Guest["section"]): { db: DB; result: CheckInResult } {
   const code = normCode(raw);
@@ -271,3 +271,23 @@ export const endEvent = (o: { thanks: string; ratings: Record<string, number> })
 };
 /** تراجع عن ختم الليلة (لو ضغطها بالغلط) */
 export const reopenEvent = (): Mutation => (db) => (db.client.event ? { ...db, client: { ...db.client, event: { ...db.client.event, endedAt: undefined } } } : db);
+
+/* ───── رسالة الدعوة في الواتساب (باللهجة السعودية) ───── */
+/** «دعوة لزواج فيصل» */
+export const inviteTitle = (title: string) => { const t = title.trim(); return "دعوة " + (t.startsWith("ال") ? "لل" + t.slice(2) : "ل" + t); };
+/** «يوم الخميس ٢٣ رجب الساعة ٨:٣٠ م» (التاريخ هجري) */
+export const inviteWhen = (date: string, time?: string) => {
+  try {
+    const d = new Date(`${date}T${time ?? "20:30"}:00`);
+    const day = new Intl.DateTimeFormat("ar-SA", { weekday: "long" }).format(d);
+    const hijri = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long" }).format(d).replace(/\s*هـ$/, "");
+    const clock = time ? ` الساعة ${new Intl.DateTimeFormat("ar-SA", { hour: "numeric", minute: "2-digit" }).format(d)}` : "";
+    return `يوم ${day} ${hijri}${clock}`;
+  } catch { return date; }
+};
+export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Guest, "name" | "relation" | "section">, url: string, time?: string) => {
+  const first = g.name.split("،")[0].trim();
+  const who = g.relation ? `${greetingFor(g)} ${first}` : first;
+  const what = e.title.trim();
+  return `يا هلا والله ${who} 🤍\nيشرّفنا حضورك في ${what}، ${inviteWhen(e.date, time)}.\nدعوتك هنا، افتحها وأكّد حضورك 👇\n${url}`;
+};
