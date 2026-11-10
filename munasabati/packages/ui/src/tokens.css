@@ -587,3 +587,8 @@ body { background:
 .gate-card, .login-card { box-shadow: var(--shadow-2); }
 
 @media (prefers-reduced-motion: reduce) { .side-link:hover { transform: none; } }
+/* زر التمرير يزحم شاشات التطبيق في الجوال (فيها شريط سفلي) */
+@media (max-width: 899px) { .shell .scroll-nav { display: none; } }
+/* شريط التطبيق: خط البراند يظهر مع التمرير */
+.appbar.scrolled { border-bottom-color: transparent; box-shadow: 0 1px 0 var(--line), 0 10px 30px -24px rgba(0,0,0,.4); }
+.appbar .scroll-prog { background: var(--brand-grad); }

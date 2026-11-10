@@ -37,7 +37,7 @@ function MiniMarket({ occ }: { occ: Occasion }) {
       <div className="ms-hello">استكشف</div>
       <div className="ms-card" style={{ padding: "9px 12px", color: "var(--faint)", display: "flex", gap: 6, alignItems: "center" }}><Icon name="Search" size={14} /> قاعات، كوشة، تصوير…</div>
       <div style={{ display: "flex", gap: 6 }}>{["قاعات", "كوشة", "تصوير", "ضيافة"].map((c, i) => <span key={c} className={"chip" + (i === 0 ? " on" : "")} style={{ minHeight: 28, padding: "0 10px", fontSize: 11 }}>{c}</span>)}</div>
-      {[["قصر الندى", "الرياض · قسم رجال ونساء", "v1"], ["دار اللؤلؤ", "جدة · قاعتان", "v3"]].map(([n, m, k]) => (
+      {[["قصر الندى", "الخبر · قسم رجال ونساء", "v1"], ["دار اللؤلؤ", "الخبر · قاعتان", "v3"]].map(([n, m, k]) => (
         <div key={n as string} className="ms-card" style={{ padding: 0, overflow: "hidden" }}>
           <img src={photoUrl(`media:${k}`, true)} alt="" style={{ height: 82, width: "100%", objectFit: "cover", display: "block", borderBottom: `3px solid ${occ.palette[1]}` }} />
           <div style={{ padding: 10 }}><div className="row between"><b className="display" style={{ fontSize: 13 }}>{n}</b><span className="brand" style={{ fontWeight: 600, fontSize: 10.5, display: "inline-flex", gap: 3, alignItems: "center" }}><Icon name="BadgeCheck" size={12} /> موثّق</span></div><div className="row between faint" style={{ fontSize: 11 }}><span>{m}</span><span style={{ color: "var(--ink)", fontWeight: 600 }}>السعر عند الطلب</span></div></div>

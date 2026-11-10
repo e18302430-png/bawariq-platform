@@ -12,7 +12,7 @@ function Login() {
   const [mode, setMode] = useState<"demo" | "join">(isCloud ? "join" : "demo");
   const [, force] = useState(0);
   const signedIn = !isCloud || hasAccount();
-  const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الرياض", phone: repo.auth?.user()?.phone ?? "", cr: "" });
+  const [f, setF] = useState({ name: "", cat: "kosha" as CategoryId, city: "الدمام", phone: repo.auth?.user()?.phone ?? "", cr: "" });
   const demos = db.suppliers.filter((s) => ["s1", "s2"].includes(s.id) || s.custom);
   const join = (e: React.FormEvent) => {
     e.preventDefault();

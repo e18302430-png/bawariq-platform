@@ -39,7 +39,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
   const [step, setStep] = useState(0);
   const [needAuth, setNeedAuth] = useState(false);
   const [login, setLogin] = useState(false);
-  const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, place: profileOf(preset).places[0] as Place, style: [] as StyleId[], city: "الرياض", date: shiftDate(today(), 75), guests: profileOf(preset).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
+  const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, place: profileOf(preset).places[0] as Place, style: [] as StyleId[], city: "الدمام", date: shiftDate(today(), 75), guests: profileOf(preset).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
   const prof = profileOf(f.occasion);

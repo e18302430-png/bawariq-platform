@@ -12,14 +12,14 @@ function seedBookings(now = Date.now()): Booking[] {
     estimate: 0, ...b, id: `seed-${i}`, createdAt: now - i * 5 * 36e5, messages: [], seed: true,
   });
   const rows: Row[] = [
-    { kind: "supplier", targetId: "s1", clientName: "عبدالله العتيبي (مثال)", phone: "0551112233", occasion: "wedding", city: "الرياض", date: d(21), guests: 600, note: "نحتاج كوشة رئيسية وبث مباشر لقسم النساء", status: "new", packageId: "p2" },
-    { kind: "supplier", targetId: "s1", clientName: "نورة الشهري (مثال)", phone: "0502223344", occasion: "milka", city: "الرياض", date: d(9), guests: 180, note: "ملكة في البيت، نبي إضاءة وكوشة صغيرة", status: "quoted" },
-    { kind: "supplier", targetId: "s1", clientName: "شركة أفق (مثال)", phone: "0533334455", occasion: "corp", city: "الرياض", date: d(34), guests: 350, note: "استيدج وشاشتين ومولد احتياطي", status: "confirmed" },
-    { kind: "supplier", targetId: "s1", clientName: "فيصل القحطاني (مثال)", phone: "0544445566", occasion: "grad", city: "الخرج", date: d(48), guests: 120, note: "خيمة وسجاد وضيافة", status: "confirmed" },
-    { kind: "venue", targetId: "v1", hallId: "a", clientName: "سلطان الدوسري (مثال)", phone: "0555556677", occasion: "wedding", city: "الرياض", date: d(15), guests: 820, note: "حجز القسمين", status: "confirmed" },
-    { kind: "venue", targetId: "v1", hallId: "a", clientName: "ماجد الحربي (مثال)", phone: "0566667788", occasion: "wedding", city: "الرياض", date: d(27), guests: 700, note: "هل يتوفر مطبخ للذبائح؟", status: "new" },
-    { kind: "venue", targetId: "v1", hallId: "b", clientName: "هند العمري (مثال)", phone: "0577778899", occasion: "milka", city: "الرياض", date: d(6), guests: 300, note: "ملكة، قسم نساء فقط", status: "confirmed" },
-    { kind: "venue", targetId: "v1", hallId: "b", clientName: "بدر السهلي (مثال)", phone: "0588889900", occasion: "grad", city: "الرياض", date: d(40), guests: 260, note: "حفل تخرج للعائلة", status: "quoted" },
+    { kind: "supplier", targetId: "s1", clientName: "عبدالله العتيبي (مثال)", phone: "0551112233", occasion: "wedding", city: "الدمام", date: d(21), guests: 600, note: "نحتاج كوشة رئيسية وبث مباشر لقسم النساء", status: "new", packageId: "p2" },
+    { kind: "supplier", targetId: "s1", clientName: "نورة الشهري (مثال)", phone: "0502223344", occasion: "milka", city: "الدمام", date: d(9), guests: 180, note: "ملكة في البيت، نبي إضاءة وكوشة صغيرة", status: "quoted" },
+    { kind: "supplier", targetId: "s1", clientName: "شركة أفق (مثال)", phone: "0533334455", occasion: "corp", city: "الدمام", date: d(34), guests: 350, note: "استيدج وشاشتين ومولد احتياطي", status: "confirmed" },
+    { kind: "supplier", targetId: "s1", clientName: "فيصل القحطاني (مثال)", phone: "0544445566", occasion: "grad", city: "القطيف", date: d(48), guests: 120, note: "خيمة وسجاد وضيافة", status: "confirmed" },
+    { kind: "venue", targetId: "v1", hallId: "a", clientName: "سلطان الدوسري (مثال)", phone: "0555556677", occasion: "wedding", city: "الدمام", date: d(15), guests: 820, note: "حجز القسمين", status: "confirmed" },
+    { kind: "venue", targetId: "v1", hallId: "a", clientName: "ماجد الحربي (مثال)", phone: "0566667788", occasion: "wedding", city: "الدمام", date: d(27), guests: 700, note: "هل يتوفر مطبخ للذبائح؟", status: "new" },
+    { kind: "venue", targetId: "v1", hallId: "b", clientName: "هند العمري (مثال)", phone: "0577778899", occasion: "milka", city: "الدمام", date: d(6), guests: 300, note: "ملكة، قسم نساء فقط", status: "confirmed" },
+    { kind: "venue", targetId: "v1", hallId: "b", clientName: "بدر السهلي (مثال)", phone: "0588889900", occasion: "grad", city: "الدمام", date: d(40), guests: 260, note: "حفل تخرج للعائلة", status: "quoted" },
   ];
   return rows.map(base);
 }

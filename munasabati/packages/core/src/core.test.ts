@@ -29,10 +29,10 @@ describe("الحسابات", () => {
   });
 
   it("المطابقة تفضّل نفس المدينة، وتستبعد السعة الأصغر إذا أدخلها صاحب القاعة", () => {
-    const [first] = matchVenues(SEED_VENUES, "جدة", 1000);
-    expect(first.venue.city).toBe("جدة");
+    const [first] = matchVenues(SEED_VENUES, "الظهران", 1000);
+    expect(first.venue.city).toBe("الظهران");
     const small = { ...SEED_VENUES[2], id: "x", halls: [{ id: "a", name: "صغيرة", menCap: 100, womenCap: 100 }] };
-    const ranked = matchVenues([small, SEED_VENUES[2]], "جدة", 1000);
+    const ranked = matchVenues([small, SEED_VENUES[2]], "الخبر", 1000);
     expect(ranked[0].venue.id).toBe(SEED_VENUES[2].id);
   });
 
@@ -42,9 +42,9 @@ describe("الحسابات", () => {
 describe("رحلة الحجز بين العميل والمورد", () => {
   it("طلب ← عرض سعر ← قبول يضيف المبلغ للميزانية ويقفل اليوم", () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
     const budgetBefore = repo.get().client.budget.length;
-    repo.apply(createBooking({ kind: "supplier", targetId: "s1", clientName: "عبدالله", phone: "0550000000", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, note: "", estimate: 24000, fromClient: true }));
+    repo.apply(createBooking({ kind: "supplier", targetId: "s1", clientName: "عبدالله", phone: "0550000000", occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, note: "", estimate: 24000, fromClient: true }));
     const id = repo.get().bookings[0].id;
     repo.apply(setBookingStatus(id, "quoted", { quote: 22000, message: { from: "provider", text: "حياكم" } }));
     repo.apply(acceptQuote(id, "بوارق"));
@@ -57,7 +57,7 @@ describe("رحلة الحجز بين العميل والمورد", () => {
 
   it("العميل يحدد ميزانيته ويعيد توزيعها", () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
     expect(repo.get().client.budget.every((l) => l.est === 0)).toBe(true);
     repo.apply(setTotalBudget(200000, true));
     const db = repo.get();
@@ -69,7 +69,7 @@ describe("رحلة الحجز بين العميل والمورد", () => {
 describe("بوابة الدخول", () => {
   it("يدخل الضيف مرة واحدة فقط ويرفض المعتذرين", () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
     const guests = repo.get().client.guests;
     const yes = guests.find((g) => g.status === "yes")!;
     const no = guests.find((g) => g.status === "no")!;
@@ -82,7 +82,7 @@ describe("بوابة الدخول", () => {
 });
 
 describe("رحلة العميل", () => {
-  const ev = { occasion: "wedding" as const, city: "الرياض", date: "2027-03-10", guests: 400, menRatio: 0.5, tier: "mid" as const, title: "زواج", hostName: "عبدالله" };
+  const ev = { occasion: "wedding" as const, city: "الخبر", date: "2027-03-10", guests: 400, menRatio: 0.5, tier: "mid" as const, title: "زواج", hostName: "عبدالله" };
   it("بعد الخطة، الخطوة التالية هي اختيار القاعة", () => {
     const repo = createMemoryRepository();
     repo.apply(createEvent(ev));
@@ -94,7 +94,7 @@ describe("رحلة العميل", () => {
   it("عرض سعر من القاعة يجعلها الخطوة النشطة، وقبوله يكملها", () => {
     const repo = createMemoryRepository();
     repo.apply(createEvent(ev));
-    repo.apply(createBooking({ kind: "venue", targetId: "v1", hallId: "a", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الرياض", date: "2027-03-10", guests: 400, note: "", estimate: 50000, fromClient: true }));
+    repo.apply(createBooking({ kind: "venue", targetId: "v1", hallId: "a", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الخبر", date: "2027-03-10", guests: 400, note: "", estimate: 50000, fromClient: true }));
     const id = repo.get().bookings[0].id;
     repo.apply(setBookingStatus(id, "quoted", { quote: 48000 }));
     expect(journey(repo.get())[1]).toMatchObject({ status: "active", cta: { route: "bookings" } });
@@ -104,7 +104,7 @@ describe("رحلة العميل", () => {
   it("مورد متكامل مؤكد يغطي كل الخدمات الأساسية", () => {
     const repo = createMemoryRepository();
     repo.apply(createEvent(ev));
-    repo.apply(createBooking({ kind: "supplier", targetId: "s1", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الرياض", date: "2027-03-10", guests: 400, note: "", estimate: 24000, fromClient: true }));
+    repo.apply(createBooking({ kind: "supplier", targetId: "s1", clientName: "ع", phone: "0550000000", occasion: "wedding", city: "الخبر", date: "2027-03-10", guests: 400, note: "", estimate: 24000, fromClient: true }));
     repo.apply(setBookingStatus(repo.get().bookings[0].id, "confirmed"));
     const prep = journey(repo.get())[2];
     expect(prep.status).toBe("done");
@@ -115,8 +115,8 @@ describe("رحلة العميل", () => {
 describe("الإدارة وسيط بين العميل والتجار", () => {
   it("ترى العميل ببياناته وطلباته، وتعدل وتحذف", () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 150000, samples: false }));
-    repo.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "+966551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, note: "", estimate: 0, fromClient: true, budget: 50000 }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 150000, samples: false }));
+    repo.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "+966551112222", occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, note: "", estimate: 0, fromClient: true, budget: 50000 }));
     let c = adminClients(repo.get()).find((x) => x.phone === "0551112222")!;
     expect(c.source).toBe("space");
     expect(c.budget).toBe(150000);
@@ -144,7 +144,7 @@ describe("الإدارة وسيط بين العميل والتجار", () => {
 describe("المنسق عند الباب", () => {
   it("رابط بمفتاح يتجدد، وضيف القسم الآخر يُوجَّه بدل تسجيله", () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 400, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "عبدالله" }));
     repo.apply(enableDoor());
     const k1 = repo.get().client.doorKey!;
     expect(k1).toHaveLength(12);
@@ -164,7 +164,7 @@ describe("المنسق عند الباب", () => {
 describe("الخطة المقترحة وحماية العميل", () => {
   const setup = () => {
     const repo = createMemoryRepository();
-    repo.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 200000, samples: false }));
+    repo.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", phone: "0551112222", budget: 200000, samples: false }));
     return repo;
   };
   it("يقترح لكل بند حسب المدينة والطابع، ويرسل الطلبات دفعة واحدة", () => {
@@ -172,7 +172,7 @@ describe("الخطة المقترحة وحماية العميل", () => {
     repo.apply(updateEvent({ style: ["najdi"] }));
     const plan = suggestPlan(repo.get());
     const venue = plan.find((l) => l.cat === "venue")!;
-    expect(venue.picks[0].city).toBe("الرياض");
+    expect(venue.picks[0].city).toBe("الخبر");
     expect(venue.budget).toBe(64000);
     const hosp = plan.find((l) => l.cat === "hosp")!;
     expect(hosp.picks.length).toBeGreaterThan(0);
@@ -184,7 +184,7 @@ describe("الخطة المقترحة وحماية العميل", () => {
   });
   it("إلغاء الحجز المؤكد يمر بالإدارة، والإسناد البديل ينشئ طلباً جديداً", () => {
     const repo = setup();
-    repo.apply(createBooking({ kind: "supplier", targetId: "s3", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true, cat: "hosp" }));
+    repo.apply(createBooking({ kind: "supplier", targetId: "s3", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true, cat: "hosp" }));
     const id = repo.get().bookings[0].id;
     repo.apply(setBookingStatus(id, "confirmed"));
     repo.apply(requestCancel(id, "ظرف طارئ"));
@@ -202,10 +202,10 @@ describe("الخطة المقترحة وحماية العميل", () => {
 });
 
 describe("الإدارة وسيط الطلبات، ودعم بحالات واضحة، وتعلّم من العميل", () => {
-  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
+  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
   it("طلب العميل يبدأ عند الإدارة، ثم يُرسل للتاجر أو يُعتذر عنه بسبب", () => {
     const r = base();
-    r.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
+    r.apply(createBooking({ kind: "venue", targetId: "v1", clientName: "سارة", phone: "0551112222", occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
     const id = r.get().bookings[0].id;
     expect(r.get().bookings[0].status).toBe("review");
     r.apply(forwardToVendor(id, "نرجو العرض"));
@@ -239,7 +239,7 @@ describe("الإدارة وسيط الطلبات، ودعم بحالات واض�
 });
 
 describe("ليلة المناسبة: غرفة التنسيق وختم الليلة", () => {
-  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
+  const base = () => { const r = createMemoryRepository(); r.apply(createEvent({ occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, menRatio: 0.5, tier: "mid", title: "زواج", hostName: "سارة", samples: false })); return r; };
   it("كل طرف يرسل لغرفة التنسيق، والرسائل الفاضية ما تنحفظ", () => {
     const r = base();
     r.apply(postOp({ from: "men", text: "القسم امتلأ", kind: "alert" }));
@@ -251,7 +251,7 @@ describe("ليلة المناسبة: غرفة التنسيق وختم الليل
   it("ختم الليلة يحفظ الشكر والتقييم ويبلغ الفريق، والتراجع يرجعها مفتوحة", () => {
     const r = base();
     const v = r.get().venues[0];
-    r.apply(createBooking({ kind: "venue", targetId: v.id, hallId: v.halls[0].id, clientName: "سارة", phone: "0551234567", occasion: "wedding", city: "الرياض", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
+    r.apply(createBooking({ kind: "venue", targetId: v.id, hallId: v.halls[0].id, clientName: "سارة", phone: "0551234567", occasion: "wedding", city: "الخبر", date: "2027-02-10", guests: 300, note: "", estimate: 0, fromClient: true }));
     const b = r.get().bookings.find((x) => x.fromClient)!;
     r.apply(endEvent({ thanks: "", ratings: { [b.id]: 9 } }));
     const db = r.get();
