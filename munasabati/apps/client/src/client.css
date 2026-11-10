@@ -605,3 +605,5 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .vchecks .vcheck.ready .avatar { background: #3dd39b; color: #06231a; }
 .vchecks .vcheck.issue .avatar { background: #ff6b62; color: #2a0705; }
 .vchecks .vcheck.arrived .avatar { background: #ffc35c; color: #2a1c05; }
+.vchecks .vcheck .t { display: grid; gap: 2px; min-width: 0; }
+.vchecks .vcheck .t small { font-size: 13px; opacity: .75; }

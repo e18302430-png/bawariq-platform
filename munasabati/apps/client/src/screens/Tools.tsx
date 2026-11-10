@@ -663,7 +663,7 @@ function CameraGate({ onCode, onManual }: { onCode: (code: string) => void; onMa
         if (v && v.readyState >= 2 && detect) {
           try {
             const raw = await detect(v);
-            if (raw && (raw !== last.current.code || Date.now() - last.current.at > 2500)) { last.current = { code: raw, at: Date.now() }; setHit(Date.now()); cb.current(raw); }
+            if (raw && (raw !== last.current.code || Date.now() - last.current.at > 15000)) { last.current = { code: raw, at: Date.now() }; setHit(Date.now()); cb.current(raw); }
           } catch { /* إطار غير جاهز */ }
         }
         timer = window.setTimeout(tick, 180);
