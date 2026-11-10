@@ -47,6 +47,18 @@ export interface InviteAdapter {
   load(code: string): Promise<InviteSnapshot | null>;
   rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string }): Promise<Guest | null>;
 }
+/** فرصة عميل جمعها وكيل الرادار من مصدر عام */
+export type LeadOccasion = "wedding" | "milka" | "grad" | "aqiqa" | "birthday" | "family" | "corp" | "other";
+export type LeadStatus = "new" | "contacted" | "won" | "skip";
+export interface Lead {
+  id: string; url: string; foundAt: string; postedAt?: string | null; occasion: LeadOccasion; city?: string | null;
+  kind: "person" | "business" | "vendor" | "signal"; title: string; summary?: string | null; source?: string | null;
+  score: number; reply?: string | null; status: LeadStatus; note?: string | null;
+}
+export interface RadarAdapter {
+  list(): Promise<Lead[]>;
+  update(id: string, patch: { status?: LeadStatus; note?: string }): Promise<boolean>;
+}
 export interface DoorAdapter {
   load(key: string): Promise<DoorSnapshot | null>;
   checkIn(key: string, code: string): Promise<CheckInResult>;
@@ -70,6 +82,8 @@ export interface Repository {
   door?: DoorAdapter;
   /** صفحة دعوة الضيف عبر رمزه */
   invite?: InviteAdapter;
+  /** رادار العملاء (الإدارة فقط) */
+  radar?: RadarAdapter;
   /** اكتمل أول تحميل (الجلسة والبيانات): قبلها نعرض شاشة تحميل بدل وميض صفحة الدخول */
   ready?(): boolean;
   /** آخر خطأ في الحفظ (مثلاً امتلاء التخزين أو انقطاع الاتصال) */

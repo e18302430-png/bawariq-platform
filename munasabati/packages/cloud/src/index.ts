@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
-  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type DoorSnapshot, type Guest, type OpsMsg, type InviteSnapshot, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
+  createInitialDB, type AuthAdapter, type AuthUser, type Booking, type CheckInResult, type DoorSnapshot, type Guest, type Lead, type OpsMsg, type InviteSnapshot, type ClientSpace, type DB, type Mutation, type Repository, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 
 /**
@@ -283,10 +283,24 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     },
   };
 
+  type LeadRow = { id: string; url: string; found_at: string; posted_at: string | null; occasion: Lead["occasion"]; city: string | null; kind: Lead["kind"]; title: string; summary: string | null; source: string | null; score: number; reply: string | null; status: Lead["status"]; note: string | null };
+  const radar = {
+    async list(): Promise<Lead[]> {
+      const { data, error } = await sb.from("leads").select("*").order("found_at", { ascending: false }).limit(500);
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as LeadRow[]).map((r) => ({ id: r.id, url: r.url, foundAt: r.found_at, postedAt: r.posted_at, occasion: r.occasion, city: r.city, kind: r.kind, title: r.title, summary: r.summary, source: r.source, score: r.score, reply: r.reply, status: r.status, note: r.note }));
+    },
+    async update(id: string, patch: { status?: Lead["status"]; note?: string }) {
+      const { error } = await sb.from("leads").update(patch).eq("id", id);
+      return !error;
+    },
+  };
+
   return {
     mode: "cloud",
     door,
     invite,
+    radar,
     ready: () => loaded,
     get: () => state,
     apply(m: Mutation) { const prev = state; state = m(state); emit(); void persist(prev, state); },

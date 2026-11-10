@@ -29,6 +29,10 @@ function deferredCloud(url: string, key: string, authMode: "phone" | "quick"): R
       load: async (c) => (await ready).invite!.load(c),
       rsvp: async (c, p) => (await ready).invite!.rsvp(c, p),
     },
+    radar: {
+      list: async () => (await ready).radar!.list(),
+      update: async (id, p) => (await ready).radar!.update(id, p),
+    },
     ready: () => inner?.ready?.() ?? false,
     error: () => inner?.error() ?? null,
   };
