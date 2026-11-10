@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
-import { DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast } from "@munasabati/ui";
+import { Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
 import diriyah from "../assets/invite/diriyah.webp";
@@ -467,6 +467,12 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
             <div className="row" style={{ marginTop: 12 }}><a className="btn grow" href={map} target="_blank" rel="noreferrer"><Icon name="MapPin" size={16} /> الموقع</a><a className="btn grow" href={cal} target="_blank" rel="noreferrer"><Icon name="CalendarPlus" size={16} /> أضف للتقويم</a></div>
           </section>
 
+          {g.status !== "pending" && <button type="button" className="gx-next" onClick={openAssistant}>
+            <span className="gx-next-ic"><Icon name="Sparkles" size={20} /></span>
+            <span className="gx-next-t"><b>عندك مناسبة قريبة؟</b><small>احسب ميزانيتها في دقيقة، ومنسق مناسبتي يرتب لك كل شي</small></span>
+            <Icon name="ArrowLeft" size={18} />
+          </button>}
+          <Assistant appUrl={`${location.href.split("#")[0]}#start-${ev.occasion}`} via="invite" fab={false} teaserOn={false} />
           {g.status !== "pending" && <a className="gx-made" href={`${location.href.split("#")[0]}#start-${ev.occasion}`}><span>سوّيت دعوتي من <b>مناسبتي</b></span><span className="gx-made-cta">ابدأ مناسبتك <Icon name="ArrowLeft" size={14} /></span></a>}
           <img className="gx-foot-art" src={wc.img} alt="" loading="lazy" />
           <a className="g-back" href="#home">للتجربة: ارجع للوحة صاحب المناسبة</a>

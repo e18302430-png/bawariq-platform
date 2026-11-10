@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
   upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, payoutFor, setPricing, setBank, setLegal, hasAgreement, feeOn, vendorOn, launchSteps, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
-  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady,
+  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady, ding,
 } from "@munasabati/ui";
 import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
@@ -424,6 +424,33 @@ function Palette({ open, onClose, go }: { open: boolean; onClose: () => void; go
   );
 }
 
+/** عملاء جاهزين طلبوا عرض بأنفسهم: رقم على الرادار، وصوت وتنبيه أول ما يوصل جديد */
+function useReadyCustomers() {
+  const toast = useToast();
+  const [n, setN] = useState(0);
+  const seen = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!isCloud || !repo.radar) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const rows = (await repo.radar!.list()).filter((l) => l.phone && l.status === "new");
+        if (!alive) return;
+        setN(rows.length);
+        if (seen.current) {
+          const fresh = rows.filter((l) => !seen.current!.has(l.id));
+          if (fresh.length) { ding(); toast(`عميل جاهز جديد: ${fresh[0].title}`); }
+        }
+        seen.current = new Set(rows.map((l) => l.id));
+      } catch { /* نحاول المرة الجاية */ }
+    };
+    void tick();
+    const t = setInterval(tick, 60_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [toast]);
+  return n;
+}
+
 function Panel() {
   const db = useDB();
   const [tab, setTab] = useState("overview");
@@ -436,13 +463,14 @@ function Panel() {
   }, []);
   const go = (t: string, id?: string) => { setFocus(id); setTab(t); window.scrollTo({ top: 0 }); };
   const live = useLive(db);
+  const ready = useReadyCustomers();
   useOpsAlerts(db.ops ?? [], "admin");
   const tabs = [
     { id: "overview", label: "نظرة عامة", icon: "LayoutDashboard" },
     { id: "ops", label: "العمليات", icon: "Radio", count: openAlerts(db) || liveRooms(db).filter((r) => !r.data.event!.endedAt && r.data.event!.date === today()).length },
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "review").length },
     { id: "clients", label: "العملاء", icon: "Users" },
-    { id: "radar", label: "الرادار", icon: "Target" },
+    { id: "radar", label: "الرادار", icon: "Target", count: ready },
     { id: "ideas", label: "الأفكار", icon: "Sparkles" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open" || t.status === "reopened").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },

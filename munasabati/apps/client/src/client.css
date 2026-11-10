@@ -607,3 +607,11 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .vchecks .vcheck.arrived .avatar { background: #ffc35c; color: #2a1c05; }
 .vchecks .vcheck .t { display: grid; gap: 2px; min-width: 0; }
 .vchecks .vcheck .t small { font-size: 13px; opacity: .75; }
+/* دعوة الضيف: بداية مناسبته هو */
+.gx-next { width: 100%; display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 14px 16px; border-radius: 22px; border: 0; cursor: pointer; text-align: start; color: #fff; font: inherit;
+  background: radial-gradient(90% 160% at 100% 0%, #ff9a5a 0%, transparent 55%), linear-gradient(135deg, #e5195e, #9b3fc9); box-shadow: 0 20px 40px -22px rgba(229,25,94,.8); transition: transform .25s var(--spring); }
+.gx-next:hover { transform: translateY(-2px); }
+.gx-next-ic { width: 44px; height: 44px; flex: none; border-radius: 15px; display: grid; place-items: center; background: rgba(255,255,255,.2); }
+.gx-next-t { display: grid; flex: 1; min-width: 0; }
+.gx-next-t b { font-family: var(--f-display); font-size: 16px; }
+.gx-next-t small { font-size: 13px; opacity: .9; line-height: 1.6; }

@@ -59,7 +59,10 @@ function Count({ to }: { to: number }) {
   return <>{fmt(v)}</>;
 }
 
-export function Assistant({ appUrl = "client/index.html" }: { appUrl?: string }) {
+/** يفتح المساعد من أي زر في الصفحة */
+export const openAssistant = () => window.dispatchEvent(new Event("mn-assistant-open"));
+
+export function Assistant({ appUrl = "client/index.html", via = "site", fab = true, teaserOn = true }: { appUrl?: string; via?: "site" | "invite"; fab?: boolean; teaserOn?: boolean }) {
   const [open, setOpen] = useState(false);
   const [teaser, setTeaser] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -79,6 +82,7 @@ export function Assistant({ appUrl = "client/index.html" }: { appUrl?: string })
   useEffect(() => {
     let seen = false; try { seen = sessionStorage.getItem("mn-assist-teaser") === "1"; } catch { /* */ }
     if (seen) return;
+    if (!teaserOn) return;
     const t = setTimeout(() => setTeaser(true), 4500);
     return () => clearTimeout(t);
   }, []);
@@ -108,6 +112,11 @@ export function Assistant({ appUrl = "client/index.html" }: { appUrl?: string })
     bot([<>هلا والله 👋 أنا <b>مساعد مناسبتي</b>.</>, "خلني أطلع لك ميزانية مناسبتك في أقل من دقيقة، ببلاش. وش المناسبة؟"], askOcc);
   };
   const openPanel = () => { setOpen(true); setTeaser(false); try { sessionStorage.setItem("mn-assist-teaser", "1"); } catch { /* */ } setTimeout(start, 250); };
+  useEffect(() => {
+    const on = () => openPanel();
+    window.addEventListener("mn-assistant-open", on);
+    return () => window.removeEventListener("mn-assistant-open", on);
+  });
 
   const askOcc = () => { setStep(1); setChips(<div className="as-grid">{OCCASIONS.map((o) => <button key={o.id} className="as-tile" onClick={() => pickOcc(o.id as OccasionId, o.name)}><span><Icon name={OCC_ICON[o.id as OccasionId]} size={18} /></span>{o.name}</button>)}</div>); };
   const pickOcc = (occ: OccasionId, label: string) => {
@@ -148,7 +157,7 @@ export function Assistant({ appUrl = "client/index.html" }: { appUrl?: string })
     setForm("sending");
     const e = ans.occ && ans.guests && ans.pri ? estimate(ans.occ, ans.guests, ans.pri.k) : null;
     try {
-      await sendLead({ name: name.trim(), phone: ph, consent: true, occasion: ans.occ, guests: String(ans.guests ?? ""), city: ans.city, when: ans.when, priority: ans.pri?.label, estimate: e ? `${fmt(e.low)}–${fmt(e.high)} ريال` : "" });
+      await sendLead({ name: name.trim(), phone: ph, consent: true, occasion: ans.occ, guests: String(ans.guests ?? ""), city: ans.city, when: ans.when, priority: ans.pri?.label, via, estimate: e ? `${fmt(e.low)}–${fmt(e.high)} ريال` : "" });
       me(`${name.trim()} · ${ph}`);
       setForm("done");
       bot([<SuccessCard key="s" name={name.trim()} />], () => setChips(<div className="as-chips"><a className="as-chip primary" href={appUrl}><Icon name="ArrowLeft" size={14} /> افتح التطبيق وكمّل</a></div>));
@@ -170,7 +179,7 @@ export function Assistant({ appUrl = "client/index.html" }: { appUrl?: string })
           </motion.button>
         )}
       </AnimatePresence>
-      {!open && <button className="as-fab" aria-label="افتح مساعد مناسبتي" onClick={openPanel}><span className="as-fab-ring" /><LogoMark size={34} mono="#ffffff" /></button>}
+      {!open && fab && <button className="as-fab" aria-label="افتح مساعد مناسبتي" onClick={openPanel}><span className="as-fab-ring" /><LogoMark size={34} mono="#ffffff" /></button>}
 
       <AnimatePresence>
         {open && <>
