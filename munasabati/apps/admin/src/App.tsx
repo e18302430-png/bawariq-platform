@@ -78,7 +78,17 @@ function Overview({ go, live }: { go: (t: string, id?: string) => void; live: Li
   ];
   return (
     <>
-      <div><span className="eyebrow">مركز التحكم</span><h1 className="page-title">نظرة عامة</h1></div>
+      <div className="adm-hero">
+        <div className="adm-hero-t">
+          <span className="adm-hero-k">{new Date().toLocaleDateString("ar-SA-u-ca-gregory", { weekday: "long", day: "numeric", month: "long" })}</span>
+          <h1>{new Date().getHours() < 12 ? "صباح الخير" : "مساء الخير"}، هذي مناسبتي اليوم</h1>
+          <p>كل شي يمر من هنا: الطلبات، الليالي المباشرة، والعملاء الجدد من الرادار.</p>
+        </div>
+        <div className="adm-hero-a">
+          <button className="btn" onClick={() => go("radar")}><Icon name="Target" size={16} /> الرادار</button>
+          <button className="btn" onClick={() => go("ops")}><Icon name="Radio" size={16} /> العمليات</button>
+        </div>
+      </div>
       <section className="card">
         <div className="section-title"><h3>ملخص آخر ٢٤ ساعة</h3></div>
         <div className="adm-morning">{morning.map(([l, n, ic, t]) => <button key={l} onClick={() => go(t)}><Icon name={ic} size={16} /><b className="num">{n}</b><small>{l}</small></button>)}</div>
