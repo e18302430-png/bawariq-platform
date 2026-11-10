@@ -52,7 +52,7 @@ export type LeadOccasion = "wedding" | "milka" | "grad" | "aqiqa" | "birthday" |
 export type LeadStatus = "new" | "contacted" | "won" | "skip";
 export interface Lead {
   id: string; url: string; foundAt: string; postedAt?: string | null; occasion: LeadOccasion; city?: string | null;
-  kind: "person" | "business" | "vendor" | "signal"; title: string; summary?: string | null; source?: string | null;
+  kind: "person" | "business" | "vendor" | "venue" | "signal"; title: string; summary?: string | null; source?: string | null;
   score: number; reply?: string | null; status: LeadStatus; note?: string | null;
   /** جوال العميل لما يطلب العرض بنفسه من مساعد المنصة (بموافقته) */
   phone?: string | null;

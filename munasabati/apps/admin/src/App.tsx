@@ -11,6 +11,7 @@ import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 import { OpsRoom, liveRooms, openAlerts } from "./ops";
 import { Radar } from "./radar";
+import { Ideas } from "./ideas";
 
 /*
   لوحة إدارة مناسبتي (مخفية، بدون روابط من أي تطبيق).
@@ -432,6 +433,7 @@ function Panel() {
     { id: "bookings", label: "الطلبات", icon: "CalendarCheck", count: db.bookings.filter((b) => b.status === "review").length },
     { id: "clients", label: "العملاء", icon: "Users" },
     { id: "radar", label: "الرادار", icon: "Target" },
+    { id: "ideas", label: "الأفكار", icon: "Sparkles" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open" || t.status === "reopened").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
@@ -448,6 +450,7 @@ function Panel() {
           {tab === "bookings" && <Bookings focus={focus} go={go} />}
           {tab === "clients" && <Clients focus={focus} go={go} />}
           {tab === "radar" && <Radar />}
+          {tab === "ideas" && <Ideas />}
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}

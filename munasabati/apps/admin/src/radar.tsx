@@ -22,8 +22,17 @@ const KIND: Record<Lead["kind"], { label: string; cls: string }> = {
   person: { label: "عميل يدوّر", cls: "ok" },
   business: { label: "جهة / شركة", cls: "info" },
   vendor: { label: "مورد للضم", cls: "warn" },
+  venue: { label: "قاعة / فندق للضم", cls: "warn" },
   signal: { label: "مؤشر طلب", cls: "neutral" },
 };
+type SecId = "clients" | "venues" | "vendors" | "orgs";
+const SECTIONS: { id: SecId; label: string; icon: string; hint: string; kinds: Lead["kind"][] }[] = [
+  { id: "clients", label: "العملاء", icon: "UserCheck", hint: "أهم قسم: عملاء طلبوا عرض من مساعد المنصة، وناس تسأل عن مناسبة في الإنترنت", kinds: ["person"] },
+  { id: "venues", label: "القاعات والفنادق", icon: "Building2", hint: "قاعات واستراحات وفنادق تسوي زواجات في الشرقية، نضمها للمنصة", kinds: ["venue"] },
+  { id: "vendors", label: "الموردين", icon: "Store", hint: "منسقين، كوش، تصوير، ضيافة… نضمهم كموردين", kinds: ["vendor"] },
+  { id: "orgs", label: "الشركات والجهات", icon: "Briefcase", hint: "حفلات شركات وفعاليات قادمة ومؤشرات طلب", kinds: ["business", "signal"] },
+];
+const CITY_LIST = ["الدمام", "الخبر", "الظهران", "القطيف", "الجبيل", "الأحساء"];
 const STATUS: { id: LeadStatus | "all"; label: string }[] = [
   { id: "new", label: "جديدة" }, { id: "contacted", label: "تواصلت" }, { id: "won", label: "صارت عميل" }, { id: "skip", label: "مو مناسبة" }, { id: "all", label: "الكل" },
 ];
@@ -53,6 +62,8 @@ export function Radar() {
   const [occ, setOcc] = useState<LeadOccasion | "all">("all");
   const [st, setSt] = useState<LeadStatus | "all">("new");
   const [sort, setSort] = useState<"heat" | "new">("heat");
+  const [sec, setSec] = useState<SecId>("clients");
+  const [city, setCity] = useState<string>("all");
 
   const load = async () => {
     setErr(null);
@@ -67,10 +78,17 @@ export function Radar() {
   const won = all.filter((l) => l.status === "won").length;
   const last = all.reduce<string | null>((m, l) => (!m || l.foundAt > m ? l.foundAt : m), null);
 
-  const shown = useMemo(() => all
-    .filter((l) => (occ === "all" || l.occasion === occ) && (st === "all" || l.status === st))
-    .sort((a, b) => (sort === "heat" ? b.score - a.score : 0) || b.foundAt.localeCompare(a.foundAt)), [all, occ, st, sort]);
-  const occCount = (o: LeadOccasion) => all.filter((l) => l.occasion === o && (st === "all" || l.status === st)).length;
+  const S = SECTIONS.find((x) => x.id === sec)!;
+  const inSec = (l: Lead, x = S) => x.kinds.includes(l.kind);
+  const secNew = (x: (typeof SECTIONS)[number]) => all.filter((l) => inSec(l, x) && l.status === "new").length;
+  const pool = all.filter((l) => inSec(l) && (st === "all" || l.status === st));
+  const shown = useMemo(() => pool
+    .filter((l) => (occ === "all" || l.occasion === occ) && (city === "all" || (l.city ?? "").includes(city)))
+    .sort((a, b) => (Number(!!b.phone) - Number(!!a.phone)) || (sort === "heat" ? b.score - a.score : 0) || b.foundAt.localeCompare(a.foundAt)), [pool, occ, city, sort]);
+  const occCount = (o: LeadOccasion) => pool.filter((l) => l.occasion === o).length;
+  const cityCount = (c: string) => pool.filter((l) => (l.city ?? "").includes(c)).length;
+  const ready = shown.filter((l) => l.phone), rest = shown.filter((l) => !l.phone);
+  const goSec = (x: SecId) => { setSec(x); setOcc("all"); setCity("all"); };
 
   const setStatus = async (l: Lead, status: LeadStatus) => {
     setLeads((cur) => (cur ?? []).map((x) => (x.id === l.id ? { ...x, status } : x)));
@@ -89,7 +107,7 @@ export function Radar() {
         <div className="radar-head">
           <span className="eyebrow"><span className="live-dot-c" /> الوكيل شغّال</span>
           <h1 className="page-title">رادار العملاء</h1>
-          <p className="page-sub">كل صباح يمسح الوكيل المصادر العامة في الشرقية: ناس تسأل عن قاعة أو منسقة، شركات تعلن حفلات، وقاعات جديدة تنضم. ويرتبها لك بالحرارة مع رد جاهز.</p>
+          <p className="page-sub">الوكيل يمسح المصادر العامة في الشرقية كل ٣ ساعات على مدار اليوم، ومساعد المنصة يجيب طلبات العملاء مباشرة. كل شي مرتب في ٤ أقسام بالأسفل.</p>
           <div className="radar-stats">
             <div><b className="num">{fresh}</b><small>فرص آخر ٢٤ ساعة</small></div>
             <div className="hot"><b className="num">{hot}</b><small>ساخنة تنتظرك</small></div>
@@ -102,19 +120,34 @@ export function Radar() {
       {!isCloud && <p className="radar-demo"><Icon name="Info" size={15} /> وضع التجربة: هذي أمثلة توضيحية. في المنصة الحقيقية تظهر الفرص اللي جابها الوكيل.</p>}
       {err && <p className="radar-demo bad"><Icon name="TriangleAlert" size={15} /> ما قدرت أحمّل الفرص: {err}</p>}
 
+      <div className="radar-secs" role="tablist" aria-label="أقسام الرادار">{SECTIONS.map((x) => (
+        <button key={x.id} role="tab" aria-selected={sec === x.id} className={"radar-sec " + x.id + (sec === x.id ? " on" : "")} onClick={() => goSec(x.id)}>
+          <span className="rs-ic"><Icon name={x.icon} size={20} /></span>
+          <span className="rs-t"><b>{x.label}</b><small>{secNew(x)} جديدة</small></span>
+          {x.id === "clients" && <span className="rs-star">الأهم</span>}
+        </button>
+      ))}</div>
+      <p className="radar-hint"><Icon name={S.icon} size={15} /> {S.hint}</p>
+
       <div className="radar-bar">
         <div className="seg" role="tablist" aria-label="الحالة">{STATUS.map((s) => <button key={s.id} role="tab" aria-selected={st === s.id} className={st === s.id ? "on" : ""} onClick={() => setSt(s.id)}>{s.label}</button>)}</div>
         <div className="seg" aria-label="الترتيب"><button className={sort === "heat" ? "on" : ""} onClick={() => setSort("heat")}><Icon name="Zap" size={13} /> الأسخن</button><button className={sort === "new" ? "on" : ""} onClick={() => setSort("new")}><Icon name="Clock" size={13} /> الأحدث</button></div>
         <button className="btn sm ghost" onClick={() => void load()}><Icon name="RefreshCw" size={14} /> تحديث</button>
       </div>
-      <div className="chips">
+      {sec === "clients" || sec === "orgs" ? <div className="chips">
         <button className={"chip" + (occ === "all" ? " on" : "")} onClick={() => setOcc("all")}>كل المناسبات</button>
-        {(Object.keys(OCC) as LeadOccasion[]).map((o) => <button key={o} className={"chip" + (occ === o ? " on" : "")} onClick={() => setOcc(o)}><Icon name={OCC[o].icon} size={14} /> {OCC[o].label} <span className="num">{occCount(o)}</span></button>)}
-      </div>
+        {(Object.keys(OCC) as LeadOccasion[]).filter((o) => occCount(o) > 0).map((o) => <button key={o} className={"chip" + (occ === o ? " on" : "")} onClick={() => setOcc(o)}><Icon name={OCC[o].icon} size={14} /> {OCC[o].label} <span className="num">{occCount(o)}</span></button>)}
+      </div> : <div className="chips">
+        <button className={"chip" + (city === "all" ? " on" : "")} onClick={() => setCity("all")}>كل المدن</button>
+        {CITY_LIST.map((c) => <button key={c} className={"chip" + (city === c ? " on" : "")} onClick={() => setCity(c)}><Icon name="MapPin" size={14} /> {c} <span className="num">{cityCount(c)}</span></button>)}
+      </div>}
 
       {leads === null ? <section className="card"><Empty icon="Loader" title="لحظة…">أجيب آخر الفرص.</Empty></section>
-        : !shown.length ? <section className="card"><Empty icon="Target" title="ما فيه فرص هنا للحين">الوكيل يمسح كل صباح. جرّب «الكل» أو مناسبة ثانية.</Empty></section>
-        : <div className="radar-list">{shown.map((l) => {
+        : !shown.length ? <section className="card"><Empty icon="Target" title="ما فيه شي هنا للحين">{sec === "clients" ? "طلبات مساعد المنصة تظهر هنا أول بأول، والوكيل يضيف اللي يلقاه كل ٣ ساعات. جرّب «الكل»." : "الوكيل يضيف كل ٣ ساعات. جرّب «الكل» أو مدينة ثانية."}</Empty></section>
+        : <>{sec === "clients" && ready.length > 0 && <h2 className="radar-group"><Icon name="Zap" size={16} /> عملاء جاهزين: طلبوا عرض بأنفسهم <span className="num">{ready.length}</span></h2>}
+        {[ready, rest].map((list, gi) => list.length === 0 ? null : <div key={gi}>
+        {sec === "clients" && gi === 1 && <h2 className="radar-group muted"><Icon name="Search" size={16} /> يدوّرون في الإنترنت <span className="num">{list.length}</span></h2>}
+        <div className="radar-list">{list.map((l) => {
           const age = daysOld(l.postedAt);
           return <article key={l.id} className={"radar-card " + heat(l.score) + (l.status !== "new" ? " done" : "")}>
             <div className="rc-top">
@@ -145,7 +178,7 @@ export function Radar() {
               </div>
             </div>
           </article>;
-        })}</div>}
+        })}</div></div>)}</>}
       <p className="radar-note"><Icon name="ShieldCheck" size={14} /> الوكيل يجمع منشورات عامة فقط، وما يحفظ أرقام جوالات. الأرقام اللي تشوفها هنا من عملاء طلبوا عرض بأنفسهم من مساعد المنصة ووافقوا على التواصل.</p>
     </>
   );
