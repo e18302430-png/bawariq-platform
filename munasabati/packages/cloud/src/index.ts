@@ -68,13 +68,13 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     const owned = (rows: Row<unknown>[] | null) => (rows ?? []).find((r) => r.owner_id && r.owner_id === user?.id)?.id ?? null;
     const ownedIds = new Set([...(sup.data ?? []), ...(ven.data ?? [])].filter((r) => r.owner_id && r.owner_id === user?.id).map((r) => r.id as string));
     // الخصوصية: جوال العميل وسعره من booking_client (العميل والإدارة)، وسعر التاجر من booking_net (التاجر والإدارة)
-    const [bcl, bnt] = user ? await Promise.all([sb.from("booking_client").select("booking_id, phone, price"), sb.from("booking_net").select("booking_id, net")]) : [{ data: [] }, { data: [] }];
+    const [bcl, bnt] = user ? await Promise.all([sb.from("booking_client").select("booking_id, phone, price"), sb.from("booking_net").select("booking_id, net, payout")]) : [{ data: [] }, { data: [] }];
     const cMap = new Map(((bcl.data ?? []) as { booking_id: string; phone: string | null; price: number | null }[]).map((r) => [r.booking_id, r]));
-    const nMap = new Map(((bnt.data ?? []) as { booking_id: string; net: number | null }[]).map((r) => [r.booking_id, r]));
+    const nMap = new Map(((bnt.data ?? []) as { booking_id: string; net: number | null; payout: number | null }[]).map((r) => [r.booking_id, r]));
     ownedTargets = ownedIds;
     const real = ((bk.data ?? []) as { id: string; data: Booking; status: Booking["status"] }[]).map((r) => {
       const c = cMap.get(r.id), n = nMap.get(r.id);
-      return { ...r.data, id: r.id, status: r.status, phone: c?.phone ?? "", clientPrice: c?.price != null ? Number(c.price) : undefined, quote: n?.net != null ? Number(n.net) : undefined };
+      return { ...r.data, id: r.id, status: r.status, phone: c?.phone ?? "", clientPrice: c?.price != null ? Number(c.price) : undefined, quote: n?.net != null ? Number(n.net) : undefined, payout: n?.payout != null ? Number(n.payout) : undefined };
     });
     // أيام محجوزة لدى الآخرين (بدون بياناتهم) حتى لا يُحجز نفس اليوم مرتين
     const blockedByOthers: Booking[] = ((busy.data ?? []) as { kind: Booking["kind"]; target_id: string; hall_id: string | null; event_date: string }[])
@@ -124,7 +124,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       const old = prev.bookings.find((x) => x.id === b.id);
       const isNew = !old;
       // البيانات المشتركة بدون الجوال والأسعار: كل واحد منها في جدوله المحمي
-      const { phone, quote, clientPrice, ...shared } = b;
+      const { phone, quote, clientPrice, payout: _payout, ...shared } = b;
       const row = { id: b.id, kind: b.kind, target_id: b.targetId, status: b.status, event_date: b.date, data: { ...shared, phone: "" }, updated_at: new Date().toISOString() };
       const admin = user?.role === "admin", vendor = ownedTargets.has(b.targetId), client = isNew || (!vendor && !admin);
       const priv = async () => {

@@ -250,7 +250,8 @@ export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, su
 export const setLegal = (l: NonNullable<DB["legal"]>): Mutation => (db) => ({ ...db, legal: { entity: l.entity.trim(), cr: l.cr.replace(/\D/g, ""), vat: l.vat.replace(/\D/g, ""), address: l.address.trim(), email: l.email.trim() } });
 /** نسخة الشروط اللي يوافق عليها المستخدم وقت إنشاء الحساب */
 export const TERMS_VERSION = 1;
-export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: Math.max(0, Math.min(60, p.feePct)), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto, steps: (p.steps ?? []).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.from) && s.feePct >= 0 && s.feePct <= 60).sort((a, b) => a.from.localeCompare(b.from)) } });
+const pct = (n: number | undefined, max = 60) => Math.max(0, Math.min(max, +(n ?? 0) || 0));
+export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: pct(p.feePct), vendorPct: pct(p.vendorPct, 40), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto, steps: (p.steps ?? []).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.from) && s.feePct >= 0 && s.feePct <= 60).map((s) => ({ from: s.from, feePct: pct(s.feePct), vendorPct: pct(s.vendorPct, 40) })).sort((a, b) => a.from.localeCompare(b.from)) } });
 export const setBank = (b: NonNullable<DB["bank"]>): Mutation => (db) => ({ ...db, bank: { name: b.name.trim(), holder: b.holder.trim(), iban: b.iban.replace(/\s/g, "").toUpperCase() } });
 /** الحسابات الظاهرة للعملاء: المعلّقة تختفي */
 export const isActive = (x: { status?: AccountStatus }) => x.status !== "suspended";
@@ -304,19 +305,31 @@ export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Gu
 };
 
 /* ───── حماية المنصة: التسعير، الدفع عبر مناسبتي، الاتفاقية، وإخفاء أرقام التواصل ───── */
-export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 15, minFee: 300, depositPct: 30, auto: true };
-/** النسبة السارية اليوم: جدول النسبة (مثلاً ١٠٪ ثم ١٥٪ ثم ١٨٪) يغلب النسبة الثابتة */
-export const feeOn = (p: Pick<NonNullable<DB["pricing"]>, "feePct" | "steps">, day = isoDay(new Date())) =>
-  [...(p.steps ?? [])].filter((s) => s.from <= day).sort((a, b) => b.from.localeCompare(a.from))[0]?.feePct ?? p.feePct;
-export const pricingOf = (db: Pick<DB, "pricing">) => { const p = { ...DEFAULT_PRICING, ...(db.pricing ?? {}) }; return { ...p, feePct: feeOn(p) }; };
-/** خطة الإطلاق: ١٠٪ أول شهرين، ثم ١٥٪ شهرين، ثم ١٨٪ */
-export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number }[] => {
+export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 15, vendorPct: 0, minFee: 300, depositPct: 30, auto: true };
+type PricingLike = Pick<NonNullable<DB["pricing"]>, "feePct" | "vendorPct" | "steps">;
+const stepOn = (p: PricingLike, day: string) => [...(p.steps ?? [])].filter((s) => s.from <= day).sort((a, b) => b.from.localeCompare(a.from))[0];
+/** النسبة اللي تنضاف على العميل اليوم: جدول النسبة يغلب النسبة الثابتة */
+export const feeOn = (p: PricingLike, day = isoDay(new Date())) => stepOn(p, day)?.feePct ?? p.feePct;
+/** النسبة اللي تنخصم من سعر المورد اليوم */
+export const vendorOn = (p: PricingLike, day = isoDay(new Date())) => { const s = stepOn(p, day); return s ? (s.vendorPct ?? 0) : (p.vendorPct ?? 0); };
+export const pricingOf = (db: Pick<DB, "pricing">) => { const p = { ...DEFAULT_PRICING, ...(db.pricing ?? {}) }; return { ...p, feePct: feeOn(p), vendorPct: vendorOn(p) }; };
+/** خطة الإطلاق: ١٠٪ على العميل أول شهرين، ١٥٪ على العميل شهرين، وبعدها ٨٪ على العميل + ١٠٪ من سعر المورد */
+export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number; vendorPct: number }[] => {
   const add = (m: number) => { const d = new Date(start + "T12:00:00"); d.setMonth(d.getMonth() + m); return isoDay(d); };
-  return [{ from: start, feePct: 10 }, { from: add(2), feePct: 15 }, { from: add(4), feePct: 18 }];
+  return [{ from: start, feePct: 10, vendorPct: 0 }, { from: add(2), feePct: 15, vendorPct: 0 }, { from: add(4), feePct: 8, vendorPct: 10 }];
 };
-/** سعر العميل من سعر التاجر الصافي: النسبة أو الحد الأدنى (الأكبر)، مقرّب لأقرب ١٠ */
-export const clientPriceFor = (net: number, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) =>
-  net > 0 ? Math.round(Math.max(net * (1 + p.feePct / 100), net + p.minFee) / 10) * 10 : 0;
+/** حق المورد: سعره ناقص نسبة المورد، مقرّب لأقرب ١٠ */
+export const payoutFor = (net: number, p: Pick<NonNullable<DB["pricing"]>, "vendorPct"> = DEFAULT_PRICING) =>
+  net > 0 ? Math.round((net * (1 - (p.vendorPct ?? 0) / 100)) / 10) * 10 : 0;
+/** سعر العميل من سعر المورد: نسبة العميل، مع حد أدنى لربح مناسبتي يحسب اللي ينخصم من المورد. مقرّب لأقرب ١٠ */
+export const clientPriceFor = (net: number, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) => {
+  if (net <= 0) return 0;
+  const cut = net - payoutFor(net, p);
+  return Math.round(Math.max(net * (1 + p.feePct / 100), net + Math.max(0, p.minFee - cut)) / 10) * 10;
+};
+/** ربح مناسبتي من طلب: الفرق مع العميل + المخصوم من المورد */
+export const platformTake = (b: Pick<Booking, "quote" | "clientPrice" | "payout">) =>
+  b.quote && b.clientPrice ? b.clientPrice - (b.payout ?? b.quote) : 0;
 export const depositFor = (b: Pick<Booking, "clientPrice">, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) => Math.round(((b.clientPrice ?? 0) * p.depositPct) / 100 / 10) * 10;
 
 /** التاجر يرسل سعره الصافي. مع التسعير التلقائي يوصل العميل سعر مناسبتي على طول */
@@ -325,7 +338,7 @@ export const sendQuote = (id: string, net: number, text: string): Mutation => (d
   return {
     ...db,
     bookings: db.bookings.map((b) => b.id !== id ? b : {
-      ...b, status: "quoted" as const, quote: net, clientPrice: p.auto ? clientPriceFor(net, p) : undefined,
+      ...b, status: "quoted" as const, quote: net, payout: payoutFor(net, p), clientPrice: p.auto ? clientPriceFor(net, p) : undefined,
       messages: text.trim() ? [...b.messages, { from: "provider" as const, text: maskContacts(text).text, at: Date.now() }] : b.messages,
     }),
   };
@@ -348,11 +361,11 @@ export const markPayout = (id: string): Mutation => (db) => ({
 });
 
 /** اتفاقية الشراكة: نسخة واحدة يوقعها كل تاجر وصاحب قاعة */
-export const AGREEMENT_VERSION = 1;
+export const AGREEMENT_VERSION = 2;
 export const AGREEMENT_CLAUSES: [string, string][] = [
   ["التواصل عبر مناسبتي فقط", "كل تواصل مع عملاء مناسبتي يكون داخل المنصة. ما أطلب رقم العميل، وما أعطيه رقمي أو حساباتي، وما أتواصل معه من برّا."],
-  ["الدفع عبر مناسبتي فقط", "العميل يدفع لمناسبتي، ومناسبتي تحوّل لي سعري الصافي. ما أستلم أي مبلغ من العميل مباشرة."],
-  ["سعري صافي لي", "السعر اللي أرسله في العرض هو صافي حقي. مناسبتي تضيف خدمتها وتعرض على العميل سعرها."],
+  ["الدفع عبر مناسبتي فقط", "العميل يدفع لمناسبتي، ومناسبتي تحوّل لي حقي. ما أستلم أي مبلغ من العميل مباشرة."],
+  ["سعري وحقي واضحين", "أرسل سعري في العرض، وأشوف قبل الإرسال حقي بعد نسبة شراكة مناسبتي المعلنة وقتها (إن وجدت). مناسبتي تضيف خدمتها على العميل، وحقي يتثبت لحظة إرسال العرض."],
   ["عدم التجاوز ١٢ شهر", "أي عميل وصلني عن طريق مناسبتي، ما أتعامل معه مباشرة لمدة ١٢ شهر من آخر حجز. لو صار، تستحق مناسبتي رسومها كاملة على هذا التعامل، ولها إيقاف حسابي."],
   ["الالتزام بالحجز", "ألتزم بالحجز المؤكد. الإلغاء يمر بالإدارة، والإدارة تقدر تحوّل الطلب لتاجر بديل."],
   ["المستحقات بعد المناسبة", "مستحقاتي تتحوّل لي بعد ما تنتهي المناسبة (ختم الليلة)، أو حسب الاتفاق مع الإدارة."],

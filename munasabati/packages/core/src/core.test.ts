@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, vendorOn, payoutFor, platformTake, DEFAULT_PRICING, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -333,14 +333,25 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
 });
 
 describe("جدول النسبة ومنسق مناسبتي", () => {
-  it("١٠٪ أول شهرين، ثم ١٥٪، ثم ١٨٪", () => {
+  it("١٠٪ على العميل أول شهرين، ثم ١٥٪، ثم ٨٪ على العميل + ١٠٪ من المورد", () => {
     const steps = launchSteps("2027-01-01");
-    expect(steps.map((s) => [s.from, s.feePct])).toEqual([["2027-01-01", 10], ["2027-03-01", 15], ["2027-05-01", 18]]);
+    expect(steps.map((s) => [s.from, s.feePct, s.vendorPct])).toEqual([["2027-01-01", 10, 0], ["2027-03-01", 15, 0], ["2027-05-01", 8, 10]]);
     const p = { feePct: 15, steps };
-    expect(feeOn(p, "2027-02-15")).toBe(10);
-    expect(feeOn(p, "2027-04-10")).toBe(15);
-    expect(feeOn(p, "2027-08-01")).toBe(18);
-    expect(feeOn(p, "2026-12-01")).toBe(15);
+    expect([feeOn(p, "2027-02-15"), vendorOn(p, "2027-02-15")]).toEqual([10, 0]);
+    expect([feeOn(p, "2027-04-10"), vendorOn(p, "2027-04-10")]).toEqual([15, 0]);
+    expect([feeOn(p, "2027-08-01"), vendorOn(p, "2027-08-01")]).toEqual([8, 10]);
+    expect([feeOn(p, "2026-12-01"), vendorOn(p, "2026-12-01")]).toEqual([15, 0]);
+  });
+  it("قاعة بـ٢٠ ألف بعد ٤ شهور: العميل ٢١٬٦٠٠، القاعة ١٨ ألف، ومناسبتي ٣٬٦٠٠ (١٨٪)", () => {
+    const p = { ...DEFAULT_PRICING, feePct: 8, vendorPct: 10 };
+    expect(clientPriceFor(20000, p)).toBe(21600);
+    expect(payoutFor(20000, p)).toBe(18000);
+    expect(platformTake({ quote: 20000, clientPrice: 21600, payout: 18000 })).toBe(3600);
+    // أول شهرين: ١٠٪ كلها على العميل، والمورد ياخذ سعره كامل
+    const p1 = { ...DEFAULT_PRICING, feePct: 10, vendorPct: 0 };
+    expect([clientPriceFor(20000, p1), payoutFor(20000, p1)]).toEqual([22000, 20000]);
+    // الحد الأدنى للربح يحسب المخصوم من المورد: طلب ٨٠٠ ريال ← المورد ٧٢٠، والعميل ١٠٢٠ (ربح ٣٠٠)
+    expect([clientPriceFor(800, p), payoutFor(800, p)]).toEqual([1020, 720]);
   });
   it("المنسق يأكد حالة المورد، وتنكتب في غرفة التنسيق", () => {
     const r = createMemoryRepository();

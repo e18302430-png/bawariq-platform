@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, forwardToVendor, markNotified, reassignBooking, rejectRequest, resolveCancel, fmt, normPhone, sar, pricingOf, clientPriceFor, priceForClient, confirmPaid, markPayout, depositFor, today,
+  CITIES, OCCASIONS, adminClients, adminDeleteClient, adminUpdateBooking, adminUpdateClient, alternativesFor, bookingMessage, forwardToVendor, markNotified, reassignBooking, rejectRequest, resolveCancel, fmt, normPhone, sar, pricingOf, clientPriceFor, platformTake, priceForClient, confirmPaid, markPayout, depositFor, today,
   type AdminClient, type Booking, type BookingStatus,
 } from "@munasabati/core";
 import { Composer, Empty, Icon, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, apply, repo, useDB, useToast } from "@munasabati/ui";
@@ -273,12 +273,12 @@ function MoneyBox({ b }: { b: Booking }) {
   const p = pricingOf(db);
   const [price, setPrice] = useState(String(b.clientPrice ?? (b.quote ? clientPriceFor(b.quote, p) : "")));
   if (!b.quote && !b.clientPrice) return null;
-  const margin = (b.clientPrice ?? 0) - (b.quote ?? 0);
+  const margin = platformTake(b);
   const ended = b.date < today();
   return (
     <div className="card flat stack money-box">
       <div className="money-row">
-        <div><small>سعر التاجر (صافي)</small><b className="num">{b.quote ? sar(b.quote) : "—"}</b></div>
+        <div><small>سعر المورد</small><b className="num">{b.quote ? sar(b.quote) : "—"}</b>{b.payout != null && b.payout !== b.quote ? <small>حقه بعد النسبة: <b className="num">{sar(b.payout)}</b></small> : null}</div>
         <div><small>سعر العميل</small><b className="num">{b.clientPrice ? sar(b.clientPrice) : "ما اعتمد"}</b></div>
         <div className={margin > 0 ? "win" : ""}><small>ربح مناسبتي</small><b className="num">{b.clientPrice && b.quote ? sar(margin) : "—"}</b></div>
       </div>
@@ -296,7 +296,7 @@ function MoneyBox({ b }: { b: Booking }) {
         </span>
         {b.pay?.stage === "claimed" && <button className="btn sm primary" onClick={() => { apply(confirmPaid(b.id)); toast("أكّدنا الاستلام وبلّغنا التاجر"); }}>أكّد استلام العربون</button>}
         {b.pay?.stage !== "paid" && b.pay?.stage !== "claimed" && <button className="btn sm" onClick={() => { apply(confirmPaid(b.id)); toast("سجّلنا الاستلام"); }}>استلمت المبلغ</button>}
-        {b.pay?.stage === "paid" && !b.pay?.payoutAt && <button className="btn sm" disabled={!ended} title={ended ? "" : "بعد المناسبة"} onClick={() => { apply(markPayout(b.id)); toast("سجّلنا تحويل حق التاجر"); }}>حوّلت للتاجر {b.quote ? sar(b.quote) : ""}</button>}
+        {b.pay?.stage === "paid" && !b.pay?.payoutAt && <button className="btn sm" disabled={!ended} title={ended ? "" : "بعد المناسبة"} onClick={() => { apply(markPayout(b.id)); toast("سجّلنا تحويل حق التاجر"); }}>حوّلت للتاجر {b.quote ? sar(b.payout ?? b.quote) : ""}</button>}
       </div>}
     </div>
   );

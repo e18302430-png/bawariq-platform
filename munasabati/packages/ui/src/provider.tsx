@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { AGREEMENT_CLAUSES, OCCASIONS, acceptAgreement, bookingMessage, fmt, isoDay, pricingOf, sendQuote, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
+import { AGREEMENT_CLAUSES, OCCASIONS, acceptAgreement, bookingMessage, fmt, isoDay, payoutFor, pricingOf, sendQuote, requestCancel, sar, setBookingStatus, setVendorStatus, type Booking } from "@munasabati/core";
 import { Icon } from "./icons";
 import { Counter, Empty, Segmented, Sheet, StatusPill, useToast } from "./components";
 import { MeshGradient } from "./MeshGradient";
@@ -18,7 +18,7 @@ export function RevenueChart({ bookings }: { bookings: Booking[] }) {
       const i = k - 3; // 3 أشهر ماضية + الحالي + شهرين قادمة
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const key = isoDay(d).slice(0, 7);
-      const v = bookings.filter((b) => b.status === "confirmed" && b.date.slice(0, 7) === key).reduce((s, b) => s + (b.quote ?? b.estimate), 0);
+      const v = bookings.filter((b) => b.status === "confirmed" && b.date.slice(0, 7) === key).reduce((s, b) => s + (b.payout ?? b.quote ?? b.estimate), 0);
       return { l: d.toLocaleDateString("ar-SA-u-ca-gregory", { month: "short" }), v, now: i === 0 };
     });
   }, [bookings]);
@@ -38,7 +38,7 @@ export function RevenueChart({ bookings }: { bookings: Booking[] }) {
 
 export function KPIs({ bookings }: { bookings: Booking[] }) {
   const confirmed = bookings.filter((b) => b.status === "confirmed");
-  const revenue = confirmed.reduce((s, b) => s + (b.quote ?? b.estimate), 0);
+  const revenue = confirmed.reduce((s, b) => s + (b.payout ?? b.quote ?? b.estimate), 0);
   const conv = bookings.length ? Math.round((confirmed.length / bookings.length) * 100) : 0;
   return (
     <div className="stats">
@@ -82,15 +82,15 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
               <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="ShieldCheck" size={14} />التواصل عبر مناسبتي</span>
               {describe?.(b)}
             </div>
-            {b.budget ? <div className="client-budget"><Icon name="Wallet" size={16} /><span>الميزانية المتاحة لك (صافي)</span><b className="num">{sar(Math.round(b.budget / (1 + pr.feePct / 100) / 100) * 100)}</b></div> : null}
+            {b.budget ? <div className="client-budget"><Icon name="Wallet" size={16} /><span>ميزانية العميل لهذا البند (قبل خدمة مناسبتي)</span><b className="num">{sar(Math.round(b.budget / (1 + pr.feePct / 100) / 100) * 100)}</b></div> : null}
             {b.note && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}>{b.note}</div>}
             <div className="row"><BookingChat booking={b} me="provider" other={b.clientName} /></div>
             {b.status === "new" && <div className="row wrap">
               <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>
               <button className="btn sm ghost" onClick={() => apply(setBookingStatus(b.id, "declined", { message: { from: "provider", text: "نعتذر، اليوم غير متاح" } }))}>اعتذار</button>
             </div>}
-            {b.status === "quoted" && <div className="muted" style={{ fontSize: 14.5 }}>سعرك الصافي: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? 0)}</b> · مناسبتي ترسل العرض للعميل وتبلغك أول ما يأكد</div>}
-            {b.status === "confirmed" && <div className="muted">حقك الصافي: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.quote ?? b.estimate)}</b></div>}
+            {b.status === "quoted" && <div className="muted" style={{ fontSize: 14.5 }}>سعرك: <b className="num">{sar(b.quote ?? 0)}</b>{b.payout != null && b.payout !== b.quote ? <> · حقك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.payout)}</b></> : null} · مناسبتي ترسل العرض للعميل وتبلغك أول ما يأكد</div>}
+            {b.status === "confirmed" && <div className="muted">حقك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.payout ?? b.quote ?? b.estimate)}</b></div>}
             {b.status === "confirmed" && <PayState b={b} />}
             {b.status === "confirmed" && b.rating && <div className="pill ok" style={{ justifySelf: "start" }}>تقييم العميل لليلة: {"★".repeat(b.rating.stars)}</div>}
             {b.status === "confirmed" && !b.rating && <ConfirmedTools b={b} />}
@@ -99,8 +99,9 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
       </div>
       <Sheet open={!!quoting} onClose={() => setQuoting(null)} title={quoting ? `عرض سعر لـ ${quoting.clientName}` : ""}>
         <form className="form" onSubmit={(e) => { e.preventDefault(); if (!quoting || !(q.amount > 0)) return; apply(sendQuote(quoting.id, q.amount, q.msg)); setQuoting(null); toast("وصل عرضك لمناسبتي، ونوصله للعميل"); }}>
-          <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5 }}><Icon name="ShieldCheck" size={14} /> اكتب <b>سعرك الصافي</b> (حقك كامل). مناسبتي تضيف خدمتها وترسل للعميل سعرها، وتحوّل لك حقك بعد المناسبة.</div>
-          <div className="field"><label htmlFor="q-a">سعرك الصافي (ر.س)</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
+          <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 13.5 }}><Icon name="ShieldCheck" size={14} /> {pr.vendorPct ? <>اكتب <b>سعرك</b>. نسبة شراكة مناسبتي الحالية <b className="num">{pr.vendorPct}٪</b> من سعرك، ويتحوّل لك حقك بعد المناسبة.</> : <>اكتب <b>سعرك الصافي</b> (حقك كامل). مناسبتي تضيف خدمتها على العميل، وتحوّل لك حقك بعد المناسبة.</>}</div>
+          <div className="field"><label htmlFor="q-a">{pr.vendorPct ? "سعرك (ر.س)" : "سعرك الصافي (ر.س)"}</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
+          {pr.vendorPct > 0 && q.amount > 0 && <div className="card flat tight row between" style={{ fontSize: 14.5 }}><span>حقك بعد نسبة مناسبتي ({pr.vendorPct}٪)</span><b className="num display">{sar(payoutFor(q.amount, pr))}</b></div>}
           <div className="field"><label htmlFor="q-m">وصف العرض للعميل (بدون أرقام تواصل)</label><textarea id="q-m" className="input" rows={4} value={q.msg} onChange={(e) => setQ({ ...q, msg: e.target.value })} /></div>
           <button className="btn primary lg block" type="submit" disabled={!(q.amount > 0)}>إرسال العرض</button>
         </form>
@@ -324,7 +325,7 @@ export function PartnerAgreementGate({ kind, id, name }: { kind: "supplier" | "v
         <LogoMark size={70} animated />
         <span className="live-pill" style={{ alignSelf: "center" }}>شراكة {name} مع مناسبتي</span>
         <h1 className="display">اتفاقية الشراكة</h1>
-        <p className="muted">قبل ما توصلك طلبات العملاء، هذي قواعد الشراكة اللي تحمي حقك وحقنا وحق العميل. نسبة خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على سعرك للعميل، وسعرك يبقى صافي لك.</p>
+        <p className="muted">قبل ما توصلك طلبات العملاء، هذي قواعد الشراكة اللي تحمي حقك وحقنا وحق العميل. {pr.vendorPct ? <>خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على العميل، ونسبة الشراكة <b className="num">{pr.vendorPct}٪</b> تنخصم من سعرك، وتشوف حقك قبل كل عرض.</> : <>نسبة خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على سعرك للعميل، وسعرك يبقى صافي لك.</>}</p>
         <ol className="agree-list">{AGREEMENT_CLAUSES.map(([t, d]) => <li key={t}><b>{t}</b><span>{d}</span></li>)}</ol>
         <label className="agree-check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> قرأت الاتفاقية وأوافق على كل بنودها</label>
         <div className="field"><label htmlFor="ag-n">اسمك الكامل (توقيع)</label><input id="ag-n" className="input" value={by} onChange={(e) => setBy(e.target.value)} placeholder="الاسم كما في الهوية" /></div>
