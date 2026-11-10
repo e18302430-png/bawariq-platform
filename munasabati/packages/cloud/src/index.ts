@@ -283,12 +283,12 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     },
   };
 
-  type LeadRow = { id: string; url: string; found_at: string; posted_at: string | null; occasion: Lead["occasion"]; city: string | null; kind: Lead["kind"]; title: string; summary: string | null; source: string | null; score: number; reply: string | null; status: Lead["status"]; note: string | null };
+  type LeadRow = { id: string; url: string; found_at: string; posted_at: string | null; occasion: Lead["occasion"]; city: string | null; kind: Lead["kind"]; title: string; summary: string | null; source: string | null; score: number; reply: string | null; status: Lead["status"]; note: string | null; phone: string | null };
   const radar = {
     async list(): Promise<Lead[]> {
       const { data, error } = await sb.from("leads").select("*").order("found_at", { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
-      return ((data ?? []) as LeadRow[]).map((r) => ({ id: r.id, url: r.url, foundAt: r.found_at, postedAt: r.posted_at, occasion: r.occasion, city: r.city, kind: r.kind, title: r.title, summary: r.summary, source: r.source, score: r.score, reply: r.reply, status: r.status, note: r.note }));
+      return ((data ?? []) as LeadRow[]).map((r) => ({ id: r.id, url: r.url, foundAt: r.found_at, postedAt: r.posted_at, occasion: r.occasion, city: r.city, kind: r.kind, title: r.title, summary: r.summary, source: r.source, score: r.score, reply: r.reply, status: r.status, note: r.note, phone: r.phone }));
     },
     async update(id: string, patch: { status?: Lead["status"]; note?: string }) {
       const { error } = await sb.from("leads").update(patch).eq("id", id);

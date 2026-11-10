@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { OCCASIONS, type Occasion } from "@munasabati/core";
-import { BRAND, Icon, Logo, LogoMark, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { Assistant, BRAND, Icon, Logo, LogoMark, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
@@ -344,6 +344,7 @@ export default function App() {
         </Reveal>
       </section>
       <ScrollNav bottom="24px" />
+      <Assistant appUrl={LINKS.client} />
       <footer className="container footer">
         <div className="row"><Logo size={24} /><span>{BRAND.goal}</span></div>
         <LegalFooter />

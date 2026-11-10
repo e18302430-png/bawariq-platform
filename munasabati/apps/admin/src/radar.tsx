@@ -37,6 +37,7 @@ const ago = (iso: string) => {
   return d === 1 ? "أمس" : `قبل ${d} أيام`;
 };
 const daysOld = (d?: string | null) => (d ? Math.round((new Date(today()).getTime() - new Date(d).getTime()) / 864e5) : null);
+const wa = (phone: string, text?: string | null) => `https://wa.me/966${phone.replace(/^0/, "")}${text ? "?text=" + encodeURIComponent(text) : ""}`;
 const heat = (s: number) => (s >= 80 ? "hot" : s >= 60 ? "warm" : "cool");
 
 const SAMPLE: Lead[] = [
@@ -119,7 +120,7 @@ export function Radar() {
             <div className="rc-top">
               <span className="rc-occ"><Icon name={OCC[l.occasion].icon} size={16} /></span>
               <div className="rc-meta">
-                <span className={"pill " + KIND[l.kind].cls}>{KIND[l.kind].label}</span>
+                {l.phone ? <span className="pill brand"><Icon name="Zap" size={12} /> عميل جاهز</span> : <span className={"pill " + KIND[l.kind].cls}>{KIND[l.kind].label}</span>}
                 <span className="pill neutral"><Icon name="MapPin" size={12} /> {l.city || "الشرقية"}</span>
                 {age != null && <span className={"pill " + (age <= 2 ? "ok" : "neutral")}><Icon name="CalendarDays" size={12} /> {age <= 0 ? "نُشر اليوم" : age === 1 ? "نُشر أمس" : `نُشر قبل ${age} أيام`}</span>}
               </div>
@@ -129,10 +130,15 @@ export function Radar() {
             {l.summary && <p className="rc-sum">{l.summary}</p>}
             {l.reply && <div className="rc-reply"><small>رد مقترح</small><p>{l.reply}</p></div>}
             <div className="rc-foot">
-              <small className="muted">{l.source || "مصدر عام"} · انمسك {ago(l.foundAt)}</small>
+              <small className="muted">{l.phone ? <><b className="rc-phone num" dir="ltr">{l.phone}</b> · طلب بنفسه {ago(l.foundAt)}</> : <>{l.source || "مصدر عام"} · انمسك {ago(l.foundAt)}</>}</small>
               <div className="rc-act">
-                <a className="btn sm brand" href={l.url} target="_blank" rel="noopener noreferrer"><Icon name="Link" size={14} /> افتح المصدر</a>
-                {l.reply && <button className="btn sm soft" onClick={() => void copy(l.reply)}><Icon name="Copy" size={14} /> انسخ الرد</button>}
+                {l.phone ? <>
+                  <a className="btn sm brand" href={wa(l.phone, l.reply)} target="_blank" rel="noopener noreferrer"><Icon name="MessageCircle" size={14} /> واتساب</a>
+                  <a className="btn sm soft" href={"tel:" + l.phone}><Icon name="Phone" size={14} /> اتصال</a>
+                </> : <>
+                  <a className="btn sm brand" href={l.url} target="_blank" rel="noopener noreferrer"><Icon name="Link" size={14} /> افتح المصدر</a>
+                  {l.reply && <button className="btn sm soft" onClick={() => void copy(l.reply)}><Icon name="Copy" size={14} /> انسخ الرد</button>}
+                </>}
                 {l.status !== "contacted" && <button className="btn sm ghost" onClick={() => void setStatus(l, "contacted")}><Icon name="Send" size={14} /> تواصلت</button>}
                 {l.status !== "won" && <button className="btn sm ghost" onClick={() => void setStatus(l, "won")}><Icon name="PartyPopper" size={14} /> صارت عميل</button>}
                 {l.status !== "skip" && <button className="btn sm ghost" aria-label="مو مناسبة" onClick={() => void setStatus(l, "skip")}><Icon name="X" size={14} /></button>}
@@ -140,7 +146,7 @@ export function Radar() {
             </div>
           </article>;
         })}</div>}
-      <p className="radar-note"><Icon name="ShieldCheck" size={14} /> الوكيل يجمع منشورات عامة فقط، وما يحفظ أرقام جوالات. الرد يكون من نفس المكان اللي نشر فيه الشخص.</p>
+      <p className="radar-note"><Icon name="ShieldCheck" size={14} /> الوكيل يجمع منشورات عامة فقط، وما يحفظ أرقام جوالات. الأرقام اللي تشوفها هنا من عملاء طلبوا عرض بأنفسهم من مساعد المنصة ووافقوا على التواصل.</p>
     </>
   );
 }
