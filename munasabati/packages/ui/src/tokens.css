@@ -592,3 +592,15 @@ body { background:
 /* شريط التطبيق: خط البراند يظهر مع التمرير */
 .appbar.scrolled { border-bottom-color: transparent; box-shadow: 0 1px 0 var(--line), 0 10px 30px -24px rgba(0,0,0,.4); }
 .appbar .scroll-prog { background: var(--brand-grad); }
+/* بوابات الموردين والقاعات */
+.rev-empty { display: flex; gap: 14px; align-items: center; padding: 18px; border-radius: var(--r-md); border: 1px dashed var(--line-2); background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 6%, var(--surface)), var(--surface)); }
+.rev-empty-ic { width: 48px; height: 48px; flex: none; border-radius: 16px; display: grid; place-items: center; color: #fff; background: var(--brand-grad); box-shadow: var(--brand-glow); }
+.rev-empty b { font-family: var(--f-display); font-size: 15.5px; }
+.rev-empty p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.7; }
+.money-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); }
+.money-strip > div { padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.money-strip > div + div { border-inline-start: 1px solid var(--line); }
+.money-strip small { font-size: 12px; color: var(--muted); }
+.money-strip b { font-family: var(--f-display); font-size: 14.5px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.money-strip .mine { background: var(--ok-soft); }
+.money-strip .mine b { color: var(--ok); font-size: 15.5px; }

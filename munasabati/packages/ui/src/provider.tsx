@@ -23,6 +23,12 @@ export function RevenueChart({ bookings }: { bookings: Booking[] }) {
     });
   }, [bookings]);
   const max = Math.max(...data.map((d) => d.v), 1);
+  if (data.every((d) => !d.v)) return (
+    <div className="rev-empty">
+      <span className="rev-empty-ic"><Icon name="TrendingUp" size={22} /></span>
+      <div><b>دخلك يطلع هنا شهر بشهر</b><p>أول ما يأكد عميل حجز معك، تشوف حقك في هذي الرسمة. الرد على الطلبات بسرعة يرفع ترتيبك في اقتراحات العملاء.</p></div>
+    </div>
+  );
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, alignItems: "end", height: 180 }} role="img" aria-label="الإيرادات المؤكدة حسب الشهر">
       {data.map((d, i) => (
@@ -89,8 +95,8 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
               <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>
               <button className="btn sm ghost" onClick={() => apply(setBookingStatus(b.id, "declined", { message: { from: "provider", text: "نعتذر، اليوم غير متاح" } }))}>اعتذار</button>
             </div>}
-            {b.status === "quoted" && <div className="muted" style={{ fontSize: 14.5 }}>سعرك: <b className="num">{sar(b.quote ?? 0)}</b>{b.payout != null && b.payout !== b.quote ? <> · حقك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.payout)}</b></> : null} · مناسبتي ترسل العرض للعميل وتبلغك أول ما يأكد</div>}
-            {b.status === "confirmed" && <div className="muted">حقك: <b className="num display" style={{ color: "var(--ink)" }}>{sar(b.payout ?? b.quote ?? b.estimate)}</b></div>}
+            {(b.status === "quoted" || b.status === "confirmed") && <MoneyStrip b={b} />}
+            {b.status === "quoted" && <div className="muted" style={{ fontSize: 13.5 }}>مناسبتي ترسل العرض للعميل وتبلغك أول ما يأكد.</div>}
             {b.status === "confirmed" && <PayState b={b} />}
             {b.status === "confirmed" && b.rating && <div className="pill ok" style={{ justifySelf: "start" }}>تقييم العميل لليلة: {"★".repeat(b.rating.stars)}</div>}
             {b.status === "confirmed" && !b.rating && <ConfirmedTools b={b} />}
@@ -111,6 +117,18 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
 }
 
 /** تقويم شهري للحجوزات، مع إمكانية إغلاق أيام (للقاعات) */
+/** سعر المورد ونسبة مناسبتي وحقه الصافي: واضحة في كل طلب */
+export function MoneyStrip({ b }: { b: Booking }) {
+  const price = b.quote ?? b.estimate, pay = b.payout ?? price, cut = Math.max(0, price - pay);
+  return (
+    <div className="money-strip">
+      <div><small>سعرك</small><b className="num">{sar(price)}</b></div>
+      <div><small>نسبة مناسبتي</small><b className="num">{cut ? "−" + sar(cut) : "بدون خصم"}</b></div>
+      <div className="mine"><small>حقك</small><b className="num">{sar(pay)}</b></div>
+    </div>
+  );
+}
+
 export function MonthBoard({ bookings, blocked = [], onToggleBlock, label }: { bookings: Booking[]; blocked?: string[]; onToggleBlock?: (iso: string) => void; label?: (b: Booking) => string }) {
   const [offset, setOffset] = useState(0);
   const base = new Date(); base.setDate(1); base.setMonth(base.getMonth() + offset);
