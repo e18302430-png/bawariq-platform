@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · تريلر</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&display=block">
+<style>
+:root { --ink: #FFF8F0; --gold: #FFD27A; --rose: #E5195E; --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%); }
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: "Cairo", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #000; transform-origin: center; }
+.abs { position: absolute; will-change: transform, opacity; }
+#world { position: absolute; inset: 0; }
+
+/* اللقطات السينمائية بملء الشاشة */
+.still { position: absolute; left: 50%; top: 50%; width: 3413px; height: 1920px; margin: -960px 0 0 -1706px; background-size: cover; background-position: center; will-change: transform, opacity; }
+.shade { position: absolute; inset: 0; background: radial-gradient(80% 60% at 50% 45%, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%), linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 60%, rgba(0,0,0,.6) 100%); }
+
+/* الكلمات الضخمة */
+.word { position: absolute; left: 0; right: 0; text-align: center; font-weight: 900; line-height: 1.05; letter-spacing: 0; will-change: transform, opacity, filter; }
+.fill { background-size: 3413px 1920px; background-position: center; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 2px rgba(255,255,255,.25); }
+.white { color: #fff; text-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.outline { color: transparent; -webkit-text-stroke: 4px rgba(255,255,255,.9); }
+
+/* بطاقات المنصة الحقيقية */
+.card { position: absolute; border-radius: 44px; overflow: hidden; background: #fff; box-shadow: 0 80px 140px -40px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.4); will-change: transform, opacity; }
+.card img { display: block; width: 100%; }
+
+/* الشعار والختام */
+#rays { position: absolute; left: 50%; top: 42%; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; background: repeating-conic-gradient(from 0deg, rgba(255,210,122,.22) 0deg 4deg, transparent 4deg 14deg); -webkit-mask: radial-gradient(circle, #000 0%, transparent 60%); mask: radial-gradient(circle, #000 0%, transparent 60%); will-change: transform, opacity; }
+#burst { position: absolute; left: 50%; top: 42%; width: 1600px; height: 1600px; margin: -800px 0 0 -800px; border-radius: 50%; background: radial-gradient(circle, rgba(255,240,210,.95) 0%, rgba(255,150,90,.55) 22%, rgba(229,25,94,.25) 45%, transparent 68%); will-change: transform, opacity; }
+#logo { position: absolute; left: 315px; top: 520px; width: 450px; height: 450px; object-fit: contain; will-change: transform, opacity; }
+.url { position: absolute; left: 50%; transform: translateX(-50%); direction: ltr; white-space: nowrap; font-size: 42px; font-weight: 800; padding: 16px 44px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); }
+
+/* طبقات العدسة */
+#leak { position: absolute; inset: -20%; background: radial-gradient(40% 30% at 20% 30%, rgba(255,140,60,.55), transparent 70%), radial-gradient(35% 25% at 85% 70%, rgba(229,25,94,.45), transparent 70%); mix-blend-mode: screen; will-change: transform, opacity; pointer-events: none; }
+#grain { position: absolute; inset: 0; background-size: 1080px 1920px; mix-blend-mode: overlay; opacity: .14; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(75% 55% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 700 13px "Cairo", sans-serif; color: #fff; max-width: calc(100vw - 20px); }
+#ui button, #ui label { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui input[type=file] { display: none; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <!-- ضبابية حركة + انقسام ألوان (يتغيّر مع الضربات) -->
+  <filter id="fx" x="-3%" y="-3%" width="106%" height="106%" color-interpolation-filters="sRGB">
+    <feGaussianBlur id="fxblur" in="SourceGraphic" stdDeviation="0 0" result="b"/>
+    <feColorMatrix in="b" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+    <feOffset id="fxr" in="r" dx="0" dy="0" result="ro"/>
+    <feColorMatrix in="b" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="g"/>
+    <feColorMatrix in="b" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bl"/>
+    <feOffset id="fxb" in="bl" dx="0" dy="0" result="bo"/>
+    <feBlend in="ro" in2="g" mode="screen" result="rg"/>
+    <feBlend in="rg" in2="bo" mode="screen"/>
+  </filter>
+</svg>
+
+<div id="wrap"><div id="stage">
+  <div id="world">
+    <div class="still" id="i1" style="background-image:url(img/f1-wedding.webp)"></div>
+    <div class="still" id="i2" style="background-image:url(img/f2-milka.webp)"></div>
+    <div class="still" id="i3" style="background-image:url(img/f3-coffee.webp)"></div>
+    <div class="still" id="i4" style="background-image:url(img/f4-rooftop.webp)"></div>
+    <div class="still" id="i5" style="background-image:url(img/f5-desert.webp)"></div>
+    <div class="shade" id="shade"></div>
+
+    <!-- الخطاف -->
+    <div class="word fill" id="w1" style="top:700px;font-size:250px;background-image:url(img/f1-wedding.webp)">ليلة العمر</div>
+    <div class="word white" id="w2" style="top:760px;font-size:230px">ما تتعاد.</div>
+
+    <!-- كشف البراند -->
+    <div id="burst"></div><div id="rays"></div>
+    <img id="logo" src="logo.png" alt="مناسبتي">
+    <div class="word white" id="w3" style="top:1010px;font-size:150px">خلّها <span class="grad">علينا</span></div>
+
+    <!-- المميزات: كلمتين على كل لقطة -->
+    <div class="word outline" id="fa1" style="top:520px;font-size:210px">القاعة</div><div class="word white" id="fb1" style="top:760px;font-size:210px">تنحجز</div>
+    <div class="word outline" id="fa2" style="top:520px;font-size:210px">الكوشة</div><div class="word white" id="fb2" style="top:760px;font-size:210px">تنبني</div>
+    <div class="word outline" id="fa3" style="top:520px;font-size:200px">الضيافة</div><div class="word white" id="fb3" style="top:760px;font-size:210px">تجهز</div>
+    <div class="word outline" id="fa4" style="top:250px;font-size:190px">الدعوات</div><div class="word white" id="fb4" style="top:450px;font-size:190px">توصل</div>
+    <div class="word outline" id="fa5" style="top:250px;font-size:180px">الميزانية</div><div class="word white" id="fb5" style="top:450px;font-size:190px">واضحة</div>
+    <div class="card" id="cInv" style="left:250px;top:760px;width:580px"><img src="img/invite.png" alt=""></div>
+    <div class="card" id="cEst" style="left:170px;top:780px;width:740px"><img src="img/lift-est-c.png" alt=""></div>
+
+    <!-- اللحظة العاطفية -->
+    <div class="word white" id="w4" style="top:620px;font-size:220px">وأنت؟</div>
+    <div class="word white" id="w5" style="top:1180px;font-size:170px">مع <span class="grad">أهلك.</span></div>
+
+    <!-- الختام -->
+    <div class="word white" id="e1" style="top:1010px;font-size:124px">مناسبتك <span class="grad">علينا.</span></div>
+    <div class="word" id="e2" style="top:1210px;font-size:50px;font-weight:800;color:var(--gold);letter-spacing:0">من الفكرة… لآخر ضيف</div>
+    <div class="url abs" id="e3" style="top:1340px">munasabati-sigma.vercel.app</div>
+  </div>
+  <div id="leak"></div><div id="vig"></div><div id="grain"></div><div id="black"></div><div id="flash"></div>
+</div></div>
+
+<div id="ui">
+  <button id="play">تشغيل</button><button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="30" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 30.00</span><button id="fs">ملء الشاشة</button>
+  <label>موسيقى<input type="file" id="upMusic" accept="audio/*"></label>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+
+<script>
+/* ═══ الخط الزمني (120 نبضة بالدقيقة) ═══ */
+const DUR = 30;
+// افتتاح: ومضات تتسارع على ضربات الطبل
+const TEASE = [["i1", .2, .55], ["i3", .7, 1.0], ["i2", 1.2, 1.45], ["i4", 1.6, 1.8], ["i5", 1.9, 2.05]];
+const HOOK = { w1: [2.5, 3.7], w2: [3.75, 4.8], drop: 5.0, brand: [5.0, 7.0] };
+const FEAT = [ // [صورة الخلفية، البداية] كل ميزة 3 ثواني: كلمة على النبضة، والثانية بعد ثانية
+  ["i1", 7], ["i2", 10], ["i3", 13], ["i4", 16], ["i1", 19],
+];
+const PAY = [22, 26], END = 26;
+// نقطة التركيز في كل صورة (نسبة من العرض) لاتجاه الكاميرا
+const FOCUS = { i1: .5, i2: .52, i3: .62, i4: .5, i5: .52 };
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eo5 = (x) => 1 - Math.pow(1 - x, 5);
+const ei = (x) => x * x * x;
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 2.2; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr, f) => { el.style.opacity = o; el.style.transform = tr || ""; if (f !== undefined) el.style.filter = f; };
+const hit = (t, a, d = .25) => (t >= a && t < a + d ? 1 - (t - a) / d : 0);
+const IMGS = ["i1", "i2", "i3", "i4", "i5"];
+
+// كلمة تنضرب: تكبر وتصغر بسرعة مع ضبابية تختفي
+function slam(el, t, a, b, big = 1.7) {
+  if (t < a || t >= b) { css(el, 0, "", "none"); return; }
+  const k = p(t, a, a + .22, back), o = p(t, b - .18, b, eio);
+  const blur = (1 - p(t, a, a + .16)) * 18;
+  css(el, (1 - o), `scale(${big - (big - 1) * k + .04 * p(t, a, b, (x) => x)}) translateY(${o * -30}px)`, blur > .3 ? `blur(${blur}px)` : "none");
+}
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  let blur = 0, split = 0, flash = 0, black = 0;
+  const show = {};
+
+  /* ١) الافتتاح: ومضات سريعة على الطبل */
+  if (t < 2.5) {
+    black = 1;
+    for (const [id, a, b] of TEASE) if (t >= a && t < b) { show[id] = { s: 1.18 + .25 * p(t, a, b, (x) => x), x: 0 }; black = 0; flash = Math.max(flash, hit(t, a, .08) * .6); split = Math.max(split, hit(t, a, .15) * 22); }
+  }
+  /* ٢) «ليلة العمر… ما تتعاد.» على السواد */
+  slam($("w1"), t, ...HOOK.w1, 1.9); slam($("w2"), t, ...HOOK.w2, 1.9);
+  $("w1").style.backgroundPosition = `${50 - (t - 2.5) * 3}% center`;
+  if (t >= 2.5 && t < 5.0) { black = Math.max(black, 1); split = Math.max(split, hit(t, 2.5, .25) * 26, hit(t, 3.75, .25) * 26); }
+  if (t >= 2.5 && t < 5.0) $("world").style.background = "#000";
+
+  /* ٣) سقوط الإيقاع: انفجار ضوء والشعار */
+  const d = HOOK.drop, bi = p(t, d, d + .35, eo5), bo = p(t, 6.75, 7.0, eio);
+  const inBrand = t >= d && t < 7.0;
+  css($("burst"), inBrand ? (1 - .55 * p(t, d + .2, d + 1.2)) * (1 - bo) : 0, `scale(${.2 + 1.3 * bi})`);
+  css($("rays"), inBrand ? .9 * (1 - bo) : 0, `rotate(${(t - d) * 14}deg) scale(${.6 + .5 * bi})`);
+  css($("logo"), inBrand ? (1 - bo) : 0, `scale(${(2.4 - 1.4 * p(t, d, d + .3, back)) * (1 + .03 * Math.sin((t - d) * 6))})`);
+  slam($("w3"), t, d + 1.0, 7.0, 1.5);
+  if (inBrand) { flash = Math.max(flash, hit(t, d, .35)); split = Math.max(split, hit(t, d, .3) * 30); }
+
+  /* ٤) المميزات: دفعة كاميرا سريعة ثم بطيئة، وانتقال بالدخول داخل الصورة */
+  FEAT.forEach(([img, a], n) => {
+    const b = a + 3;
+    if (t >= a - .02 && t < b) {
+      const ramp = a + .35;
+      const s = t < ramp ? 1.9 - .75 * p(t, a, ramp, eo5) : 1.15 + .12 * p(t, ramp, b - .4, (x) => x);
+      const zout = p(t, b - .4, b, ei);                                   // يدخل داخل الصورة للانتقال
+      show[img] = { s: s + 2.2 * zout, x: 0 };
+      blur = Math.max(blur, (1 - p(t, a, a + .3)) * 26, zout * 30);
+      split = Math.max(split, hit(t, a, .22) * 24, zout * 24);
+      if (n >= 3) show[img].dim = .55;                                       // خلفية أهدأ لبطاقات المنصة
+    }
+    slam($("fa" + (n + 1)), t, a + .05, b - .25, 1.6);
+    slam($("fb" + (n + 1)), t, a + 1.0, b - .25, 1.8);
+  });
+  // بطاقات المنصة الحقيقية تنضرب على النبضة
+  [["cInv", 16], ["cEst", 19]].forEach(([id, a]) => {
+    const k = p(t, a + .45, a + .85, back), o = p(t, a + 2.6, a + 3, ei);
+    const on = t >= a + .45 && t < a + 3;
+    css($(id), on ? 1 - o : 0, `perspective(1600px) translateY(${(1 - k) * 600 - o * 200}px) rotateX(${(1 - k) * 25}deg) rotate(${id === "cInv" ? -4 : 3}deg) scale(${.9 + .1 * k + 1.2 * o})`);
+  });
+
+  /* ٥) اللحظة العاطفية: لمّة الأهل تحت النجوم */
+  if (t >= PAY[0] && t < PAY[1]) {
+    const em = p(t, PAY[0], PAY[0] + .5, eo5);
+    show.i5 = { s: 1.45 - .3 * em + .08 * p(t, PAY[0], PAY[1], (x) => x), x: 0 };
+    blur = Math.max(blur, (1 - em) * 28); split = Math.max(split, hit(t, PAY[0], .25) * 20);
+    if (t > PAY[1] - .5) blur = Math.max(blur, p(t, PAY[1] - .5, PAY[1], ei) * 30);
+  }
+  slam($("w4"), t, 22.3, 25.8, 1.6); slam($("w5"), t, 23.5, 25.8, 1.6);
+
+  /* ٦) الختام */
+  const e = END, ei2 = p(t, e, e + .4, eo5);
+  if (t >= e) {
+    css($("burst"), .7 - .4 * p(t, e + .3, e + 1.5), `scale(${.3 + 1.1 * ei2})`);
+    css($("rays"), .6, `rotate(${(t - e) * 10}deg) scale(${.7 + .4 * ei2})`);
+    css($("logo"), 1, `scale(${2.2 - 1.2 * p(t, e, e + .35, back)})`);
+    flash = Math.max(flash, hit(t, e, .4)); split = Math.max(split, hit(t, e, .3) * 30);
+  }
+  slam($("e1"), t, e + .5, 31, 1.5);
+  const k2 = p(t, e + 1.1, e + 1.6), k3 = p(t, e + 1.5, e + 2.0, back);
+  css($("e2"), t >= e + 1.1 ? k2 : 0, `translateY(${(1 - k2) * 30}px)`);
+  css($("e3"), t >= e + 1.5 ? k3 : 0, `translateX(-50%) scale(${.6 + .4 * k3})`);
+
+  /* الصور */
+  for (const id of IMGS) {
+    const el = $(id), v = show[id];
+    if (!v) { el.style.opacity = 0; continue; }
+    const fx = (FOCUS[id] - .5) * -3413 * .6;
+    css(el, 1, `translateX(${fx}px) scale(${v.s})`, v.dim ? `brightness(${v.dim}) saturate(1.1)` : "saturate(1.15) contrast(1.05)");
+  }
+  $("shade").style.opacity = Object.keys(show).length ? 1 : 0;
+  $("world").style.background = "#000";
+
+  /* المؤثرات على الصورة كلها */
+  const W = $("world");
+  if (blur > .4 || split > .4) {
+    W.style.filter = "url(#fx)";
+    $("fxblur").setAttribute("stdDeviation", `${blur.toFixed(1)} ${(blur * .35).toFixed(1)}`);
+    $("fxr").setAttribute("dx", split.toFixed(1)); $("fxb").setAttribute("dx", (-split).toFixed(1));
+  } else W.style.filter = "none";
+  $("flash").style.opacity = flash * .85;
+  $("black").style.opacity = t >= 4.8 && t < 5.0 ? 1 : 0;
+  $("leak").style.opacity = .35 + .25 * Math.sin(t * 1.3) + .4 * flash;
+  $("leak").style.transform = `translate(${Math.sin(t * .7) * 80}px, ${Math.cos(t * .5) * 60}px)`;
+  $("grain").style.backgroundImage = `url(grain/g${Math.floor(t * 24) % 6}.png)`;
+  // اهتزاز خفيف للكاميرا عند الضربات الكبيرة
+  const sh = Math.max(hit(t, d, .4), hit(t, e, .4), hit(t, 2.5, .2), hit(t, 3.75, .2)) * 14;
+  $("stage").style.transform = (document.body.classList.contains("rec") ? "" : `scale(${window.__fit || 1}) `) + `translate(${Math.sin(t * 90) * sh}px, ${Math.cos(t * 77) * sh}px)`;
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { window.__fit = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); render(+seek.value); };
+addEventListener("resize", fit);
+$("upMusic").onchange = (e) => { const f = e.target.files[0]; if (f) { pause(); music.src = URL.createObjectURL(f); base = 0; } };
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; }
+else fit();
+render(0);
+</script>
+</body>
+</html>
