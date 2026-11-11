@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · الباب الذهبي</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@700;800;900&display=block">
+<style>
+:root { --ink: #FFF8F0; --gold: #FFD27A; --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%); }
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: "Cairo", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #050208; transform-origin: center; }
+.abs { position: absolute; will-change: transform, opacity; }
+.shot { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; will-change: transform, opacity, filter; }
+#shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.5) 0%, transparent 20%, transparent 52%, rgba(0,0,0,.75) 68%, rgba(0,0,0,.9) 100%); pointer-events: none; }
+canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
+
+/* الفصل الأول: الأشياء اللي ما خلصت */
+.task { position: absolute; left: 0; top: 0; padding: 18px 34px; border-radius: 999px; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); backdrop-filter: blur(10px); font-size: 50px; font-weight: 800; white-space: nowrap; will-change: transform, opacity; }
+.task.r { color: #FF8A9A; border-color: rgba(255,110,130,.4); }
+#big { left: 0; right: 0; top: 640px; text-align: center; font-size: 300px; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 30px 80px rgba(0,0,0,.6); opacity: 0; }
+#bigs { left: 0; right: 0; top: 950px; text-align: center; font-size: 76px; font-weight: 900; color: var(--gold); opacity: 0; }
+
+/* السرد */
+#cap { left: 40px; right: 40px; top: 1440px; text-align: center; font-size: 84px; font-weight: 900; line-height: 1.25; text-shadow: 0 10px 50px rgba(0,0,0,.9); }
+#cap span { display: inline-block; will-change: transform, opacity, filter; }
+#cap .g { color: var(--gold); }
+#chap { left: 0; right: 0; top: 1350px; text-align: center; font-family: "Amiri", serif; font-size: 44px; color: var(--gold); opacity: 0; }
+
+#count { left: 50%; top: 260px; transform: translateX(-50%); padding: 18px 40px; border-radius: 30px; background: rgba(15,10,25,.7); border: 2px solid rgba(255,210,122,.4); backdrop-filter: blur(14px); font-size: 52px; font-weight: 900; white-space: nowrap; opacity: 0; }
+#count b { color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* الصحوة: بطاقة الدعوة */
+#morning { position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 40%, #FFF3E2 0%, #F5D9C0 55%, #C9A08A 100%); opacity: 0; }
+#card { left: 150px; top: 430px; width: 780px; height: 1000px; border-radius: 30px; background: linear-gradient(160deg, #FFFDF8, #F7EBDD); box-shadow: 0 60px 120px -30px rgba(80,40,20,.55); border: 3px solid #D9B26A; padding: 70px 60px; text-align: center; color: #5A3A22; opacity: 0; }
+#card::before { content: ""; position: absolute; inset: 22px; border: 2px solid rgba(217,178,106,.7); border-radius: 20px; }
+#card .k { font-family: "Amiri", serif; font-size: 60px; color: #B98A3A; margin-top: 40px; }
+#card .n { font-family: "Amiri", serif; font-size: 120px; font-weight: 700; margin: 60px 0 20px; color: #4A2A18; }
+#card .d { font-size: 44px; font-weight: 800; color: #8A6248; }
+#card .s { margin-top: 70px; font-size: 38px; font-weight: 800; color: #B98A3A; }
+#card .seal { position: absolute; left: 50%; bottom: 70px; width: 130px; height: 130px; margin-left: -65px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F06A8E, #B3134A); box-shadow: 0 10px 30px rgba(150,20,60,.4); display: grid; place-items: center; color: #FFE3EA; font-size: 60px; }
+#w1 { left: 0; right: 0; top: 1520px; text-align: center; font-size: 110px; font-weight: 900; color: #4A2A18; opacity: 0; }
+#w2 { left: 0; right: 0; top: 1660px; text-align: center; font-size: 80px; font-weight: 900; opacity: 0; }
+#w2 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* الختام */
+#end { position: absolute; inset: 0; background: radial-gradient(90% 60% at 50% 42%, #2A1030 0%, #07030a 75%); opacity: 0; }
+#burst { position: absolute; left: 50%; top: 42%; width: 1800px; height: 1800px; margin: -900px 0 0 -900px; border-radius: 50%; background: radial-gradient(circle, rgba(255,245,220,.95) 0%, rgba(255,170,90,.5) 22%, rgba(229,25,94,.2) 45%, transparent 68%); opacity: 0; will-change: transform, opacity; }
+#logo { left: 290px; top: 440px; width: 500px; height: 500px; object-fit: contain; opacity: 0; }
+#brand { left: 0; right: 0; top: 980px; text-align: center; font-size: 170px; font-weight: 900; line-height: 1.2; opacity: 0; }
+#brand span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#tag { left: 0; right: 0; top: 1220px; text-align: center; font-size: 62px; font-weight: 800; color: var(--gold); opacity: 0; }
+#url { left: 50%; top: 1380px; direction: ltr; white-space: nowrap; font-size: 42px; font-weight: 800; padding: 16px 46px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); opacity: 0; }
+
+#ai { position: absolute; left: 40px; bottom: 40px; font-size: 24px; font-weight: 700; color: rgba(255,255,255,.5); }
+#grain { position: absolute; inset: 0; background-size: 1080px 1920px; mix-blend-mode: overlay; opacity: .13; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(75% 55% at 50% 50%, transparent 55%, rgba(0,0,0,.6) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #FFF6E8; opacity: 0; pointer-events: none; }
+#black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 700 13px "Cairo", sans-serif; color: #fff; max-width: calc(100vw - 20px); }
+#ui button { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="shots"></div>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div id="shade"></div>
+  <div id="tasks"></div>
+  <div class="abs" id="big">٣٠</div>
+  <div class="abs" id="bigs">يوم… على زواج ريم</div>
+  <div class="abs" id="count">الدعوات وصلت: <b id="cnum">٠</b></div>
+
+  <div id="morning"></div>
+  <div class="abs" id="card"><div class="k">بكل الحب ندعوكم</div><div class="n">ريم</div><div class="d">لحضور حفل زواجها</div><div class="s">قاعة الحلم (مثال)</div><div class="seal">♥</div></div>
+  <div class="abs" id="w1">مو حلم.</div>
+  <div class="abs" id="w2">هذي <span>مناسبتي.</span></div>
+
+  <div id="end"></div><div id="burst"></div>
+  <img class="abs" id="logo" src="logo.png" alt="">
+  <div class="abs" id="brand"><span>مناسبتي</span></div>
+  <div class="abs" id="tag">من الفكرة لآخر ضيف</div>
+  <div class="abs" id="url">munasabati-sigma.vercel.app</div>
+
+  <div class="abs" id="chap"></div>
+  <div class="abs" id="cap"></div>
+  <div id="black"></div>
+  <div id="grain"></div><div id="vig"></div><div id="flash"></div>
+  <div id="ai">قصة خيالية · مشاهد مولّدة بالذكاء الاصطناعي</div>
+</div></div>
+<div id="ui">
+  <button id="play">تشغيل</button><button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="37" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 37.00</span><button id="fs">ملء الشاشة</button>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+
+<script>
+/* ═══ القصة: ريم والباب الذهبي (التوقيت نفسه في audio/make_audio.py) ═══ */
+const DUR = 37;
+const T = { door: 4.2, portal: 7.2, palace: 8.0, env: 11.6, coffee: 15.2, kosha: 18.6, zaffa: 22.0, aisle: 25.0, fire: 27.4, wake: 30.0, end: 33.6 };
+const SHOTS = [
+  // الصورة، البداية، النهاية، [تكبير من، إلى، إزاحة x، y]، مكان الصورة (للصور العرضية)، أصل التكبير
+  { img: "img/m1.png", a: 0.0, b: T.palace + .1, cam: [1.05, 1.15, 0, 0], o: "57% 37%" },
+  { img: "img/m2.png", a: T.palace, b: T.env + .3, cam: [1.25, 1.05, 0, 30], o: "50% 40%" },
+  { img: "img/m3.png", a: T.env, b: T.coffee + .3, cam: [1.05, 1.22, 0, -30], o: "60% 30%" },
+  { img: "img/f3-coffee.webp", a: T.coffee, b: T.kosha + .3, cam: [1.1, 1.25, 0, 0], o: "40% 50%", pos: "38% 50%" },
+  { img: "img/f1-wedding.webp", a: T.kosha, b: T.zaffa, cam: [1.35, 1.08, 0, 0], o: "50% 35%", pos: "50% 50%" },
+  { img: "img/s5.png", a: T.zaffa, b: T.aisle, cam: [1.25, 1.05, 0, 40], o: "50% 50%" },
+  { img: "img/s6.png", a: T.aisle, b: T.fire + .3, cam: [1.3, 1.08, 0, -50], o: "50% 40%" },
+  { img: "img/f4-rooftop.webp", a: T.fire, b: T.wake, cam: [1.05, 1.18, 0, 0], o: "50% 30%", pos: "50% 50%" },
+];
+const CAPS = [
+  { a: T.door + .5, b: T.portal - .1, t: "وفي ليلة… ضغطت *زر واحد.*", c: "الفصل الأول" },
+  { a: T.palace + .5, b: T.env - .2, t: "القاعة… *طلعت من الرمل.*", c: "الفصل الثاني" },
+  { a: T.env + .5, b: T.coffee - .2, t: "والدعوات *طارت لكل بيت.*" },
+  { a: T.coffee + .4, b: T.kosha - .2, t: "والقهوة… *تصب نفسها.*" },
+  { a: T.kosha + .4, b: T.zaffa - .2, t: "والكوشة… *تفتحت ورد.*" },
+  { a: T.zaffa + .3, b: T.aisle - .2, t: "والزفة… *هزّت المكان.*" },
+  { a: T.aisle + .4, b: T.fire - .15, t: "ومشت… *لحلمها.*", c: "الفصل الأخير" },
+  { a: T.fire + .3, b: T.wake - .2, t: "ليلة… *أحلى من الحلم.*" },
+];
+const TASKS = [["القاعة؟", 1], ["الدعوات؟", 0], ["الكوشة؟", 1], ["المصور؟", 0], ["الضيافة؟", 1], ["العربون؟", 0], ["الأسعار؟", 1], ["الفستان؟", 0], ["الزفة؟", 1], ["١٢٠ ضيف؟", 0]];
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eo5 = (x) => 1 - Math.pow(1 - x, 5), lin = (x) => x, ei = (x) => x * x * x;
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+const hit = (t, a, d = .25) => (t >= a && t < a + d ? 1 - (t - a) / d : 0);
+const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const AR = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+
+const SH = SHOTS.map((s) => { const d = document.createElement("div"); d.className = "shot"; d.style.backgroundImage = `url(${s.img})`; d.style.transformOrigin = s.o; if (s.pos) d.style.backgroundPosition = s.pos; $("shots").appendChild(d); return d; });
+const TK = TASKS.map(([w, r]) => { const d = document.createElement("div"); d.className = "task" + (r ? " r" : ""); d.textContent = w; $("tasks").appendChild(d); return d; });
+
+/* ═══ المؤثرات المرسومة ═══ */
+const cx = $("fx").getContext("2d");
+function glow(x, y, r, c, a) { const g = cx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`); cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, r, 0, 7); cx.fill(); }
+function sparks(t, n, seed, k, c = "255,220,160", up = 30) {
+  for (let i = 0; i < n; i++) {
+    const x = (rnd(i + seed) * 1080 + Math.sin(t * .5 + i) * 30) % 1080, y = (rnd(i + seed + 50) * 1920 - t * (up + rnd(i + seed + 9) * up) + 1920 * 8) % 1920;
+    glow(x, y, 6 + rnd(i + seed + 3) * 14, c, k * (.35 + .5 * Math.abs(Math.sin(t * 2 + i))));
+  }
+}
+function envelope(x, y, s, rot, a) {
+  cx.save(); cx.translate(x, y); cx.rotate(rot); cx.scale(s, s); cx.globalAlpha = a;
+  cx.shadowColor = "rgba(255,200,120,.9)"; cx.shadowBlur = 25;
+  cx.fillStyle = "#FFF4E0"; cx.fillRect(-40, -27, 80, 54);
+  cx.shadowBlur = 0; cx.strokeStyle = "#D9A74A"; cx.lineWidth = 3; cx.strokeRect(-40, -27, 80, 54);
+  cx.beginPath(); cx.moveTo(-40, -27); cx.lineTo(0, 5); cx.lineTo(40, -27); cx.stroke();
+  cx.fillStyle = "#E5195E"; cx.beginPath(); cx.arc(0, 5, 7, 0, 7); cx.fill();
+  cx.restore(); cx.globalAlpha = 1;
+}
+function lantern(x, y, s, a, t, i) {
+  glow(x, y, 90 * s, "255,170,80", .45 * a);
+  cx.save(); cx.translate(x, y); cx.rotate(Math.sin(t * 1.2 + i) * .08); cx.globalAlpha = a;
+  const g = cx.createLinearGradient(0, -40 * s, 0, 40 * s); g.addColorStop(0, "#FFE2A8"); g.addColorStop(1, "#FF9A3C");
+  cx.fillStyle = g; cx.beginPath(); cx.roundRect(-24 * s, -36 * s, 48 * s, 72 * s, 18 * s); cx.fill();
+  cx.fillStyle = "#7A4A1A"; cx.fillRect(-18 * s, -42 * s, 36 * s, 8 * s); cx.fillRect(-18 * s, 34 * s, 36 * s, 8 * s);
+  cx.restore(); cx.globalAlpha = 1;
+}
+function petals(t, a0, n, k) {
+  for (let i = 0; i < n; i++) {
+    const life = (t - a0) * (90 + rnd(i + 2) * 110);
+    const x = rnd(i + 11) * 1180 - 50 + Math.sin(t * 1.4 + i) * 70, y = -80 + (rnd(i + 13) * 900 + life) % 2100;
+    cx.save(); cx.translate(x, y); cx.rotate(t * (1 + rnd(i) * 2) + i); cx.scale(1, .5 + .5 * Math.sin(t * 3 + i));
+    cx.globalAlpha = .9 * k; cx.fillStyle = i % 3 ? "#FFB7C8" : "#FFF0F3";
+    const s = 14 + rnd(i + 17) * 22; cx.beginPath(); cx.ellipse(0, 0, s, s * .6, 0, 0, 7); cx.fill(); cx.restore();
+  }
+  cx.globalAlpha = 1;
+}
+const FW = [[0.2, 300, 420, "255,90,140"], [0.6, 780, 330, "255,210,122"], [1.0, 540, 520, "160,120,255"], [1.35, 250, 260, "120,220,255"], [1.7, 840, 520, "255,140,80"], [2.0, 520, 300, "255,210,122"], [2.3, 380, 560, "255,90,140"]];
+function fireworks(t) {
+  FW.forEach(([d, x0, y0, c], j) => {
+    const a = T.fire + d, dt = t - a; if (dt < -.5 || dt > 1.9) return;
+    if (dt < 0) { const q = 1 + dt / .5; cx.strokeStyle = `rgba(${c},.8)`; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x0, y0 + 700 * (1 - q) + 40); cx.lineTo(x0, y0 + 700 * (1 - q)); cx.stroke(); return; }
+    glow(x0, y0, 260 * (1 - dt / 1.9), c, .5 * Math.max(0, 1 - dt * 2));
+    for (let i = 0; i < 90; i++) {
+      const ang = i / 90 * Math.PI * 2 + j, v = 300 + rnd(i + j * 99) * 120, f = 1 - Math.exp(-dt * 3.2), f2 = 1 - Math.exp(-(dt - .06) * 3.2);
+      const x = x0 + Math.cos(ang) * v * f, y = y0 + Math.sin(ang) * v * f + dt * dt * 90;
+      const xb = x0 + Math.cos(ang) * v * Math.max(0, f2), yb = y0 + Math.sin(ang) * v * Math.max(0, f2) + Math.max(0, dt - .06) ** 2 * 90;
+      const al = Math.max(0, 1 - dt / 1.9) * (.6 + .4 * Math.sin(dt * 30 + i));
+      cx.strokeStyle = `rgba(${c},${al.toFixed(2)})`; cx.lineWidth = 4; cx.lineCap = "round"; cx.beginPath(); cx.moveTo(xb, yb); cx.lineTo(x, y); cx.stroke();
+    }
+  });
+}
+function effects(t) {
+  cx.clearRect(0, 0, 1080, 1920);
+  cx.globalCompositeOperation = "lighter";
+  // الباب يرمي شرار
+  if (t >= T.door && t < T.palace + .3) {
+    const k = p(t, T.door, T.door + .8);
+    for (let i = 0; i < 70; i++) {
+      const life = ((t - T.door) * (.5 + rnd(i) * .7) + rnd(i + 5)) % 1.6;
+      const ang = rnd(i + 7) * Math.PI * 2, d = life * (200 + rnd(i + 3) * 500);
+      glow(615 + Math.cos(ang) * d * .7, 700 + Math.sin(ang) * d, 8 + rnd(i) * 10, "255,215,140", k * (1 - life / 1.6));
+    }
+    glow(615, 700, 500 + 80 * Math.sin(t * 6), "255,200,120", .35 * k + .6 * p(t, T.portal, T.palace, ei));
+  }
+  // الرمل يطيح من القصر
+  if (t >= T.palace && t < T.env + .3) {
+    for (let i = 0; i < 160; i++) {
+      const x = 180 + rnd(i) * 720, y = 600 + ((t - T.palace) * (250 + rnd(i + 4) * 300) + rnd(i + 8) * 700) % 800;
+      cx.fillStyle = `rgba(255,205,140,${(.25 + rnd(i + 2) * .4).toFixed(2)})`; cx.fillRect(x, y, 3, 8);
+    }
+    sparks(t, 30, 300, .8, "255,200,120", 60);
+  }
+  if (t >= T.coffee && t < T.kosha + .3) sparks(t, 26, 500, .9, "255,190,110", 25);
+  if (t >= T.kosha && t < T.zaffa + .2) { sparks(t, 30, 700, .8, "255,220,230", 40); glow(540, 620, 600, "255,220,180", .25 + .2 * hit(t, T.kosha + .3, 1.2)); }
+  if (t >= T.zaffa && t < T.aisle) sparks(t, 20, 900, .6);
+  if (t >= T.aisle && t < T.fire + .3) sparks(t, 30, 1100, .7, "255,215,190", 30);
+  if (t >= T.fire && t < T.wake) fireworks(t);
+  cx.globalCompositeOperation = "source-over";
+  // الدعوات تطير وتنزل على البيوت
+  if (t >= T.env && t < T.coffee + .2) {
+    for (let i = 0; i < 38; i++) {
+      const st = T.env + rnd(i) * 2.6, q = clamp((t - st) / 1.6); if (q <= 0) continue;
+      const x0 = -100 + rnd(i + 3) * 300, y0 = 300 + rnd(i + 4) * 500, x1 = 200 + rnd(i + 5) * 800, y1 = 1100 + rnd(i + 6) * 500;
+      const e = eio(q), x = x0 + (x1 - x0) * e + Math.sin(q * 6 + i) * 60, y = y0 + (y1 - y0) * e - Math.sin(Math.PI * q) * 300;
+      envelope(x, y, .8 + rnd(i + 7) * .8 * (1 - q * .6), Math.sin(t * 3 + i) * .3, q < .9 ? 1 : (1 - q) * 10);
+      if (q >= 1) continue;
+    }
+    cx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 38; i++) { const st = T.env + rnd(i) * 2.6 + 1.6; if (t >= st && t < st + .6) { const x1 = 200 + rnd(i + 5) * 800, y1 = 1100 + rnd(i + 6) * 500; glow(x1, y1, 60, "255,220,150", (1 - (t - st) / .6) * .9); } }
+    cx.globalCompositeOperation = "source-over";
+  }
+  // فوانيس تطلع مع القهوة
+  if (t >= T.coffee && t < T.kosha + .3) {
+    for (let i = 0; i < 14; i++) {
+      const x = 80 + rnd(i + 21) * 920 + Math.sin(t * .8 + i) * 30, y = 1900 - ((t - T.coffee) * (110 + rnd(i + 22) * 120) + rnd(i + 23) * 900) % 2000;
+      lantern(x, y, .7 + rnd(i + 24) * .9, p(t, T.coffee, T.coffee + .8), t, i);
+    }
+  }
+  if (t >= T.kosha - .1 && t < T.zaffa + .2) petals(t, T.kosha, 60, p(t, T.kosha, T.kosha + .6));
+  if (t >= T.aisle && t < T.fire + .3) petals(t, T.aisle - 1, 40, .8);
+}
+
+/* العنوان: كلمة كلمة */
+const capEl = $("cap"); let cur = -2;
+function setCap(i) {
+  if (i === cur) return; cur = i; capEl.innerHTML = ""; if (i < 0) return;
+  let hi = false;
+  CAPS[i].t.split(" ").forEach((w, k, arr) => {
+    const s = document.createElement("span"); let x = w; if (x.startsWith("*")) { hi = true; x = x.slice(1); }
+    const end = x.includes("*"); x = x.replace(/\*/g, ""); s.textContent = x; if (hi) s.className = "g"; if (end) hi = false;
+    capEl.appendChild(s); if (k < arr.length - 1) capEl.appendChild(document.createTextNode(" "));
+  });
+}
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  let flash = 0, shake = 0;
+
+  /* اللقطات */
+  SHOTS.forEach((s, i) => {
+    const el = SH[i];
+    if (t < s.a || t > s.b) { el.style.opacity = 0; return; }
+    const q = p(t, s.a, s.b, lin), [z0, z1, dx, dy] = s.cam;
+    let z = z0 + (z1 - z0) * eio(q), o = 1 - p(t, s.b - .3, s.b, eio), blur = 0, bri = 1;
+    if (i === 0) { // البداية: الغرفة مظلمة، ثم الباب يفتح، ثم ندخل فيه
+      bri = .25 + .75 * p(t, T.door, T.door + 1);
+      blur = 14 * (1 - p(t, T.door - .4, T.door + .6));
+      z = 1.05 + .1 * p(t, 0, T.portal, lin) + 5 * p(t, T.portal, T.palace + .1, ei);
+    }
+    if (i > 0) { z += .14 * hit(t, s.a, .5); blur = 18 * hit(t, s.a, .4); }
+    if (i === 5) { const beat = ((t - T.zaffa) / .42) % 1; z += .03 * (1 - beat) ** 4; }
+    el.style.opacity = o;
+    el.style.transform = `translate(${dx * q}px, ${dy * q}px) scale(${z})`;
+    el.style.filter = `blur(${blur.toFixed(1)}px) brightness(${bri.toFixed(2)}) saturate(1.1)`;
+  });
+  SHOTS.forEach((s, i) => { if (i > 0) flash = Math.max(flash, hit(t, s.a, .3) * .55); });
+  flash = Math.max(flash, hit(t, T.palace, .8), hit(t, T.door, .5) * .6);
+  shake = Math.max(shake, hit(t, T.palace, .9) * 18, hit(t, T.zaffa, .5) * 14);
+  if (t >= T.palace && t < T.palace + 2.5) shake = Math.max(shake, 4 * (1 - p(t, T.palace, T.palace + 2.5)));
+  if (t >= T.zaffa && t < T.aisle) { const beat = ((t - T.zaffa) / .42) % 1; shake = Math.max(shake, (1 - beat) ** 6 * 6); }
+  FW.forEach(([d]) => { flash = Math.max(flash, hit(t, T.fire + d, .15) * .18); });
+
+  /* الفصل الأول: العد والأشياء اللي ما خلصت */
+  const bk = p(t, .3, .7, back), bo = p(t, 1.5, 1.8, eio);
+  css($("big"), t < 1.8 ? bk * (1 - bo) : 0, `scale(${1.6 - .6 * bk})`);
+  css($("bigs"), t < 1.8 ? p(t, .6, 1.0) * (1 - bo) : 0, `translateY(${(1 - p(t, .6, 1.0)) * 30}px)`);
+  TK.forEach((el, i) => {
+    const a = 1.6 + i * .2, k = p(t, a, a + .3, back), suck = p(t, 3.6, 4.15, ei);
+    const ang = i * 2.4 + t * .4, rad = 330 + (i % 3) * 120;
+    const x = clamp(540 + Math.cos(ang) * rad * (1 - suck) - el.offsetWidth / 2, 40, 1040 - el.offsetWidth), y = 860 + Math.sin(ang) * rad * 1.3 * (1 - suck) - 45;
+    const jit = Math.sin(t * 50 + i) * 4 * p(t, 2.6, 3.4);
+    css(el, t >= a && t < 4.15 ? k * (1 - suck * .7) : 0, `translate(${x + jit}px, ${y}px) scale(${(.6 + .4 * k) * (1 - suck * .8)}) rotate(${Math.sin(i) * 6}deg)`);
+  });
+  $("black").style.opacity = t < T.door ? (t < 3.9 ? 0 : p(t, 3.9, 4.15)) * (1 - p(t, 4.15, 4.4)) : 0;
+
+  /* عداد الدعوات */
+  const cin = p(t, T.env + .8, T.env + 1.1, back), cout = p(t, T.coffee - .3, T.coffee, eio);
+  css($("count"), t >= T.env + .8 && t < T.coffee ? cin * (1 - cout) : 0, `translateX(-50%) scale(${.7 + .3 * cin})`);
+  $("cnum").textContent = AR(Math.round(120 * p(t, T.env + 1.4, T.env + 3.6, eo)));
+
+  /* الصحوة: بطاقة الدعوة */
+  const W = T.wake;
+  const mo = p(t, W, W + .5) * (1 - p(t, T.end - .2, T.end, eio));
+  $("morning").style.opacity = t >= W && t < T.end ? mo : 0;
+  const ck = p(t, W + .4, W + 1.3, eo5);
+  css($("card"), t >= W && t < T.end ? ck * (1 - p(t, T.end - .2, T.end)) : 0, `translateY(${(1 - ck) * -500}px) rotate(${(1 - ck) * -14 + Math.sin(t) * .6}deg)`);
+  const w1 = p(t, W + 1.4, W + 1.8, back), w2 = p(t, W + 2.2, W + 2.6, back);
+  css($("w1"), t >= W && t < T.end ? w1 * (1 - p(t, T.end - .2, T.end)) : 0, `scale(${1.3 - .3 * w1})`);
+  css($("w2"), t >= W && t < T.end ? w2 * (1 - p(t, T.end - .2, T.end)) : 0, `scale(${1.3 - .3 * w2})`);
+  flash = Math.max(flash, hit(t, W, .7));
+  $("ai").style.color = t >= W && t < T.end ? "rgba(90,58,34,.55)" : "rgba(255,255,255,.5)";
+
+  /* الختام */
+  const E = T.end;
+  $("end").style.opacity = t >= E ? 1 : 0;
+  const b2 = p(t, E, E + .6, eo5); css($("burst"), t >= E ? .9 - .5 * p(t, E + .3, E + 2) : 0, `scale(${.2 + 1.1 * b2})`);
+  const l2 = p(t, E + .1, E + .7, back); css($("logo"), t >= E ? l2 : 0, `scale(${1.5 - .5 * l2})`);
+  const k1 = p(t, E + .6, E + 1.0, back); css($("brand"), t >= E ? k1 : 0, `scale(${1.25 - .25 * k1})`);
+  const k2 = p(t, E + 1.0, E + 1.4); css($("tag"), t >= E ? k2 : 0, `translateY(${(1 - k2) * 26}px)`);
+  const k3 = p(t, E + 1.4, E + 1.8, back); css($("url"), t >= E ? k3 : 0, `translateX(-50%) scale(${.6 + .4 * k3})`);
+  flash = Math.max(flash, hit(t, E, .4) * .7);
+
+  /* السرد */
+  const ci = CAPS.findIndex((c) => t >= c.a && t < c.b + .35);
+  setCap(ci);
+  const chap = $("chap");
+  if (ci >= 0) {
+    const c = CAPS[ci], sp = [...capEl.querySelectorAll("span")], out = p(t, c.b, c.b + .35, eio);
+    sp.forEach((s, k) => { const q = p(t, c.a + k * .14, c.a + k * .14 + .4, back); s.style.opacity = clamp(q) * (1 - out); s.style.filter = `blur(${((1 - clamp(q)) * 12 + out * 10).toFixed(1)}px)`; s.style.transform = `translateY(${(1 - q) * 40}px) scale(${1.25 - .25 * q})`; });
+    chap.textContent = c.c || ""; chap.style.opacity = c.c ? p(t, c.a, c.a + .4) * (1 - out) : 0;
+  } else chap.style.opacity = 0;
+
+  effects(t);
+  $("flash").style.opacity = flash * .85;
+  $("grain").style.backgroundImage = `url(grain/g${Math.floor(t * 24) % 6}.png)`;
+  $("stage").style.transform = (document.body.classList.contains("rec") ? "" : `scale(${window.__fit || 1}) `) + `translate(${Math.sin(t * 90) * shake}px, ${Math.cos(t * 77) * shake}px)`;
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { window.__fit = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); render(+seek.value); };
+addEventListener("resize", fit);
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; } else fit();
+render(0);
+</script>
+</body>
+</html>
