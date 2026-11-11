@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · ١٢٠ نور</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&display=block">
+<style>
+:root { --ink: #FFF8F0; --gold: #FFD27A; --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%); }
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: "Cairo", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #04030A; transform-origin: center; }
+canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
+#glow { filter: blur(10px); opacity: .55; mix-blend-mode: screen; }
+.abs { position: absolute; will-change: transform, opacity; }
+#cap { left: 40px; right: 40px; top: 1440px; text-align: center; font-size: 92px; font-weight: 900; line-height: 1.25; text-shadow: 0 10px 50px rgba(0,0,0,.95); }
+#cap span { display: inline-block; will-change: transform, opacity, filter; }
+#cap .g { color: var(--gold); }
+#count { left: 50%; top: 210px; padding: 18px 42px; border-radius: 30px; background: rgba(12,10,22,.72); border: 2px solid rgba(255,210,122,.35); backdrop-filter: blur(14px); font-size: 50px; font-weight: 900; white-space: nowrap; opacity: 0; }
+#count b { color: var(--gold); }
+#logo { left: 290px; top: 430px; width: 500px; height: 500px; object-fit: contain; opacity: 0; }
+#brand { left: 0; right: 0; top: 980px; text-align: center; font-size: 170px; font-weight: 900; line-height: 1.2; opacity: 0; }
+#brand span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#tag { left: 0; right: 0; top: 1220px; text-align: center; font-size: 62px; font-weight: 800; color: var(--gold); opacity: 0; }
+#url { left: 50%; top: 1380px; direction: ltr; white-space: nowrap; font-size: 42px; font-weight: 800; padding: 16px 46px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); opacity: 0; }
+#grain { position: absolute; inset: 0; background-size: 1080px 1920px; mix-blend-mode: overlay; opacity: .1; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(75% 55% at 50% 48%, transparent 50%, rgba(0,0,0,.75) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #FFF6E8; opacity: 0; pointer-events: none; }
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 700 13px "Cairo", sans-serif; color: #fff; max-width: calc(100vw - 20px); }
+#ui button { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="map" width="1080" height="1920"></canvas>
+  <canvas id="glow" width="540" height="960"></canvas>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div class="abs" id="count"></div>
+  <img class="abs" id="logo" src="logo.png" alt="">
+  <div class="abs" id="brand"><span>مناسبتي</span></div>
+  <div class="abs" id="tag">ليلة وحدة… تجمع الكل</div>
+  <div class="abs" id="url">munasabati-sigma.vercel.app</div>
+  <div class="abs" id="cap"></div>
+  <div id="grain"></div><div id="vig"></div><div id="flash"></div>
+</div></div>
+<div id="ui">
+  <button id="play">تشغيل</button><button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="34" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 34.00</span><button id="fs">ملء الشاشة</button>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+<img id="logoImg" src="logo.png" alt="" style="display:none">
+
+<script>
+/* ═══ «١٢٠ نور»: مدينة بالليل من فوق (التوقيت نفسه في audio/make_audio.py) ═══ */
+const DUR = 34;
+const T = { send: 2.8, reply: 9.0, vend: 14.0, flow: 19.5, dive: 23.5, fire: 24.6, logo: 27.6 };
+const VEND_AT = [14.3, 15.3, 16.3, 17.3];
+const CAPS = [
+  { a: .4, b: 2.6, t: "بيت واحد… *في الخبر.*" },
+  { a: 3.3, b: 5.6, t: "دعوة وحدة…" },
+  { a: 6.0, b: 8.8, t: "وصلت *١٢٠ بيت.*" },
+  { a: 9.4, b: 13.6, t: "والكل ردّ: *أكيد جايين!*" },
+  { a: 14.4, b: 17.4, t: "القاعة… الورد… *القهوة…*" },
+  { a: 17.6, b: 19.3, t: "كلها *تجمّعت.*" },
+  { a: 19.9, b: 21.6, t: "ليلة الخميس…" },
+  { a: 21.8, b: 23.4, t: "الكل *في طريقه لك.*" },
+  { a: 25.0, b: 27.3, t: "كل هالأنوار… *جت عشانك.*" },
+];
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eo5 = (x) => 1 - Math.pow(1 - x, 5), lin = (x) => x, ei = (x) => x * x * x;
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+const hit = (t, a, d = .25) => (t >= a && t < a + d ? 1 - (t - a) / d : 0);
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const AR = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+
+/* ═══ المدينة: شبكة شوارع، والبحر شرق ═══ */
+const R = mulberry(120);
+const NX = 34, NY = 58, SP = 112;
+const coast = (y) => 3000 + 260 * Math.sin(y / 900) + 160 * Math.sin(y / 360 + 1);
+const nodes = [], idx = (i, j) => j * NX + i;
+for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+  const x = 120 + i * SP + (R() - .5) * 46 + Math.sin(j / 5) * 40, y = 120 + j * SP + (R() - .5) * 46 + Math.sin(i / 6) * 30;
+  nodes.push({ x, y, on: x < coast(y) - 40 });
+}
+const edges = [], adj = nodes.map(() => []);
+function link(a, b, major) { if (!nodes[a].on || !nodes[b].on) return; edges.push([a, b, major]); const d = Math.hypot(nodes[a].x - nodes[b].x, nodes[a].y - nodes[b].y); adj[a].push([b, d]); adj[b].push([a, d]); }
+for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+  if (i + 1 < NX && (j % 6 === 0 || R() < .86)) link(idx(i, j), idx(i + 1, j), j % 6 === 0);
+  if (j + 1 < NY && (i % 6 === 0 || R() < .86)) link(idx(i, j), idx(i, j + 1), i % 6 === 0);
+  if (i + 1 < NX && j + 1 < NY && (i - j) % 9 === 0) link(idx(i, j), idx(i + 1, j + 1), true);
+}
+function nearest(x, y) { let b = 0, bd = 1e18; nodes.forEach((n, k) => { if (!n.on || !adj[k].length) return; const d = (n.x - x) ** 2 + (n.y - y) ** 2; if (d < bd) { bd = d; b = k; } }); return b; }
+function tree(src) { // أقصر طريق من نقطة لكل الشبكة
+  const dist = new Float64Array(nodes.length).fill(1e18), par = new Int32Array(nodes.length).fill(-1), done = new Uint8Array(nodes.length); dist[src] = 0;
+  for (;;) { let u = -1, bd = 1e18; for (let k = 0; k < nodes.length; k++) if (!done[k] && dist[k] < bd) { bd = dist[k]; u = k; } if (u < 0) break; done[u] = 1; for (const [v, d] of adj[u]) if (dist[u] + d < dist[v]) { dist[v] = dist[u] + d; par[v] = u; } }
+  return par;
+}
+function pathTo(par, dst, rev) { const pts = []; let k = dst; while (k >= 0) { pts.push([nodes[k].x, nodes[k].y]); k = par[k]; } if (!rev) pts.reverse(); const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return { pts, cum, L: cum[cum.length - 1] }; }
+function along(P, s) { s = clamp(s, 0, P.L); let i = 1; while (i < P.cum.length - 1 && P.cum[i] < s) i++; const a = P.pts[i - 1], b = P.pts[i] || a, seg = (P.cum[i] - P.cum[i - 1]) || 1, k = (s - P.cum[i - 1]) / seg; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; }
+
+const O = nearest(2200, 3250), H = nearest(2700, 4350);
+const parO = tree(O), parH = tree(H);
+const HOMES = []; const used = new Set([O, H]);
+while (HOMES.length < 120) { const k = Math.floor(R() * nodes.length); if (!nodes[k].on || !adj[k].length || used.has(k) || parO[k] < 0) continue; used.add(k); HOMES.push(k); }
+const INV = HOMES.map((k, i) => ({ k, P: pathTo(parO, k, false), st: T.send + .3 + R() * 1.4, sp: 1000 + R() * 500, rep: i % 11 !== 3, rt: T.reply + .2 + R() * 3.4, ft: T.flow + .1 + R() * 1.0, F: pathTo(parH, k, true), fs: 1500 + R() * 700 }));
+INV.forEach((v) => { v.arr = v.st + v.P.L / v.sp; v.harr = v.ft + v.F.L / v.fs; });
+const VEND = [[1100, 2700, "القاعة", "255,210,122"], [1500, 5000, "الورد", "255,120,165"], [2400, 2200, "القهوة", "255,160,80"], [800, 4300, "التصوير", "180,150,255"]].map(([x, y, n, c]) => { const k = nearest(x, y); return { x: nodes[k].x, y: nodes[k].y, n, c }; });
+const CITY = [["الدمام", 1700, 900], ["الظهران", 900, 3700], ["الخبر", 2300, 3900]];
+
+/* ═══ الكاميرا ═══ */
+const WC = [1750, 3300];
+function cam(t) {
+  const o = [nodes[O].x, nodes[O].y], h = [nodes[H].x, nodes[H].y];
+  let cx = o[0], cy = o[1], z = 3.2;
+  if (t >= T.send) { const k = p(t, T.send, 6.2, eio); z = Math.exp(Math.log(3.2) + (Math.log(.235) - Math.log(3.2)) * k); cx = o[0] + (WC[0] - o[0]) * k; cy = o[1] + (WC[1] - o[1]) * k; }
+  if (t >= T.vend) { const k = p(t, T.vend, T.flow, eio); z = .235 + (.3 - .235) * k; cx = WC[0] + (h[0] - 300 - WC[0]) * k * .5; cy = WC[1] + (h[1] - WC[1]) * k * .5; }
+  if (t >= T.flow) { const k = p(t, T.flow, T.dive, lin); z = .3 + .05 * k; }
+  if (t >= T.dive) { const k = p(t, T.dive, T.fire, ei); z = Math.exp(Math.log(.35) + (Math.log(14) - Math.log(.35)) * k); const c0 = [WC[0] + (h[0] - 300 - WC[0]) * .5, WC[1] + (h[1] - WC[1]) * .5]; cx = c0[0] + (h[0] - c0[0]) * p(t, T.dive, T.dive + .5); cy = c0[1] + (h[1] - c0[1]) * p(t, T.dive, T.dive + .5); }
+  z *= 1 + .015 * Math.sin(t * .7);
+  return { cx, cy, z };
+}
+
+const mp = $("map").getContext("2d"), fx = $("fx").getContext("2d"), gl = $("glow").getContext("2d");
+function drawMap(t, C) {
+  mp.fillStyle = "#04030A"; mp.fillRect(0, 0, 1080, 1920);
+  if (t >= T.fire) return;
+  const S = (x, y) => [(x - C.cx) * C.z + 540, (y - C.cy) * C.z + 860];
+  // البحر
+  mp.beginPath(); for (let y = -200; y <= 7000; y += 100) { const [sx, sy] = S(coast(y), y); y === -200 ? mp.moveTo(sx, sy) : mp.lineTo(sx, sy); }
+  const [ex, ey] = S(9000, 7000), [fx0, fy0] = S(9000, -200); mp.lineTo(ex, ey); mp.lineTo(fx0, fy0); mp.closePath();
+  mp.fillStyle = "#06102A"; mp.fill();
+  mp.strokeStyle = "rgba(90,160,255,.35)"; mp.lineWidth = Math.max(1.5, 6 * C.z); mp.stroke();
+  // الشوارع
+  mp.lineCap = "round";
+  for (const pass of [0, 1]) {
+    mp.beginPath();
+    for (const [a, b, major] of edges) { if (!!major !== !!pass) continue; const A = S(nodes[a].x, nodes[a].y), B = S(nodes[b].x, nodes[b].y); if ((A[0] < -50 && B[0] < -50) || (A[0] > 1130 && B[0] > 1130) || (A[1] < -50 && B[1] < -50) || (A[1] > 1970 && B[1] > 1970)) continue; mp.moveTo(A[0], A[1]); mp.lineTo(B[0], B[1]); }
+    mp.strokeStyle = pass ? "rgba(255,190,120,.30)" : "rgba(150,140,200,.16)"; mp.lineWidth = Math.max(.8, (pass ? 9 : 5) * C.z); mp.stroke();
+  }
+  // أسماء المدن
+  mp.font = `800 ${Math.round(clamp(170 * C.z, 26, 90))}px Cairo`; mp.textAlign = "center"; mp.direction = "rtl";
+  CITY.forEach(([n, x, y]) => { const [sx, sy] = S(x, y); mp.fillStyle = `rgba(255,235,210,${(.35 * p(t, 4, 5.5)).toFixed(2)})`; mp.fillText(n, sx, sy); });
+  const [gx, gy] = S(3500, 2600); mp.fillStyle = `rgba(120,170,255,${(.3 * p(t, 4, 5.5)).toFixed(2)})`; mp.fillText("الخليج العربي", gx, gy);
+}
+function dot(ctx, x, y, r, c, a) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(255,255,245,${a})`); g.addColorStop(.25, `rgba(${c},${a * .8})`); g.addColorStop(1, `rgba(${c},0)`); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+function trail(ctx, P, s, C, c, w, a) {
+  const S = (q) => { const [x, y] = along(P, q); return [(x - C.cx) * C.z + 540, (y - C.cy) * C.z + 860]; };
+  ctx.strokeStyle = `rgba(${c},${a})`; ctx.lineWidth = w; ctx.beginPath(); const len = 360;
+  for (let k = 0; k <= 6; k++) { const q = s - len * k / 6; if (q < 0) break; const [x, y] = S(q); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke(); const [hx, hy] = S(s); dot(ctx, hx, hy, w * 4, c, a);
+}
+function heart(ctx, x, y, s, a) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = a; ctx.fillStyle = "#FF5C8D";
+  ctx.beginPath(); ctx.moveTo(0, 8); ctx.bezierCurveTo(-14, -2, -8, -14, 0, -6); ctx.bezierCurveTo(8, -14, 14, -2, 0, 8); ctx.fill(); ctx.restore(); ctx.globalAlpha = 1;
+}
+
+/* ═══ الألعاب النارية فوق البحر، ثم الشعار من الأنوار ═══ */
+const FW = [[.15, 300, 600, "255,90,140"], [.45, 780, 470, "255,210,122"], [.8, 540, 720, "160,120,255"], [1.15, 230, 380, "120,220,255"], [1.45, 850, 700, "255,140,80"], [1.75, 520, 420, "255,210,122"], [2.05, 380, 760, "255,90,140"], [2.35, 700, 330, "255,240,220"]];
+const RD = Array.from({ length: 4000 }, mulberry(7));
+let LOGO = null;
+function buildLogo() {
+  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920; const x = c.getContext("2d");
+  x.drawImage($("logoImg"), 290, 430, 500, 500); const d = x.getImageData(0, 0, 1080, 1920).data, pts = [];
+  for (let y = 430; y < 930; y += 4) for (let xx = 290; xx < 790; xx += 4) { const k = (y * 1080 + xx) * 4; if (d[k + 3] > 120) pts.push([xx, y, d[k], d[k + 1], d[k + 2]]); }
+  const r = mulberry(3); LOGO = Array.from({ length: 1400 }, () => pts[Math.floor(r() * pts.length)]);
+}
+function skyline(ctx, t) {
+  const g = ctx.createLinearGradient(0, 0, 0, 1920); g.addColorStop(0, "#05030E"); g.addColorStop(.6, "#120822"); g.addColorStop(1, "#1A0B1E"); ctx.fillStyle = g; ctx.fillRect(0, 0, 1080, 1920);
+  ctx.fillStyle = "#06040C"; const r = mulberry(5); let x = 0;
+  while (x < 1080) { const w = 40 + r() * 70, h = 120 + r() * 300; ctx.fillRect(x, 1300 - h, w, h + 40); for (let k = 0; k < 6; k++) { ctx.fillStyle = `rgba(255,200,130,${(.25 + r() * .4).toFixed(2)})`; ctx.fillRect(x + 8 + r() * (w - 16), 1300 - h + 15 + r() * (h - 20), 5, 7); } ctx.fillStyle = "#06040C"; x += w + 6; }
+  // برج المياه
+  ctx.fillRect(732, 980, 18, 320); ctx.beginPath(); ctx.ellipse(741, 960, 70, 38, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(741, 880); ctx.lineTo(752, 925); ctx.lineTo(730, 925); ctx.fill();
+  const sea = ctx.createLinearGradient(0, 1300, 0, 1920); sea.addColorStop(0, "#0A0A26"); sea.addColorStop(1, "#020208"); ctx.fillStyle = sea; ctx.fillRect(0, 1300, 1080, 620);
+}
+function fireworks(ctx, t, toLogo) {
+  FW.forEach(([d, x0, y0, c], j) => {
+    const a = T.fire + d, dt = t - a; if (dt < -.45 || (dt > 2.2 && !toLogo)) return;
+    if (dt < 0) { const q = 1 + dt / .45; ctx.strokeStyle = `rgba(${c},.85)`; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, y0 + 800 * (1 - q) + 50); ctx.lineTo(x0, y0 + 800 * (1 - q)); ctx.stroke(); return; }
+    dot(ctx, x0, y0, 300 * Math.max(0, 1 - dt / 1.5), c, .45 * Math.max(0, 1 - dt * 2));
+    for (let i = 0; i < 110; i++) {
+      const ang = i / 110 * Math.PI * 2 + j, v = 300 + RD[i + j * 110] * 160, f = 1 - Math.exp(-dt * 3), f2 = 1 - Math.exp(-Math.max(0, dt - .07) * 3);
+      let x = x0 + Math.cos(ang) * v * f, y = y0 + Math.sin(ang) * v * f + dt * dt * 70, xb = x0 + Math.cos(ang) * v * f2, yb = y0 + Math.sin(ang) * v * f2 + Math.max(0, dt - .07) ** 2 * 70;
+      let al = Math.max(0, 1 - dt / 2.2) * (.6 + .4 * Math.sin(dt * 30 + i)), col = c;
+      if (toLogo) { const n = j * 110 + i, L = LOGO[n % LOGO.length], k = p(t, T.logo + RD[n % 4000] * .5, T.logo + .9 + RD[n % 4000] * .5, eio); x += (L[0] - x) * k; y += (L[1] - y) * k; xb += (L[0] - xb) * k; yb += (L[1] - yb) * k; al = Math.max(al, k * .9) * (1 - p(t, T.logo + 1.6, T.logo + 2.4)); if (k > .5) col = `${L[2]},${L[3]},${L[4]}`; }
+      if (al <= .01) continue;
+      ctx.strokeStyle = `rgba(${col},${al.toFixed(2)})`; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(xb, yb); ctx.lineTo(x + .01, y); ctx.stroke();
+    }
+  });
+}
+
+function draw(t) {
+  const C = cam(t);
+  drawMap(t, C);
+  fx.clearRect(0, 0, 1080, 1920); fx.globalCompositeOperation = "lighter";
+  const S = (x, y) => [(x - C.cx) * C.z + 540, (y - C.cy) * C.z + 860];
+  if (t < T.fire) {
+    const zw = clamp(C.z, .2, 3);
+    // البيوت
+    INV.forEach((v) => {
+      const [x, y] = S(nodes[v.k].x, nodes[v.k].y); if (x < -40 || x > 1120 || y < -40 || y > 1960) return;
+      const lit = t >= v.arr, flowing = t >= v.ft && v.rep;
+      if (lit && !(flowing && t > v.ft + .3)) dot(fx, x, y, (26 + 60 * hit(t, v.arr, .6)) * Math.max(.6, zw), "255,200,120", .5 + .5 * hit(t, v.arr, .6));
+      else if (!lit) { fx.fillStyle = "rgba(255,240,220,.18)"; fx.fillRect(x - 2, y - 2, 4, 4); }
+    });
+    // بيتها
+    const [ox, oy] = S(nodes[O].x, nodes[O].y);
+    dot(fx, ox, oy, (90 + 20 * Math.sin(t * 5)) * clamp(C.z, .5, 2.4) * (1 + 1.5 * hit(t, 1.9, .5)), "255,120,165", t < T.flow ? 1 : .6);
+    if (t >= 1.9 && t < 2.8) { const k = p(t, 1.9, 2.8); fx.strokeStyle = `rgba(255,180,200,${1 - k})`; fx.lineWidth = 6; fx.beginPath(); fx.arc(ox, oy, 60 + 300 * k, 0, 7); fx.stroke(); }
+    // الدعوات تجري في الشوارع
+    INV.forEach((v) => { if (t < v.st || t > v.arr + .3) return; const s = (t - v.st) * v.sp; trail(fx, v.P, s, C, "255,210,140", Math.max(2.5, 7 * zw), Math.min(1, (v.arr + .3 - t) / .3)); });
+    // الردود: قلوب تطلع
+    INV.forEach((v) => { if (!v.rep || t < v.rt || t > v.rt + 1.6) return; const [x, y] = S(nodes[v.k].x, nodes[v.k].y), k = (t - v.rt) / 1.6; heart(fx, x + Math.sin(k * 6 + v.k) * 14, y - k * 140, 2.2 * (1 - k * .3), Math.min(1, (1 - k) * 2)); dot(fx, x, y, 50 * hit(t, v.rt, .5), "120,255,170", .8); });
+    // القاعة على البحر
+    const [hx, hy] = S(nodes[H].x, nodes[H].y), hp = p(t, T.vend, T.vend + .6) + .6 * p(t, VEND_AT[3], T.flow) + p(t, T.flow + .8, T.dive);
+    if (t >= T.vend) dot(fx, hx, hy, (80 + 120 * hp) * clamp(C.z * 3, .6, 3), "255,210,122", Math.min(1, .5 + .4 * hp));
+    // المورّدين: خطوط مثل النجوم للقاعة
+    VEND.forEach((v, i) => {
+      const a = VEND_AT[i]; if (t < a) return;
+      const [x, y] = S(v.x, v.y), k = p(t, a, a + .8, eio), out = p(t, T.dive - .4, T.dive);
+      fx.strokeStyle = `rgba(${v.c},${(.75 * (1 - out)).toFixed(2)})`; fx.lineWidth = 6; fx.setLineDash([2, 14]);
+      const mx = (x + hx) / 2, my = Math.min(y, hy) - 220;
+      fx.beginPath(); fx.moveTo(x, y); for (let q = 0; q <= 1.0001; q += .05) { if (q > k) break; const bx = (1 - q) ** 2 * x + 2 * (1 - q) * q * mx + q * q * hx, by = (1 - q) ** 2 * y + 2 * (1 - q) * q * my + q * q * hy; fx.lineTo(bx, by); } fx.stroke(); fx.setLineDash([]);
+      dot(fx, x, y, 90 * (1 + .8 * hit(t, a, .6)), v.c, 1 - out);
+      fx.globalCompositeOperation = "source-over"; fx.font = "900 46px Cairo"; fx.textAlign = "center"; fx.direction = "rtl";
+      fx.fillStyle = `rgba(255,248,240,${(p(t, a + .2, a + .5) * (1 - out)).toFixed(2)})`; fx.fillText(v.n, x, y - 70); fx.globalCompositeOperation = "lighter";
+    });
+    // ليلة الخميس: أنهار من النور للقاعة
+    INV.forEach((v) => { if (!v.rep || t < v.ft || t > v.harr + .2) return; const s = (t - v.ft) * v.fs; trail(fx, v.F, s, C, "255,180,120", Math.max(3, 9 * zw), Math.min(1, (v.harr + .2 - t) / .2)); });
+  } else {
+    fx.globalCompositeOperation = "source-over"; skyline(fx, t); fx.globalCompositeOperation = "lighter";
+    fireworks(fx, t, t >= T.logo);
+  }
+  fx.globalCompositeOperation = "source-over";
+  gl.clearRect(0, 0, 540, 960); gl.drawImage($("fx"), 0, 0, 540, 960);
+}
+
+const capEl = $("cap"); let cur = -2;
+function setCap(i) {
+  if (i === cur) return; cur = i; capEl.innerHTML = ""; if (i < 0) return;
+  let hi = false;
+  CAPS[i].t.split(" ").forEach((w, k, arr) => {
+    const s = document.createElement("span"); let x = w; if (x.startsWith("*")) { hi = true; x = x.slice(1); }
+    const end = x.includes("*"); x = x.replace(/\*/g, ""); s.textContent = x; if (hi) s.className = "g"; if (end) hi = false;
+    capEl.appendChild(s); if (k < arr.length - 1) capEl.appendChild(document.createTextNode(" "));
+  });
+}
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  if (!LOGO) return;
+  draw(t);
+  let flash = Math.max(hit(t, T.fire, .7), hit(t, 1.9, .3) * .2, hit(t, T.logo + 1.6, .5) * .4);
+  FW.forEach(([d]) => { flash = Math.max(flash, hit(t, T.fire + d, .12) * .15); });
+  VEND_AT.forEach((a) => { flash = Math.max(flash, hit(t, a, .2) * .12); });
+
+  // العداد
+  const cnt = $("count"); let txt = "", o = 0;
+  if (t >= T.send + .4 && t < T.reply) { const n = INV.filter((v) => t >= v.arr).length; txt = `الدعوات وصلت: <b>${AR(n)}</b>`; o = p(t, T.send + .4, T.send + .8) * (1 - p(t, T.reply - .3, T.reply)); }
+  else if (t >= T.reply && t < T.vend) { const n = INV.filter((v) => v.rep && t >= v.rt).length; txt = `أكيد جايين: <b>${AR(n)}</b> ♥`; o = p(t, T.reply, T.reply + .3) * (1 - p(t, T.vend - .3, T.vend)); }
+  else if (t >= T.flow + .3 && t < T.dive) { const n = INV.filter((v) => v.rep && t >= v.harr).length; txt = `وصلوا القاعة: <b>${AR(n)}</b>`; o = p(t, T.flow + .3, T.flow + .7) * (1 - p(t, T.dive - .2, T.dive)); }
+  if (cnt.innerHTML !== txt) cnt.innerHTML = txt;
+  css(cnt, o, "translateX(-50%)");
+
+  // الشعار الحقيقي يثبت فوق الأنوار
+  const L = T.logo, lk = p(t, L + 1.4, L + 2.0, eio);
+  css($("logo"), lk, `scale(${1.03 - .03 * lk})`);
+  const k1 = p(t, L + 1.9, L + 2.3, back); css($("brand"), k1, `scale(${1.25 - .25 * k1})`);
+  const k2 = p(t, L + 2.3, L + 2.7); css($("tag"), k2, `translateY(${(1 - k2) * 26}px)`);
+  const k3 = p(t, L + 2.7, L + 3.1, back); css($("url"), k3, `translateX(-50%) scale(${.6 + .4 * k3})`);
+
+  const ci = CAPS.findIndex((c) => t >= c.a && t < c.b + .35);
+  setCap(ci);
+  if (ci >= 0) { const c = CAPS[ci], sp = [...capEl.querySelectorAll("span")], out = p(t, c.b, c.b + .35, eio); sp.forEach((s, k) => { const q = p(t, c.a + k * .14, c.a + k * .14 + .4, back); s.style.opacity = clamp(q) * (1 - out); s.style.filter = `blur(${((1 - clamp(q)) * 12 + out * 10).toFixed(1)}px)`; s.style.transform = `translateY(${(1 - q) * 40}px) scale(${1.25 - .25 * q})`; }); }
+
+  const fade = 1 - p(t, DUR - .8, DUR, lin);
+  $("stage").style.opacity = fade;
+  $("flash").style.opacity = flash * .85;
+  $("grain").style.backgroundImage = `url(grain/g${Math.floor(t * 24) % 6}.png)`;
+  const sh = Math.max(hit(t, T.fire, .6) * 18, hit(t, 1.9, .2) * 5);
+  $("stage").style.transform = (document.body.classList.contains("rec") ? "" : `scale(${window.__fit || 1}) `) + `translate(${Math.sin(t * 90) * sh}px, ${Math.cos(t * 77) * sh}px)`;
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { window.__fit = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); render(+seek.value); };
+addEventListener("resize", fit);
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; } else fit();
+(async () => {
+  await document.fonts.load("900 46px Cairo"); await document.fonts.ready;
+  const im = $("logoImg"); if (!im.complete) await new Promise((r) => { im.onload = im.onerror = r; });
+  buildLogo(); window.__ready = true; render(+seek.value || 0);
+})();
+</script>
+</body>
+</html>
