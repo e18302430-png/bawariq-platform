@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · سحر</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&display=block">
+<style>
+:root { --ink: #FFF8F0; --gold: #FFD27A; --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%); }
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: "Cairo", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: radial-gradient(90% 60% at 50% 45%, #1B0B26 0%, #07030C 70%, #020104 100%); transform-origin: center; }
+canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
+#glow { filter: blur(14px); opacity: .9; mix-blend-mode: screen; }
+#neb { position: absolute; inset: -200px; background: radial-gradient(40% 30% at 30% 35%, rgba(155,63,201,.28), transparent 70%), radial-gradient(35% 28% at 72% 62%, rgba(229,25,94,.22), transparent 70%), radial-gradient(30% 25% at 50% 48%, rgba(255,179,107,.14), transparent 70%); will-change: transform, opacity; }
+.abs { position: absolute; will-change: transform, opacity; }
+#cap { left: 40px; right: 40px; top: 1360px; text-align: center; font-size: 100px; font-weight: 900; line-height: 1.2; text-shadow: 0 10px 50px rgba(0,0,0,.8); }
+#cap span { display: inline-block; will-change: transform, opacity, filter; }
+#cap .g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#sub { left: 40px; right: 40px; top: 1500px; text-align: center; font-size: 52px; font-weight: 800; color: var(--gold); text-shadow: 0 8px 40px rgba(0,0,0,.8); }
+#ring { position: absolute; left: 50%; top: 860px; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; border: 10px solid rgba(255,230,190,.9); box-shadow: 0 0 60px rgba(255,180,110,.8), inset 0 0 40px rgba(255,180,110,.6); opacity: 0; will-change: transform, opacity; }
+#burst { position: absolute; left: 50%; top: 860px; width: 1900px; height: 1900px; margin: -950px 0 0 -950px; border-radius: 50%; background: radial-gradient(circle, rgba(255,248,230,.95) 0%, rgba(255,180,110,.5) 20%, rgba(229,25,94,.2) 42%, transparent 66%); opacity: 0; will-change: transform, opacity; }
+#rays { position: absolute; left: 50%; top: 860px; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; background: repeating-conic-gradient(from 0deg, rgba(255,210,122,.22) 0deg 3deg, transparent 3deg 11deg); -webkit-mask: radial-gradient(circle, #000 0%, transparent 58%); mask: radial-gradient(circle, #000 0%, transparent 58%); opacity: 0; will-change: transform, opacity; }
+#logo { left: 280px; top: 380px; width: 520px; height: 520px; object-fit: contain; opacity: 0; filter: drop-shadow(0 0 40px rgba(255,150,110,.5)); }
+#brand { left: 0; right: 0; top: 1040px; text-align: center; font-size: 210px; font-weight: 900; line-height: 1.25; opacity: 0; }
+#brand span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#tag { left: 0; right: 0; top: 1420px; text-align: center; font-size: 62px; font-weight: 800; color: var(--gold); opacity: 0; }
+#url { left: 50%; top: 1570px; direction: ltr; white-space: nowrap; font-size: 42px; font-weight: 800; padding: 16px 46px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); opacity: 0; }
+#grain { position: absolute; inset: 0; background-size: 1080px 1920px; mix-blend-mode: overlay; opacity: .12; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(75% 55% at 50% 48%, transparent 55%, rgba(0,0,0,.7) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #FFF6E8; opacity: 0; pointer-events: none; }
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 700 13px "Cairo", sans-serif; color: #fff; max-width: calc(100vw - 20px); }
+#ui button { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="neb"></div>
+  <canvas id="bg" width="1080" height="1920"></canvas>
+  <div id="burst"></div><div id="rays"></div><div id="ring"></div>
+  <canvas id="glow" width="540" height="960"></canvas>
+  <canvas id="fx" width="1080" height="1920"></canvas>
+  <div class="abs" id="cap"></div>
+  <div class="abs" id="sub"></div>
+  <img class="abs" id="logo" src="logo.png" alt=""><div class="abs" id="brand"><span>مناسبتي</span></div>
+  <div class="abs" id="tag">من الفكرة لآخر ضيف</div>
+  <div class="abs" id="url">munasabati-sigma.vercel.app</div>
+  <div id="grain"></div><div id="vig"></div><div id="flash"></div>
+</div></div>
+<div id="ui">
+  <button id="play">تشغيل</button><button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="32" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 32.00</span><button id="fs">ملء الشاشة</button>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+<img id="logoImg" src="logo.png" alt="" style="display:none">
+
+<script>
+/* ═══ السيناريو: ذرات ذهب تتشكل قدامك وتحكي القصة (التوقيت نفسه في audio/make_audio.py) ═══ */
+const DUR = 32, N = 4600, CX = 540, CY = 860;
+const MORPHS = [ // الشكل يبدأ يتكون عند at
+  { at: 0.0, shape: "spark" }, { at: 2.6, shape: "fikra" }, { at: 5.2, shape: "ring" }, { at: 8.2, shape: "hall" },
+  { at: 11.2, shape: "env" }, { at: 14.2, shape: "camera" }, { at: 17.2, shape: "shield" }, { at: 20.2, shape: "point" },
+  { at: 22.4, shape: "burst", fast: true }, { at: 23.3, shape: "heart" }, { at: 26.4, shape: "logo" },
+];
+const CAPS = [
+  { a: 0.9, b: 2.4, t: "عندك *فكرة؟*" },
+  { a: 3.1, b: 5.0, t: "قولها… *بس.*" },
+  { a: 5.8, b: 8.0, t: "زواج؟ *خطوبة؟*", s: "عقيقة · تخرّج · حفلة شركة" },
+  { a: 8.8, b: 11.0, t: "نجيب لك *القاعة*", s: "عروض من قاعات الشرقية" },
+  { a: 11.8, b: 14.0, t: "نوصّل *دعواتك*", s: "باسم كل ضيف" },
+  { a: 14.8, b: 17.0, t: "ونرتّب *الباقي*", s: "تصوير · ضيافة · كوشة" },
+  { a: 17.8, b: 20.0, t: "وعربونك *محفوظ*", s: "عبر المنصة" },
+  { a: 20.7, b: 22.0, t: "وأنت؟" },
+  { a: 23.8, b: 26.1, t: "عيش *ليلتك.*" },
+];
+const BURST = 22.4, LOGO = 26.4;
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eo5 = (x) => 1 - Math.pow(1 - x, 5), lin = (x) => x;
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+const hit = (t, a, d = .25) => (t >= a && t < a + d ? 1 - (t - a) / d : 0);
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = mulberry(2026), RND = Array.from({ length: N * 6 }, R);
+
+/* ═══ الأشكال: نرسمها على لوح مخفي ونلقط منه نقاط ═══ */
+const GOLD = [255, 210, 122], ROSE = [255, 120, 165], VIOL = [196, 150, 255], WHITE = [255, 244, 228];
+function sample(draw, col, seed) {
+  const c = document.createElement("canvas"); c.width = 1080; c.height = 1920;
+  const x = c.getContext("2d"); x.fillStyle = "#fff"; x.strokeStyle = "#fff"; x.lineCap = x.lineJoin = "round"; draw(x);
+  const d = x.getImageData(0, 0, 1080, 1920).data, pts = [];
+  for (let y = 0; y < 1920; y += 3) for (let xx = 0; xx < 1080; xx += 3) { const k = (y * 1080 + xx) * 4; if (d[k + 3] > 110) pts.push([xx, y, d[k], d[k + 1], d[k + 2]]); }
+  const r = mulberry(seed), out = new Float32Array(N * 6);
+  for (let i = 0; i < N; i++) {
+    const q = pts[Math.floor(r() * pts.length)], cc = col ? col(q[0], q[1], r) : [q[2], q[3], q[4]];
+    out.set([q[0] + (r() - .5) * 3, q[1] + (r() - .5) * 3, (r() - .5) * 90, cc[0], cc[1], cc[2]], i * 6);
+  }
+  return out;
+}
+const mix = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+const goldish = (x, y, r) => mix(GOLD, WHITE, r() * .6);
+function buildShapes() {
+  const S = {};
+  S.fikra = sample((x) => { x.direction = "rtl"; x.textAlign = "center"; x.font = "900 340px Cairo"; x.fillText("فكرة", CX, CY + 140); }, goldish, 1);
+  S.ring = sample((x) => {
+    x.lineWidth = 30; x.beginPath(); x.arc(CX, CY + 70, 230, 0, 7); x.stroke();
+    x.beginPath(); x.moveTo(CX - 90, CY - 175); x.lineTo(CX - 52, CY - 240); x.lineTo(CX + 52, CY - 240); x.lineTo(CX + 90, CY - 175); x.lineTo(CX, CY - 80); x.closePath(); x.fill();
+    [[-300, -250], [310, -150], [-260, 260]].forEach(([dx, dy]) => { x.beginPath(); x.arc(CX + dx, CY + dy, 12, 0, 7); x.fill(); });
+  }, (xx, y, r) => (y < CY - 70 ? mix(WHITE, [200, 235, 255], r()) : goldish(xx, y, r)), 2);
+  S.hall = sample((x) => {
+    x.lineWidth = 20; x.beginPath(); x.moveTo(CX - 250, CY + 300); x.lineTo(CX - 250, CY - 20); x.arc(CX, CY - 20, 250, Math.PI, 0); x.lineTo(CX + 250, CY + 300); x.stroke();
+    x.lineWidth = 11; x.beginPath(); x.moveTo(CX - 165, CY + 300); x.lineTo(CX - 165, CY + 20); x.arc(CX, CY + 20, 165, Math.PI, 0); x.lineTo(CX + 165, CY + 300); x.stroke();
+    x.lineWidth = 16; x.beginPath(); x.moveTo(CX - 360, CY + 310); x.lineTo(CX + 360, CY + 310); x.stroke();
+    x.beginPath(); x.moveTo(CX, CY - 330); x.lineTo(CX + 22, CY - 290); x.lineTo(CX, CY - 250); x.lineTo(CX - 22, CY - 290); x.closePath(); x.fill();
+    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; x.beginPath(); x.arc(CX + Math.cos(a) * 60, CY + 20 + Math.sin(a) * 22, 9, 0, 7); x.fill(); }
+    x.lineWidth = 6; x.beginPath(); x.moveTo(CX, CY - 145); x.lineTo(CX, CY + 2); x.stroke();
+  }, goldish, 3);
+  S.env = sample((x) => {
+    x.lineWidth = 20; x.beginPath(); x.roundRect(CX - 280, CY - 170, 560, 380, 30); x.stroke();
+    x.beginPath(); x.moveTo(CX - 270, CY - 160); x.lineTo(CX, CY + 50); x.lineTo(CX + 270, CY - 160); x.stroke();
+    x.beginPath(); const hx = CX, hy = CY + 40; x.moveTo(hx, hy + 40); x.bezierCurveTo(hx - 70, hy - 5, hx - 40, hy - 55, hx, hy - 25); x.bezierCurveTo(hx + 40, hy - 55, hx + 70, hy - 5, hx, hy + 40); x.fill();
+  }, (xx, y, r) => (Math.hypot(xx - CX, y - CY - 30) < 70 ? mix([255, 70, 120], ROSE, r()) : mix(ROSE, WHITE, r() * .5)), 4);
+  S.camera = sample((x) => {
+    x.lineWidth = 20; x.beginPath(); x.roundRect(CX - 290, CY - 150, 580, 360, 50); x.stroke();
+    x.beginPath(); x.roundRect(CX - 130, CY - 225, 170, 70, 20); x.stroke();
+    x.beginPath(); x.arc(CX, CY + 30, 120, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.arc(CX, CY + 30, 65, 0, 7); x.stroke();
+    x.beginPath(); x.arc(CX + 200, CY - 80, 20, 0, 7); x.fill();
+  }, (xx, y, r) => mix(VIOL, WHITE, r() * .5), 5);
+  S.shield = sample((x) => {
+    x.lineWidth = 22; x.beginPath(); x.moveTo(CX, CY - 290); x.bezierCurveTo(CX + 120, CY - 220, CX + 220, CY - 220, CX + 250, CY - 220);
+    x.bezierCurveTo(CX + 250, CY + 60, CX + 160, CY + 220, CX, CY + 320); x.bezierCurveTo(CX - 160, CY + 220, CX - 250, CY + 60, CX - 250, CY - 220);
+    x.bezierCurveTo(CX - 220, CY - 220, CX - 120, CY - 220, CX, CY - 290); x.stroke();
+    x.lineWidth = 34; x.beginPath(); x.moveTo(CX - 105, CY + 10); x.lineTo(CX - 25, CY + 95); x.lineTo(CX + 125, CY - 70); x.stroke();
+  }, goldish, 6);
+  S.heart = sample((x) => {
+    x.beginPath();
+    for (let k = 0; k <= 200; k++) { const a = k / 200 * Math.PI * 2, hx = 16 * Math.sin(a) ** 3, hy = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a); x.lineTo(CX + hx * 21, CY - 20 - hy * 21); }
+    x.fill();
+  }, (xx, y, r) => mix([255, 60, 110], [255, 190, 150], (y - CY + 330) / 700 * .7 + r() * .3), 7);
+  S.logo = sample((x) => {
+    x.drawImage($("logoImg"), CX - 260, 380, 520, 520);
+    const g = x.createLinearGradient(CX - 350, 0, CX + 350, 0); g.addColorStop(0, "#9B3FC9"); g.addColorStop(.4, "#E5195E"); g.addColorStop(.75, "#FF6B5A"); g.addColorStop(1, "#FFB36B");
+    x.fillStyle = g; x.direction = "rtl"; x.textAlign = "center"; x.font = "900 210px Cairo"; x.fillText("مناسبتي", CX, 1240);
+  }, null, 8);
+  // الشرارة والنقطة والانفجار تنحسب بدون رسم
+  const pt = new Float32Array(N * 6), bu = new Float32Array(N * 6), r = mulberry(9), PAL = [GOLD, ROSE, VIOL, WHITE, [255, 150, 90]];
+  for (let i = 0; i < N; i++) {
+    const a = r() * Math.PI * 2, b = Math.acos(2 * r() - 1), rad = 260 + Math.pow(r(), .6) * 760, c = PAL[i % 5];
+    pt.set([CX + (r() - .5) * 8, CY + (r() - .5) * 8, (r() - .5) * 8, 255, 236, 200], i * 6);
+    bu.set([CX + Math.sin(b) * Math.cos(a) * rad, CY + Math.sin(b) * Math.sin(a) * rad * 1.15, Math.cos(b) * rad * .6, c[0], c[1], c[2]], i * 6);
+  }
+  S.point = pt; S.burst = bu;
+  return S;
+}
+
+/* الشرارة تلف قبل ما تنفجر */
+const spark = (t) => [CX + Math.sin(t * 1.25) * 280 * (1 - p(t, 1.6, 2.6, eio)), CY + 260 - 260 * p(t, 0, 2.6, eio) + Math.sin(t * 2.3) * 160 * (1 - p(t, 1.6, 2.6, eio)), 0];
+let SH = null;
+function target(i, k, t) {
+  const m = MORPHS[k];
+  if (m.shape === "spark") { const s = spark(t); return [s[0] + (RND[i] - .5) * 10, s[1] + (RND[i + N] - .5) * 10, 0, 255, 236, 200]; }
+  const a = SH[m.shape], o = i * 6; return [a[o], a[o + 1], a[o + 2], a[o + 3], a[o + 4], a[o + 5]];
+}
+function pos(i, t) {
+  let k = 0; while (k + 1 < MORPHS.length && t >= MORPHS[k + 1].at) k++;
+  const B = target(i, k, t);
+  let P;
+  if (k === 0) P = B;
+  else {
+    const m = MORPHS[k], A = target(i, k - 1, m.at), fast = m.fast;
+    const d = fast ? RND[i + 2 * N] * .12 : RND[i + 2 * N] * .55, dur = fast ? .7 : 1.05;
+    const q = clamp((t - m.at - d) / dur), e = fast ? eo5(q) : eio(q);
+    const sw = Math.sin(Math.PI * e) * (fast ? 0 : 120 + RND[i + 3 * N] * 300), th = i * 2.399 + e * 4;
+    P = [A[0] + (B[0] - A[0]) * e + Math.cos(th) * sw, A[1] + (B[1] - A[1]) * e + Math.sin(th) * sw, A[2] + (B[2] - A[2]) * e + Math.sin(th * .7) * sw * .5,
+      A[3] + (B[3] - A[3]) * e, A[4] + (B[4] - A[4]) * e, A[5] + (B[5] - A[5]) * e];
+  }
+  const br = MORPHS[k].shape === "burst" ? 0 : 3.5;
+  P[0] += Math.sin(t * 1.7 + i) * br; P[1] += Math.cos(t * 1.3 + i * 1.7) * br;
+  if (MORPHS[k].shape === "burst") { const g = t - BURST; P[1] += g * g * 60; }
+  return P;
+}
+/* كاميرا ثلاثية الأبعاد خفيفة تلف حول الشكل */
+function proj(P, t) {
+  const a = Math.sin(t * .55) * .38 * (1 - p(t, LOGO, LOGO + 1.2, eio)), x = P[0] - CX, y = P[1] - CY, z = P[2];
+  const xr = x * Math.cos(a) + z * Math.sin(a), zr = -x * Math.sin(a) + z * Math.cos(a);
+  const s = 1100 / (1100 + zr) * camZoom(t);
+  return [CX + xr * s, CY + y * s, s];
+}
+function camZoom(t) {
+  let k = 0; while (k + 1 < MORPHS.length && t >= MORPHS[k + 1].at) k++;
+  const m = MORPHS[k], nx = MORPHS[k + 1] ? MORPHS[k + 1].at : DUR;
+  return m.shape === "logo" ? 1 : 1 + .06 * p(t, m.at, nx, lin);
+}
+
+const fx = $("fx").getContext("2d"), gl = $("glow").getContext("2d"), bg = $("bg").getContext("2d");
+function stars(t) {
+  bg.clearRect(0, 0, 1080, 1920);
+  for (let i = 0; i < 220; i++) {
+    const x = (RND[i * 3] * 1080 + t * 6 * (RND[i * 3 + 1] - .5)) % 1080, y = (RND[i * 3 + 1] * 1920 - t * 10 * RND[i * 3 + 2] + 1920) % 1920;
+    const tw = .25 + .75 * Math.abs(Math.sin(t * (.6 + RND[i * 3 + 2] * 2) + i));
+    bg.fillStyle = `rgba(255,240,220,${.55 * tw})`; bg.fillRect(x, y, 1.6 + RND[i] * 2, 1.6 + RND[i] * 2);
+  }
+}
+function draw(t) {
+  fx.clearRect(0, 0, 1080, 1920);
+  fx.globalCompositeOperation = "lighter"; fx.lineCap = "round";
+  const fade = 1 - p(t, 31.2, 32, lin);
+  for (let i = 0; i < N; i++) {
+    const P = pos(i, t), Q = pos(i, t - .045), a = proj(P, t), b = proj(Q, t - .045);
+    const tw = (.55 + .45 * Math.sin(t * 3 + i * 1.3)) * fade, w = (2.2 + RND[i + 4 * N] * 3.2) * a[2];
+    fx.strokeStyle = `rgba(${P[3] | 0},${P[4] | 0},${P[5] | 0},${Math.min(1, tw * 1.05).toFixed(2)})`; fx.lineWidth = w;
+    fx.beginPath(); fx.moveTo(b[0], b[1]); fx.lineTo(a[0] + .01, a[1]); fx.stroke();
+  }
+  // وهج الشرارة والنقطة
+  const glowAt = (x, y, r, al) => { const g = fx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(255,248,230,${al})`); g.addColorStop(.25, `rgba(255,200,130,${al * .55})`); g.addColorStop(1, "rgba(255,150,90,0)"); fx.fillStyle = g; fx.beginPath(); fx.arc(x, y, r, 0, 7); fx.fill(); };
+  if (t < 3.1) { const s = spark(Math.min(t, 2.6)), pp = proj([s[0], s[1], 0], t); glowAt(pp[0], pp[1], 140 + 30 * Math.sin(t * 9), (t < 2.6 ? 1 : 1 - p(t, 2.6, 3.1)) * clamp(t * 3)); }
+  if (t >= 20.6 && t < BURST) { const k = p(t, 20.6, BURST, (x) => x * x); glowAt(CX, CY, 120 + 260 * k + 20 * Math.sin(t * 30), .5 + .5 * k); }
+  fx.globalCompositeOperation = "source-over";
+  gl.clearRect(0, 0, 540, 960); gl.drawImage($("fx"), 0, 0, 540, 960);
+}
+
+/* العناوين: كل كلمة تطلع من ضباب */
+const capEl = $("cap"), subEl = $("sub"); let cur = -2;
+function setCap(i) {
+  if (i === cur) return; cur = i; capEl.innerHTML = ""; subEl.textContent = i >= 0 && CAPS[i].s ? CAPS[i].s : "";
+  if (i < 0) return;
+  let hi = false;
+  CAPS[i].t.split(" ").forEach((w, k, arr) => {
+    const s = document.createElement("span"); let x = w; if (x.startsWith("*")) { hi = true; x = x.slice(1); }
+    const end = x.includes("*"); x = x.replace(/\*/g, ""); s.textContent = x; if (hi) s.className = "g"; if (end) hi = false;
+    capEl.appendChild(s); if (k < arr.length - 1) capEl.appendChild(document.createTextNode(" "));
+  });
+}
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  if (!SH) return;
+  let flash = 0, shake = 0;
+  stars(t); draw(t);
+  $("neb").style.transform = `translate(${Math.sin(t * .2) * 60}px, ${Math.cos(t * .17) * 50}px) scale(${1 + .05 * Math.sin(t * .3)})`;
+  $("neb").style.opacity = t >= 20.4 && t < BURST ? 1 - p(t, 20.4, 21.2) * .8 : 1;
+
+  // كل تحوّل: نبضة ضوء خفيفة
+  MORPHS.forEach((m, k) => { if (k) flash = Math.max(flash, hit(t, m.at + .9, .3) * .12); });
+  // الانفجار
+  const bi = p(t, BURST, BURST + .5, eo5);
+  css($("burst"), t >= BURST && t < LOGO + 1 ? .75 * (1 - .8 * p(t, BURST + .2, BURST + 1.4)) * (1 - p(t, LOGO, LOGO + 1)) : 0, `scale(${.1 + 1.2 * bi})`);
+  css($("rays"), t >= BURST && t < LOGO ? .8 * (1 - .75 * p(t, BURST + .4, BURST + 1.6)) * (1 - p(t, LOGO - .5, LOGO)) : 0, `rotate(${(t - BURST) * 14}deg) scale(${.5 + .6 * bi})`);
+  const ri = p(t, BURST, BURST + 1.1, eo);
+  css($("ring"), t >= BURST && t < BURST + 1.1 ? 1 - ri : 0, `scale(${.2 + 6 * ri})`);
+  flash = Math.max(flash, hit(t, BURST, .6), hit(t, 2.6, .35) * .5, hit(t, LOGO + .9, .5) * .5);
+  shake = Math.max(shake, hit(t, BURST, .7) * 22, hit(t, 2.6, .3) * 8);
+
+  // العناوين
+  const ci = CAPS.findIndex((c) => t >= c.a && t < c.b + .4);
+  setCap(ci);
+  if (ci >= 0) {
+    const c = CAPS[ci], sp = [...capEl.querySelectorAll("span")], out = p(t, c.b, c.b + .4, eio);
+    sp.forEach((s, k) => { const q = p(t, c.a + k * .16, c.a + k * .16 + .45, back); s.style.opacity = clamp(q) * (1 - out); s.style.filter = `blur(${((1 - clamp(q)) * 12 + out * 10).toFixed(1)}px)`; s.style.transform = `translateY(${(1 - q) * 40}px) scale(${1.25 - .25 * q})`; });
+    const sq = p(t, c.a + .45, c.a + .85); css(subEl, sq * (1 - out), `translateY(${(1 - sq) * 20}px)`);
+    capEl.style.top = ci === 7 || ci === 8 ? "1380px" : "1360px";
+  } else subEl.style.opacity = 0;
+
+  // الختام: الشعار الحقيقي يثبت فوق الذرات
+  const lk = p(t, LOGO + 1.0, LOGO + 1.8, eio), lf = 1 - p(t, 31.2, 32, lin);
+  css($("logo"), lk * lf, `scale(${1.04 - .04 * lk})`); css($("brand"), lk * lf, `scale(${1.04 - .04 * lk})`);
+  const tg = p(t, LOGO + 1.6, LOGO + 2.1); css($("tag"), tg * (1 - p(t, 31.2, 32, lin)), `translateY(${(1 - tg) * 24}px)`);
+  const u = p(t, LOGO + 2.2, LOGO + 2.6, back); css($("url"), t >= LOGO + 2.2 ? u * (1 - p(t, 31.2, 32, lin)) : 0, `translateX(-50%) scale(${.6 + .4 * u})`);
+
+  $("flash").style.opacity = flash * .8;
+  $("grain").style.backgroundImage = `url(grain/g${Math.floor(t * 24) % 6}.png)`;
+  $("stage").style.transform = (document.body.classList.contains("rec") ? "" : `scale(${window.__fit || 1}) `) + `translate(${Math.sin(t * 90) * shake}px, ${Math.cos(t * 77) * shake}px)`;
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { window.__fit = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); render(+seek.value); };
+addEventListener("resize", fit);
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; } else fit();
+(async () => {
+  await document.fonts.load("900 400px Cairo"); await document.fonts.ready;
+  const im = $("logoImg"); if (!im.complete) await new Promise((r) => { im.onload = im.onerror = r; });
+  SH = buildShapes(); window.__ready = true; render(+seek.value || 0);
+})();
+</script>
+</body>
+</html>
