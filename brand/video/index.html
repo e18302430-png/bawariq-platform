@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · فيديو القاعات</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&display=block">
+<style>
+/* ── الألوان والخطوط: غيّرها من هنا ── */
+:root {
+  --bg-1: #120814; --bg-2: #2A1030; --glow: #7A1F5A;
+  --ink: #FBF3EC; --muted: #D9C6CF;
+  --rose: #E5195E; --gold: #FFD27A; --violet: #9B3FC9;
+  --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%);
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #050205; overflow: hidden; }
+body { font-family: "Cairo", "Noto Kufi Arabic", Tahoma, sans-serif; color: var(--ink); }
+
+/* المسرح بمقاس التصدير، ويتصغّر للمعاينة */
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; transform-origin: center; background: radial-gradient(120% 70% at 50% 30%, var(--bg-2) 0%, var(--bg-1) 70%); }
+.light { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; pointer-events: none; }
+#l1 { width: 900px; height: 900px; background: radial-gradient(circle, #8E2F6B 0%, transparent 65%); top: 80px; right: -260px; }
+#l2 { width: 800px; height: 800px; background: radial-gradient(circle, #4B1C7A 0%, transparent 65%); bottom: 120px; left: -280px; }
+#floor { position: absolute; left: 50%; bottom: 210px; width: 760px; height: 120px; margin-left: -380px; border-radius: 50%; background: radial-gradient(closest-side, rgba(229,25,94,.35), transparent); filter: blur(10px); }
+
+/* العناوين */
+.head { position: absolute; left: 100px; right: 100px; top: 250px; text-align: center; will-change: transform, opacity; }
+.head h1 { font-size: 92px; font-weight: 900; line-height: 1.22; letter-spacing: -1px; }
+.head h1 .g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.head p { margin-top: 18px; font-size: 44px; font-weight: 700; color: var(--muted); }
+.chips { margin-top: 26px; display: flex; justify-content: center; gap: 16px; }
+.chip { font-size: 36px; font-weight: 700; padding: 10px 28px; border-radius: 999px; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.18); will-change: transform, opacity; }
+
+/* الجوال */
+#phone { position: absolute; left: 50%; top: 640px; width: 560px; height: 1180px; margin-left: -280px; border-radius: 76px; padding: 18px; background: linear-gradient(160deg, #2b2030, #0d080f); box-shadow: 0 60px 120px -40px rgba(0,0,0,.9), 0 0 0 2px rgba(255,255,255,.08) inset; will-change: transform, opacity; }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 60px; overflow: hidden; background: #f3f2f6; }
+.shot { position: absolute; inset: 0; will-change: transform, opacity; }
+.shot img { position: absolute; left: 0; top: 0; width: 100%; height: auto; transform-origin: 0 0; }
+#notch { position: absolute; top: 30px; left: 50%; width: 150px; height: 40px; margin-left: -75px; border-radius: 20px; background: #000; z-index: 3; }
+
+/* الرقم الكبير والختام */
+.lift { position: absolute; left: 90px; width: 900px; border-radius: 34px; overflow: hidden; background: #fff; box-shadow: 0 50px 100px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.4); will-change: transform, opacity; opacity: 0; }
+.lift img { display: block; width: 100%; height: auto; }
+#zero { position: absolute; left: 0; right: 0; top: 640px; text-align: center; will-change: transform, opacity; }
+#zero .num { direction: ltr; font-size: 400px; font-weight: 900; line-height: 1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#zero h2 { font-size: 80px; font-weight: 900; margin-top: 10px; }
+#zero p { font-size: 42px; font-weight: 700; color: var(--muted); margin-top: 22px; }
+#zero small { display: block; margin-top: 40px; font-size: 30px; color: rgba(217,198,207,.7); font-weight: 600; }
+#cta { position: absolute; left: 0; right: 0; top: 520px; display: grid; justify-items: center; text-align: center; will-change: opacity; }
+#logo { width: 420px; height: 420px; object-fit: contain; will-change: transform, opacity; }
+#cta h2 { font-size: 104px; font-weight: 900; margin-top: 10px; }
+#cta .url { margin-top: 34px; direction: ltr; font-size: 40px; font-weight: 800; padding: 16px 40px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); }
+#cta p { margin-top: 44px; font-size: 44px; font-weight: 700; color: var(--gold); }
+
+/* أدوات المعاينة (تختفي في وضع التسجيل) */
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 600 13px "Cairo", sans-serif; color: #fff; backdrop-filter: blur(10px); max-width: calc(100vw - 20px); }
+#ui button, #ui label { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui input[type=file] { display: none; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div class="light" id="l1"></div><div class="light" id="l2"></div><div id="floor"></div>
+
+  <!-- العناوين: نص واحد لكل مشهد -->
+  <div class="head" id="h1"><h1>عندك ليالي <span class="g">فاضية</span><br>بين الأسبوع؟</h1><p>خلّنا نعبّيها لك</p></div>
+  <div class="head" id="h2"><h1>طلبات <span class="g">جاهزة</span> توصلك</h1><div class="chips"><span class="chip" id="c1">التاريخ</span><span class="chip" id="c2">عدد الضيوف</span><span class="chip" id="c3">القاعة</span></div></div>
+  <div class="head" id="h3"><h1>ترد <span class="g">بسعرك</span><br>من جوالك</h1><p>عرض واحد، في دقيقة</p></div>
+  <div class="head" id="h4"><h1>حقك <span class="g">واضح</span> ومضمون</h1><p>العربون عبر المنصة، وحقك بعد الليلة</p></div>
+
+  <div id="phone"><div id="screen">
+    <div id="notch"></div>
+    <div class="shot" id="s1"><img data-asset="cal" src="shots/cal.png" alt=""></div>
+    <div class="shot" id="s2"><img data-asset="inbox" src="shots/inbox.png" alt=""></div>
+    <div class="shot" id="s3"><img data-asset="quote" src="shots/quote.png" alt=""></div>
+    <div class="shot" id="s4"><img data-asset="money" src="shots/money.png" alt=""></div>
+  </div></div>
+
+  <div class="lift" id="k2" style="top:1190px"><img data-asset="lift-inbox" src="shots/lift-inbox.png" alt=""></div>
+  <div class="lift" id="k3" style="top:1250px"><img data-asset="lift-quote" src="shots/lift-quote.png" alt=""></div>
+  <div class="lift" id="k4" style="top:1230px"><img data-asset="lift-money" src="shots/lift-money.png" alt=""></div>
+
+  <div id="zero"><div class="num">0%</div><h2>من سعرك أول ٤ شهور</h2><p>بدون اشتراك · توقف متى ما تبي</p><small>حسب خطة الإطلاق في مناسبتي</small></div>
+  <div id="cta"><img id="logo" data-asset="logo" src="logo.png" alt="مناسبتي"><h2>سجّل قاعتك اليوم</h2><div class="url">munasabati-sigma.vercel.app/venues</div><p>مناسبتك علينا… من الفكرة لآخر ضيف</p></div>
+</div></div>
+
+<div id="ui">
+  <button id="play">تشغيل</button>
+  <button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="30" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 30.00</span>
+  <button id="fs">ملء الشاشة</button>
+  <label>موسيقى<input type="file" id="upMusic" accept="audio/*"></label>
+  <label>الشعار<input type="file" id="upLogo" accept="image/*"></label>
+  <label>صور الشاشات<input type="file" id="upShots" accept="image/*" multiple></label>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+
+<script>
+/* ═══ الخط الزمني: كل التوقيتات بالثواني هنا ═══ */
+const DUR = 30;
+const CUES = { s1: [0, 4.6], s2: [4.6, 9.6], s3: [9.6, 14.6], s4: [14.6, 19.6], zero: [19.6, 25.2], cta: [25.2, 30] };
+// نقطة التركيز داخل كل شاشة (بإحداثيات صورة الجوال 390×844) والتكبير
+const FOCUS = { s1: { y: 440, k: 1.12 }, s2: { y: 360, k: 1.08 }, s3: { y: 545, k: 1.1 }, s4: { y: 520, k: 1.1 } };
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3);                       // easeOutCubic
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const p = (t, a, b, ease = eo) => ease(clamp((t - a) / (b - a)));
+const set = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+
+function headIn(el, t, [a, b]) {
+  const i = p(t, a + .15, a + .85), o = p(t, b - .45, b, eio);
+  const op = i * (1 - o);
+  set(el, op, `translateY(${(1 - i) * 40 - o * 30}px)`);
+}
+function shot(id, t) {
+  const [a, b] = CUES[id], el = $(id), f = FOCUS[id];
+  const fadeIn = id === "s1" ? 1 : p(t, a - .05, a + .45, eio);
+  set(el, fadeIn, `translateX(${(1 - fadeIn) * -60}px)`);
+  // دفعة كاميرا قصيرة ثم ثبات
+  const z = p(t, a + .9, a + 2.3, eio);
+  const k = 1 + (f.k - 1) * z;
+  const img = el.querySelector("img"), W = 524, s = W / 390;          // عرض الشاشة الداخلي
+  const H = 1144, cy = f.y * s;
+  const ty = H / 2 - cy * k;                                          // يوسّط نقطة التركيز
+  const tx = (W - W * k) / 2;
+  img.style.transform = `translate(${tx}px, ${Math.min(0, Math.max(H - 844 * s * k, ty * z))}px) scale(${k})`;
+}
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  // إضاءة الاستوديو تتحرك ببطء
+  $("l1").style.transform = `translate(${Math.sin(t / 5) * 40}px, ${Math.cos(t / 6) * 30}px)`;
+  $("l2").style.transform = `translate(${Math.cos(t / 7) * 40}px, ${Math.sin(t / 5) * 30}px)`;
+
+  headIn($("h1"), t, CUES.s1); headIn($("h2"), t, CUES.s2); headIn($("h3"), t, CUES.s3); headIn($("h4"), t, CUES.s4);
+  ["c1", "c2", "c3"].forEach((c, i) => { const a = CUES.s2[0] + 1.1 + i * .45; const k = p(t, a, a + .5); set($(c), k * (1 - p(t, CUES.s2[1] - .45, CUES.s2[1], eio)), `translateY(${(1 - k) * 24}px)`); });
+
+  // الجوال: يدخل في البداية، ويختفي قبل الرقم الكبير
+  const ph = $("phone"), pin = p(t, 0, .9), pout = p(t, CUES.zero[0] - .3, CUES.zero[0] + .6, eio);
+  set(ph, pin * (1 - pout), `translateY(${(1 - pin) * 120 + pout * 260}px) scale(${.94 + .06 * pin - .08 * pout})`);
+  $("floor").style.opacity = pin * (1 - pout);
+  ["s1", "s2", "s3", "s4"].forEach((id) => { if (t >= CUES[id][0] - .1 && t <= CUES.zero[0] + .7) shot(id, t); else $(id).style.opacity = id === "s1" && t < CUES.s2[0] ? 1 : 0; });
+
+  // الجزء المهم من الشاشة الحقيقية يطلع كبطاقة واضحة قدام الجوال
+  [["k2", "s2", 2.3], ["k3", "s3", 1.6], ["k4", "s4", 1.6]].forEach(([k, s, d]) => {
+    const [a, b] = CUES[s], i = p(t, a + d, a + d + .75), o = p(t, b - .45, b, eio);
+    set($(k), i * (1 - o), `translateY(${(1 - i) * 90}px) scale(${.82 + .18 * i})`);
+  });
+  const lifted = Math.max(...[["s2", 2.3], ["s3", 1.6], ["s4", 1.6]].map(([s, d]) => p(t, CUES[s][0] + d, CUES[s][0] + d + .75) * (1 - p(t, CUES[s][1] - .45, CUES[s][1], eio))));
+  $("screen").style.opacity = 1 - lifted * .35;
+
+  // 0% يطلع من مكان الجوال
+  const z = $("zero"), zi = p(t, CUES.zero[0] + .2, CUES.zero[0] + 1.1), zo = p(t, CUES.cta[0] - .35, CUES.cta[0] + .25, eio);
+  set(z, zi * (1 - zo), `translateY(${(1 - zi) * 60}px) scale(${.92 + .08 * zi - .1 * zo})`);
+  [...z.children].forEach((c, i) => { if (i === 0) return; const k = p(t, CUES.zero[0] + .7 + i * .35, CUES.zero[0] + 1.3 + i * .35); c.style.opacity = k; c.style.transform = `translateY(${(1 - k) * 20}px)`; });
+
+  // الختام: الشعار بنفس مكان الرقم، وبعده الدعوة
+  const c = $("cta"), ci = p(t, CUES.cta[0], CUES.cta[0] + .8);
+  c.style.opacity = ci;
+  $("logo").style.transform = `scale(${.86 + .14 * ci})`;
+  [...c.children].forEach((el, i) => { if (i === 0) return; const k = p(t, CUES.cta[0] + .4 + i * .3, CUES.cta[0] + 1 + i * .3); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 22}px)`; });
+}
+window.__render = render;
+window.__DUR = DUR;
+
+/* ═══ المعاينة: تشغيل، إيقاف، بحث، إعادة، ملء الشاشة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() {
+  const t = now();
+  if (t >= DUR) { pause(); base = DUR; }
+  render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`;
+  if (playing) raf = requestAnimationFrame(loop);
+}
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* بدون صوت */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { const s = Math.min(innerWidth / 1080, (innerHeight - (document.body.classList.contains("rec") ? 0 : 70)) / 1920); $("stage").style.transform = `scale(${s})`; };
+addEventListener("resize", fit);
+
+/* رفع ملفات بديلة: موسيقى، شعار، أو صور الشاشات (بالترتيب: تقويم، طلبات، عرض، حق) */
+const url = (f) => URL.createObjectURL(f);
+$("upMusic").onchange = (e) => { const f = e.target.files[0]; if (f) { pause(); music.src = url(f); base = 0; } };
+$("upLogo").onchange = (e) => { const f = e.target.files[0]; if (f) $("logo").src = url(f); };
+$("upShots").onchange = (e) => { [...e.target.files].slice(0, 4).forEach((f, i) => { document.querySelector(`#s${i + 1} img`).src = url(f); }); };
+
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); document.getElementById("wrap").style.placeItems = "start"; $("stage").style.transform = "none"; }
+else fit();
+render(0);
+</script>
+</body>
+</html>
