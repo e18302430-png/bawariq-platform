@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · من الفوضى للباب</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=block">
+<style>
+:root {
+  --bg-1: #0B0509; --bg-2: #2A1030;
+  --ink: #FBF3EC; --muted: #E3D2DA; --gold: #FFD27A;
+  --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%);
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #050205; overflow: hidden; }
+body { font-family: "Cairo", "Noto Kufi Arabic", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; transform-origin: center; background: #07030a; }
+.layer { position: absolute; inset: 0; overflow: hidden; will-change: clip-path, opacity, transform; }
+.studio { background: radial-gradient(120% 70% at 50% 30%, var(--bg-2) 0%, var(--bg-1) 72%); }
+.g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ١) الفوضى */
+#chaos { background: radial-gradient(90% 60% at 50% 45%, #1d0d1f 0%, #070308 75%); }
+#bubbles { position: absolute; inset: 0; transform-origin: 50% 52%; }
+.bub { position: absolute; padding: 18px 26px 20px; border-radius: 30px; font-size: 40px; font-weight: 700; line-height: 1.35; white-space: nowrap; color: #111; box-shadow: 0 14px 30px rgba(0,0,0,.45); will-change: transform, opacity; }
+.bub.in { background: #fff; border-bottom-right-radius: 8px; }
+.bub.out { background: #D9FDD3; border-bottom-left-radius: 8px; }
+.bub.price { background: #2a1430; color: var(--gold); border: 2px solid rgba(255,210,122,.5); font-size: 46px; font-weight: 900; direction: ltr; }
+.bub small { display: block; font-size: 24px; color: #7a7a7a; font-weight: 600; margin-top: 2px; text-align: left; direction: ltr; }
+#bigword { position: absolute; left: 40px; right: 40px; top: 760px; text-align: center; font-size: 190px; font-weight: 900; line-height: 1.1; letter-spacing: -3px; color: #fff; text-shadow: 0 20px 60px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.6); will-change: transform, opacity; }
+
+/* ٢) الباب */
+#archsvg { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; overflow: visible; }
+#tagline { position: absolute; left: 0; right: 0; top: 1500px; text-align: center; font-size: 96px; font-weight: 900; will-change: opacity, transform; }
+
+/* المشاهد */
+.head { position: absolute; left: 80px; right: 80px; top: 230px; text-align: center; will-change: transform, opacity; }
+.head h1 { font-size: 104px; font-weight: 900; line-height: 1.18; letter-spacing: -1px; }
+.head p { margin-top: 18px; font-size: 46px; font-weight: 700; color: var(--muted); }
+.card3d { position: absolute; border-radius: 40px; overflow: hidden; background: #fff; box-shadow: 0 70px 120px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.35); will-change: transform; }
+.card3d img { display: block; width: 100%; }
+#est { left: 150px; top: 640px; width: 780px; }
+#c1 { left: 120px; top: 700px; width: 560px; }
+#c2 { left: 400px; top: 860px; width: 560px; }
+#ring { position: absolute; border-radius: 48px; border: 6px solid var(--gold); box-shadow: 0 0 60px rgba(255,210,122,.6); pointer-events: none; will-change: opacity, transform; }
+#full img { position: absolute; left: 0; top: -210px; width: 1080px; will-change: opacity, transform; }
+#sweep { position: absolute; top: -200px; width: 380px; height: 2400px; background: linear-gradient(90deg, transparent, rgba(255,240,200,.6), transparent); transform: rotate(18deg); }
+.plate { top: 200px; left: 70px; right: 70px; padding: 34px 30px 40px; border-radius: 44px; background: rgba(32,10,30,.8); backdrop-filter: blur(14px); }
+#hero { left: 90px; top: 760px; width: 900px; }
+
+/* الختام */
+#end { background: radial-gradient(90% 60% at 50% 40%, #2A1030 0%, #0B0509 75%); }
+#logo { position: absolute; left: 290px; top: 470px; width: 500px; height: 500px; object-fit: contain; will-change: opacity, transform; }
+#endtxt { position: absolute; left: 0; right: 0; top: 1010px; display: grid; justify-items: center; text-align: center; }
+#endtxt h2 { font-size: 124px; font-weight: 900; line-height: 1.15; }
+#endtxt .url { margin-top: 40px; direction: ltr; font-size: 42px; font-weight: 800; padding: 16px 44px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); }
+#endtxt p { margin-top: 40px; font-size: 44px; font-weight: 700; color: var(--gold); }
+#endtxt > * { will-change: opacity, transform; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 600 13px "Cairo", sans-serif; color: #fff; max-width: calc(100vw - 20px); }
+#ui button, #ui label { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui input[type=file] { display: none; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- ١) الفوضى -->
+  <div class="layer" id="chaos"><div id="bubbles"></div><div id="bigword"></div></div>
+
+  <!-- المشاهد (كل وحدة تنفتح من داخل باب الشعار) -->
+  <div class="layer studio" id="sc1">
+    <div class="head" id="h1"><h1>ميزانيتك<br><span class="g">في دقيقة</span></h1><p>لكل بند، من أسعار السوق في الشرقية</p></div>
+    <div class="card3d" id="est"><img data-asset="lift-est-c" src="shots/lift-est-c.png" alt=""></div>
+  </div>
+  <div class="layer studio" id="sc2">
+    <div class="head" id="h2"><h1>عروض <span class="g">حقيقية</span><br>على ذوقك</h1><p>من موردين الشرقية، وأنت تختار</p></div>
+    <div class="card3d" id="c2"><img data-asset="p2" src="shots/p2.png" alt=""></div>
+    <div class="card3d" id="c1"><img data-asset="p1" src="shots/p1.png" alt=""></div>
+    <div id="ring"></div>
+  </div>
+  <div class="layer" id="sc3">
+    <div id="full"><img id="fic" data-asset="invite-closed" src="shots/invite-closed.png" alt=""><img id="fio" data-asset="invite" src="shots/invite.png" alt=""><div id="sweep"></div></div>
+    <div class="head plate" id="h3"><h1>دعوة <span class="g">لكل ضيف</span></h1><p>باسمه على الواتساب، وفيها باركود دخوله</p></div>
+  </div>
+  <div class="layer studio" id="sc4">
+    <div class="head" id="h4"><h1>ليلتك <span class="g">تحت السيطرة</span></h1><p>ومنسق مناسبتي معك لآخر ضيف</p></div>
+    <div class="card3d" id="hero"><img data-asset="hero" src="shots/hero.png" alt=""></div>
+  </div>
+  <div class="layer" id="end">
+    <img id="logo" data-asset="logo" src="logo.png" alt="مناسبتي">
+    <div id="endtxt"><h2>مناسبتك<br><span class="g">علينا.</span></h2><div class="url">munasabati-sigma.vercel.app</div><p>من الفكرة لآخر ضيف · ابدأ ببلاش</p></div>
+  </div>
+
+  <!-- ٢) الباب الذهبي (يُرسم ثم نطير من خلاله) -->
+  <svg id="archsvg" viewBox="0 0 1080 1920">
+    <defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE3A6"/><stop offset=".5" stop-color="#FFD27A"/><stop offset="1" stop-color="#E5195E"/></linearGradient>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <g id="archg" filter="url(#glow)"><path id="archp" d="M28 108V58A32 32 0 0 1 92 58V108ZM44 108V63A16 16 0 0 1 76 63V108Z" fill="none" stroke="url(#gg)" stroke-width="1.6" stroke-linejoin="round"/>
+      <path id="spark" d="M60 7L63.4 16.6L73 20L63.4 23.4L60 33L56.6 23.4L47 20L56.6 16.6Z" fill="#FFD27A"/></g>
+  </svg>
+  <svg id="rimsvg" viewBox="0 0 1080 1920" style="position:absolute;left:0;top:0;width:1080px;height:1920px;pointer-events:none;overflow:visible"><path id="rim" d="" fill="none" stroke="url(#gg)" stroke-width="10" filter="url(#glow)"/></svg>
+  <div id="tagline">مناسبتك <span class="g">علينا</span></div>
+  <div id="flash"></div>
+</div></div>
+
+<div id="ui">
+  <button id="play">تشغيل</button><button id="restart">من البداية</button>
+  <input id="seek" type="range" min="0" max="30" step="0.01" value="0" aria-label="الوقت">
+  <span class="t" id="time">0.00 / 30.00</span><button id="fs">ملء الشاشة</button>
+  <label>موسيقى<input type="file" id="upMusic" accept="audio/*"></label>
+</div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+
+<script>
+/* ═══ الخط الزمني (الإيقاع يبدأ عند 6.4 ث، كل نبضة 0.5 ث) ═══ */
+const DUR = 30;
+const T = { freeze: 4.8, draw: 5.0, fly: 6.4, s1: 6.4, s2: 12.4, s3: 18.4, s4: 23.4, end: 27.4 };
+const CX = 540, CY = 1020, U = 6;           // مركز الباب، وحجم وحدة الشعار (الشعار 120 وحدة)
+const MSGS = [
+  ["كم سعر القاعة؟", "in"], ["المصور ما يرد 😩", "out"], ["الكوشة ٤٠ ألف!", "in"], ["وين وصلت الدعوات؟", "out"],
+  ["مين يستقبل الضيوف؟", "in"], ["العربون لمين نحوّله؟", "out"], ["الورد تأخر!", "in"], ["كم ضيف أكّد؟", "out"],
+  ["القهوجية كم واحد؟", "in"], ["السعر تغيّر 🙃", "out"], ["متى نشوف القاعة؟", "in"], ["باقي ٣ أسابيع!!", "out"],
+  ["الكيكة نسيناها", "in"], ["الدي جي ما رد", "out"], ["كم الميزانية؟", "in"], ["مين بيتابع الليلة؟", "out"],
+  ["40,000 SAR", "price"], ["25,500 SAR", "price"], ["18,000 SAR", "price"], ["العشاء كم صحن؟", "in"],
+  ["فين المنسقة؟", "out"], ["أحد يعرف قاعة بالخبر؟", "in"], ["الطقاقة محجوزة", "out"], ["كم التوزيعات؟", "in"],
+];
+const WORDS = [["١٠ مكالمات", 1.0, 2.2], ["٢٠ سعر", 2.2, 3.4], ["ليلة وحدة.", 3.4, 4.8]];
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const ei = (x) => x * x * x;
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+let seed = 11; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+
+/* فقاعات الفوضى: تظهر متباعدة، وبعدين تتزاحم */
+const bubbles = MSGS.map(([txt, kind], i) => {
+  const el = document.createElement("div");
+  el.className = "bub " + kind;
+  el.innerHTML = txt + (kind === "price" ? "" : `<small>${10 + (i % 12)}:${String((i * 7) % 60).padStart(2, "0")} ✓✓</small>`);
+  $("bubbles").appendChild(el);
+  const at = 0.15 + 4.4 * Math.sqrt(i / MSGS.length);
+  const x = 60 + rnd() * 560, y = 260 + rnd() * 1300, r = (rnd() - .5) * 12;
+  el.style.left = x + "px"; el.style.top = y + "px";
+  return { el, at, x, y, r };
+});
+
+/* باب الشعار كمسار قص: يكبر من المركز لين يغطي الشاشة */
+function doorPath(k, cx = CX, cy = CY) {
+  const m = (x, y) => `${(cx + (x - 60) * U * k).toFixed(1)} ${(cy + (y - 80) * U * k).toFixed(1)}`;
+  const r = (16 * U * k).toFixed(1);
+  return `path('M ${m(44, 140)} L ${m(44, 63)} A ${r} ${r} 0 0 1 ${m(76, 63)} L ${m(76, 140)} Z')`;
+}
+function doorD(k, cx = CX, cy = CY) {
+  const m = (x, y) => `${(cx + (x - 60) * U * k).toFixed(1)} ${(cy + (y - 80) * U * k).toFixed(1)}`;
+  const r = (16 * U * k).toFixed(1);
+  return `M ${m(44, 140)} L ${m(44, 63)} A ${r} ${r} 0 0 1 ${m(76, 63)} L ${m(76, 140)}`;
+}
+let rimK = 0, rimO = 0;
+function portal(el, t, at, dur = .8) {           // المشهد ينفتح من داخل الباب، وحافته ذهبية
+  const k = p(t, at - .1, at + dur, ei);
+  if (t < at - .1) { el.style.visibility = "hidden"; return; }
+  el.style.visibility = "visible";
+  el.style.clipPath = k >= 1 ? "none" : doorPath(.02 + k * 16);
+  if (k > 0 && k < 1) { rimK = .02 + k * 16; rimO = 1 - p(k, .55, 1); }
+}
+function head(el, t, a, b) {
+  const i = p(t, a, a + .6), o = p(t, b - .35, b, eio);
+  css(el, i * (1 - o), `translateY(${(1 - i) * 60 - o * 40}px)`);
+}
+const beat = (t) => (t >= T.fly ? Math.exp(-(((t - T.fly) % .5) / .5) * 6) : 0);
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+
+  /* ١) الفوضى: الكاميرا تقرّب، والرسائل تتزاحم، وبعدين كل شي يتجمد وينسحب للباب */
+  const ch = $("chaos");
+  ch.style.visibility = t < T.fly + .9 ? "visible" : "hidden";
+  const push = p(t, 0, T.freeze, (x) => x);
+  const shake = t < T.freeze ? Math.pow(push, 3) * 7 : 0;
+  $("bubbles").style.transform = `scale(${1 + .14 * push}) translate(${Math.sin(t * 47) * shake}px, ${Math.cos(t * 39) * shake}px)`;
+  const frozen = t >= T.freeze;
+  ch.style.filter = frozen ? `grayscale(${p(t, T.freeze, T.freeze + .15)}) brightness(${1 - .45 * p(t, T.freeze, T.freeze + .15)})` : "none";
+  bubbles.forEach((b, i) => {
+    const pop = p(t, b.at, b.at + .22, back);
+    const suck = p(t, T.draw + .02 + (i % 8) * .04, T.draw + .62 + (i % 8) * .04, ei);
+    const dx = (CX - 180 - b.x) * suck, dy = (CY - b.y) * suck;
+    css(b.el, t < b.at ? 0 : 1 - suck, `translate(${dx}px, ${dy}px) rotate(${b.r * (1 - suck)}deg) scale(${(.6 + .4 * pop) * (1 - .9 * suck)})`);
+  });
+  const bw = $("bigword"), w = WORDS.find(([, a, b]) => t >= a && t < b);
+  if (w) { const k = p(t, w[1], w[1] + .2, back); bw.textContent = w[0]; css(bw, 1, `scale(${1.3 - .3 * k})`); } else css(bw, 0);
+
+  /* ٢) الباب الذهبي: يترسم، والشعار اللفظي تحته، وبعدين نطير من خلاله */
+  const ap = $("archp"), len = 560;
+  ap.style.strokeDasharray = len; ap.style.strokeDashoffset = len * (1 - p(t, T.draw, T.draw + 1.1, eio));
+  const fly = p(t, T.fly, T.fly + .9, ei);
+  const ak = 1 + fly * 15;
+  $("archg").setAttribute("transform", `translate(${CX - 60 * U * ak} ${CY - 80 * U * ak}) scale(${U * ak})`);
+  $("archsvg").style.opacity = t < T.draw ? 0 : (1 - p(t, T.fly + .35, T.fly + .8));
+  $("spark").style.opacity = p(t, T.draw + .9, T.draw + 1.2);
+  const tg = $("tagline"), ti = p(t, T.draw + .7, T.draw + 1.2), to = p(t, T.fly, T.fly + .3);
+  css(tg, ti * (1 - to), `translateY(${(1 - ti) * 40}px)`);
+
+  /* المشاهد: كل وحدة تنفتح من باب جديد، على الإيقاع */
+  rimK = 0; rimO = 0;
+  portal($("sc1"), t, T.fly + .05, .85);
+  portal($("sc2"), t, T.s2); portal($("sc3"), t, T.s3); portal($("sc4"), t, T.s4); portal($("end"), t, T.end);
+
+  $("rim").setAttribute("d", rimK ? doorD(rimK) : ""); $("rim").style.opacity = rimO;
+  $("rim").setAttribute("stroke-width", (6 + 4 * Math.min(1, rimK / 6)).toFixed(1));
+
+  // المشهد ١: الميزانية، بطاقة ثلاثية الأبعاد تطفو
+  head($("h1"), t, T.s1 + .15, T.s2 + .6);
+  const e1 = p(t, T.s1, T.s1 + 1.1);
+  css($("est"), e1, `perspective(1800px) translateY(${(1 - e1) * 160 + Math.sin(t * 1.6) * 10}px) rotateX(${10 - 6 * e1}deg) rotateY(${-22 + 14 * e1 + Math.sin(t) * 2}deg) scale(${(.85 + .15 * e1) * (1 + .012 * beat(t))})`);
+
+  // المشهد ٢: بطاقتين حقيقيتين تنفرد، وتختار الأولى
+  head($("h2"), t, T.s2 - .05, T.s3 + .6);
+  const a1 = p(t, T.s2 - .1, T.s2 + .7, back), a2 = p(t, T.s2 + .15, T.s2 + .95, back), pick = p(t, T.s2 + 3.0, T.s2 + 3.6, eio);
+  css($("c1"), a1, `perspective(1600px) translateY(${(1 - a1) * 500}px) rotate(${-7 + 4 * pick}deg) scale(${1 + .08 * pick})`);
+  css($("c2"), a2 * (1 - .45 * pick), `perspective(1600px) translateY(${(1 - a2) * 500 + 40 * pick}px) rotate(${8}deg) scale(${1 - .06 * pick})`);
+  const rg = $("ring"), r1 = $("c1");
+  rg.style.left = (120 - 14) + "px"; rg.style.top = (700 - 14) + "px"; rg.style.width = (560 + 28) + "px"; rg.style.height = (r1.offsetHeight + 28) + "px";
+  css(rg, pick, `rotate(${-7 + 4 * pick}deg) scale(${1 + .08 * pick})`);
+
+  // المشهد ٣: الدعوة تنفتح بلمعة ذهبية
+  head($("h3"), t, T.s3 + .25, T.s4 + .6);
+  const op = p(t, T.s3 + 2.1, T.s3 + 2.5, eio);
+  css($("fic"), 1 - op, `translateY(${-(t - T.s3) * 7}px)`);
+  css($("fio"), op, `translateY(${-(t - T.s3 - 2) * 9}px) scale(${1.05 - .05 * op})`);
+  const sw = p(t, T.s3 + 2.0, T.s3 + 2.8, eio); $("sweep").style.opacity = sw > 0 && sw < 1 ? 1 : 0; $("sweep").style.left = `${-500 + sw * 2100}px`;
+
+  // المشهد ٤: العد التنازلي لليلة
+  head($("h4"), t, T.s4 - .05, T.end + .6);
+  const h4 = p(t, T.s4 - .1, T.s4 + .7, back);
+  css($("hero"), h4, `perspective(1800px) translateY(${(1 - h4) * 200}px) rotateX(${8 - 8 * h4}deg) scale(${(.9 + .1 * h4) * (1 + .015 * beat(t)) + .05 * p(t, T.s4 + 1.4, T.end, (x) => x)})`);
+
+  // الختام: الشعار الحقيقي من نفس مكان الباب
+  const lg = p(t, T.end - .05, T.end + .7, back);
+  css($("logo"), lg, `scale(${.7 + .3 * lg})`);
+  [...$("endtxt").children].forEach((el, n) => { const k = p(t, T.end + .7 + n * .35, T.end + 1.3 + n * .35); css(el, k, `translateY(${(1 - k) * 30}px)`); });
+
+  // ومضات قصيرة عند الضربات الكبيرة
+  const fl = Math.max(...[T.freeze, T.fly, T.s2, T.s3, T.s3 + 2.1, T.s4, T.end].map((a) => (t >= a && t < a + .22 ? 1 - (t - a) / .22 : 0)));
+  $("flash").style.opacity = fl * (t >= T.freeze && t < T.freeze + .3 ? .5 : .28);
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.src && !music.error && music.readyState >= 2 ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch { /* */ } $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; try { music.currentTime = 0; } catch { /* */ } play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch { /* */ } t0 = performance.now(); render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+$("fs").onclick = () => document.documentElement.requestFullscreen?.();
+const fit = () => { const s = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); $("stage").style.transform = `scale(${s})`; };
+addEventListener("resize", fit);
+$("upMusic").onchange = (e) => { const f = e.target.files[0]; if (f) { pause(); music.src = URL.createObjectURL(f); base = 0; } };
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; $("stage").style.transform = "none"; }
+else fit();
+render(0);
+</script>
+</body>
+</html>
