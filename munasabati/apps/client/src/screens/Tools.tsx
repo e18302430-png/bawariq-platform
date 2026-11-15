@@ -90,6 +90,7 @@ function DirectPay({ b, name }: { b: Booking; name: string }) {
   const copy = async (t: string, what: string) => { try { await navigator.clipboard.writeText(t); toast(`نسخنا ${what}`); } catch { toast(t); } };
   const stage = b.pay?.stage ?? "due";
   const [seal, setSeal] = useState(0);
+  if (fee === 0) return <PayDirect b={b} name={name} target={target} cert={ref} />;
   const send = () => { setSeal((x) => x + 1); playSeal(); setTimeout(() => { apply(claimPaid(b.id)); toast("ختمنا طلبك، ونأكد ونفتح التواصل قريب"); }, 900); };
   const steps: [string, string, boolean][] = [
     ["وقّعت العقد", "بنود واضحة وسعر مثبّت", !!b.contract],
@@ -131,6 +132,38 @@ function DirectPay({ b, name }: { b: Booking; name: string }) {
           <div className="seal-btn-wrap"><SealBurst fire={seal} />
           <button className={"btn primary block seal-btn" + (seal ? " sealing" : "")} disabled={!b.contract || !!seal} onClick={send}><span className="seal-ic" aria-hidden="true">م</span> {b.contract ? `حوّلت رسوم التأكيد (${sar(fee)})` : "وقّع العقد أولاً"}</button></div>
         </>
+      )}
+    </div>
+  );
+}
+
+/** بدون أي رسوم من مناسبتي: العميل يدفع للتاجر مباشرة (رابط دفعه الخاص)، ومناسبتي توثّق الحجز وتتابعه */
+function PayDirect({ b, name, target, cert }: { b: Booking; name: string; target?: { phone?: string; payLink?: string }; cert: string }) {
+  const steps: [string, string, boolean][] = [
+    ["الحجز مؤكد", "التواصل انفتح بينك وبين التاجر", true],
+    ["وقّع العقد", "بنود واضحة وسعر مثبّت", !!b.contract],
+    ["ادفع للتاجر مباشرة", `${sar(b.clientPrice ?? 0)} حسب اتفاقكم، وخذ فاتورة`, false],
+  ];
+  return (
+    <div className="paybox direct">
+      <div className="row between wrap"><b className="display">موعدك مؤكد ✓</b><span className="pill ok">بدون أي رسوم من مناسبتي</span></div>
+      <ol className="pay-steps">{steps.map(([t, d, ok], i) => <li key={t} className={ok ? "ok" : i === steps.findIndex((x) => !x[2]) ? "now" : ""}><i>{ok ? "✓" : i + 1}</i><div><b>{t}</b><small>{d}</small></div></li>)}</ol>
+      <div className="row wrap">
+        {target?.payLink && <a className="btn primary grow" href={target.payLink} target="_blank" rel="noreferrer"><Icon name="CreditCard" size={16} /> ادفع لـ{name}</a>}
+        {target?.phone && <a className="btn grow" href={`tel:${target.phone}`}><Icon name="Phone" size={16} /> اتصل بـ{name}</a>}
+      </div>
+      {!target?.payLink && <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>تفاصيل الدفع توصلك من {name} في محادثة الطلب. ادفع بعد ما توقّع العقد، وخذ منه فاتورة.</p>}
+      {b.contract && (
+        <div className="cert">
+          <div className="cert-qr"><QR text={`MNS-CERT|${cert}|${b.date}|${name}`} size={120} /></div>
+          <div className="cert-t">
+            <small>شهادة حجز مؤكد</small>
+            <b>{name}</b>
+            <span className="num">{b.date} · {fmt(b.guests)} ضيف</span>
+            <span className="cert-ref num" dir="ltr">{cert}</span>
+            <em>موثّقة من مناسبتي · وريها للتاجر يتحقق منها</em>
+          </div>
+        </div>
       )}
     </div>
   );

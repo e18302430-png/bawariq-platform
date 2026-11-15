@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem, type StoryChapter } from "@munasabati/core";
+import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem, type StoryChapter, INVITE_TIERS, inviteTierOf, requestInviteTier, sar } from "@munasabati/core";
 import { Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
@@ -252,6 +252,7 @@ export function Invites() {
   const story = invite.story ?? [];
   const setStory = (st: StoryChapter[]) => setInv({ story: st });
   const wishes = db.client.guests.filter((g) => g.wish);
+  const tier = inviteTierOf(db);
   const setInv = (patch: Partial<typeof invite>) => apply(patchClient({ invite: { ...invite, ...patch } }));
   const copy = async (g: Guest) => {
     const text = inviteText(db, g);
@@ -345,6 +346,8 @@ export function Invites() {
         )}
       </div>
 
+      <InvitePlans />
+
       {wishes.length > 0 && <section className="card wish-book">
         <div className="row between"><h3 className="card-title"><Icon name="Heart" size={17} /> دفتر التهاني</h3><span className="pill neutral num">{wishes.length}</span></div>
         <div className="wish-list">{wishes.map((g) => <figure key={g.id} className="wish"><blockquote>{g.wish}</blockquote><figcaption>— {g.name}</figcaption></figure>)}</div>
@@ -356,11 +359,11 @@ export function Invites() {
           <Segmented value={filter} onChange={setFilter} options={[["all", "الكل"], ["pending", "لم يردّوا"], ["yes", "مؤكدين"]]} />
         </div>
         <p className="faint" style={{ fontSize: 12.5 }}>يوصل الضيف رابط دعوته فقط على الواتساب.</p>
-        {list.length ? <div className="list">{list.map((g) => (
+        {list.length ? <div className="list">{list.map((g) => { const locked = db.client.guests.indexOf(g) >= tier.guests; return (
           <div key={g.id} className="list-row">
             <span className={"avatar" + (g.section === "women" ? " alt" : "")}>{g.name[0]}</span>
             <div className="t"><b>{g.name}</b><small style={{ color: g.status === "yes" ? "var(--ok)" : g.status === "no" ? "var(--bad)" : undefined }}>{g.status === "yes" ? "سيحضر" : g.status === "no" ? "اعتذر" : "لم يرد"}</small></div>
-            <a className="btn sm wa-btn" href={waLink(db, g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>
+            {locked ? <a className="btn sm" href="#inv-plans"><Icon name="Lock" size={15} /> رقّ الباقة</a> : <a className="btn sm wa-btn" href={waLink(db, g)} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a>}
             <button className="icon-btn sm" aria-label={"خيارات دعوة " + g.name} aria-expanded={rowAsk === g.id} onClick={() => setRowAsk(rowAsk === g.id ? null : g.id)}><Icon name={rowAsk === g.id ? "X" : "MoreHorizontal"} size={15} /></button>
             {rowAsk === g.id && <div className="inv-row-menu">
               <button className="btn sm" onClick={() => { void copy(g); setRowAsk(null); }}><Icon name="Share2" size={14} /> مشاركة الرابط</button>
@@ -369,9 +372,38 @@ export function Invites() {
               <button className="btn sm" style={{ color: "var(--bad)" }} onClick={() => { apply(removeGuest(g.id)); setRowAsk(null); toast("حذفنا دعوة الضيف"); }}><Icon name="Trash2" size={14} /> حذف الدعوة</button>
             </div>}
           </div>
-        ))}</div> : <Empty icon="Users" title="لا يوجد ضيوف هنا" />}
+        ); })}</div> : <Empty icon="Users" title="لا يوجد ضيوف هنا" />}
       </section>
     </>
+  );
+}
+
+/* ───── باقات الدعوة: مجانية حتى ٥٠ ضيف، وبعدها باقات بسعر واضح (تحويل، والإدارة تفعّل) ───── */
+function InvitePlans() {
+  const db = useDB();
+  const toast = useToast();
+  const cur = inviteTierOf(db), want = db.client.invitePlan?.want;
+  const n = db.client.guests.length;
+  const ref = "MNS-I-" + (db.client.profile?.phone ?? "0000").slice(-5);
+  const need = INVITE_TIERS.find((t) => t.guests >= n) ?? INVITE_TIERS[INVITE_TIERS.length - 1];
+  return (
+    <section className="card stack" id="inv-plans">
+      <div className="row between wrap"><h3 className="card-title"><Icon name="Crown" size={17} /> باقة دعوتك: {cur.name}</h3>{n > cur.guests && <span className="pill brand num">عندك {n} ضيف · باقتك لين {cur.guests}</span>}</div>
+      <div className="tiers">{INVITE_TIERS.map((t) => (
+        <div key={t.id} className={"tier" + (t.id === cur.id ? " cur" : "") + (t.id === need.id && t.id !== cur.id ? " rec" : "")}>
+          {t.id === need.id && t.id !== cur.id && <span className="tier-tag">تناسب ضيوفك</span>}
+          <b>{t.name}</b><span className="num">{t.price ? sar(t.price) : "مجاناً"}</span>
+          <ul>{t.perks.map((p) => <li key={p}>{p}</li>)}</ul>
+          {t.id === cur.id ? <small className="faint">باقتك الحالية</small> : t.price > cur.price && (want === t.id ? <small className="faint">طلبك قيد التفعيل</small> : <button className="btn sm primary block" onClick={() => { apply(requestInviteTier(t.id)); toast(`اخترت باقة ${t.name}. حوّل المبلغ ونفعّلها لك`); }}>اختر {t.name}</button>)}
+        </div>
+      ))}</div>
+      {want && db.bank?.iban && <div className="pay-rows">
+        <div><small>المبلغ</small><b className="num">{sar(INVITE_TIERS.find((t) => t.id === want)!.price)}</b></div>
+        <div><small>البنك</small><b>{db.bank.name}</b></div>
+        <div><small>الآيبان</small><b className="num" dir="ltr">{db.bank.iban}</b></div>
+        <div><small>الرقم المرجعي</small><b className="num" dir="ltr">{ref}</b></div>
+      </div>}
+    </section>
   );
 }
 

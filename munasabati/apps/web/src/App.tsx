@@ -179,9 +179,9 @@ function Partners() {
   const [price, setPrice] = useState(25000);
   const [extra, setExtra] = useState(3);
   useEffect(() => { setPrice(isV ? 25000 : 6000); setExtra(isV ? 3 : 4); }, [isV]);
-  const month = price * extra, cut = month * 0.1, year = (month - cut) * 12;
+  const month = price * extra, cost = isV ? 399 : Math.round((extra * 3) * 32), year = (month - cost) * 12;
   const FACTS: [string, string, string][] = [
-    ["BadgePercent", "10% بس، وما تطلع من جيبك", "العميل يدفع عمولتنا مقدّماً من سعرك، وتستلم الـ90% منه مباشرة. ما فيه فواتير تلاحقك."],
+    ["BadgePercent", "0% عمولة على حجوزاتك", "العميل يدفع لك سعرك كامل مباشرة، ومهما كبر الحجز ما نلمسه."],
     ["UserCheck", "عميل جاد ومؤكد", "ما يوصلك رقم العميل إلا بعد ما يقفل موعده ويدفع رسوم التأكيد."],
     ["CalendarCheck", "أيامك الفاضية تتعبى", "نوصّلك طلبات بالتاريخ والميزانية وعدد الضيوف، وأنت تختار."],
     ["FileSignature", "عقد إلكتروني وفاتورة", "كل حجز له عقد موقّع وشهادة، فما فيه خلاف ولا ضياع."],
@@ -190,8 +190,8 @@ function Partners() {
     <section className="sec container partners" id="partners">
       <Reveal className="sec-head">
         <span className="eyebrow">للقاعات والموردين</span>
-        <h2>نجيب لك العميل المؤكد… <span className="grad-text">وأنت تركّز على ليلته</span></h2>
-        <p>نوصلك عملاء جادين في الشرقية، قفلوا موعدهم ووقّعوا العقد. عمولتنا ١٠٪ من سعرك يدفعها العميل لنا مقدّماً، والباقي يوصلك منه مباشرة.</p>
+        <h2>نجيب لك العميل… <span className="grad-text">وأنت تحتفظ بكل ريال</span></h2>
+        <p>صفر عمولة على حجوزاتك. العميل يدفع لك سعرك كامل مباشرة. القاعات باشتراك شهري ثابت، والموردين يدفعون بس على كل عميل جاد يردون عليه.</p>
       </Reveal>
       <div className="pt-grid">
         <div className="pt-facts">{FACTS.map(([ic, t, d], i) => <Reveal key={t} delay={i * 0.05} className="pt-fact"><span><Icon name={ic} size={20} /></span><div><b>{t}</b><small>{d}</small></div></Reveal>)}</div>
@@ -206,10 +206,10 @@ function Partners() {
             <input type="range" min={1} max={isV ? 12 : 20} step={1} value={extra} onChange={(e) => setExtra(+e.target.value)} aria-label="العدد" /></label>
           <div className="pt-out">
             <div><small>حجوزات إضافية بالشهر</small><b className="num">{sarFmt(month)}</b><i>ر.س</i></div>
-            <div className="big"><small>صافي لك بالسنة</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
+            <div className="big"><small>صافي لك بالسنة بعد رسومنا</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
           </div>
-          <div className="pt-cut"><span>عمولة مناسبتي (10%) يدفعها العميل مقدّماً</span><b className="num">{sarFmt(cut)} ر.س/شهر</b></div>
-          <small className="pt-note">حسبة توضيحية من الأرقام اللي تختارها، مو وعد بعدد حجوزات.</small>
+          <div className="pt-cut"><span>{isV ? "اشتراكك الشهري (بدون أي عمولة)" : "رصيد العروض بالشهر (تقريباً)"}</span><b className="num">{sarFmt(cost)} ر.س</b></div>
+          <small className="pt-note">حسبة توضيحية من أرقامك. {isV ? "أول ٣ شهور مجاناً للقاعات المؤسسة." : "تقديرها: ٣ عروض لكل حجز، بمتوسط ٣٢ ريال للعرض. وأول ٥ عروض مجاناً."}</small>
           <a className="btn primary lg block" href={isV ? LINKS.venues : LINKS.vendors}>{isV ? "سجّل قاعتك مجاناً" : "سجّل كمورد مجاناً"} <Icon name="ArrowLeft" size={17} /></a>
         </Reveal>
       </div>

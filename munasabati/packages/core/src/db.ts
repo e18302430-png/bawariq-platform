@@ -1,7 +1,7 @@
 import { SAMPLE_GUESTS, SEED_SUPPLIERS, SEED_VENUES } from "./catalog";
 import { splitBudget, inviteCode, isoDay, shiftDate, uid, DAY } from "./calc";
 import { profileOf } from "./occasions";
-import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, Message, OpsMsg, Relation, Supplier, Task, Ticket, Venue } from "./types";
+import type { AccountStatus, Booking, BookingStatus, BudgetLine, ClientEvent, DB, Guest, InviteTier, Message, OpsMsg, Relation, Supplier, Task, Ticket, Venue } from "./types";
 
 /* ───────────────── البيانات الأولية ───────────────── */
 
@@ -120,7 +120,11 @@ export const acceptQuote = (id: string, label: string): Mutation => (db) => {
   if (!b || b.status !== "quoted") return db;
   const next = setBookingStatus(id, "confirmed", { message: { from: "client", text: "تم قبول العرض" } })(db);
   const price = b.clientPrice ?? b.quote ?? b.estimate;
-  return { ...next, bookings: next.bookings.map((x) => (x.id === id ? { ...x, pay: x.pay ?? { stage: "due" as const } } : x)), client: { ...next.client, budget: [...next.client.budget, { id: uid("b"), label, cat: b.kind, est: price, paid: 0 }] } };
+  // بدون رسوم تأكيد: التواصل والدفع المباشر ينفتحون لحظة قبول العرض
+  const free = isDirectPay(db) && confirmFeeFor({ ...b, clientPrice: price }, pricingOf(db)) === 0;
+  const t = b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId) : db.suppliers.find((s) => s.id === b.targetId);
+  const openMsg = { from: "admin" as const, at: Date.now(), text: `حجزك مؤكد ✓ ادفع لـ${t?.name ?? "التاجر"} مباشرة حسب اتفاقكم.` + (t?.payLink ? ` رابط الدفع: ${t.payLink}` : "") + (t?.phone ? ` رقم ${t.name}: ${t.phone}.` : "") + (b.phone ? ` رقم العميل ${b.clientName}: ${b.phone}.` : "") };
+  return { ...next, bookings: next.bookings.map((x) => (x.id === id ? { ...x, pay: free ? { stage: "paid" as const, paidAt: Date.now() } : x.pay ?? { stage: "due" as const }, messages: free ? [...x.messages, openMsg] : x.messages } : x)), client: { ...next.client, budget: [...next.client.budget, { id: uid("b"), label, cat: b.kind, est: price, paid: 0 }] } };
 };
 
 export const upsertSupplier = (s: Supplier): Mutation => (db) => ({
@@ -305,9 +309,9 @@ export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Gu
 };
 
 /* ───── حماية المنصة: التسعير، الدفع عبر مناسبتي، الاتفاقية، وإخفاء أرقام التواصل ───── */
-/** النموذج المعتمد: العميل يدفع سعر التاجر نفسه بدون أي إضافة، وعمولة مناسبتي ١٠٪ من سعر القاعة أو المورد،
- *  يدفعها العميل لمناسبتي كرسوم تأكيد (جزء من السعر)، والباقي ٩٠٪ للتاجر مباشرة */
-export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 0, vendorPct: 10, minFee: 0, depositPct: 30, auto: true, payMode: "direct" };
+/** النموذج المعتمد: بدون أي عمولة على الحجز. العميل يدفع سعر التاجر نفسه للتاجر مباشرة،
+ *  ومناسبتي تكسب من اشتراك القاعات ورصيد عروض الموردين وباقات الدعوات (انظر آخر الملف) */
+export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 0, vendorPct: 0, minFee: 0, depositPct: 30, auto: true, payMode: "direct" };
 type PricingLike = Pick<NonNullable<DB["pricing"]>, "feePct" | "vendorPct" | "steps">;
 const stepOn = (p: PricingLike, day: string) => [...(p.steps ?? [])].filter((s) => s.from <= day).sort((a, b) => b.from.localeCompare(a.from))[0];
 /** النسبة اللي تنضاف على العميل اليوم: جدول النسبة يغلب النسبة الثابتة */
@@ -315,8 +319,8 @@ export const feeOn = (p: PricingLike, day = isoDay(new Date())) => stepOn(p, day
 /** النسبة اللي تنخصم من سعر المورد اليوم */
 export const vendorOn = (p: PricingLike, day = isoDay(new Date())) => { const s = stepOn(p, day); return s ? (s.vendorPct ?? 0) : (p.vendorPct ?? 0); };
 export const pricingOf = (db: Pick<DB, "pricing">) => { const p = { ...DEFAULT_PRICING, ...(db.pricing ?? {}) }; return { ...p, feePct: feeOn(p), vendorPct: vendorOn(p) }; };
-/** خطة الإطلاق المعتمدة: ١٠٪ من سعر القاعة أو المورد، وصفر على العميل */
-export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number; vendorPct: number }[] => [{ from: start, feePct: 0, vendorPct: 10 }];
+/** خطة الإطلاق المعتمدة: بدون عمولة على العميل ولا على التاجر (الدخل من الاشتراكات والرصيد والدعوات) */
+export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number; vendorPct: number }[] => [{ from: start, feePct: 0, vendorPct: 0 }];
 /** حق المورد: سعره ناقص نسبة المورد، مقرّب لأقرب ١٠ */
 export const payoutFor = (net: number, p: Pick<NonNullable<DB["pricing"]>, "vendorPct"> = DEFAULT_PRICING) =>
   net > 0 ? Math.round((net * (1 - (p.vendorPct ?? 0) / 100)) / 10) * 10 : 0;
@@ -346,8 +350,12 @@ export const directDueFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout"
 /** التاجر يرسل سعره الصافي. مع التسعير التلقائي يوصل العميل سعر مناسبتي على طول */
 export const sendQuote = (id: string, net: number, text: string): Mutation => (db) => {
   const p = pricingOf(db);
+  const bk = db.bookings.find((x) => x.id === id);
+  // رصيد العروض: أول عرض على الطلب ينخصم منه رصيد واحد من المورد (القاعات باشتراك شهري ما ينخصم منها شي)
+  const charge = bk && bk.kind === "supplier" && bk.status !== "quoted";
   return {
     ...db,
+    suppliers: !charge ? db.suppliers : db.suppliers.map((s) => (s.id !== bk!.targetId ? s : { ...s, wallet: { ...(s.wallet ?? { credits: FREE_CREDITS }), credits: Math.max(0, creditsOf(s) - 1), spent: (s.wallet?.spent ?? 0) + 1, log: [...(s.wallet?.log ?? []), { at: Date.now(), delta: -1, why: `عرض لـ${bk!.clientName || "عميل"}` }].slice(-50) } })),
     bookings: db.bookings.map((b) => b.id !== id ? b : {
       ...b, status: "quoted" as const, quote: net, payout: payoutFor(net, p), clientPrice: p.auto ? clientPriceFor(net, p) : undefined,
       messages: text.trim() ? [...b.messages, { from: "provider" as const, text: maskContacts(text).text, at: Date.now() }] : b.messages,
@@ -389,16 +397,14 @@ export const markPayout = (id: string): Mutation => (db) => ({
 });
 
 /** اتفاقية الشراكة: نسخة واحدة يوقعها كل تاجر وصاحب قاعة */
-export const AGREEMENT_VERSION = 4;
+export const AGREEMENT_VERSION = 5;
 export const AGREEMENT_CLAUSES: [string, string][] = [
-  ["عمولة ١٠٪ من سعري تُحصّل مقدّماً", "عمولة مناسبتي ١٠٪ من سعري (أو النسبة المعلنة وقت العرض). العميل يدفعها لمناسبتي كرسوم تأكيد الحجز وهي جزء من سعري، وأستلم الباقي (٩٠٪) من العميل مباشرة. ما أدفع شي من جيبي."],
-  ["التواصل يفتح بعد التأكيد", "قبل ما يدفع العميل رسوم التأكيد، التواصل يكون داخل المنصة فقط. بعد التأكيد توصلني بيانات العميل، وأتعامل معه مباشرة لإتمام هذا الحجز."],
-  ["سعر موحّد", "ما أعطي عملاء مناسبتي سعر أعلى من سعري خارجها، وما أعرض على العميل خصم مقابل إنه يحجز من برّا المنصة."],
-  ["لا إلغاء وحجز من ورا المنصة", "لو ألغى العميل وحجز معي نفس المناسبة مباشرة، تبقى رسوم مناسبتي مستحقة، وألتزم أبلّغ الإدارة."],
-  ["سعري وحقي واضحين", "أرسل سعري في العرض، وأشوف قبل الإرسال حقي بعد نسبة شراكة مناسبتي المعلنة وقتها (إن وجدت). مناسبتي تضيف خدمتها على العميل، وحقي يتثبت لحظة إرسال العرض."],
-  ["حجوزات العميل المتكررة ١٨ شهر", "أي عميل وصلني عن طريق مناسبتي، حجوزاته الجاية معي خلال ١٨ شهر تمر عبر المنصة. لو تعاملنا مباشرة، تستحق مناسبتي رسومها على هذا التعامل، ولها إيقاف حسابي."],
-  ["الالتزام بالحجز", "ألتزم بالحجز المؤكد. الإلغاء يمر بالإدارة، والإدارة تقدر تحوّل الطلب لتاجر بديل."],
-  ["تسجيل الاستلام بأمانة", "أسجّل في المنصة استلامي لباقي المبلغ من العميل، وأي تعديل على قيمة الحجز (ضيوف أو خدمات إضافية)."],
+  ["صفر عمولة على حجوزاتي", "العميل يدفع لي سعري كامل مباشرة، ومناسبتي ما تاخذ أي نسبة منه."],
+  ["رسوم مناسبتي واضحة", "القاعة: اشتراك شهري ثابت. المورد: رصيد عروض أشحنه مقدّماً، وكل عرض أرسله على طلب جديد يخصم رصيد واحد. ما فيه أي رسوم ثانية بدون إعلان مسبق."],
+  ["التواصل قبل القبول داخل المنصة", "قبل ما يقبل العميل عرضي، أتواصل معه داخل المنصة فقط، وما أطلب رقمه ولا أعطيه رقمي. بعد القبول يفتح التواصل المباشر."],
+  ["سعر موحّد", "ما أعطي عملاء مناسبتي سعر أعلى من سعري خارجها لنفس الخدمة والموعد."],
+  ["بيانات صحيحة", "صوري وجولتي وباقاتي وأسعاري حقيقية، وأحدّث تقويمي أول بأول."],
+  ["الالتزام بالحجز", "ألتزم بالحجز المؤكد. لو اعتذرت لسبب مني، أرجع للعميل كل اللي استلمته، والإدارة ترشّح له بديل."],
 ];
 export const acceptAgreement = (kind: "supplier" | "venue", id: string, by: string): Mutation => (db) => {
   const agreement = { v: AGREEMENT_VERSION, at: Date.now(), by: by.trim() };
@@ -446,3 +452,56 @@ export const assignCoordinatorLocal = (c: { name: string; phone: string }): Muta
   return { ...db, client: { ...db.client, doorKey: db.client.doorKey ?? doorKeyGen(), event: { ...db.client.event, coordinator: { name: c.name.trim(), phone: c.phone.replace(/\D/g, ""), at: Date.now() } } } };
 };
 export const newDoorKey = () => doorKeyGen();
+
+
+/* ═══════════ نموذج الدخل: اشتراك القاعات، رصيد عروض الموردين، وباقات الدعوات ═══════════
+   الفلوس ما تمر بحساب مناسبتي: العميل يدفع للقاعة والمورد مباشرة، ومناسبتي تبيع خدماتها هي فقط. */
+export const VENUE_PLAN = { price: 399, trialDays: 90 } as const;
+export const FEATURED_PRICE = 199;
+export const FREE_CREDITS = 5;
+export const CREDIT_PACKS = [
+  { id: "s", credits: 10, price: 390 },
+  { id: "m", credits: 25, price: 790, tag: "الأكثر طلباً" },
+  { id: "l", credits: 60, price: 1590, tag: "أوفر" },
+] as const;
+export const INVITE_TIERS: { id: InviteTier; name: string; price: number; guests: number; perks: string[] }[] = [
+  { id: "free", name: "مجانية", price: 0, guests: 50, perks: ["دعوة سينمائية", "حتى ٥٠ ضيف"] },
+  { id: "basic", name: "أنيقة", price: 149, guests: 150, perks: ["حتى ١٥٠ ضيف", "ردود الضيوف وبطاقات QR"] },
+  { id: "plus", name: "فاخرة", price: 349, guests: 400, perks: ["حتى ٤٠٠ ضيف", "استقبال بالكاميرا عند الباب", "دفتر التهاني"] },
+  { id: "royal", name: "ملكية", price: 699, guests: 100000, perks: ["ضيوف بلا حد", "منسق يرتب الدعوات معك", "صفحة شكر بعد الحفل"] },
+];
+export const inviteTierOf = (db: Pick<DB, "client">) => INVITE_TIERS.find((t) => t.id === (db.client.invite.tier ?? "free")) ?? INVITE_TIERS[0];
+
+export const creditsOf = (s?: Pick<Supplier, "wallet">) => s?.wallet?.credits ?? FREE_CREDITS;
+/** المورد يطلب شحن رصيد (يحوّل مقابل الباقة، والإدارة تأكد) */
+export const requestTopUp = (supplierId: string, packId: string): Mutation => (db) => {
+  const pk = CREDIT_PACKS.find((p) => p.id === packId); if (!pk) return db;
+  return { ...db, suppliers: db.suppliers.map((s) => (s.id !== supplierId ? s : { ...s, wallet: { ...(s.wallet ?? { credits: FREE_CREDITS }), credits: creditsOf(s), pending: { pack: pk.id, credits: pk.credits, amount: pk.price, at: Date.now() } } })) };
+};
+/** الإدارة تأكد استلام مبلغ الباقة وتضيف الرصيد */
+export const approveTopUp = (supplierId: string): Mutation => (db) => ({
+  ...db, suppliers: db.suppliers.map((s) => {
+    if (s.id !== supplierId || !s.wallet?.pending) return s;
+    const p = s.wallet.pending, credits = creditsOf(s) + p.credits;
+    return { ...s, wallet: { ...s.wallet, credits, pending: undefined, log: [...(s.wallet.log ?? []), { at: Date.now(), delta: p.credits, why: `شحن ${p.credits} عرض (${p.amount} ر.س)` }].slice(-50) } };
+  }),
+});
+export const rejectTopUp = (supplierId: string): Mutation => (db) => ({ ...db, suppliers: db.suppliers.map((s) => (s.id !== supplierId || !s.wallet ? s : { ...s, wallet: { ...s.wallet, pending: undefined } })) });
+
+/** القاعة تبلّغ إنها حوّلت الاشتراك */
+export const claimVenueSub = (venueId: string): Mutation => (db) => ({ ...db, venues: db.venues.map((v) => (v.id !== venueId ? v : { ...v, sub: { ...(v.sub ?? { plan: "trial" as const }), claimedAt: Date.now() } })) });
+/** الإدارة تأكد الاشتراك: يتفعّل شهر من اليوم (أو من نهاية الشهر الحالي) */
+export const confirmVenueSub = (venueId: string, months = 1): Mutation => (db) => ({
+  ...db, venues: db.venues.map((v) => {
+    if (v.id !== venueId) return v;
+    const now = isoDay(new Date()), base = v.sub?.until && v.sub.until > now ? v.sub.until : now;
+    const d = new Date(base + "T12:00:00"); d.setMonth(d.getMonth() + months);
+    return { ...v, sub: { plan: "active" as const, until: isoDay(d), paidAt: Date.now() } };
+  }),
+});
+export const setVenueSub = (venueId: string, sub: Venue["sub"]): Mutation => (db) => ({ ...db, venues: db.venues.map((v) => (v.id === venueId ? { ...v, sub } : v)) });
+/** القاعة تظهر للعملاء إلا إذا تأخر اشتراكها أو انوقفت */
+export const venueVisible = (v: Pick<Venue, "status" | "sub">) => isActive(v) && v.sub?.plan !== "overdue";
+
+/** العميل يطلب ترقية باقة الدعوة */
+export const requestInviteTier = (want: InviteTier): Mutation => (db) => ({ ...db, client: { ...db.client, invitePlan: { want, claimedAt: Date.now() } } });

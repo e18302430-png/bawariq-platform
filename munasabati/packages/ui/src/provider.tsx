@@ -58,8 +58,10 @@ export function KPIs({ bookings }: { bookings: Booking[] }) {
 
 const ago = (t: number) => { const m = Math.round((Date.now() - t) / 6e4); return m < 60 ? `قبل ${Math.max(1, m)} د` : m < 1440 ? `قبل ${Math.round(m / 60)} س` : `قبل ${Math.round(m / 1440)} يوم`; };
 
-export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
+export function Inbox({ bookings, defaultQuote, describe, quoteTemplate, credits, onTopUp }: {
   bookings: Booking[]; defaultQuote: (b: Booking) => number; describe?: (b: Booking) => ReactNode; quoteTemplate: (b: Booking) => string;
+  /** رصيد العروض (للموردين فقط): كل عرض على طلب جديد ينخصم منه رصيد */
+  credits?: number; onTopUp?: () => void;
 }) {
   const toast = useToast();
   const pr = pricingOf(useDB());
@@ -70,7 +72,9 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
   const c = (s: string) => bookings.filter((b) => b.status === s).length;
   return (
     <>
-      <div className="row between wrap"><div><h1 className="page-title">الطلبات</h1><p className="page-sub">ردّك السريع يرفع ترتيبك في نتائج البحث.</p></div></div>
+      <div className="row between wrap"><div><h1 className="page-title">الطلبات</h1><p className="page-sub">ردّك السريع يرفع ترتيبك في نتائج البحث.</p></div>
+        {credits != null && <button className={"credit-chip" + (credits <= 2 ? " low" : "")} onClick={onTopUp}><Icon name="Coins" size={16} /> رصيد العروض: <b className="num">{credits}</b>{credits <= 2 && <span>اشحن</span>}</button>}
+      </div>
       <Segmented value={filter} onChange={setFilter} label="تصفية" options={[["new", `جديدة ${c("new")}`], ["quoted", `عروض ${c("quoted")}`], ["confirmed", `مؤكدة ${c("confirmed")}`], ["declined", "مرفوضة"], ["all", "الكل"]]} />
       {!list.length && <section className="card"><Empty icon="Inbox" title="لا توجد طلبات هنا" /></section>}
       <div className="stack">
@@ -92,7 +96,9 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
             {b.note && <div className="card flat tight" style={{ background: "var(--surface-2)", fontSize: 14 }}>{b.note}</div>}
             <div className="row"><BookingChat booking={b} me="provider" other={b.clientName} /></div>
             {b.status === "new" && <div className="row wrap">
-              <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>
+              {credits != null && credits <= 0
+                ? <button className="btn primary sm" onClick={onTopUp}><Icon name="Coins" size={15} /> اشحن رصيدك وأرسل العرض</button>
+                : <button className="btn primary sm" onClick={() => { setQ({ amount: defaultQuote(b), msg: quoteTemplate(b) }); setQuoting(b); }}><Icon name="Send" size={15} /> أرسل عرض سعر</button>}
               <button className="btn sm ghost" onClick={() => apply(setBookingStatus(b.id, "declined", { message: { from: "provider", text: "نعتذر، اليوم غير متاح" } }))}>اعتذار</button>
             </div>}
             {(b.status === "quoted" || b.status === "confirmed") && <MoneyStrip b={b} />}
@@ -109,6 +115,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate }: {
           <div className="field"><label htmlFor="q-a">{pr.vendorPct ? "سعرك (ر.س)" : "سعرك الصافي (ر.س)"}</label><input id="q-a" type="number" min={1} required className="input num" style={{ fontSize: 22, fontWeight: 700 }} value={q.amount || ""} placeholder="اكتب السعر" onChange={(e) => setQ({ ...q, amount: +e.target.value })} /></div>
           {pr.vendorPct > 0 && q.amount > 0 && <div className="card flat tight row between" style={{ fontSize: 14.5 }}><span>حقك بعد نسبة مناسبتي ({pr.vendorPct}٪)</span><b className="num display">{sar(payoutFor(q.amount, pr))}</b></div>}
           <div className="field"><label htmlFor="q-m">وصف العرض للعميل (بدون أرقام تواصل)</label><textarea id="q-m" className="input" rows={4} value={q.msg} onChange={(e) => setQ({ ...q, msg: e.target.value })} /></div>
+          {credits != null && quoting?.status === "new" && <div className="card flat tight row between" style={{ fontSize: 13.5 }}><span><Icon name="Coins" size={14} /> العرض يخصم رصيد واحد، وتعديله بعدين ما يخصم</span><b className="num">باقي {Math.max(0, credits - 1)}</b></div>}
           <button className="btn primary lg block" type="submit" disabled={!(q.amount > 0)}>إرسال العرض</button>
         </form>
       </Sheet>
@@ -336,14 +343,13 @@ export function PartnerAgreementGate({ kind, id, name }: { kind: "supplier" | "v
   const toast = useToast();
   const [ok, setOk] = useState(false);
   const [by, setBy] = useState("");
-  const pr = pricingOf(useDB());
   return (
     <div className="agree">
       <div className="agree-in">
         <LogoMark size={70} animated />
         <span className="live-pill" style={{ alignSelf: "center" }}>شراكة {name} مع مناسبتي</span>
         <h1 className="display">اتفاقية الشراكة</h1>
-        <p className="muted">قبل ما توصلك طلبات العملاء، هذي قواعد الشراكة اللي تحمي حقك وحقنا وحق العميل. {pr.vendorPct ? <>خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على العميل، ونسبة الشراكة <b className="num">{pr.vendorPct}٪</b> تنخصم من سعرك، وتشوف حقك قبل كل عرض.</> : <>نسبة خدمة مناسبتي <b className="num">{pr.feePct}٪</b> تنضاف على سعرك للعميل، وسعرك يبقى صافي لك.</>}</p>
+        <p className="muted">قبل ما توصلك طلبات العملاء، هذي قواعد الشراكة اللي تحمي حقك وحقنا وحق العميل. <b>صفر عمولة على حجوزاتك</b>: العميل يدفع لك سعرك كامل مباشرة، ورسوم مناسبتي واضحة ومعلنة.</p>
         <ol className="agree-list">{AGREEMENT_CLAUSES.map(([t, d]) => <li key={t}><b>{t}</b><span>{d}</span></li>)}</ol>
         <label className="agree-check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> قرأت الاتفاقية وأوافق على كل بنودها</label>
         <div className="field"><label htmlFor="ag-n">اسمك الكامل (توقيع)</label><input id="ag-n" className="input" value={by} onChange={(e) => setBy(e.target.value)} placeholder="الاسم كما في الهوية" /></div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import {
+import { venueVisible,
   CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, toggleFavorite,
   venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
@@ -20,7 +20,7 @@ export function Explore({ initialCat }: { initialCat?: string }) {
   const [favOnly, setFavOnly] = useState(false);
 
   const items = useMemo(() => {
-    const venues: Item[] = db.venues.filter(isActive).map((v) => ({ kind: "venue", v }));
+    const venues: Item[] = db.venues.filter(venueVisible).map((v) => ({ kind: "venue", v }));
     const sups: Item[] = db.suppliers.filter(isActive).map((v) => ({ kind: "supplier", v }));
     let list = cat === "all" ? [...venues, ...sups] : cat === "venues" ? venues : sups.filter((s) => (s.v as Supplier).cats.includes(cat));
     if (city !== "all") list = list.filter((i) => i.v.city === city || (i.kind === "supplier" && i.v.area.includes("كل مناطق")));

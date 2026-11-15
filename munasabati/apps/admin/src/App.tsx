@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Billing } from "./billing";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
   upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, payoutFor, setPricing, setBank, setLegal, hasAgreement, feeOn, vendorOn, launchSteps, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
@@ -479,6 +480,7 @@ function Panel() {
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.status === "open" || t.status === "reopened").length },
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
+    { id: "billing", label: "الفوترة", icon: "Receipt", count: db.suppliers.filter((x) => x.wallet?.pending).length + db.venues.filter((v) => v.sub?.claimedAt && v.sub.plan !== "active").length + (db.clients ?? []).filter((c) => c.data.invitePlan).length },
     { id: "settings", label: "الإعدادات", icon: "Settings" },
   ];
   return (
@@ -496,6 +498,7 @@ function Panel() {
           {tab === "support" && <Support focus={focus} />}
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}
+          {tab === "billing" && <Billing />}
           {tab === "settings" && <Settings />}
         </motion.div>
       </AnimatePresence>

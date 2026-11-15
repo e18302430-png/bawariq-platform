@@ -54,6 +54,10 @@ export interface Supplier {
   phone?: string;
   /** روابط صور حقيقية يرفعها المورد (الأولى غلاف) */
   photos?: string[];
+  /** رابط دفع خاص بالمورد (من بنكه أو بوابته) يظهر للعميل بعد تأكيد الحجز */
+  payLink?: string;
+  /** رصيد العروض: كل عرض سعر يرسله لعميل جاد ينخصم منه رصيد واحد (يشحنه مقدّماً) */
+  wallet?: { credits: number; spent?: number; pending?: { pack: string; credits: number; amount: number; at: number }; log?: { at: number; delta: number; why: string }[] };
   /** جولة ٣٦٠°: صور بانوراما لأعماله (كوشة منفذة، ستوديو، معرض، خيمة…) */
   tour?: { src: string; label: string }[];
   featured?: boolean;
@@ -92,6 +96,10 @@ export interface Venue {
   blocked: string[];
   /** روابط صور حقيقية يرفعها صاحب القاعة (الأولى غلاف) */
   photos?: string[];
+  /** رابط دفع خاص بالقاعة يظهر للعميل بعد تأكيد الحجز */
+  payLink?: string;
+  /** اشتراك القاعة الشهري (بدون أي عمولة على الحجوزات) */
+  sub?: { plan: "trial" | "active" | "overdue"; until?: string; claimedAt?: number; paidAt?: number };
   /** جولة ٣٦٠°: صور بانوراما كروية (نسبة ٢:١) لكل ركن في القاعة */
   tour?: { src: string; label: string }[];
   phone?: string;
@@ -231,6 +239,7 @@ export interface Task {
 }
 
 /** لوحات مائية (balad جدة التاريخية، diriyah الدرعية، ula العُلا) وقوالب كلاسيكية */
+export type InviteTier = "free" | "basic" | "plus" | "royal";
 export type InviteTemplate = "balad" | "diriyah" | "ula" | "night" | "ivory" | "photo";
 export interface ProgramItem { title: string; time: string }
 /** فصل من «حكايتنا» في الدعوة: عنوان قصير وتاريخ اختياري وسطر */
@@ -245,7 +254,9 @@ export interface ClientSpace {
   doorKey?: string;
   tasks: Task[];
   favorites: string[];
-  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean; story?: StoryChapter[]; music?: boolean };
+  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean; story?: StoryChapter[]; music?: boolean; tier?: InviteTier };
+  /** طلب ترقية باقة الدعوة (العميل يحوّل، والإدارة تأكد وتفعّل tier) */
+  invitePlan?: { want: InviteTier; claimedAt: number };
   /** تفضيلات يتعلمها النظام من اختيارات العميل: اللي اختاره واللي رفضه */
   prefs?: { liked: string[]; dismissed: string[] };
   /** الفقرة الجارية الآن من برنامج الليلة (يتحكم بها العميل) */

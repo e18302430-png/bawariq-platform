@@ -84,7 +84,7 @@ function learnBoost(L: ReturnType<typeof learned>, x: { id: string; tags: string
 
 function rankVenues(db: DB, city: string, guests: number, date: string, styles: StyleId[], budget?: number, exclude: string[] = []): Pick[] {
   const L = learned(db);
-  return db.venues.filter((v) => v.status !== "suspended" && !exclude.includes(v.id) && !L.dismissed.has(v.id)).map((v: Venue) => {
+  return db.venues.filter((v) => v.status !== "suspended" && v.sub?.plan !== "overdue" && !exclude.includes(v.id) && !L.dismissed.has(v.id)).map((v: Venue) => {
     const reasons: string[] = []; let s = 50 + learnBoost(L, v, []);
     if (v.city === city) { s += 30; reasons.push("في مدينتك"); } else s -= 40;
     const fit = v.halls.find((h) => (hallCapacity(h) || Infinity) >= guests && !busyDays(v.id, db.bookings, v.blocked, h.id, true).has(date)) ?? v.halls.find((h) => !busyDays(v.id, db.bookings, v.blocked, h.id, true).has(date));

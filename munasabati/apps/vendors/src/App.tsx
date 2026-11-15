@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { hasAgreement, normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, BRAND, PartnerAgreementGate, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, TourManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { creditsOf, hasAgreement, normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
+import { AppShell, BRAND, PartnerAgreementGate, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, TourManager, WalletPanel, PayLinkField, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -132,6 +132,7 @@ function Profile({ s }: { s: Supplier }) {
         </div>
         <div className="field"><span className="label">الخدمات اللي تقدمها</span><div className="chips wrap">{CATEGORIES.map((c) => <button type="button" key={c.id} className={"chip" + (f.cats.includes(c.id) ? " on" : "")} onClick={() => toggle(c.id)} aria-pressed={f.cats.includes(c.id)}><Icon name={c.icon} size={15} />{c.name}</button>)}</div></div>
         <PhotoManager photos={s.photos} onChange={(photos) => apply(upsertSupplier({ ...s, photos }))} />
+        <PayLinkField value={s.payLink} onSave={(payLink) => apply(upsertSupplier({ ...s, payLink }))} />
         <TourManager tour={s.tour} spots={["كوشة منفذة", "الستوديو", "المعرض", "تجهيز قاعة", "خيمة", "ركن الضيافة"]} onChange={(tour) => apply(upsertSupplier({ ...s, tour }))} />
         <div className="field"><label htmlFor="f-t">مميزات قصيرة (افصل بفاصلة)</label><input id="f-t" className="input" value={f.tags} onChange={(e) => setF({ ...f, tags: e.target.value })} /></div>
         <button className="btn primary lg" type="submit">حفظ التغييرات</button>
@@ -150,6 +151,7 @@ function Portal({ s }: { s: Supplier }) {
     { id: "requests", label: "الطلبات", icon: "Inbox", count: mine.filter((b) => b.status === "new").length },
     { id: "calendar", label: "التقويم", icon: "CalendarDays" },
     { id: "packages", label: "الباقات", icon: "Package" },
+    { id: "wallet", label: "رصيد العروض", icon: "Coins", count: creditsOf(s) <= 2 ? creditsOf(s) || undefined : undefined },
     { id: "profile", label: "الملف التعريفي", icon: "Store" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "supplier" && t.fromId === s.id && t.status === "answered").length },
   ];
@@ -160,7 +162,8 @@ function Portal({ s }: { s: Supplier }) {
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {s.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}
           {tab === "overview" && <Overview s={s} go={setTab} />}
-          {tab === "requests" && <Inbox bookings={mine} defaultQuote={(b) => s.packages.find((p) => p.id === b.packageId)?.price ?? b.estimate ?? s.priceFrom}
+          {tab === "wallet" && <WalletPanel s={s} />}
+          {tab === "requests" && <Inbox bookings={mine} credits={creditsOf(s)} onTopUp={() => setTab("wallet")} defaultQuote={(b) => s.packages.find((p) => p.id === b.packageId)?.price ?? b.estimate ?? s.priceFrom}
             quoteTemplate={(b) => { const p = s.packages.find((x) => x.id === b.packageId); return `حياكم الله، يسعدنا نكون جزء من فرحتكم. العرض يشمل ${p ? p.items.join("، ") : "التجهيز حسب طلبكم"}.`; }} />}
           {tab === "calendar" && <><div><h1 className="page-title">التقويم</h1><p className="page-sub">المناسبات المؤكدة والطلبات قيد الانتظار.</p></div><MonthBoard bookings={mine} /><section className="card" style={{ paddingBlock: 6 }}><div className="list">{mine.filter((b) => b.status !== "declined").sort((a, b) => a.date.localeCompare(b.date)).map((b) => <div key={b.id} className="list-row"><b className="num display" style={{ width: 92 }}>{b.date}</b><div className="t"><b>{b.clientName}</b><small>{fmt(b.guests)} ضيف · {b.city}</small></div><StatusPill status={b.status} /></div>)}</div></section></>}
           {tab === "packages" && <Packages s={s} />}

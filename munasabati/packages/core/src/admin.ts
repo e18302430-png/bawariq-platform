@@ -4,7 +4,7 @@
 */
 import { normPhone } from "./calc";
 import { newDoorKey, type Mutation } from "./db";
-import type { Booking, ClientEvent, ClientRecord, DB, Ticket } from "./types";
+import type { Booking, ClientEvent, ClientRecord, DB, InviteTier, Ticket } from "./types";
 
 export interface AdminClient {
   key: string;
@@ -101,3 +101,7 @@ export const adminUpdateBooking = (id: string, patch: Partial<Pick<Booking, "dat
 /** الإدارة تعيّن منسق مناسبتي لمناسبة عميل (ويتجهز رابط شاشة المنسق) */
 export const adminAssignCoordinator = (spaceId: string, c: { name: string; phone: string }): Mutation => (db) =>
   patchSpace(db, spaceId, (cl) => (cl.event ? { ...cl, doorKey: cl.doorKey ?? newDoorKey(), event: { ...cl.event, coordinator: { name: c.name.trim(), phone: c.phone.replace(/\D/g, ""), at: Date.now() } } } : cl));
+
+/** الإدارة تفعّل باقة الدعوة بعد استلام التحويل (أو ترفض الطلب) */
+export const adminSetInviteTier = (spaceId: string, tier: InviteTier | null): Mutation => (db) =>
+  patchSpace(db, spaceId, (c) => ({ ...c, invite: tier ? { ...c.invite, tier } : c.invite, invitePlan: undefined }));
