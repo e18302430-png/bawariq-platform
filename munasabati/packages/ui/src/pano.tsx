@@ -129,14 +129,14 @@ export function TourModal({ scenes, title, onClose }: { scenes: TourScene[]; tit
 }
 
 /** زر «ادخل القاعة ٣٦٠°» يفتح الجولة */
-export function TourButton({ scenes, title, compact = false }: { scenes?: TourScene[]; title: string; compact?: boolean }) {
+export function TourButton({ scenes, title, compact = false, label }: { scenes?: TourScene[]; title: string; compact?: boolean; label?: string }) {
   const [open, setOpen] = useState(false);
   if (!scenes?.length) return null;
   return (
     <>
       <button type="button" className={"tour-btn" + (compact ? " compact" : "")} onClick={(e) => { e.stopPropagation(); setOpen(true); }}>
         <span className="tour-orb" aria-hidden="true"><Icon name="Rotate3d" size={compact ? 14 : 18} /></span>
-        {compact ? "٣٦٠°" : <span><b>ادخل القاعة ٣٦٠°</b><small>تجوّل فيها كأنك واقف داخلها</small></span>}
+        {compact ? "٣٦٠°" : <span><b>{label ?? "ادخل القاعة ٣٦٠°"}</b><small>تجوّل فيها كأنك واقف داخلها</small></span>}
       </button>
       {open && <TourModal scenes={scenes} title={title} onClose={() => setOpen(false)} />}
     </>
@@ -145,7 +145,7 @@ export function TourButton({ scenes, title, compact = false }: { scenes?: TourSc
 
 const SPOTS = ["القاعة", "الكوشة", "المدخل", "قسم الرجال", "قسم النساء", "الحديقة"];
 /** صاحب القاعة يرفع صور ٣٦٠ (بانوراما كروية ٢:١) ويسمّي كل ركن */
-export function TourManager({ tour = [], onChange, max = 4 }: { tour?: TourScene[]; onChange: (t: TourScene[]) => void; max?: number }) {
+export function TourManager({ tour = [], onChange, max = 4, spots = SPOTS }: { tour?: TourScene[]; onChange: (t: TourScene[]) => void; max?: number; spots?: string[] }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
@@ -156,20 +156,20 @@ export function TourManager({ tour = [], onChange, max = 4 }: { tour?: TourScene
       const ratio = await new Promise<number>((res) => { const u = URL.createObjectURL(f); const i = new Image(); i.onload = () => { res(i.width / i.height); URL.revokeObjectURL(u); }; i.onerror = () => res(0); i.src = u; });
       if (ratio < 1.9 || ratio > 2.1) toast("الصورة مو بانوراما ٣٦٠ (لازم عرضها ضعف طولها). بنرفعها، بس الأفضل تصورها بوضع ٣٦٠");
       const url = await repo.uploadPhoto(await resizeImage(f, repo.mode === "local" ? 2048 : 4096, 0.85));
-      onChange([...tour, { src: url, label: SPOTS.find((x) => !tour.some((t) => t.label === x)) ?? "ركن" }]);
+      onChange([...tour, { src: url, label: spots.find((x) => !tour.some((t) => t.label === x)) ?? "ركن" }]);
       toast(repo.error() ?? "أضفنا صورة الجولة");
     } catch (e) { toast((e as Error).message || "تعذّر رفع الصورة"); } finally { setBusy(false); }
   };
   return (
     <div className="tour-mgr">
       <div className="row between wrap"><span className="label">جولة ٣٦٠° ({tour.length}/{max})</span>{tour.length > 0 && <button type="button" className="btn sm" onClick={() => setPreview(true)}><Icon name="Rotate3d" size={15} /> معاينة الجولة</button>}</div>
-      <p className="faint" style={{ margin: 0, fontSize: 12.5 }}>صوّر من وسط القاعة بكاميرا ٣٦٠ أو بوضع «Photo Sphere / ٣٦٠» في الجوال. القاعات اللي فيها جولة تطلع بشارة «جولة ٣٦٠°» وتجيب طلبات أكثر.</p>
+      <p className="faint" style={{ margin: 0, fontSize: 12.5 }}>صوّر من وسط المكان بكاميرا ٣٦٠ أو بوضع «Photo Sphere / ٣٦٠» في الجوال. الحسابات اللي فيها جولة تطلع بشارة «جولة ٣٦٠°» وتجيب طلبات أكثر.</p>
       <div className="tour-list">
         {tour.map((t, i) => (
           <div key={t.src.slice(-30) + i} className="tour-item">
             <img src={photoUrl(t.src, true)} alt="" />
             <label className="sr" htmlFor={"tr-l" + i}>اسم الركن</label>
-            <select id={"tr-l" + i} className="select" value={t.label} onChange={(e) => onChange(tour.map((x, k) => (k === i ? { ...x, label: e.target.value } : x)))}>{[...new Set([t.label, ...SPOTS])].map((x) => <option key={x}>{x}</option>)}</select>
+            <select id={"tr-l" + i} className="select" value={t.label} onChange={(e) => onChange(tour.map((x, k) => (k === i ? { ...x, label: e.target.value } : x)))}>{[...new Set([t.label, ...spots])].map((x) => <option key={x}>{x}</option>)}</select>
             <button type="button" className="icon-btn sm" aria-label="حذف صورة الجولة" onClick={() => onChange(tour.filter((_, k) => k !== i))}><Icon name="Trash2" size={15} /></button>
           </div>
         ))}

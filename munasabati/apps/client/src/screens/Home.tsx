@@ -32,11 +32,20 @@ export default function Home() {
   const doneCount = stages.filter((x) => x.status === "done").length;
   const yes = db.client.guests.filter((g) => g.status === "yes").reduce((a, g) => a + g.count, 0);
   const est = db.client.budget.reduce((a, b) => a + b.est, 0), paid = db.client.budget.reduce((a, b) => a + b.paid, 0);
+  // «لوحة المناسبة» للعائلة: ملخص الخطة في رسالة واتساب واحدة للقروب
+  const share = () => {
+    const nameOf = (k: string, id: string) => (k === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((s) => s.id === id)?.name) ?? "";
+    const booked = db.bookings.filter((b) => b.fromClient && b.status === "confirmed").map((b) => `✓ ${nameOf(b.kind, b.targetId)}`);
+    const asked = db.bookings.filter((b) => b.fromClient && ["new", "review", "quoted"].includes(b.status)).map((b) => `• ${nameOf(b.kind, b.targetId)} (بانتظار العرض)`);
+    const text = [`✨ ${e.title}`, `📅 ${e.date} · ${e.city} · ${fmt(e.guests)} ضيف`, e.budget ? `💰 الميزانية: ${sar(e.budget)}` : "", booked.length || asked.length ? "\nالحجوزات:" : "", ...booked, ...asked, `\nباقي ${d} يوم ⏳`, "رأيكم؟ 🤍", "", `خططتها في مناسبتي: ${location.origin}`].filter(Boolean).join("\n");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  };
 
   return (
     <>
       <div className="hello">
         <div className="grow"><div className="muted" style={{ fontSize: 14 }}>{greet()} {db.client.profile?.name}</div><h1>رحلة مناسبتك</h1></div>
+        <button className="btn sm family-share" onClick={share}><Icon name="Users" size={15} /> شاركها مع العائلة</button>
         <div className="journey-ring" aria-label={`${doneCount} من 5 مراحل مكتملة`}>
           <svg viewBox="0 0 44 44"><defs><linearGradient id="jr-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f7e0a6" /><stop offset=".5" stopColor="#d9ae62" /><stop offset="1" stopColor="#9b6d2c" /></linearGradient></defs><circle cx="22" cy="22" r="19" /><motion.circle cx="22" cy="22" r="19" className="fg" stroke="url(#jr-g)" initial={{ pathLength: 0 }} animate={{ pathLength: doneCount / 5 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} /></svg>
           <b className="num">{doneCount}/5</b>

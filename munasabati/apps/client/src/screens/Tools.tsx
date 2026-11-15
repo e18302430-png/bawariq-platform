@@ -4,9 +4,10 @@ import {
   acceptQuote, confirmFeeFor, directDueFor, isDirectPay, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, coordCheck, CHECK_LABEL, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
   type Booking, type CheckInResult, type DoorSnapshot, type DoorVendor, type OpsMsg,
 } from "@munasabati/core";
-import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
+import { BookingChat, Counter, Empty, Icon, OpsFeed, QR, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 import { ContractButton } from "./Contract";
+import { SealBurst, playSeal } from "./inviteFx";
 
 /* ───── الحجوزات ───── */
 export function Bookings() {
@@ -88,6 +89,8 @@ function DirectPay({ b, name }: { b: Booking; name: string }) {
   const target = b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId) : db.suppliers.find((s) => s.id === b.targetId);
   const copy = async (t: string, what: string) => { try { await navigator.clipboard.writeText(t); toast(`نسخنا ${what}`); } catch { toast(t); } };
   const stage = b.pay?.stage ?? "due";
+  const [seal, setSeal] = useState(0);
+  const send = () => { setSeal((x) => x + 1); playSeal(); setTimeout(() => { apply(claimPaid(b.id)); toast("ختمنا طلبك، ونأكد ونفتح التواصل قريب"); }, 900); };
   const steps: [string, string, boolean][] = [
     ["وقّعت العقد", "بنود واضحة وسعر مثبّت", !!b.contract],
     ["رسوم تأكيد الحجز", `${sar(fee)} لمناسبتي، تقفل موعدك`, stage === "paid"],
@@ -100,20 +103,33 @@ function DirectPay({ b, name }: { b: Booking; name: string }) {
       <div className="split-bar" aria-hidden="true"><i style={{ width: `${Math.max(8, (fee / (b.clientPrice || 1)) * 100)}%` }} /><span /></div>
       <div className="split-legend"><span><i className="a" />لمناسبتي الحين <b className="num">{sar(fee)}</b></span><span><i className="b" />لـ{name} مباشرة <b className="num">{sar(due)}</b></span></div>
       <ol className="pay-steps">{steps.map(([t, d, ok], i) => <li key={t} className={ok ? "ok" : i === steps.findIndex((s) => !s[2]) ? "now" : ""}><i>{ok ? "✓" : i + 1}</i><div><b>{t}</b><small>{d}</small></div></li>)}</ol>
+      {stage === "paid" && (
+        <div className="cert" id={"cert-" + b.id}>
+          <div className="cert-qr"><QR text={`MNS-CERT|${ref}|${b.date}|${name}`} size={120} /></div>
+          <div className="cert-t">
+            <small>شهادة حجز مؤكد</small>
+            <b>{name}</b>
+            <span className="num">{b.date} · {fmt(b.guests)} ضيف</span>
+            <span className="cert-ref num" dir="ltr">{ref}</span>
+            <em>موثّقة من مناسبتي · وريها للتاجر يتحقق منها</em>
+          </div>
+        </div>
+      )}
       {stage === "paid" ? (
         <div className="pay-ok"><Icon name="ShieldCheck" size={17} /> <span>موعدك محفوظ.{target?.phone ? <> رقم {name}: <a className="num" dir="ltr" href={`tel:${target.phone}`}>{target.phone}</a>.</> : " بيتواصل معك التاجر خلال ساعات."} ادفع له الباقي ({sar(due)}) حسب اتفاقكم، وخذ منه فاتورة.</span></div>
       ) : stage === "claimed" ? (
         <div className="req-step"><Icon name="Hourglass" size={15} /> استلمنا إشعار تحويلك، ونأكد خلال ساعات ونفتح لك التواصل.</div>
       ) : (
         <>
-          <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>الرسوم تُحسب من الإجمالي، وترجع لك كاملة لو اعتذر التاجر. <a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></p>
+          <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>بدون أي رسوم إضافية: الإجمالي هو سعر التاجر نفسه، والرسوم جزء منه. وترجع لك كاملة لو اعتذر التاجر. <a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></p>
           {db.bank?.iban ? <div className="pay-rows">
             <div><small>البنك</small><b>{db.bank.name}</b></div>
             <div><small>اسم المستفيد</small><b>{db.bank.holder}</b></div>
             <div><small>الآيبان</small><b className="num" dir="ltr">{db.bank.iban}</b><button className="icon-btn sm" aria-label="نسخ الآيبان" onClick={() => void copy(db.bank!.iban, "الآيبان")}><Icon name="Copy" size={14} /></button></div>
             <div><small>الرقم المرجعي</small><b className="num" dir="ltr">{ref}</b><button className="icon-btn sm" aria-label="نسخ الرقم المرجعي" onClick={() => void copy(ref, "الرقم المرجعي")}><Icon name="Copy" size={14} /></button></div>
           </div> : <div className="req-step"><Icon name="Info" size={15} /> بيانات الحساب توصلك من الإدارة في محادثة الطلب.</div>}
-          <button className="btn primary block" disabled={!b.contract} onClick={() => { apply(claimPaid(b.id)); toast("وصلنا إشعارك، ونأكد ونفتح التواصل قريب"); }}><Icon name="CheckCircle2" size={16} /> {b.contract ? `حوّلت رسوم التأكيد (${sar(fee)})` : "وقّع العقد أولاً"}</button>
+          <div className="seal-btn-wrap"><SealBurst fire={seal} />
+          <button className={"btn primary block seal-btn" + (seal ? " sealing" : "")} disabled={!b.contract || !!seal} onClick={send}><span className="seal-ic" aria-hidden="true">م</span> {b.contract ? `حوّلت رسوم التأكيد (${sar(fee)})` : "وقّع العقد أولاً"}</button></div>
         </>
       )}
     </div>

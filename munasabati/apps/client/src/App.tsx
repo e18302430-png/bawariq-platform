@@ -64,7 +64,7 @@ function Main() {
   if (!ready) return <Splash dark />;
   // ضيف ضغط «ابدأ مناسبتك» من دعوة: #start-<نوع المناسبة>
   const st = route.match(/^start-(\w+)$/);
-  if (!db.client.event) return <Suspense fallback={<div className="onb" />}><Onboarding preset={st?.[1] as OccasionId | undefined} source={st ? "invite" : undefined} /></Suspense>;
+  if (!db.client.event) return <Suspense fallback={<div className="onb" />}><Onboarding preset={(st?.[1] ?? new URLSearchParams(location.search).get("occ") ?? undefined) as OccasionId | undefined} source={st ? "invite" : undefined} /></Suspense>;
 
   const quotes = db.bookings.filter((b) => b.fromClient && b.status === "quoted").length;
   const tabs: ShellTab[] = [

@@ -305,7 +305,9 @@ export const inviteMessage = (e: Pick<ClientEvent, "title" | "date">, g: Pick<Gu
 };
 
 /* ───── حماية المنصة: التسعير، الدفع عبر مناسبتي، الاتفاقية، وإخفاء أرقام التواصل ───── */
-export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 15, vendorPct: 0, minFee: 300, depositPct: 30, auto: true };
+/** النموذج المعتمد: العميل يدفع سعر التاجر نفسه بدون أي إضافة، وعمولة مناسبتي ١٠٪ من سعر القاعة أو المورد،
+ *  يدفعها العميل لمناسبتي كرسوم تأكيد (جزء من السعر)، والباقي ٩٠٪ للتاجر مباشرة */
+export const DEFAULT_PRICING: NonNullable<DB["pricing"]> = { feePct: 0, vendorPct: 10, minFee: 0, depositPct: 30, auto: true, payMode: "direct" };
 type PricingLike = Pick<NonNullable<DB["pricing"]>, "feePct" | "vendorPct" | "steps">;
 const stepOn = (p: PricingLike, day: string) => [...(p.steps ?? [])].filter((s) => s.from <= day).sort((a, b) => b.from.localeCompare(a.from))[0];
 /** النسبة اللي تنضاف على العميل اليوم: جدول النسبة يغلب النسبة الثابتة */
@@ -313,11 +315,8 @@ export const feeOn = (p: PricingLike, day = isoDay(new Date())) => stepOn(p, day
 /** النسبة اللي تنخصم من سعر المورد اليوم */
 export const vendorOn = (p: PricingLike, day = isoDay(new Date())) => { const s = stepOn(p, day); return s ? (s.vendorPct ?? 0) : (p.vendorPct ?? 0); };
 export const pricingOf = (db: Pick<DB, "pricing">) => { const p = { ...DEFAULT_PRICING, ...(db.pricing ?? {}) }; return { ...p, feePct: feeOn(p), vendorPct: vendorOn(p) }; };
-/** خطة الإطلاق: ١٠٪ على العميل أول شهرين، ١٥٪ على العميل شهرين، وبعدها ٨٪ على العميل + ١٠٪ من سعر المورد */
-export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number; vendorPct: number }[] => {
-  const add = (m: number) => { const d = new Date(start + "T12:00:00"); d.setMonth(d.getMonth() + m); return isoDay(d); };
-  return [{ from: start, feePct: 10, vendorPct: 0 }, { from: add(2), feePct: 15, vendorPct: 0 }, { from: add(4), feePct: 8, vendorPct: 10 }];
-};
+/** خطة الإطلاق المعتمدة: ١٠٪ من سعر القاعة أو المورد، وصفر على العميل */
+export const launchSteps = (start = isoDay(new Date())): { from: string; feePct: number; vendorPct: number }[] => [{ from: start, feePct: 0, vendorPct: 10 }];
 /** حق المورد: سعره ناقص نسبة المورد، مقرّب لأقرب ١٠ */
 export const payoutFor = (net: number, p: Pick<NonNullable<DB["pricing"]>, "vendorPct"> = DEFAULT_PRICING) =>
   net > 0 ? Math.round((net * (1 - (p.vendorPct ?? 0) / 100)) / 10) * 10 : 0;
@@ -334,10 +333,15 @@ export const depositFor = (b: Pick<Booking, "clientPrice">, p: NonNullable<DB["p
 /** الدفع المباشر (الافتراضي): العميل يدفع لمناسبتي «رسوم تأكيد الحجز» فقط، ويدفع الباقي لصاحب القاعة أو المورد مباشرة */
 export const isDirectPay = (db: Pick<DB, "pricing">) => (db.pricing?.payMode ?? "direct") === "direct";
 /** رسوم تأكيد الحجز = حق مناسبتي من الحجز (سعر العميل ناقص حق التاجر) */
-export const confirmFeeFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct"> = DEFAULT_PRICING) =>
-  platformTake(b) || (b.clientPrice ? Math.round((b.clientPrice - b.clientPrice / (1 + p.feePct / 100)) / 10) * 10 : 0);
+export const confirmFeeFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct" | "vendorPct"> = DEFAULT_PRICING) => {
+  if (b.quote && b.clientPrice) return platformTake(b);
+  // العميل ما يشوف سعر التاجر الصافي: نحسب حق مناسبتي من سعر العميل والنسبتين
+  if (!b.clientPrice) return 0;
+  const net = b.clientPrice / (1 + p.feePct / 100);
+  return Math.round((b.clientPrice - net * (1 - (p.vendorPct ?? 0) / 100)) / 10) * 10;
+};
 /** المبلغ اللي يدفعه العميل للتاجر مباشرة */
-export const directDueFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct"> = DEFAULT_PRICING) => (b.clientPrice ?? 0) - confirmFeeFor(b, p);
+export const directDueFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct" | "vendorPct"> = DEFAULT_PRICING) => (b.clientPrice ?? 0) - confirmFeeFor(b, p);
 
 /** التاجر يرسل سعره الصافي. مع التسعير التلقائي يوصل العميل سعر مناسبتي على طول */
 export const sendQuote = (id: string, net: number, text: string): Mutation => (db) => {
@@ -385,9 +389,9 @@ export const markPayout = (id: string): Mutation => (db) => ({
 });
 
 /** اتفاقية الشراكة: نسخة واحدة يوقعها كل تاجر وصاحب قاعة */
-export const AGREEMENT_VERSION = 3;
+export const AGREEMENT_VERSION = 4;
 export const AGREEMENT_CLAUSES: [string, string][] = [
-  ["٠٪ عمولة من سعري", "أستلم سعري كاملاً من العميل مباشرة. مناسبتي تاخذ «رسوم تأكيد الحجز» من العميل نفسه، وما تخصم من حقي شي (إلا لو أعلنت المنصة غير كذا وقبلته)."],
+  ["عمولة ١٠٪ من سعري تُحصّل مقدّماً", "عمولة مناسبتي ١٠٪ من سعري (أو النسبة المعلنة وقت العرض). العميل يدفعها لمناسبتي كرسوم تأكيد الحجز وهي جزء من سعري، وأستلم الباقي (٩٠٪) من العميل مباشرة. ما أدفع شي من جيبي."],
   ["التواصل يفتح بعد التأكيد", "قبل ما يدفع العميل رسوم التأكيد، التواصل يكون داخل المنصة فقط. بعد التأكيد توصلني بيانات العميل، وأتعامل معه مباشرة لإتمام هذا الحجز."],
   ["سعر موحّد", "ما أعطي عملاء مناسبتي سعر أعلى من سعري خارجها، وما أعرض على العميل خصم مقابل إنه يحجز من برّا المنصة."],
   ["لا إلغاء وحجز من ورا المنصة", "لو ألغى العميل وحجز معي نفس المناسبة مباشرة، تبقى رسوم مناسبتي مستحقة، وألتزم أبلّغ الإدارة."],

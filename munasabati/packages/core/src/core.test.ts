@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, vendorOn, payoutFor, platformTake, DEFAULT_PRICING, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, signContract, CONTRACT_VERSION, bookingMessage, acceptAgreement, hasAgreement,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, vendorOn, payoutFor, platformTake, DEFAULT_PRICING, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, confirmFeeFor, signContract, CONTRACT_VERSION, bookingMessage, acceptAgreement, hasAgreement,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -301,8 +301,11 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
       expect(maskContacts(t)).toEqual({ text: t, hit: false });
   });
   it("التاجر يرسل سعره الصافي، والعميل يشوف سعر مناسبتي، والعربون يتأكد من الإدارة", () => {
-    expect(clientPriceFor(20000)).toBe(23000);
-    expect(clientPriceFor(800)).toBe(1100); // الحد الأدنى ٣٠٠
+    const old = { ...DEFAULT_PRICING, feePct: 15, vendorPct: 0, minFee: 300 };
+    expect(clientPriceFor(20000, old)).toBe(23000);
+    expect(clientPriceFor(800, old)).toBe(1100); // الحد الأدنى ٣٠٠
+    // النموذج المعتمد: العميل يدفع سعر التاجر نفسه، و١٠٪ عمولة من التاجر
+    expect([clientPriceFor(20000), payoutFor(20000)]).toEqual([20000, 18000]);
     const r = createMemoryRepository();
     r.apply(createEvent({ occasion: "milka", city: "الدمام", date: "2027-03-01", guests: 100, menRatio: 0.5, tier: "mid", title: "ملكة", hostName: "سارة", samples: false }));
     const s = r.get().suppliers[0];
@@ -312,21 +315,24 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
     r.apply(sendQuote(id, 6000, "جوالي 0551112222"));
     let b = r.get().bookings.find((x) => x.id === id)!;
     expect(b.quote).toBe(6000);
-    expect(b.clientPrice).toBe(6900);
+    expect(b.clientPrice).toBe(6000); // العميل يدفع سعر التاجر نفسه
+    expect(b.payout).toBe(5400); // التاجر ياخذ ٩٠٪
     expect(b.messages.at(-1)!.text).not.toContain("0551112222");
     r.apply(acceptQuote(id, "الكوشة"));
     b = r.get().bookings.find((x) => x.id === id)!;
     expect(b.pay!.stage).toBe("due");
-    expect(depositFor(b)).toBe(2070);
+    expect(depositFor(b)).toBe(1800);
     r.apply(signContract(id, "  سارة العتيبي "));
     const ct = r.get().bookings.find((x) => x.id === id)!.contract!;
-    expect(ct).toMatchObject({ name: "سارة العتيبي", v: CONTRACT_VERSION, price: 6900, deposit: 900, date: "2027-03-01" }); // دفع مباشر: رسوم التأكيد = حق مناسبتي
+    expect(ct).toMatchObject({ name: "سارة العتيبي", v: CONTRACT_VERSION, price: 6000, deposit: 600, date: "2027-03-01" }); // رسوم التأكيد = عمولة ١٠٪ من سعر التاجر
     r.apply(signContract(id, "اسم ثاني"));
     expect(r.get().bookings.find((x) => x.id === id)!.contract!.name).toBe("سارة العتيبي"); // التوقيع ما يتعدل
     r.apply(claimPaid(id)); r.apply(confirmPaid(id));
     expect(r.get().bookings.find((x) => x.id === id)!.pay!.stage).toBe("paid");
+    // العميل ما يشوف سعر التاجر: نفس الرسوم من سعره والنسبة
+    expect(confirmFeeFor({ clientPrice: 6000 })).toBe(600);
     const msg = r.get().bookings.find((x) => x.id === id)!.messages.at(-1)!.text;
-    expect(msg).toContain("6,000"); // الباقي للتاجر مباشرة
+    expect(msg).toContain("5,400"); // الباقي (٩٠٪) للتاجر مباشرة
     expect(msg).toContain("0551234567"); // التواصل يفتح بعد الرسوم
     r.apply(bookingMessage(id, "client", "ارسل لي رقمك 0559998888"));
     expect(r.get().bookings.find((x) => x.id === id)!.leaks).toBe(1);
@@ -341,9 +347,9 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
 });
 
 describe("جدول النسبة ومنسق مناسبتي", () => {
-  it("١٠٪ على العميل أول شهرين، ثم ١٥٪، ثم ٨٪ على العميل + ١٠٪ من المورد", () => {
-    const steps = launchSteps("2027-01-01");
-    expect(steps.map((s) => [s.from, s.feePct, s.vendorPct])).toEqual([["2027-01-01", 10, 0], ["2027-03-01", 15, 0], ["2027-05-01", 8, 10]]);
+  it("الخطة المعتمدة ١٠٪ من التاجر وصفر على العميل، والجدول يغلب النسبة الثابتة", () => {
+    expect(launchSteps("2027-01-01").map((s) => [s.from, s.feePct, s.vendorPct])).toEqual([["2027-01-01", 0, 10]]);
+    const steps = [{ from: "2027-01-01", feePct: 10, vendorPct: 0 }, { from: "2027-03-01", feePct: 15, vendorPct: 0 }, { from: "2027-05-01", feePct: 8, vendorPct: 10 }];
     const p = { feePct: 15, steps };
     expect([feeOn(p, "2027-02-15"), vendorOn(p, "2027-02-15")]).toEqual([10, 0]);
     expect([feeOn(p, "2027-04-10"), vendorOn(p, "2027-04-10")]).toEqual([15, 0]);
@@ -351,7 +357,7 @@ describe("جدول النسبة ومنسق مناسبتي", () => {
     expect([feeOn(p, "2026-12-01"), vendorOn(p, "2026-12-01")]).toEqual([15, 0]);
   });
   it("قاعة بـ٢٠ ألف بعد ٤ شهور: العميل ٢١٬٦٠٠، القاعة ١٨ ألف، ومناسبتي ٣٬٦٠٠ (١٨٪)", () => {
-    const p = { ...DEFAULT_PRICING, feePct: 8, vendorPct: 10 };
+    const p = { ...DEFAULT_PRICING, feePct: 8, vendorPct: 10, minFee: 300 };
     expect(clientPriceFor(20000, p)).toBe(21600);
     expect(payoutFor(20000, p)).toBe(18000);
     expect(platformTake({ quote: 20000, clientPrice: 21600, payout: 18000 })).toBe(3600);

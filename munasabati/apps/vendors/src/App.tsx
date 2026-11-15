@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { hasAgreement, normPhone, CATEGORIES, CITIES, OCCASIONS, fmt, sar, setSession, uid, upsertSupplier, type CategoryId, type Package, type Supplier } from "@munasabati/core";
-import { AppShell, BRAND, PartnerAgreementGate, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { AppShell, BRAND, PartnerAgreementGate, SupportCenter, Empty, Gate, Icon, Media, NextAction, PhoneAuth, PhotoManager, TourManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, StatusPill, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#FFC93D", "#FF7A2E", "#C2185B", "#2A0B1E"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -64,6 +64,7 @@ function Overview({ s, go }: { s: Supplier; go: (t: string) => void }) {
       <NextAction items={[
         { when: mine.some((b) => b.status === "new"), icon: "Inbox", title: `عندك ${mine.filter((b) => b.status === "new").length} طلب جديد`, sub: "الرد خلال ساعتين يرفع ترتيبك في نتائج البحث.", cta: "رد على الطلبات", go: () => go("requests") },
         { when: !(s.photos?.length), icon: "ImagePlus", title: "أضف صور أعمالك", sub: "النشاطات اللي فيها صور حقيقية تستقبل طلبات أكثر.", cta: "أضف الصور", go: () => go("profile"), tone: "info" },
+        { when: !(s.tour?.length), icon: "Rotate3d", title: "خلّ العميل يدخل أعمالك ٣٦٠°", sub: "صورة ٣٦٠ لكوشة نفذتها أو ستوديوك تبهر العميل قبل ما يطلب.", cta: "أضف جولة", go: () => go("profile"), tone: "info" },
         { when: !s.packages.length, icon: "Package", title: "أضف باقاتك وأسعارك", sub: "العميل يحجز أسرع لما يشوف سعراً واضحاً.", cta: "أضف باقة", go: () => go("packages"), tone: "info" },
         { when: upcoming.some((b) => (new Date(b.date).getTime() - Date.now()) / 864e5 <= 7), icon: "CalendarClock", title: `عندك مناسبة بتاريخ ${upcoming[0]?.date ?? ""}`, sub: `${upcoming[0]?.clientName ?? ""} · جهّز الفريق والمعدات.`, cta: "التقويم", go: () => go("calendar"), tone: "info" },
       ]} />
@@ -131,6 +132,7 @@ function Profile({ s }: { s: Supplier }) {
         </div>
         <div className="field"><span className="label">الخدمات اللي تقدمها</span><div className="chips wrap">{CATEGORIES.map((c) => <button type="button" key={c.id} className={"chip" + (f.cats.includes(c.id) ? " on" : "")} onClick={() => toggle(c.id)} aria-pressed={f.cats.includes(c.id)}><Icon name={c.icon} size={15} />{c.name}</button>)}</div></div>
         <PhotoManager photos={s.photos} onChange={(photos) => apply(upsertSupplier({ ...s, photos }))} />
+        <TourManager tour={s.tour} spots={["كوشة منفذة", "الستوديو", "المعرض", "تجهيز قاعة", "خيمة", "ركن الضيافة"]} onChange={(tour) => apply(upsertSupplier({ ...s, tour }))} />
         <div className="field"><label htmlFor="f-t">مميزات قصيرة (افصل بفاصلة)</label><input id="f-t" className="input" value={f.tags} onChange={(e) => setF({ ...f, tags: e.target.value })} /></div>
         <button className="btn primary lg" type="submit">حفظ التغييرات</button>
       </form>

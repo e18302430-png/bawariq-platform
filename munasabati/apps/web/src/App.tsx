@@ -152,6 +152,25 @@ function Features() {
   );
 }
 
+/* ───── البداية السريعة: المناسبة والتاريخ والضيوف والمدينة، وتدخل التطبيق والإجابات جاهزة ───── */
+function QuickStart({ occ }: { occ: Occasion }) {
+  const [o, setO] = useState<string>(occ.id);
+  const [date, setDate] = useState("");
+  const [guests, setGuests] = useState("300");
+  const [city, setCity] = useState("الدمام");
+  useEffect(() => setO(occ.id), [occ.id]);
+  const go = (e: React.FormEvent) => { e.preventDefault(); const q = new URLSearchParams({ occ: o, guests, city }); if (date) q.set("date", date); location.href = `${LINKS.client}?${q.toString()}`; };
+  return (
+    <form className="qs" onSubmit={go} aria-label="ابدأ مناسبتك">
+      <label><span>المناسبة</span><select value={o} onChange={(e) => setO(e.target.value)}>{OCCASIONS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+      <label><span>المدينة</span><select value={city} onChange={(e) => setCity(e.target.value)}>{["الدمام", "الخبر", "الظهران", "القطيف", "الأحساء", "الجبيل"].map((c) => <option key={c}>{c}</option>)}</select></label>
+      <label><span>التاريخ</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      <label><span>الضيوف</span><input type="number" inputMode="numeric" min={10} max={3000} value={guests} onChange={(e) => setGuests(e.target.value.slice(0, 4))} /></label>
+      <button type="submit"><Icon name="Sparkles" size={17} /> شوف خطتك</button>
+    </form>
+  );
+}
+
 /* ───── للقاعات والموردين: «نجيب لك العميل، وأنت تحتفظ بكل ريال» + حاسبة من أرقامهم ───── */
 const sarFmt = (n: number) => Math.round(n).toLocaleString("en-US");
 function Partners() {
@@ -160,9 +179,9 @@ function Partners() {
   const [price, setPrice] = useState(25000);
   const [extra, setExtra] = useState(3);
   useEffect(() => { setPrice(isV ? 25000 : 6000); setExtra(isV ? 3 : 4); }, [isV]);
-  const month = price * extra, year = month * 12;
+  const month = price * extra, cut = month * 0.1, year = (month - cut) * 12;
   const FACTS: [string, string, string][] = [
-    ["BadgePercent", "0% عمولة من سعرك", "العميل يدفعك سعرك كامل. رسوم مناسبتي على العميل، مو عليك."],
+    ["BadgePercent", "10% بس، وما تطلع من جيبك", "العميل يدفع عمولتنا مقدّماً من سعرك، وتستلم الـ90% منه مباشرة. ما فيه فواتير تلاحقك."],
     ["UserCheck", "عميل جاد ومؤكد", "ما يوصلك رقم العميل إلا بعد ما يقفل موعده ويدفع رسوم التأكيد."],
     ["CalendarCheck", "أيامك الفاضية تتعبى", "نوصّلك طلبات بالتاريخ والميزانية وعدد الضيوف، وأنت تختار."],
     ["FileSignature", "عقد إلكتروني وفاتورة", "كل حجز له عقد موقّع وشهادة، فما فيه خلاف ولا ضياع."],
@@ -171,8 +190,8 @@ function Partners() {
     <section className="sec container partners" id="partners">
       <Reveal className="sec-head">
         <span className="eyebrow">للقاعات والموردين</span>
-        <h2>نجيب لك العميل… <span className="grad-text">وأنت تحتفظ بكل ريال</span></h2>
-        <p>مناسبتي ما تاخذ نسبة من سعرك. نوصلك عملاء جادين في الشرقية، دفعوا رسوم تأكيد حجزهم، ويتواصلون معك مباشرة.</p>
+        <h2>نجيب لك العميل المؤكد… <span className="grad-text">وأنت تركّز على ليلته</span></h2>
+        <p>نوصلك عملاء جادين في الشرقية، قفلوا موعدهم ووقّعوا العقد. عمولتنا ١٠٪ من سعرك يدفعها العميل لنا مقدّماً، والباقي يوصلك منه مباشرة.</p>
       </Reveal>
       <div className="pt-grid">
         <div className="pt-facts">{FACTS.map(([ic, t, d], i) => <Reveal key={t} delay={i * 0.05} className="pt-fact"><span><Icon name={ic} size={20} /></span><div><b>{t}</b><small>{d}</small></div></Reveal>)}</div>
@@ -186,10 +205,10 @@ function Partners() {
           <label className="pt-row"><span>{isV ? "ليالي فاضية نعبيها لك بالشهر" : "حجوزات زيادة بالشهر"}</span><b className="num">{extra}</b>
             <input type="range" min={1} max={isV ? 12 : 20} step={1} value={extra} onChange={(e) => setExtra(+e.target.value)} aria-label="العدد" /></label>
           <div className="pt-out">
-            <div><small>دخل إضافي بالشهر</small><b className="num">{sarFmt(month)}</b><i>ر.س</i></div>
-            <div className="big"><small>بالسنة… كله لك</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
+            <div><small>حجوزات إضافية بالشهر</small><b className="num">{sarFmt(month)}</b><i>ر.س</i></div>
+            <div className="big"><small>صافي لك بالسنة</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
           </div>
-          <div className="pt-cut"><span>نسبة مناسبتي من سعرك</span><b className="num">0 ر.س</b></div>
+          <div className="pt-cut"><span>عمولة مناسبتي (10%) يدفعها العميل مقدّماً</span><b className="num">{sarFmt(cut)} ر.س/شهر</b></div>
           <small className="pt-note">حسبة توضيحية من الأرقام اللي تختارها، مو وعد بعدد حجوزات.</small>
           <a className="btn primary lg block" href={isV ? LINKS.venues : LINKS.vendors}>{isV ? "سجّل قاعتك مجاناً" : "سجّل كمورد مجاناً"} <Icon name="ArrowLeft" size={17} /></a>
         </Reveal>
@@ -233,6 +252,7 @@ function Hero({ occ }: { occ: Occasion }) {
             <br />من الفكرة لآخر ضيف.
           </h1>
           <p className="lead">خطوة بخطوة: القاعة، ثم التجهيزات، ثم الدعوات، حتى يوم المناسبة. كل شيء في تطبيق واحد.</p>
+          <QuickStart occ={occ} />
           <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد فيلم مناسبتي</button>
           <div className="doors">
             {doors.map(([href, ic, t, d], i) => (
@@ -263,7 +283,7 @@ const PROMISES: [string, string, string][] = [
   ["ShieldCheck", "حسابات موثّقة", "كل قاعة ومورد يراجعه فريق مناسبتي قبل الظهور"],
   ["MessagesSquare", "محادثة بإشراف الإدارة", "الإدارة وسيط بينك وبين التاجر وتحمي حقك"],
   ["Wallet", "ميزانيتك أنت تحددها", "تكتبها مرة، وتوصل مع كل طلب للتاجر"],
-  ["Lock", "موعدك مقفول ومحمي", "رسوم تأكيد واضحة تقفل موعدك، وترجع كاملة لو اعتذر التاجر"],
+  ["Sparkles", "بدون أي رسوم إضافية عليك", "تدفع سعر القاعة أو المورد نفسه، وموعدك مقفول ومحمي بعقد"],
 ];
 function Signature() {
   return (

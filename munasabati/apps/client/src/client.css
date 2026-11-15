@@ -710,3 +710,19 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .pay-steps li.ok > i { background: var(--ok); color: #fff; border-color: transparent; }
 .pay-steps li.now > i { background: var(--brand); color: #fff; border-color: transparent; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 20%, transparent); }
 .pay-steps b { display: block; font-size: 14.5px; } .pay-steps small { color: var(--muted); font-size: 12.5px; }
+
+/* شهادة الحجز والختم */
+.cert { display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 20px; color: #fbeedd; background: radial-gradient(120% 120% at 100% 0%, #3a1240, #12081a 70%); border: 1px solid rgba(255, 210, 122, .35); box-shadow: 0 24px 50px -24px rgba(229, 25, 94, .5); position: relative; overflow: hidden; }
+.cert::after { content: ""; position: absolute; inset: 6px; border-radius: 15px; border: 1px dashed rgba(255, 210, 122, .3); pointer-events: none; }
+.cert-qr { flex: none; padding: 8px; border-radius: 14px; background: #fff; }
+.cert-qr svg, .cert-qr canvas, .cert-qr img { display: block; width: 104px; height: 104px; }
+.cert-t { display: grid; gap: 3px; min-width: 0; }
+.cert-t small { color: #FFD27A; font-weight: 800; font-size: 12.5px; }
+.cert-t b { font-size: 18px; }
+.cert-t span { font-size: 13.5px; opacity: .85; }
+.cert-ref { font-weight: 800; letter-spacing: .08em; color: #FFD27A; }
+.cert-t em { font-style: normal; font-size: 12px; opacity: .65; }
+.seal-btn-wrap { position: relative; }
+.seal-btn-wrap .seal-burst { top: 50%; }
+.seal-btn .seal-ic { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; font-family: "Aref Ruqaa", serif; font-weight: 700; color: #6e4a12; background: radial-gradient(circle at 35% 30%, #fff1c9, #e0b45c 60%, #b8893b); transition: transform .6s cubic-bezier(.22,1,.36,1); }
+.seal-btn.sealing .seal-ic { transform: scale(1.6) rotate(-20deg); }

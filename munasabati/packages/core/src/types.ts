@@ -54,6 +54,8 @@ export interface Supplier {
   phone?: string;
   /** روابط صور حقيقية يرفعها المورد (الأولى غلاف) */
   photos?: string[];
+  /** جولة ٣٦٠°: صور بانوراما لأعماله (كوشة منفذة، ستوديو، معرض، خيمة…) */
+  tour?: { src: string; label: string }[];
   featured?: boolean;
   /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;

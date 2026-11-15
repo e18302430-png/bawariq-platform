@@ -40,7 +40,7 @@ export const TIERS: { id: TierId; name: string; desc: string; mult: number }[] =
 export const SEED_SUPPLIERS: Supplier[] = [
   {
     id: "s1", name: "بوارق لتجهيز المناسبات", city: "الدمام", area: "يغطي كل المنطقة الشرقية", featured: true,
-    cats: ["kosha", "tents", "photo", "av", "live", "hosp", "power", "stage"], photos: ["media:s1", "media:s7", "media:s4", "media:s3", "media:s5"], hue: 18,
+    tour: [{ src: "media:pano1", label: "تجهيز قاعة نفّذناه (مثال)" }], cats: ["kosha", "tents", "photo", "av", "live", "hosp", "power", "stage"], photos: ["media:s1", "media:s7", "media:s4", "media:s3", "media:s5"], hue: 18,
     tags: ["تجهيز متكامل", "فريق ميداني", "بث مباشر"],
     about: "نوفر خدمات تنسيق وتجهيز قاعات الأفراح والمناسبات بأعلى مستوى من الاحترافية: الكوشة والطاولات الرجالية، الخيام والسجاد والطاولات، استديو التصوير، السماعات والشاشات والإضاءة، البث المباشر، المفروشات والضيافة، مولدات الكهرباء، والاستيدج وتجهيز المسرح. تجهيز متكامل لجميع المناسبات والأفراح، مع الاهتمام بأدق التفاصيل.",
     packages: [
