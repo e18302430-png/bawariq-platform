@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { hasAgreement, normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, BRAND, PartnerAgreementGate, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { AppShell, BRAND, PartnerAgreementGate, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, TourManager, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -75,6 +75,7 @@ function Overview({ v, go }: { v: Venue; go: (t: string) => void }) {
       <NextAction items={[
         { when: mine.some((b) => b.status === "new"), icon: "Inbox", title: `عندك ${mine.filter((b) => b.status === "new").length} طلب حجز جديد`, sub: "العرسان يحجزون أول قاعة ترد عليهم.", cta: "رد على الطلبات", go: () => go("bookings") },
         { when: !(v.photos?.length), icon: "ImagePlus", title: "أضف صور قاعتك", sub: "الصور الحقيقية أول شي يقارنه العرسان.", cta: "أضف الصور", go: () => go("profile"), tone: "info" },
+        { when: !(v.tour?.length), icon: "Rotate3d", title: "خلّ العرسان يدخلون قاعتك ٣٦٠°", sub: "صورة ٣٦٠ من وسط القاعة تخلي العميل يتجول فيها من جواله.", cta: "أضف جولة", go: () => go("profile"), tone: "info" },
         { when: upcoming.some((b) => (new Date(b.date).getTime() - Date.now()) / 864e5 <= 7), icon: "CalendarClock", title: `حفلة قادمة بتاريخ ${upcoming[0]?.date ?? ""}`, sub: `${upcoming[0]?.clientName ?? ""} · ${fmt(upcoming[0]?.guests ?? 0)} ضيف.`, cta: "التقويم", go: () => go("calendar"), tone: "info" },
         { when: occupancy.some((o) => o.pct < 50), icon: "TrendingUp", title: "ليالي ويكند فاضية هالشهر", sub: `${occupancy.filter((o) => o.pct < 50).map((o) => o.h.name).join("، ")} · جرّب سعر ويكند أنسب.`, cta: "الأسعار", go: () => go("halls"), tone: "info" },
       ]} />
@@ -169,6 +170,7 @@ function Profile({ v }: { v: Venue }) {
           <div className="field full"><label htmlFor="p-d">الحي</label><input id="p-d" className="input" value={f.district} onChange={(e) => setF({ ...f, district: e.target.value })} /></div>
           <div className="field full"><label htmlFor="p-a">نبذة</label><textarea id="p-a" className="input" rows={5} value={f.about} onChange={(e) => setF({ ...f, about: e.target.value })} /></div>
           <div className="full"><PhotoManager photos={v.photos} onChange={(photos) => apply(upsertVenue({ ...v, photos }))} /></div>
+          <div className="full"><TourManager tour={v.tour} onChange={(tour) => apply(upsertVenue({ ...v, tour }))} /></div>
           <div className="field full"><label htmlFor="p-t">المميزات (افصل بفاصلة)</label><input id="p-t" className="input" value={f.tags} onChange={(e) => setF({ ...f, tags: e.target.value })} /></div>
         </div>
         <button className="btn primary lg" type="submit">حفظ التغييرات</button>

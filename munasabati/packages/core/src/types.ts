@@ -90,6 +90,8 @@ export interface Venue {
   blocked: string[];
   /** روابط صور حقيقية يرفعها صاحب القاعة (الأولى غلاف) */
   photos?: string[];
+  /** جولة ٣٦٠°: صور بانوراما كروية (نسبة ٢:١) لكل ركن في القاعة */
+  tour?: { src: string; label: string }[];
   phone?: string;
   /** مختار من الإدارة: يظهر أولاً في الاقتراحات والبحث */
   promoted?: boolean;

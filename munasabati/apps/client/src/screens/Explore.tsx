@@ -3,7 +3,7 @@ import {
   CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, toggleFavorite,
   venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
 } from "@munasabati/core";
-import { Calendar, Empty, Icon, Media, Segmented, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
+import { Calendar, Empty, Icon, Media, Segmented, TourButton, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
 type Item = { kind: "venue"; v: Venue } | { kind: "supplier"; v: Supplier };
@@ -68,7 +68,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
     <div className="vcard" role="link" tabIndex={0} onClick={() => go(`${item.kind}-${v.id}`)} onKeyDown={(e) => e.key === "Enter" && go(`${item.kind}-${v.id}`)}>
       <div className="art">
         <Media photos={v.photos} seed={v.id} hue={v.hue} kind={item.kind} alt={v.name} />
-        <div className="over">{item.v.promoted && <span className="pill pl-promo" style={{ position: "static" }}><Icon name="Sparkles" size={12} /> مختار</span>}{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}</div>
+        <div className="over">{item.v.promoted && <span className="pill pl-promo" style={{ position: "static" }}><Icon name="Sparkles" size={12} /> مختار</span>}{item.kind === "supplier" && item.v.featured && <span className="pill"><Icon name="BadgeCheck" size={13} /> تجهيز متكامل</span>}{tooSmall && <span className="pill">السعة أقل من ضيوفك</span>}{item.kind === "venue" && item.v.tour?.length ? <span className="pill pill-360"><Icon name="Rotate3d" size={12} /> جولة ٣٦٠°</span> : null}</div>
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
       <div className="body">
@@ -131,6 +131,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
           ? <div className="gallery">{v.photos!.map((p, i) => <img key={i} src={photoUrl(p)} alt={`${v.name} ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />)}</div>
           : <Media photos={v.photos} seed={v.id + "h"} hue={v.hue} kind={kind} alt={v.name} small={false} />}
         {(v.photos?.length ?? 0) > 1 && <span className="pill num" style={{ position: "absolute", bottom: 14, left: 14, background: "rgba(0,0,0,.55)", color: "#fff", backdropFilter: "blur(8px)" }}><Icon name="Images" size={13} /> {v.photos!.length} صور · اسحب</span>}
+        {venue?.tour?.length ? <div className="hero-tour"><TourButton scenes={venue.tour} title={v.name} /></div> : null}
         <div className="bar-top">
           <button className="icon-btn" onClick={() => history.length > 1 ? history.back() : go("explore")} aria-label="رجوع"><Icon name="ArrowRight" size={18} /></button>
           <button className="icon-btn" onClick={() => apply(toggleFavorite(v.id))} aria-label="المفضلة" aria-pressed={fav}><Icon name="Heart" size={18} fill={fav ? "#e5195e" : "none"} color={fav ? "#e5195e" : undefined} /></button>
