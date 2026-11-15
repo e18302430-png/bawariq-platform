@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, vendorOn, payoutFor, platformTake, DEFAULT_PRICING, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, bookingMessage, acceptAgreement, hasAgreement,
+  postOp, endEvent, reopenEvent, DEFAULT_THANKS, launchSteps, feeOn, vendorOn, payoutFor, platformTake, DEFAULT_PRICING, coordCheck, assignCoordinatorLocal, inviteTitle, inviteMessage, normCode, OCCASION_PROFILES, maskContacts, clientPriceFor, depositFor, sendQuote, claimPaid, confirmPaid, signContract, CONTRACT_VERSION, bookingMessage, acceptAgreement, hasAgreement,
   acceptQuote, busyDays, checkIn, createBooking, createEvent, createMemoryRepository, splitBudget, setTotalBudget, adminClients, adminUpdateClient, adminDeleteClient, adminUpdateBooking, normPhone, validPhone, enableDoor, suggestPlan, requestPlan, forwardToVendor, rejectRequest, openTicket, replyTicket, closeTicket, reopenTicket, learnPref, requestCancel, resolveCancel, reassignBooking, alternativesFor, updateEvent,
   hospitality, isWeekend, matchVenues, setBookingStatus, shiftDate, SEED_VENUES, hallPrice, journey, nextStage,
 } from "./index";
@@ -318,6 +318,11 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
     b = r.get().bookings.find((x) => x.id === id)!;
     expect(b.pay!.stage).toBe("due");
     expect(depositFor(b)).toBe(2070);
+    r.apply(signContract(id, "  سارة العتيبي "));
+    const ct = r.get().bookings.find((x) => x.id === id)!.contract!;
+    expect(ct).toMatchObject({ name: "سارة العتيبي", v: CONTRACT_VERSION, price: 6900, deposit: 2070, date: "2027-03-01" });
+    r.apply(signContract(id, "اسم ثاني"));
+    expect(r.get().bookings.find((x) => x.id === id)!.contract!.name).toBe("سارة العتيبي"); // التوقيع ما يتعدل
     r.apply(claimPaid(id)); r.apply(confirmPaid(id));
     expect(r.get().bookings.find((x) => x.id === id)!.pay!.stage).toBe("paid");
     r.apply(bookingMessage(id, "client", "ارسل لي رقمك 0559998888"));

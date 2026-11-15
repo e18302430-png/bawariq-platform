@@ -147,6 +147,8 @@ export interface Booking {
   clientPrice?: number;
   /** حق المورد بعد خصم نسبة مناسبتي من سعره (يتثبت لحظة إرسال السعر) */
   payout?: number;
+  /** عقد الحجز الإلكتروني: وقّعه العميل باسمه على نسخة معيّنة من البنود (السعر والعربون والتاريخ وقت التوقيع) */
+  contract?: { at: number; name: string; v: number; price: number; deposit: number; date: string };
   /** الدفع عبر مناسبتي: العميل يحوّل العربون لحساب المنصة، والمنصة تحوّل للتاجر بعد ختم الليلة */
   pay?: { stage: "due" | "claimed" | "paid"; claimedAt?: number; paidAt?: number; payoutAt?: number };
   /** محاولات مشاركة رقم أو حساب في المحادثة (انخفت تلقائياً) */
@@ -200,6 +202,8 @@ export interface Guest {
   vip?: boolean;
   /** ملاحظة أكل أو حساسية يكتبها الضيف */
   diet?: string;
+  /** تهنئة يكتبها الضيف للعروسين مع ردّه (تظهر لصاحب المناسبة في دفتر التهاني) */
+  wish?: string;
   /** وقت الدخول */
   checkedAt?: number;
 }
@@ -225,6 +229,8 @@ export interface Task {
 /** لوحات مائية (balad جدة التاريخية، diriyah الدرعية، ula العُلا) وقوالب كلاسيكية */
 export type InviteTemplate = "balad" | "diriyah" | "ula" | "night" | "ivory" | "photo";
 export interface ProgramItem { title: string; time: string }
+/** فصل من «حكايتنا» في الدعوة: عنوان قصير وتاريخ اختياري وسطر */
+export interface StoryChapter { title: string; when?: string; text?: string }
 
 export interface ClientSpace {
   profile: { name: string; phone: string } | null;
@@ -235,7 +241,7 @@ export interface ClientSpace {
   doorKey?: string;
   tasks: Task[];
   favorites: string[];
-  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean };
+  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean; story?: StoryChapter[]; music?: boolean };
   /** تفضيلات يتعلمها النظام من اختيارات العميل: اللي اختاره واللي رفضه */
   prefs?: { liked: string[]; dismissed: string[] };
   /** الفقرة الجارية الآن من برنامج الليلة (يتحكم بها العميل) */

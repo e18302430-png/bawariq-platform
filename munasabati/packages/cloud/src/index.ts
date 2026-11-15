@@ -256,8 +256,8 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
       if (error || !data || !(data as { guest?: unknown }).guest) return null;
       return data as InviteSnapshot;
     },
-    async rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string }) {
-      const { data, error } = await sb.rpc("invite_rsvp", { c: code, st: patch.status, cnt: patch.count ?? null, dt: patch.diet ?? null });
+    async rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string; wish?: string }) {
+      const { data, error } = await sb.rpc("invite_rsvp", { c: code, st: patch.status, cnt: patch.count ?? null, dt: patch.diet ?? null, wsh: patch.wish ?? null });
       if (error || !data) return null;
       return data as Guest;
     },

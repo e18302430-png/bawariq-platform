@@ -6,6 +6,7 @@ import {
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
 import { go } from "../nav";
+import { ContractButton } from "./Contract";
 
 /* ───── الحجوزات ───── */
 export function Bookings() {
@@ -38,6 +39,7 @@ export function Bookings() {
                 <button className="btn sm primary" onClick={() => { apply(acceptQuote(b.id, nameOf(b.kind, b.targetId))); toast("تم تأكيد الحجز وإضافته للميزانية"); }}>اقبل العرض</button>
               </div>
             )}
+            {b.status === "confirmed" && <ContractButton b={b} name={nameOf(b.kind, b.targetId)} />}
             {b.status === "confirmed" && <PayBox b={b} name={nameOf(b.kind, b.targetId)} />}
             {b.status === "review" && <div className="req-step"><Icon name="ShieldCheck" size={15} /> طلبك عند الإدارة. بنراجعه ونطلب لك عرض السعر من التاجر.</div>}
             {b.status === "new" && <div className="req-step"><Icon name="Hourglass" size={15} /> طلبنا عرض السعر من التاجر، وبيوصلك هنا أول ما يرد.</div>}

@@ -45,7 +45,7 @@ export interface DoorSnapshot { title: string; date: string; guests: Guest[]; pr
 export interface InviteSnapshot { event: DB["client"]["event"]; invite: DB["client"]["invite"]; liveIndex?: number; host?: string; guest: Guest; venue?: { name: string; district: string; photos?: string[] } | null }
 export interface InviteAdapter {
   load(code: string): Promise<InviteSnapshot | null>;
-  rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string }): Promise<Guest | null>;
+  rsvp(code: string, patch: { status: Guest["status"]; count?: number; diet?: string; wish?: string }): Promise<Guest | null>;
 }
 /** فرصة عميل جمعها وكيل الرادار من مصدر عام */
 export type LeadOccasion = "wedding" | "milka" | "grad" | "aqiqa" | "birthday" | "family" | "corp" | "other";

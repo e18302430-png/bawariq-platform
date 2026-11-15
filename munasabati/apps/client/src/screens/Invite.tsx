@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem } from "@munasabati/core";
+import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem, type StoryChapter } from "@munasabati/core";
 import { Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
@@ -9,6 +9,7 @@ import diriyahSm from "../assets/invite/diriyah-sm.webp";
 import ula from "../assets/invite/ula.webp";
 import ulaSm from "../assets/invite/ula-sm.webp";
 import arch from "../assets/invite/arch.webp";
+import { FilmIntro, Hearts, Particles, SealBurst, playSeal, playYes, reducedMotion, useAmbient } from "./inviteFx";
 
 /* ═══════════ الدعوات: لوحات مائية سعودية + ظرف بختم + اكشط لتكشف ═══════════ */
 
@@ -248,6 +249,9 @@ export function Invites() {
   const list = db.client.guests.filter((g) => filter === "all" || g.status === filter);
   const replied = db.client.guests.filter((g) => g.status !== "pending").length;
   const program = invite.program?.length ? invite.program : DEFAULT_PROGRAM;
+  const story = invite.story ?? [];
+  const setStory = (st: StoryChapter[]) => setInv({ story: st });
+  const wishes = db.client.guests.filter((g) => g.wish);
   const setInv = (patch: Partial<typeof invite>) => apply(patchClient({ invite: { ...invite, ...patch } }));
   const copy = async (g: Guest) => {
     const text = inviteText(db, g);
@@ -316,11 +320,35 @@ export function Invites() {
             </div>
           </div>
           <div className="field"><label htmlFor="i-m">سطر ختامي (اختياري)</label><input id="i-m" className="input" placeholder="مثال: وبحضوركم تكتمل فرحتنا" value={invite.message} onChange={(e) => setInv({ message: e.target.value })} /></div>
+          <div className="field"><span className="label">حكايتكم (اختياري، تظهر للضيف كفصول رومانسية)</span>
+            <div className="stack" style={{ ["--gap" as string]: "8px" }}>
+              {story.map((c, i) => (
+                <div key={i} className="story-edit">
+                  <div className="row">
+                    <label className="sr" htmlFor={"st-t" + i}>عنوان الفصل</label>
+                    <input id={"st-t" + i} className="input grow" placeholder="مثال: أول لقاء" value={c.title} onChange={(e) => setStory(story.map((x, k) => (k === i ? { ...x, title: e.target.value.slice(0, 40) } : x)))} />
+                    <label className="sr" htmlFor={"st-w" + i}>متى</label>
+                    <input id={"st-w" + i} className="input" style={{ width: 130 }} placeholder="١٤٤٥ هـ" value={c.when ?? ""} onChange={(e) => setStory(story.map((x, k) => (k === i ? { ...x, when: e.target.value.slice(0, 24) } : x)))} />
+                    <button className="icon-btn sm" aria-label="حذف الفصل" onClick={() => setStory(story.filter((_, k) => k !== i))}><Icon name="X" size={14} /></button>
+                  </div>
+                  <label className="sr" htmlFor={"st-x" + i}>سطر الفصل</label>
+                  <input id={"st-x" + i} className="input" placeholder="سطر قصير يحكي اللحظة" value={c.text ?? ""} onChange={(e) => setStory(story.map((x, k) => (k === i ? { ...x, text: e.target.value.slice(0, 120) } : x)))} />
+                </div>
+              ))}
+              {story.length < 4 && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setStory([...story, { title: ["أول لقاء", "الخطوبة", "الملكة", "ليلة العمر"][story.length] ?? "فصل جديد" }])}><Icon name="Plus" size={14} /> فصل من حكايتكم</button>}
+            </div>
+          </div>
+          <div className="field"><span className="label">موسيقى الدعوة</span><Segmented value={invite.music === false ? "off" : "on"} onChange={(v) => setInv({ music: v === "on" })} options={[["on", "تشتغل مع فتح الظرف"], ["off", "بدون موسيقى"]]} /></div>
           <div className="field"><span className="label">الأطفال</span><Segmented value={invite.kids == null ? "none" : invite.kids ? "yes" : "no"} onChange={(v) => setInv({ kids: v === "none" ? undefined : v === "yes" })} options={[["none", "بدون ذكر"], ["yes", "مرحّب فيهم"], ["no", "للكبار فقط"]]} /></div>
           <div className="form-submit inv-done"><button className="btn primary lg block" onClick={() => { setEditing(false); toast("حفظنا دعوتك"); }}><Icon name="Check" size={17} /> تم</button></div>
         </section>
         )}
       </div>
+
+      {wishes.length > 0 && <section className="card wish-book">
+        <div className="row between"><h3 className="card-title"><Icon name="Heart" size={17} /> دفتر التهاني</h3><span className="pill neutral num">{wishes.length}</span></div>
+        <div className="wish-list">{wishes.map((g) => <figure key={g.id} className="wish"><blockquote>{g.wish}</blockquote><figcaption>— {g.name}</figcaption></figure>)}</div>
+      </section>}
 
       <section className="card" style={{ paddingBlock: 6 }}>
         <div className="row between wrap" style={{ marginTop: 14, marginBottom: 6 }}>
@@ -359,7 +387,12 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
   const db = useDB();
   const g = db.client.guests.find((x) => x.code === code);
   const info = useEventInfo();
-  const [stage, setStage] = useState<"envelope" | "opening" | "open">("envelope");
+  const [stage, setStage] = useState<"intro" | "envelope" | "opening" | "open">(() => (reducedMotion() ? "envelope" : "intro"));
+  const [burst, setBurst] = useState(0);
+  const [hearts, setHearts] = useState(0);
+  const [wish, setWish] = useState(g?.wish ?? "");
+  const music = useAmbient();
+  const endIntro = useCallback(() => setStage((s) => (s === "intro" ? "envelope" : s)), []);
   const [revealed, setRevealed] = useState(false);
   const [fire, setFire] = useState(0);
   const [count, setCount] = useState(g?.count ?? 1);
@@ -377,7 +410,13 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
   const cal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(info.couple)}&dates=${fmtCal(start)}/${fmtCal(new Date(start.getTime() + 4 * 36e5))}&location=${encodeURIComponent(info.place)}`;
   const map = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.place)}`;
   const after = ev.date < today();
-  const open = () => { if (stage !== "envelope") return; setStage("opening"); setTimeout(() => setStage("open"), 1150); };
+  const open = () => {
+    if (stage !== "envelope") return;
+    setStage("opening"); setBurst((b) => b + 1); playSeal();
+    if (db.client.invite.music !== false) setTimeout(() => music.start(), 900);
+    setTimeout(() => setStage("open"), 1150);
+  };
+  const story = db.client.invite.story?.filter((c) => c.title.trim()) ?? [];
 
   // بعد ختم الليلة: الدعوة تتحول لرسالة شكر من صاحب المناسبة
   if (ev.endedAt) return (
@@ -397,12 +436,16 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
   return (
     <div className="gx" style={{ ["--wc-tint" as string]: wc.tint, ["--wc-deep" as string]: wc.deep }}>
       <AnimatePresence>
-        {stage !== "open" && (
+        {stage === "intro" && <FilmIntro key="film" names={info.couple} onDone={endIntro} lines={[`إلى ${greetingFor(g)} ${g.name}`, "في ليلة… من ليالي العمر", "تبدأ حكاية نتمنى تكون جزء منها"]} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {stage !== "open" && stage !== "intro" && (
           <motion.div key="env" className="gx-env" exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
             <div className="gx-env-in">
               <Monogram initials={info.initials} size={110} color={wc.deep} />
               <div className={"gx-window" + (stage === "opening" ? " opening" : "")}><img src={wc.img} alt="" /></div>
               <div className={"gx-flaps" + (stage === "opening" ? " opening" : "")} aria-hidden="true"><i className="l" /><i className="r" /><i className="b" /></div>
+              <SealBurst fire={burst} />
               <motion.button className="gx-seal" onClick={open} aria-label="افتح الدعوة" animate={stage === "opening" ? { scale: [1, 1.15, 0], opacity: [1, 1, 0], rotate: [0, -8, 20] } : { scale: [1, 1.04, 1] }} transition={stage === "opening" ? { duration: 0.7 } : { duration: 2.2, repeat: Infinity }}>
                 <span>{info.initials.join("")}</span>
               </motion.button>
@@ -420,6 +463,9 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
       {stage === "open" && (
         <motion.main className="gx-page" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
           <Confetti fire={fire} />
+          <Hearts fire={hearts} />
+          <Particles kind="petals" density={0.8} />
+          <button type="button" className={"gx-music" + (music.on ? " on" : "")} onClick={music.toggle} aria-pressed={music.on} aria-label={music.on ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}><Icon name={music.on ? "Music" : "VolumeX"} size={18} />{music.on && <span className="eq" aria-hidden="true"><i /><i /><i /></span>}</button>
           {ev.date === today() && info.program[db.client.liveIndex ?? 0] && <div className="gx-live"><span className="live-dot-c" /> الآن في الحفل: <b>{info.program[db.client.liveIndex ?? 0].title}</b></div>}
           {after && g.checkedIn && <section className="gx-sec gx-thanks"><h2 className="gx-h">شكراً لحضوركم</h2><p>نوّرتوا ليلتنا يا {first}، وحضوركم كان أجمل هدية.</p></section>}
           <p className="gx-hi">{greetingFor(g)} <b>{first}</b></p>
@@ -428,6 +474,18 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
               <div className="inv-date"><span>{info.day}</span><b className="num">{info.num}</b><span>{info.month}</span></div>
             </Scratch>
           )} /></Tilt>
+
+          {story.length > 0 && <section className="gx-sec gx-story">
+            <h2 className="gx-h">حكايتنا</h2>
+            <ol className="story-line">
+              {story.map((c, i) => (
+                <motion.li key={i} initial={{ opacity: 0, x: i % 2 ? -30 : 30, filter: "blur(6px)" }} whileInView={{ opacity: 1, x: 0, filter: "blur(0px)" }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}>
+                  <span className="story-dot" aria-hidden="true">♥</span>
+                  <div><b>{c.title}</b>{c.when && <small className="num">{c.when}</small>}{c.text && <p>{c.text}</p>}</div>
+                </motion.li>
+              ))}
+            </ol>
+          </section>}
 
           {!after && <section className="gx-sec">
             <h2 className="gx-h">باقي على الفرح</h2>
@@ -458,11 +516,22 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
                 </div>
                 <label className="sr" htmlFor="gx-diet">ملاحظة أكل أو حساسية</label>
                 <input id="gx-diet" className="input" placeholder="عندك حساسية أو نظام أكل خاص؟ (اختياري)" value={diet} onChange={(e) => setDiet(e.target.value.slice(0, 120))} />
-                <button className="btn lg block gx-yes" onClick={() => { rsvp(g.id, { status: "yes", count, diet: diet.trim() || undefined }); setFire((f) => f + 1); }}>بحضر إن شاء الله</button>
-                <button className="btn block ghost" onClick={() => rsvp(g.id, { status: "no" })}>أعتذر عن الحضور</button>
+                <label className="sr" htmlFor="gx-wish">تهنئة للعروسين</label>
+                <textarea id="gx-wish" className="input gx-wish" rows={2} placeholder="اكتب لهم تهنئة من قلبك… (اختياري)" value={wish} onChange={(e) => setWish(e.target.value.slice(0, 280))} />
+                <button className="btn lg block gx-yes" onClick={() => { rsvp(g.id, { status: "yes", count, diet: diet.trim() || undefined, wish: wish.trim() || undefined }); setHearts((f) => f + 1); playYes(); }}>بحضر إن شاء الله</button>
+                <button className="btn block ghost" onClick={() => rsvp(g.id, { status: "no", wish: wish.trim() || undefined })}>أعتذر عن الحضور</button>
               </div>
             ) : (
-              <div className="gx-done">{g.status === "yes" ? <><Icon name="CheckCircle2" size={20} /> بانتظارك. بطاقة الدخول على الدعوة فوق.</> : <>شكراً لردك.</>}<button onClick={() => rsvp(g.id, { status: "pending" })}>تغيير</button></div>
+              <>
+                <div className="gx-done">{g.status === "yes" ? <><Icon name="CheckCircle2" size={20} /> بانتظارك. بطاقة الدخول على الدعوة فوق.</> : <>شكراً لردك.</>}<button onClick={() => rsvp(g.id, { status: "pending" })}>تغيير</button></div>
+                {g.wish ? <figure className="gx-mywish"><blockquote>{g.wish}</blockquote><figcaption>تهنئتك وصلت للعروسين ♥</figcaption></figure> : (
+                  <form className="gx-rsvp" style={{ marginTop: 12 }} onSubmit={(e) => { e.preventDefault(); if (!wish.trim()) return; rsvp(g.id, { status: g.status, wish: wish.trim() }); setHearts((f) => f + 1); playYes(); }}>
+                    <label className="sr" htmlFor="gx-wish2">تهنئة للعروسين</label>
+                    <textarea id="gx-wish2" className="input gx-wish" rows={2} placeholder="اكتب لهم تهنئة من قلبك…" value={wish} onChange={(e) => setWish(e.target.value.slice(0, 280))} />
+                    <button className="btn block" type="submit" disabled={!wish.trim()}><Icon name="Heart" size={16} /> أرسل التهنئة</button>
+                  </form>
+                )}
+              </>
             )}
             <div className="row" style={{ marginTop: 12 }}><a className="btn grow" href={map} target="_blank" rel="noreferrer"><Icon name="MapPin" size={16} /> الموقع</a><a className="btn grow" href={cal} target="_blank" rel="noreferrer"><Icon name="CalendarPlus" size={16} /> أضف للتقويم</a></div>
           </section>
@@ -507,7 +576,7 @@ export function GuestInvite({ code }: { code: string }) {
   };
   const rsvp = (_id: string, patch: Partial<Guest>) => {
     setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...patch } } : s));
-    void repo.invite!.rsvp(code, { status: patch.status ?? snap.guest.status, count: patch.count, diet: patch.diet }).then((g) => g && setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...g } } : s)));
+    void repo.invite!.rsvp(code, { status: patch.status ?? snap.guest.status, count: patch.count, diet: patch.diet, wish: patch.wish }).then((g) => g && setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...g } } : s)));
   };
   return <DBProvider value={view}><GuestInviteView code={code} rsvp={rsvp} /></DBProvider>;
 }

@@ -348,6 +348,12 @@ export const priceForClient = (id: string, price: number): Mutation => (db) => (
   ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, clientPrice: Math.max(0, Math.round(price)), messages: [...b.messages, { from: "admin" as const, text: "عرض السعر جاهز، راجعه وأكّد حجزك.", at: Date.now() }] })),
 });
 /** العميل يقول إنه حوّل العربون */
+/** نسخة بنود عقد الحجز الإلكتروني (ترتفع لما تتغير البنود) */
+export const CONTRACT_VERSION = 1;
+/** العميل يوقّع عقد الحجز باسمه: نثبت السعر والعربون والتاريخ وقت التوقيع، ولا يتعدل بعدها */
+export const signContract = (id: string, name: string): Mutation => (db) => ({
+  ...db, bookings: db.bookings.map((b) => (b.id !== id || b.contract || !b.clientPrice ? b : { ...b, contract: { at: Date.now(), name: name.trim().slice(0, 60), v: CONTRACT_VERSION, price: b.clientPrice, deposit: depositFor(b, pricingOf(db)), date: b.date } })),
+});
 export const claimPaid = (id: string): Mutation => (db) => ({
   ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "claimed" as const, claimedAt: Date.now() } })),
 });
