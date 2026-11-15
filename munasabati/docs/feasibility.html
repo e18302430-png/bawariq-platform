@@ -1,0 +1,373 @@
+<title>دراسة جدوى مناسبتي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap">
+<style>
+/* Layout: a bound investor dossier — sticky section index on wide screens, single column on phones */
+:root {
+  --bg: #faf7f8; --paper: #ffffff; --ink: #24131f; --muted: #6f5d69; --line: #eadfe5;
+  --plum: #7a1f52; --rose: #d9356f; --gold: #b5832c; --ok: #1f8a5b; --bad: #c0392b; --warn: #b7791f;
+  --plum-soft: #f6e9f0; --gold-soft: #f8efdd; --ok-soft: #e5f4ec; --bad-soft: #fbe9e7;
+  --display: "Readex Pro", "IBM Plex Sans Arabic", Tahoma, sans-serif;
+  --body: "IBM Plex Sans Arabic", Tahoma, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #150b12; --paper: #1e1119; --ink: #f5e9ef; --muted: #b9a3b0; --line: #3a2532;
+  --plum: #e07aac; --rose: #ff6f9c; --gold: #e2b25d; --ok: #4cc28c; --bad: #ff7b6b; --warn: #e8b04a;
+  --plum-soft: #2c1724; --gold-soft: #2c2214; --ok-soft: #12291f; --bad-soft: #2e1512; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #150b12; --paper: #1e1119; --ink: #f5e9ef; --muted: #b9a3b0; --line: #3a2532;
+  --plum: #e07aac; --rose: #ff6f9c; --gold: #e2b25d; --ok: #4cc28c; --bad: #ff7b6b; --warn: #e8b04a;
+  --plum-soft: #2c1724; --gold-soft: #2c2214; --ok-soft: #12291f; --bad-soft: #2e1512; color-scheme: dark }
+* { box-sizing: border-box; }
+html { direction: rtl; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.8 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); } nav.index { display: none; } }
+nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; padding-top: 140px; font-size: 14px; }
+nav.index a { display: block; padding: 6px 12px; border-inline-start: 2px solid var(--line); color: var(--muted); text-decoration: none; }
+nav.index a:hover, nav.index a:focus-visible { color: var(--plum); border-color: var(--plum); outline: none; }
+header.cover { grid-column: 1 / -1; padding-block: 48px 28px; border-bottom: 1px solid var(--line); display: grid; gap: 12px; }
+.eyebrow { font: 600 13px var(--display); color: var(--gold); letter-spacing: .04em; }
+h1 { font: 700 clamp(30px, 5vw, 46px)/1.25 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 clamp(22px, 3vw, 28px)/1.35 var(--display); margin: 0 0 6px; text-wrap: balance; }
+h3 { font: 600 18px/1.5 var(--display); margin: 18px 0 6px; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 17px; max-width: 70ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 13.5px; }
+main { display: grid; gap: 44px; padding-top: 28px; min-width: 0; }
+section { display: grid; gap: 14px; scroll-margin-top: 24px; min-width: 0; }
+.verdict { display: grid; gap: 14px; padding: 22px; border-radius: 18px; background: var(--plum-soft); border: 1px solid var(--line); }
+.verdict .tag { justify-self: start; font: 700 13px var(--display); color: var(--paper); background: var(--plum); padding: 4px 14px; border-radius: 999px; }
+.verdict p { font-size: 17px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 2px; }
+.kpi small { color: var(--muted); font-size: 12.5px; }
+.kpi b { font: 700 24px/1.3 var(--display); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 12.5px; color: var(--muted); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 560px; }
+th, td { padding: 10px 14px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 13px var(--display); color: var(--muted); background: color-mix(in srgb, var(--plum-soft) 60%, var(--paper)); }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.total td { font-weight: 700; background: color-mix(in srgb, var(--gold-soft) 70%, var(--paper)); }
+.neg { color: var(--bad); } .pos { color: var(--ok); }
+.src { font-size: 12px; color: var(--muted); }
+.badge { display: inline-block; font: 600 11.5px var(--display); padding: 1px 8px; border-radius: 999px; margin-inline-start: 6px; vertical-align: 2px; }
+.badge.s { background: var(--ok-soft); color: var(--ok); } .badge.e { background: var(--gold-soft); color: var(--gold); }
+.chart { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; overflow-x: auto; }
+.chart svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; }
+.streams { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.stream { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+.stream b { font: 600 17px var(--display); }
+.stream .price { font: 700 20px var(--display); color: var(--plum); font-variant-numeric: tabular-nums; }
+.stream ul { margin: 0; padding-inline-start: 18px; color: var(--muted); font-size: 14px; }
+.note { padding: 14px 16px; border-radius: 12px; background: var(--gold-soft); font-size: 14.5px; }
+.risk-h { color: var(--bad); font-weight: 600; } .risk-m { color: var(--warn); font-weight: 600; } .risk-l { color: var(--ok); font-weight: 600; }
+ol.steps { margin: 0; padding-inline-start: 22px; display: grid; gap: 8px; max-width: 72ch; }
+.sources { font-size: 13px; color: var(--muted); columns: 2 280px; column-gap: 28px; }
+.sources a { color: var(--plum); word-break: break-all; }
+.sources li { break-inside: avoid; margin-bottom: 4px; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 18px; }
+a { color: var(--plum); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header class="cover">
+    <span class="eyebrow">دراسة جدوى · المنطقة الشرقية · نوفمبر ٢٠٢٦</span>
+    <h1>مناسبتي: منصة المناسبات بنموذج دخل بلا عمولات</h1>
+    <p class="lead">دراسة أعدّها أربعة خبراء: السوق، والمالية، والأنظمة والمخاطر، والنمو والتشغيل. وكُتبت على قرارات مجلس المستشارين: اشتراك شهري للقاعات، ورصيد عروض للموردين، وباقات دعوات للعملاء، وبدون استلام أي مبالغ حجز.</p>
+    <div class="meta"><span>العملة: ريال سعودي، بدون ضريبة القيمة المضافة</span><span>الأفق: ٣ سنوات</span><span><span class="badge s">موثّق</span> رقم من مصدر</span><span><span class="badge e">تقدير</span> افتراض مبني على حسبة</span></div>
+  </header>
+
+  <nav class="index" aria-label="فهرس الدراسة">
+    <a href="#summary">الخلاصة والقرار</a><a href="#market">السوق</a><a href="#model">نموذج الدخل</a><a href="#revenue">الإيرادات</a><a href="#costs">التكاليف والربحية</a><a href="#units">اقتصاديات الوحدة</a><a href="#sensitivity">الحساسية</a><a href="#legal">الأنظمة والتراخيص</a><a href="#risks">المخاطر</a><a href="#gtm">خطة الإطلاق</a><a href="#kpi">مؤشرات النجاح</a><a href="#decision">التوصية والخطوات</a><a href="#sources">المصادر</a>
+  </nav>
+
+  <main>
+    <section id="summary">
+      <div class="verdict">
+        <span class="tag">القرار: مجدية بشروط</span>
+        <p>المشروع <b>مجدٍ كبداية في الشرقية، وربحه الحقيقي يجي مع التوسع</b>. في السيناريو الأساسي تصل المنصة إلى نقطة التعادل قرب <b>نهاية السنة الثالثة</b> في الشرقية وحدها. والدخل الأكبر من <b>رصيد عروض الموردين</b> ثم اشتراك القاعات. وتحتاج رأس مال تقريبي <b>٤٥٠ ألف ريال</b> مقسّم على مراحل. والربح الواضح يبدأ بإضافة مناسبات غير الزواج (العقيقة والتخرج والشركات) ثم الرياض.</p>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><small>زواجات الشرقية سنوياً</small><b>≈ 17,000</b><span>تقدير من بيانات الإحصاء</span></div>
+        <div class="kpi"><small>إيراد السنة الثالثة (أساسي)</small><b>1.05 مليون</b><span>ريال</span></div>
+        <div class="kpi"><small>نقطة التعادل (أساسي)</small><b>نهاية السنة ٣</b><span>الشرقية وحدها</span></div>
+        <div class="kpi"><small>رأس المال المقترح</small><b>≈ 450 ألف</b><span>على مراحل مع بوابات قرار</span></div>
+        <div class="kpi"><small>أكبر رافعة</small><b>طلبات العملاء</b><span>تحرك ⅔ الإيراد</span></div>
+      </div>
+    </section>
+
+    <section id="market">
+      <h2>السوق</h2>
+      <p>الشرقية فيها ٥٫١ مليون نسمة، منهم قرابة ٢٫٩٥ مليون سعودي. ومعدل الزواج فيها من أقل المناطق، لكنها من أعلاها إنفاقاً، والأحساء أغلى منطقة في المملكة في تكلفة الزواج.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>المؤشر</th><th class="n">القيمة</th><th>الحالة والمصدر</th></tr></thead>
+        <tbody>
+          <tr><td>عقود الزواج في المملكة (٢٠٢٠)</td><td class="n">150,117</td><td><span class="badge s">موثّق</span> <span class="src">الهيئة العامة للإحصاء ووزارة العدل</span></td></tr>
+          <tr><td>معدل الزواج في الشرقية (٢٠٢٠)</td><td class="n">5.5 لكل 1,000 سعودي</td><td><span class="badge s">موثّق</span> <span class="src">Statista نقلاً عن الإحصاء</span></td></tr>
+          <tr><td>سكان الشرقية (تعداد ٢٠٢٢)</td><td class="n">5,125,254</td><td><span class="badge s">موثّق</span> <span class="src">٥٧٫٦٪ سعوديون</span></td></tr>
+          <tr><td>عقود زواج الشرقية في شهر واحد (يوليو ٢٠١٩)</td><td class="n">1,656</td><td><span class="badge s">موثّق</span> <span class="src">سعودي جازيت</span></td></tr>
+          <tr><td><b>زواجات الشرقية سنوياً</b></td><td class="n"><b>≈ 17,000</b> (15–20 ألف)</td><td><span class="badge e">تقدير</span> <span class="src">5.5 × 2.95 مليون ≈ 16,200، و1,656 × 12 ≈ 19,900</span></td></tr>
+          <tr><td>متوسط تكلفة حفلة الزواج (٢٠٢٢)</td><td class="n">12,500</td><td><span class="badge s">موثّق</span> <span class="src">ارتفعت ٣٢٪ في سنة، وفي الأحساء تصل ١٠٠ ألف</span></td></tr>
+          <tr><td>سعر القاعة بقسمين (الدمام والجبيل)</td><td class="n">14–30 ألف · الفاخرة 60–73 ألف</td><td><span class="badge s">أسعار معلنة</span> <span class="src">zafaf.net</span></td></tr>
+          <tr><td>تصوير قسم النساء</td><td class="n">600–2,500 · الفاخر 6–12 ألف</td><td><span class="badge s">أسعار معلنة</span></td></tr>
+          <tr><td>القاعات وقاعات الفنادق في الشرقية</td><td class="n">≈ 150 + ≈ 300 استراحة</td><td><span class="badge e">تقدير</span> <span class="src">من حصة الشرقية من قاعات المملكة</span></td></tr>
+          <tr><td>مواليد الشرقية (٢٠٢٢)، سوق العقيقة</td><td class="n">67,970</td><td><span class="badge s">موثّق</span> <span class="src">DataSaudi</span></td></tr>
+          <tr><td>خريجو جامعة الإمام عبدالرحمن (١٤٤٧هـ)</td><td class="n">7,866</td><td><span class="badge s">موثّق</span></td></tr>
+        </tbody>
+      </table></div>
+      <h3>المنافسون والأسعار</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>المنافس</th><th>ما يقدمه</th><th>السعر المعلن</th></tr></thead>
+        <tbody>
+          <tr><td>احجز، Megavents، فرحة، زفاف</td><td>حجز قاعات وخدمات</td><td>لا أحد يعلن عمولته أو اشتراكه. «فرحة» يطلب عربون ٢٥–٥٠٪</td></tr>
+          <tr><td>معازيم</td><td>دعوات رقمية</td><td>مجانية حتى ١٠٠ ضيف</td></tr>
+          <tr><td>بشارة</td><td>دعوات رقمية</td><td>389 / 499 / 719 لـ50 / 100 / 200 ضيف</td></tr>
+          <tr><td>مراس، أسفرت، مصممو خمسات</td><td>دعوات وتصاميم</td><td>من 125 ريال، والتصاميم من 5–15 دولار</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note"><b>ملاحظة على التسعير:</b> «معازيم» تعطي الدعوة مجاناً حتى ١٠٠ ضيف، وباقتنا المجانية حتى ٥٠ فقط. والتوصية: نرفع المجانية إلى ١٠٠ ضيف، ونبيع اللي فوقها، لأن الدعوة أكبر قناة تسويق مجانية للمنصة.</p>
+    </section>
+
+    <section id="model">
+      <h2>نموذج الدخل</h2>
+      <p>مناسبتي ما تستلم أي مبلغ حجز. العميل يدفع للقاعة والمورد مباشرة، والمنصة تبيع خدماتها هي فقط. هذا يخفف المخاطر النظامية، ويبني ثقة العميل.</p>
+      <div class="streams">
+        <div class="stream"><b>اشتراك القاعات</b><span class="price">399 ريال/شهر</span><ul><li>صفر عمولة على الحجوزات</li><li>أول ٣ شهور مجاناً للقاعات المؤسسة</li><li>يتوقف ظهور القاعة عند التأخر</li></ul></div>
+        <div class="stream"><b>رصيد عروض الموردين</b><span class="price">≈ 32 ريال/عرض</span><ul><li>١٠ = 390 · ٢٥ = 790 · ٦٠ = 1,590</li><li>أول ٥ عروض مجاناً</li><li>ظهور مميّز اختياري 199/شهر</li></ul></div>
+        <div class="stream"><b>باقات الدعوات</b><span class="price">149 · 349 · 699</span><ul><li>مجانية للأعداد الصغيرة</li><li>متوسط الباقة المدفوعة ≈ 300 ريال</li><li>كل دعوة تسوّق للمنصة عند مئات الضيوف</li></ul></div>
+      </div>
+    </section>
+
+    <section id="revenue">
+      <h2>الإيرادات المتوقعة</h2>
+      <p>الحسبة مبنية على ١٧ ألف زواج سنوياً، وحصة المنصة منها في السنوات الثلاث: ١ / ٣ / ٦٪ في السيناريو المتحفظ، و٢ / ٦ / ١٢٪ في الأساسي، و٣ / ١٠ / ١٨٪ في المتفائل. وكل عميل يطلب من ٢ إلى ٣ خدمات، ويستلم عن كل طلب حوالي ٣ عروض.</p>
+      <div class="chart" role="img" aria-label="الإيرادات والتكاليف لثلاث سنوات في ثلاثة سيناريوهات">
+        <svg id="chart" viewBox="0 0 720 300"></svg>
+        <div class="legend"><span><i style="background:var(--plum)"></i>الإيراد</span><span><i style="background:var(--line);outline:1px solid var(--muted)"></i>التكاليف</span></div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>مصدر الدخل (الأساسي)</th><th class="n">السنة ١</th><th class="n">السنة ٢</th><th class="n">السنة ٣</th></tr></thead>
+        <tbody>
+          <tr><td>عدد المناسبات على المنصة</td><td class="n">340</td><td class="n">1,020</td><td class="n">2,040</td></tr>
+          <tr><td>اشتراك القاعات (12 / 40 / 75 قاعة دافعة)</td><td class="n">57,456</td><td class="n">191,520</td><td class="n">359,100</td></tr>
+          <tr><td>رصيد عروض الموردين</td><td class="n">49,600</td><td class="n">204,800</td><td class="n">441,600</td></tr>
+          <tr><td>الظهور المميّز</td><td class="n">14,328</td><td class="n">47,760</td><td class="n">95,520</td></tr>
+          <tr><td>باقات الدعوات (٢٥٪ يشترون)</td><td class="n">25,500</td><td class="n">76,500</td><td class="n">153,000</td></tr>
+          <tr class="total"><td>إجمالي الإيراد</td><td class="n">146,884</td><td class="n">520,580</td><td class="n">1,049,220</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">مثال حسبة الرصيد في السنة ٣: 2,040 مناسبة × 2.5 طلب × 3 عروض = 15,300 عرض، ناقص 1,500 عرض مجاني = 13,800 × 32 = 441,600.</p>
+    </section>
+
+    <section id="costs">
+      <h2>التكاليف والربحية</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>بند التكلفة (الأساسي)</th><th class="n">السنة ١</th><th class="n">السنة ٢</th><th class="n">السنة ٣</th></tr></thead>
+        <tbody>
+          <tr><td>منسق عمليات ومبيعات</td><td class="n">108,000</td><td class="n">114,000</td><td class="n">120,000</td></tr>
+          <tr><td>مطوّر ودعم فني</td><td class="n">72,000</td><td class="n">96,000</td><td class="n">168,000</td></tr>
+          <tr><td>مندوبو شراكات (٠ ← ١ ← ١)</td><td class="n">0</td><td class="n">48,000</td><td class="n">108,000</td></tr>
+          <tr><td>راتب المؤسس</td><td class="n">0</td><td class="n">96,000</td><td class="n">180,000</td></tr>
+          <tr><td>التسويق (سناب، تيك توك، انستقرام، مؤثرات)</td><td class="n">120,000</td><td class="n">200,000</td><td class="n">300,000</td></tr>
+          <tr><td>الاستضافة والأدوات وواتساب للأعمال</td><td class="n">23,100</td><td class="n">45,300</td><td class="n">78,600</td></tr>
+          <tr><td>السجل والمحاسب والفوترة الإلكترونية</td><td class="n">40,000</td><td class="n">35,000</td><td class="n">45,000</td></tr>
+          <tr><td>متفرقات واحتياطي</td><td class="n">30,000</td><td class="n">45,000</td><td class="n">60,000</td></tr>
+          <tr class="total"><td>إجمالي التكاليف</td><td class="n">393,100</td><td class="n">679,300</td><td class="n">1,059,600</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>صافي الربح أو الخسارة</th><th class="n">السنة ١</th><th class="n">السنة ٢</th><th class="n">السنة ٣</th><th class="n">التراكمي</th></tr></thead>
+        <tbody>
+          <tr><td>متحفظ</td><td class="n neg">−336,908</td><td class="n neg">−418,160</td><td class="n neg">−508,120</td><td class="n neg">−1,263,188</td></tr>
+          <tr class="total"><td>أساسي</td><td class="n neg">−246,216</td><td class="n neg">−158,720</td><td class="n neg">−10,380</td><td class="n neg">−415,316</td></tr>
+          <tr><td>متفائل</td><td class="n neg">−168,580</td><td class="n pos">+115,460</td><td class="n pos">+382,520</td><td class="n pos">+329,400</td></tr>
+        </tbody>
+      </table></div>
+      <h3>رأس المال المطلوب</h3>
+      <p>في الأساسي، أعمق نقطة في السيولة قرابة <b>٤١٥ ألف</b> قبل التعادل. والمقترح <b>٤٥٠ ألف ريال</b> تُصرف على ثلاث دفعات، وكل دفعة لها شرط قبل ما تنصرف:</p>
+      <ol class="steps">
+        <li><b>١٥٠ ألف للانطلاق (الشهور ١–٦):</b> التسجيل، وأول ٤٠ قاعة و١٥٠ مورد، وحملات تجريبية.</li>
+        <li><b>١٥٠ ألف عند الشهر التاسع:</b> بشرط ١٥ قاعة دافعة أو أكثر، و١٥٠ طلب شهرياً أو أكثر.</li>
+        <li><b>١٥٠ ألف عند الشهر الثامن عشر:</b> بشرط إيراد شهري فوق ٤٠ ألف، وتجديد القاعات فوق ٧٥٪.</li>
+      </ol>
+      <p class="note">في المتحفظ تحتاج أكثر من مليون ريال، ولا تصل للتعادل في الشرقية وحدها. لذلك الشروط قبل كل دفعة إلزامية: إذا ما تحقق الشرط، نعيد النظر في الخطة قبل ما نصرف أكثر.</p>
+    </section>
+
+    <section id="units">
+      <h2>اقتصاديات الوحدة (السنة ٣، أساسي)</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>المؤشر</th><th class="n">القيمة</th><th>القراءة</th></tr></thead>
+        <tbody>
+          <tr><td>دخل القاعة سنوياً</td><td class="n">4,788</td><td>سنة أولى 3,591 بعد ٣ شهور مجانية</td></tr>
+          <tr><td>دخل المورد النشط سنوياً</td><td class="n">≈ 1,060</td><td>رصيد + ظهور مميّز</td></tr>
+          <tr><td>دخل المناسبة الواحدة</td><td class="n">≈ 290</td><td>عروض الموردين + الدعوة</td></tr>
+          <tr><td>تكلفة جذب قاعة (الهدف)</td><td class="n">≤ 1,200</td><td>تسترد في الشهر السادس</td></tr>
+          <tr><td>تكلفة جذب مورد (الهدف)</td><td class="n">≤ 400</td><td>تسترد في ٣–٤ شهور</td></tr>
+          <tr><td>تكلفة جذب عميل (الهدف)</td><td class="n">≤ 75</td><td>تسترد من نفس المناسبة</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="sensitivity">
+      <h2>الحساسية: وش يحرك الأرقام؟</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>التغيير</th><th class="n">أثره على إيراد السنة ٣</th></tr></thead>
+        <tbody>
+          <tr><td>حصة المنصة من الزواجات ±٥٠٪</td><td class="n">±٣٣٪ تقريباً</td></tr>
+          <tr><td>العروض لكل طلب من ٣ إلى ٢</td><td class="n">−١٨٪</td></tr>
+          <tr><td>سعر العرض من ٣٢ إلى ٢٥ ريال</td><td class="n">−١١٪</td></tr>
+          <tr><td>القاعات الدافعة من ٧٥ إلى ٥٠</td><td class="n">−١١٪</td></tr>
+          <tr><td>نسبة شراء الدعوات من ٢٥٪ إلى ١٥٪</td><td class="n">−٦٪</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>الخلاصة:</b> طلبات العملاء هي الرافعة الأولى، لأنها تحرك رصيد الموردين والدعوات (قرابة ⅔ الإيراد). والقاعات دخل ثابت، لكنها ما تكفي لحالها: لو اشتركت كل قاعات الشرقية، الدخل أقل من ٧٢٠ ألف بالسنة.</p>
+    </section>
+
+    <section id="legal">
+      <h2>الأنظمة والتراخيص</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>الخطوة بالترتيب</th><th>المدة والتكلفة</th><th>الحالة</th></tr></thead>
+        <tbody>
+          <tr><td>سجل تجاري لمؤسسة فردية من المركز السعودي للأعمال، بنشاط منصة إلكترونية</td><td>١–٣ أيام · ٢٠٠–٥٠٠ ريال</td><td><span class="badge s">موثّق</span> المدة · <span class="badge e">تقدير</span> الرسوم</td></tr>
+          <tr><td>حساب بنكي باسم المؤسسة، ونقل كل التحصيل عليه</td><td>١–٢ أسبوع</td><td><span class="badge e">تقدير</span></td></tr>
+          <tr><td>توثيق المتجر الإلكتروني وإظهار السجل والعنوان في الموقع</td><td>يوم واحد تقريباً</td><td><span class="badge s">موثّق</span></td></tr>
+          <tr><td>بوابة دفع (ميسر أو تاب)، تحتاج سجلاً وحساباً بنكياً</td><td>١–٣ أسابيع · ١–٢٫٧٥٪ لكل عملية</td><td><span class="badge s">موثّق</span> الشرط</td></tr>
+          <tr><td>ضريبة القيمة المضافة: إلزامية فوق ٣٧٥ ألف خلال ١٢ شهراً، واختيارية من ١٨٧٫٥ ألف، مع الفوترة الإلكترونية</td><td>متوقع في السنة الثانية</td><td><span class="badge s">موثّق</span></td></tr>
+          <tr><td>نظام حماية البيانات الشخصية: سياسة خصوصية، وقواعد لحذف بيانات الضيوف بعد المناسبة</td><td>٣–١٠ آلاف للنماذج القانونية</td><td><span class="badge s">النظام موثّق</span> · <span class="badge e">التكلفة تقدير</span></td></tr>
+        </tbody>
+      </table></div>
+      <p><b>المدفوعات:</b> ما دامت المنصة ما تستلم مبالغ الحجز، فهي غالباً خارج ترخيص البنك المركزي لخدمات الدفع. والرصيد يبقى داخل المنصة: ما يتحول لأحد، وما يُصرف نقداً، وما يُستخدم إلا لخدماتها، حتى ما يُعامل كنقود إلكترونية.</p>
+      <p><b>المحاسبة:</b> الرصيد المدفوع مقدماً يُسجّل كإيراد مؤجل، ويُحتسب إيراداً لما يستخدمه المورد.</p>
+    </section>
+
+    <section id="risks">
+      <h2>سجل المخاطر</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>الخطر</th><th>الاحتمال</th><th>الأثر</th><th>المعالجة</th></tr></thead>
+        <tbody>
+          <tr><td>تجميد الحساب الشخصي بسبب تحويلات تجارية بدون سجل</td><td class="risk-h">عالٍ الآن</td><td class="risk-h">عالٍ</td><td>السجل والحساب البنكي أولاً، ووقف التحويل للحساب الشخصي</td></tr>
+          <tr><td>بطء اشتراك القاعات</td><td class="risk-h">عالٍ</td><td class="risk-h">عالٍ</td><td>تجربة مجانية ٣ شهور، وزيارات ميدانية، وتصوير الجولة ٣٦٠ مجاناً</td></tr>
+          <tr><td>قلة العروض على كل طلب (أقل من ٣)</td><td class="risk-m">متوسط</td><td class="risk-h">عالٍ</td><td>١٥٠ مورداً قبل أي إعلان مدفوع، وتنبيه فوري لكل طلب</td></tr>
+          <tr><td>المواسم (رمضان ضعيف، والعيد والصيف ذروة)</td><td class="risk-h">عالٍ</td><td class="risk-m">متوسط</td><td>حملات «احجز لبعد العيد»، واشتراكات سنوية بخصم، واحتياطي ٦ شهور</td></tr>
+          <tr><td>التعامل خارج المنصة</td><td class="risk-h">عالٍ</td><td class="risk-l">منخفض</td><td>النموذج ما يعتمد على عمولة، فالتسرب ما يضر الدخل</td></tr>
+          <tr><td>منافسة الدعوات المجانية</td><td class="risk-h">عالٍ</td><td class="risk-m">متوسط</td><td>المجانية حتى ١٠٠ ضيف، والميزة في الاستقبال بالكاميرا والتهاني والسينمائية</td></tr>
+          <tr><td>تسرب بيانات الضيوف أو إزعاج الرسائل</td><td class="risk-m">متوسط</td><td class="risk-h">عالٍ</td><td>ضوابط حماية البيانات، وحد للرسائل لكل باقة، وحذف بعد المناسبة</td></tr>
+          <tr><td>تاجر سيئ يضر السمعة</td><td class="risk-m">متوسط</td><td class="risk-h">عالٍ</td><td>توثيق الهوية، والتقييمات المرتبطة بالعقود، والإيقاف</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="gtm">
+      <h2>خطة الإطلاق</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>المرحلة</th><th>التوقيت</th><th>شرط الانتقال</th></tr></thead>
+        <tbody>
+          <tr><td>بناء العرض: القاعات والموردين قبل العملاء</td><td>الشهر −٢ إلى ٠</td><td>٤٠ قاعة و١٥٠ مورد بجولات ٣٦٠</td></tr>
+          <tr><td>طلب هادئ: الدعوات، والمحتوى، والإحالات</td><td>الشهر ١–٣</td><td>كل طلب يستلم ٣ عروض خلال ٢٤ ساعة</td></tr>
+          <tr><td>إعلانات مدفوعة</td><td>الشهر ٤–٩</td><td>تكلفة جذب العميل ≤ ٧٥ ريال</td></tr>
+          <tr><td>تحصيل وتوسع</td><td>الشهر ١٠–١٢</td><td>أكثر من ٦٠٪ من القاعات المؤسسة تكمل وتدفع</td></tr>
+          <tr><td>الرياض، ثم جدة، ثم الخليج</td><td>الشهر ١٢ وما بعده</td><td>٩٠ قاعة دافعة، وتجديد قاعات فوق ٨٥٪</td></tr>
+        </tbody>
+      </table></div>
+      <h3>قنوات الجذب</h3>
+      <p>سناب شات (٣٠٪، القناة الأولى للنساء ١٨–٤٥)، وتيك توك وانستقرام (٢٠٪، مقاطع الجولات ٣٦٠ والحفلات)، والمؤثرات الصغيرات (٢٠٪، الدفع بكود الحجز)، وإحالات منسقات الحفلات (١٠٪)، والدعوات نفسها عبر «سوّيت دعوتي من مناسبتي» (١٠٪)، والقاعات كقناة توزيع (١٠٪). <b>صاحبة القرار غالباً العروس وأمها</b>، والتسويق والدعم بفريق نسائي.</p>
+    </section>
+
+    <section id="kpi">
+      <h2>مؤشرات النجاح</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>المؤشر</th><th class="n">الشهر ٦</th><th class="n">الشهر ١٢</th></tr></thead>
+        <tbody>
+          <tr><td><b>المؤشر الأهم: الحجوزات المؤكدة بعقد شهرياً</b></td><td class="n">15</td><td class="n">60</td></tr>
+          <tr><td>القاعات الدافعة</td><td class="n">10</td><td class="n">25</td></tr>
+          <tr><td>الموردون اللي يشحنون رصيد</td><td class="n">40</td><td class="n">120</td></tr>
+          <tr><td>العروض لكل طلب خلال ٢٤ ساعة</td><td class="n">3</td><td class="n">4</td></tr>
+          <tr><td>الدعوات المدفوعة شهرياً</td><td class="n">4</td><td class="n">15</td></tr>
+          <tr><td>نسبة العملاء الجدد من الدعوات</td><td class="n">20%</td><td class="n">30%</td></tr>
+          <tr><td>الإيراد الشهري</td><td class="n">≈ 8 آلاف</td><td class="n">≈ 22 ألف</td></tr>
+        </tbody>
+      </table></div>
+      <p class="src">الأهداف معايرة على السيناريو الأساسي بعد تصحيح حجم السوق إلى ١٧ ألف زواج، وهي افتراضات تخطيط تُراجع كل ربع.</p>
+    </section>
+
+    <section id="decision">
+      <h2>التوصية والخطوات الصريحة</h2>
+      <div class="verdict"><span class="tag">انطلق، وبالترتيب هذا</span>
+        <ol class="steps">
+          <li><b>هذا الأسبوع:</b> سجل تجاري لمؤسسة فردية، وحساب بنكي باسمها، ووقف أي تحويل للحساب الشخصي.</li>
+          <li><b>الشهر الأول:</b> ٢٠ قاعة مؤسسة (٣ شهور مجاناً، مع تصوير جولتها ٣٦٠) و١٥٠ مورد. الموردون أولاً، لأنهم مصدر الدخل الأكبر.</li>
+          <li><b>عدّل الدعوات:</b> المجانية حتى ١٠٠ ضيف، عشان تنافس «معازيم»، والدعوة أقوى إعلان مجاني.</li>
+          <li><b>الشهر الثاني:</b> بوابة دفع (ميسر أو تاب) لشحن الرصيد والاشتراك والدعوات، بدل التحويل اليدوي.</li>
+          <li><b>الشهر الثالث:</b> ابدأ الإعلانات المدفوعة بس إذا كل طلب يستلم ٣ عروض أو أكثر.</li>
+          <li><b>من الشهر السادس:</b> أضف العقيقة والتخرج وحفلات الشركات، لأنها تزيد الطلبات ٢٠–٤٠٪ بنفس الموردين.</li>
+          <li><b>بوابة قرار عند الشهر التاسع:</b> ١٥ قاعة دافعة و١٥٠ طلب شهرياً. إذا ما تحقق، نراجع الأسعار والقنوات قبل أي صرف إضافي.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>المصادر</h2>
+      <ol class="sources">
+        <li><a href="https://english.ajel.sa/saudi-marriages-raised-by-8-9-in-2020/">عقود الزواج ٢٠٢٠ (عاجل)</a></li>
+        <li><a href="https://www.statista.com/statistics/1118581/saudi-arabia-citizen-crude-marriage-rate-by-administrative-area/">معدل الزواج حسب المنطقة (Statista)</a></li>
+        <li><a href="https://saudipedia.com/%D8%A7%D9%84%D9%85%D9%86%D8%B7%D9%82%D8%A9-%D8%A7%D9%84%D8%B4%D8%B1%D9%82%D9%8A%D8%A9">سكان المنطقة الشرقية (سعوديبيديا)</a></li>
+        <li><a href="https://www.saudigazette.com.sa/article/572738">عقود الزواج في الشرقية (سعودي جازيت)</a></li>
+        <li><a href="https://www.saudigazette.com.sa/article/621963">تكلفة حفلات الزواج (سعودي جازيت)</a></li>
+        <li><a href="https://www.alwatan.com.sa/article/1132499">تكلفة الزواج في الأحساء (الوطن)</a></li>
+        <li><a href="https://saudi-arabia.zafaf.net/wedding-venues/ashsharqiah">قاعات الشرقية وأسعارها (زفاف)</a></li>
+        <li><a href="https://www.arabiaweddings.com/news/saudi-arabia-wedding-hall-market-rising">سوق قاعات الأفراح (Arabia Weddings)</a></li>
+        <li><a href="https://datasaudi.sa/en/region/eastern-region">بيانات المنطقة الشرقية (DataSaudi)</a></li>
+        <li><a href="https://ajel.sa/local/3xo53ht053">خريجو جامعة الإمام عبدالرحمن (عاجل)</a></li>
+        <li><a href="https://landing.mazoom.sa/">معازيم</a> · <a href="https://www.busharh.com/">بشارة</a> · <a href="https://merasapp.com/">مراس</a> · <a href="https://asfrt.com/">أسفرت</a></li>
+        <li><a href="https://www.ahjjz.sa/ar">احجز</a> · <a href="https://frhsa.com/">فرحة</a> · <a href="https://apps.apple.com/us/app/id1564827044">Megavents</a></li>
+        <li><a href="https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/%28SMEs%29%20Guidelines%20%E2%80%93%20Zatca%201.pdf">دليل ضريبة القيمة المضافة للمنشآت الصغيرة (الزكاة والضريبة)</a></li>
+        <li><a href="https://www.ey.com/en_gl/technical/tax-alerts/saudi-arabia-announces-25th-wave-of-phase-2-e-invoicing-integration">الموجة ٢٥ من الفوترة الإلكترونية (EY)</a></li>
+        <li><a href="https://misa.gov.sa/app/uploads/2025/07/E-Commerce-Law.pdf">نظام التجارة الإلكترونية</a></li>
+        <li><a href="https://cms.law/en/omn/legal-updates/new-sdaia-rules-and-guidelines-published-as-ksa-s-personal-data-protection-framework-is-now-enforceable">نظام حماية البيانات الشخصية (CMS)</a></li>
+        <li><a href="https://www.sama.gov.sa/en-US/LawsRegulations/DocLib/Implementing_Regulations_for_Law_of_Payments_and_Payment_Services-EN.pdf">لائحة نظام المدفوعات (البنك المركزي)</a></li>
+        <li><a href="https://www.moyasar.com/en/resources/faqs">متطلبات ميسر</a></li>
+      </ol>
+      <p class="src">بعض الأرقام من مقتطفات محركات البحث لأن بعض المواقع الحكومية محجوبة عن بيئة الإعداد. وأحدث رقم وطني منشور لعقود الزواج يعود إلى ٢٠٢٠. والدراسة لا تغني عن مراجعة محاسب ومحامٍ مرخّصين.</p>
+    </section>
+
+    <footer>أعدّها فريق خبراء مناسبتي: السوق، والمالية، والأنظمة والمخاطر، والنمو والتشغيل · نوفمبر ٢٠٢٦</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var data = [
+    { s: "متحفظ", rev: [54092, 207840, 434880], cost: [391000, 626000, 943000] },
+    { s: "أساسي", rev: [146884, 520580, 1049220], cost: [393100, 679300, 1059600] },
+    { s: "متفائل", rev: [264420, 957460, 1794520], cost: [433000, 842000, 1412000] }
+  ];
+  var svg = document.getElementById("chart"), NS = "http://www.w3.org/2000/svg";
+  var W = 720, H = 300, L = 70, B = 250, T = 20, max = 2000000;
+  function el(n, a, txt) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+  [0, 500000, 1000000, 1500000, 2000000].forEach(function (v) {
+    var y = B - (v / max) * (B - T);
+    el("line", { x1: L, x2: W - 10, y1: y, y2: y, stroke: "var(--line)", "stroke-width": 1 });
+    el("text", { x: L - 8, y: y + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, v === 0 ? "0" : (v / 1e6) + " م");
+  });
+  var groupW = (W - L - 20) / 3;
+  data.forEach(function (d, gi) {
+    var gx = L + 10 + gi * groupW;
+    el("text", { x: gx + groupW / 2 - 10, y: H - 8, "text-anchor": "middle", "font-size": 13, "font-weight": 600, fill: "var(--ink)" }, d.s);
+    for (var y = 0; y < 3; y++) {
+      var x = gx + y * (groupW - 20) / 3, bw = (groupW - 20) / 3 / 2 - 3;
+      var hr = (d.rev[y] / max) * (B - T), hc = (d.cost[y] / max) * (B - T);
+      el("rect", { x: x, y: B - hr, width: bw, height: hr, rx: 3, fill: "var(--plum)" });
+      el("rect", { x: x + bw + 3, y: B - hc, width: bw, height: hc, rx: 3, fill: "var(--line)", stroke: "var(--muted)", "stroke-width": .8 });
+      el("text", { x: x + bw + 1.5, y: B + 15, "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" }, "س" + ["١", "٢", "٣"][y]);
+    }
+  });
+  el("line", { x1: L, x2: W - 10, y1: B, y2: B, stroke: "var(--muted)", "stroke-width": 1 });
+})();
+</script>
