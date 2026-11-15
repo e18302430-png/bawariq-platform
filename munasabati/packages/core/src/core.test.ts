@@ -320,11 +320,14 @@ describe("حماية المنصة: التسعير والدفع والاتفاق�
     expect(depositFor(b)).toBe(2070);
     r.apply(signContract(id, "  سارة العتيبي "));
     const ct = r.get().bookings.find((x) => x.id === id)!.contract!;
-    expect(ct).toMatchObject({ name: "سارة العتيبي", v: CONTRACT_VERSION, price: 6900, deposit: 2070, date: "2027-03-01" });
+    expect(ct).toMatchObject({ name: "سارة العتيبي", v: CONTRACT_VERSION, price: 6900, deposit: 900, date: "2027-03-01" }); // دفع مباشر: رسوم التأكيد = حق مناسبتي
     r.apply(signContract(id, "اسم ثاني"));
     expect(r.get().bookings.find((x) => x.id === id)!.contract!.name).toBe("سارة العتيبي"); // التوقيع ما يتعدل
     r.apply(claimPaid(id)); r.apply(confirmPaid(id));
     expect(r.get().bookings.find((x) => x.id === id)!.pay!.stage).toBe("paid");
+    const msg = r.get().bookings.find((x) => x.id === id)!.messages.at(-1)!.text;
+    expect(msg).toContain("6,000"); // الباقي للتاجر مباشرة
+    expect(msg).toContain("0551234567"); // التواصل يفتح بعد الرسوم
     r.apply(bookingMessage(id, "client", "ارسل لي رقمك 0559998888"));
     expect(r.get().bookings.find((x) => x.id === id)!.leaks).toBe(1);
   });

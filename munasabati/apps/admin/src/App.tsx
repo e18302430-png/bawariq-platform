@@ -369,6 +369,10 @@ function PricingSettings() {
     <section className="card form">
       <h3 className="card-title">التسعير والتحويل</h3>
       <p className="muted" style={{ fontSize: 14 }}>النسبة لها شقين: <b>على العميل</b> تنضاف لسعر المورد، و<b>على المورد</b> تنخصم من سعره. مثال اليوم: مورد بـ{sar(20000)} ← العميل يدفع <b className="num">{sar(ex)}</b>، والمورد ياخذ <b className="num">{sar(exPay)}</b>، ولك <b className="num">{sar(ex - exPay)}</b>.</p>
+      <div className="field"><span className="label">طريقة الدفع</span>
+        <Segmented value={p.payMode ?? "direct"} onChange={(v) => setP({ ...p, payMode: v as "direct" | "escrow" })} options={[["direct", "مباشر: الرسوم لنا والباقي للتاجر"], ["escrow", "عبر حسابنا: العربون كامل لنا"]]} />
+        <small className="faint" style={{ fontSize: 12.5 }}>{(p.payMode ?? "direct") === "direct" ? "العميل يحوّل لنا رسوم تأكيد الحجز (حقنا من الحجز) ويدفع الباقي للتاجر مباشرة. بيانات الطرفين تنفتح بعد ما تأكد استلام الرسوم." : "العميل يحوّل العربون كامل لحسابنا، ونحوّل للتاجر بعد ختم الليلة."}</small>
+      </div>
       <div className="grid-3">
         <div className="field"><label htmlFor="pf">على العميل ٪</label><input id="pf" className="input num" type="number" min={0} max={60} value={p.feePct} onChange={(e) => setP({ ...p, feePct: +e.target.value })} /></div>
         <div className="field"><label htmlFor="pv">من المورد ٪</label><input id="pv" className="input num" type="number" min={0} max={40} value={p.vendorPct ?? 0} onChange={(e) => setP({ ...p, vendorPct: +e.target.value })} /></div>

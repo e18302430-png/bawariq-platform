@@ -296,7 +296,7 @@ export interface PartnerAgreement { v: number; at: number; by: string }
 export interface DB {
   version: 2;
   /** سياسة التسعير: نسبة مناسبتي، الحد الأدنى، العربون، والتسعير التلقائي */
-  pricing?: { feePct: number; vendorPct?: number; minFee: number; depositPct: number; auto: boolean; steps?: { from: string; feePct: number; vendorPct?: number }[] };
+  pricing?: { feePct: number; vendorPct?: number; minFee: number; depositPct: number; auto: boolean; payMode?: "direct" | "escrow"; steps?: { from: string; feePct: number; vendorPct?: number }[] };
   /** بيانات المنشأة النظامية (نظام التجارة الإلكترونية يطلب ظهورها في المنصة) */
   legal?: { entity: string; cr: string; vat: string; address: string; email: string };
   /** حساب مناسبتي البنكي لتحويل العربون */

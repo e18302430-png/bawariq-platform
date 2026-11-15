@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  acceptQuote, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, coordCheck, CHECK_LABEL, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
+  acceptQuote, confirmFeeFor, directDueFor, isDirectPay, addBudget, addTask, checkIn, claimPaid, depositFor, pricingOf, enableDoor, fmt, normCode, openTicket, setLiveIndex, postOp, OPS_QUICK, endEvent, reopenEvent, DEFAULT_THANKS, coordCheck, CHECK_LABEL, removeBudget, removeTask, sar, setBookingStatus, setTotalBudget, toggleTask, today, updateBudget,
   type Booking, type CheckInResult, type DoorSnapshot, type DoorVendor, type OpsMsg,
 } from "@munasabati/core";
 import { BookingChat, Counter, Empty, Icon, OpsFeed, Sheet, StatusPill, apply, repo, useDB, useOpsAlerts, useToast } from "@munasabati/ui";
@@ -61,6 +61,7 @@ function PayBox({ b, name }: { b: Booking; name: string }) {
   const ref = "MNS-" + b.id.slice(-6).toUpperCase();
   const copy = async (t: string, what: string) => { try { await navigator.clipboard.writeText(t); toast(`نسخنا ${what}`); } catch { toast(t); } };
   if (!b.clientPrice) return null;
+  if (isDirectPay(db)) return <DirectPay b={b} name={name} />;
   if (b.pay?.stage === "paid") return <div className="pay-ok"><Icon name="ShieldCheck" size={17} /> العربون مستلم، وحجزك مع {name} مؤكد ومضمون عبر مناسبتي.</div>;
   if (b.pay?.stage === "claimed") return <div className="req-step"><Icon name="Hourglass" size={15} /> استلمنا إشعار تحويلك، ونأكد الاستلام خلال ساعات.</div>;
   return (
@@ -77,6 +78,48 @@ function PayBox({ b, name }: { b: Booking; name: string }) {
     </div>
   );
 }
+/** الدفع المباشر: رسوم تأكيد لمناسبتي تقفل الموعد، والباقي لصاحب القاعة أو المورد مباشرة */
+function DirectPay({ b, name }: { b: Booking; name: string }) {
+  const db = useDB();
+  const toast = useToast();
+  const p = pricingOf(db);
+  const fee = confirmFeeFor(b, p), due = directDueFor(b, p);
+  const ref = "MNS-" + b.id.slice(-6).toUpperCase();
+  const target = b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId) : db.suppliers.find((s) => s.id === b.targetId);
+  const copy = async (t: string, what: string) => { try { await navigator.clipboard.writeText(t); toast(`نسخنا ${what}`); } catch { toast(t); } };
+  const stage = b.pay?.stage ?? "due";
+  const steps: [string, string, boolean][] = [
+    ["وقّعت العقد", "بنود واضحة وسعر مثبّت", !!b.contract],
+    ["رسوم تأكيد الحجز", `${sar(fee)} لمناسبتي، تقفل موعدك`, stage === "paid"],
+    ["التواصل يفتح", `رقم ${name} يوصلك هنا`, stage === "paid"],
+    ["الباقي للتاجر مباشرة", `${sar(due)} حسب اتفاقكم`, false],
+  ];
+  return (
+    <div className="paybox direct">
+      <div className="row between wrap"><b className="display">{stage === "paid" ? "موعدك مقفول ✓" : "اقفل موعدك"}</b><span className="pill brand num">{sar(b.clientPrice ?? 0)} الإجمالي</span></div>
+      <div className="split-bar" aria-hidden="true"><i style={{ width: `${Math.max(8, (fee / (b.clientPrice || 1)) * 100)}%` }} /><span /></div>
+      <div className="split-legend"><span><i className="a" />لمناسبتي الحين <b className="num">{sar(fee)}</b></span><span><i className="b" />لـ{name} مباشرة <b className="num">{sar(due)}</b></span></div>
+      <ol className="pay-steps">{steps.map(([t, d, ok], i) => <li key={t} className={ok ? "ok" : i === steps.findIndex((s) => !s[2]) ? "now" : ""}><i>{ok ? "✓" : i + 1}</i><div><b>{t}</b><small>{d}</small></div></li>)}</ol>
+      {stage === "paid" ? (
+        <div className="pay-ok"><Icon name="ShieldCheck" size={17} /> <span>موعدك محفوظ.{target?.phone ? <> رقم {name}: <a className="num" dir="ltr" href={`tel:${target.phone}`}>{target.phone}</a>.</> : " بيتواصل معك التاجر خلال ساعات."} ادفع له الباقي ({sar(due)}) حسب اتفاقكم، وخذ منه فاتورة.</span></div>
+      ) : stage === "claimed" ? (
+        <div className="req-step"><Icon name="Hourglass" size={15} /> استلمنا إشعار تحويلك، ونأكد خلال ساعات ونفتح لك التواصل.</div>
+      ) : (
+        <>
+          <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>الرسوم تُحسب من الإجمالي، وترجع لك كاملة لو اعتذر التاجر. <a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></p>
+          {db.bank?.iban ? <div className="pay-rows">
+            <div><small>البنك</small><b>{db.bank.name}</b></div>
+            <div><small>اسم المستفيد</small><b>{db.bank.holder}</b></div>
+            <div><small>الآيبان</small><b className="num" dir="ltr">{db.bank.iban}</b><button className="icon-btn sm" aria-label="نسخ الآيبان" onClick={() => void copy(db.bank!.iban, "الآيبان")}><Icon name="Copy" size={14} /></button></div>
+            <div><small>الرقم المرجعي</small><b className="num" dir="ltr">{ref}</b><button className="icon-btn sm" aria-label="نسخ الرقم المرجعي" onClick={() => void copy(ref, "الرقم المرجعي")}><Icon name="Copy" size={14} /></button></div>
+          </div> : <div className="req-step"><Icon name="Info" size={15} /> بيانات الحساب توصلك من الإدارة في محادثة الطلب.</div>}
+          <button className="btn primary block" disabled={!b.contract} onClick={() => { apply(claimPaid(b.id)); toast("وصلنا إشعارك، ونأكد ونفتح التواصل قريب"); }}><Icon name="CheckCircle2" size={16} /> {b.contract ? `حوّلت رسوم التأكيد (${sar(fee)})` : "وقّع العقد أولاً"}</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ───── الميزانية ───── */
 export function Budget() {
   const db = useDB();

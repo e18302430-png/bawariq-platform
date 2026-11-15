@@ -152,6 +152,52 @@ function Features() {
   );
 }
 
+/* ───── للقاعات والموردين: «نجيب لك العميل، وأنت تحتفظ بكل ريال» + حاسبة من أرقامهم ───── */
+const sarFmt = (n: number) => Math.round(n).toLocaleString("en-US");
+function Partners() {
+  const [kind, setKind] = useState<"venue" | "vendor">("venue");
+  const isV = kind === "venue";
+  const [price, setPrice] = useState(25000);
+  const [extra, setExtra] = useState(3);
+  useEffect(() => { setPrice(isV ? 25000 : 6000); setExtra(isV ? 3 : 4); }, [isV]);
+  const month = price * extra, year = month * 12;
+  const FACTS: [string, string, string][] = [
+    ["BadgePercent", "0% عمولة من سعرك", "العميل يدفعك سعرك كامل. رسوم مناسبتي على العميل، مو عليك."],
+    ["UserCheck", "عميل جاد ومؤكد", "ما يوصلك رقم العميل إلا بعد ما يقفل موعده ويدفع رسوم التأكيد."],
+    ["CalendarCheck", "أيامك الفاضية تتعبى", "نوصّلك طلبات بالتاريخ والميزانية وعدد الضيوف، وأنت تختار."],
+    ["FileSignature", "عقد إلكتروني وفاتورة", "كل حجز له عقد موقّع وشهادة، فما فيه خلاف ولا ضياع."],
+  ];
+  return (
+    <section className="sec container partners" id="partners">
+      <Reveal className="sec-head">
+        <span className="eyebrow">للقاعات والموردين</span>
+        <h2>نجيب لك العميل… <span className="grad-text">وأنت تحتفظ بكل ريال</span></h2>
+        <p>مناسبتي ما تاخذ نسبة من سعرك. نوصلك عملاء جادين في الشرقية، دفعوا رسوم تأكيد حجزهم، ويتواصلون معك مباشرة.</p>
+      </Reveal>
+      <div className="pt-grid">
+        <div className="pt-facts">{FACTS.map(([ic, t, d], i) => <Reveal key={t} delay={i * 0.05} className="pt-fact"><span><Icon name={ic} size={20} /></span><div><b>{t}</b><small>{d}</small></div></Reveal>)}</div>
+        <Reveal className="pt-calc" delay={0.1}>
+          <div className="pt-tabs" role="tablist">
+            <button role="tab" aria-selected={isV} className={isV ? "on" : ""} onClick={() => setKind("venue")}><Icon name="Building2" size={16} /> عندي قاعة</button>
+            <button role="tab" aria-selected={!isV} className={!isV ? "on" : ""} onClick={() => setKind("vendor")}><Icon name="Store" size={16} /> أنا مورّد</button>
+          </div>
+          <label className="pt-row"><span>{isV ? "سعر ليلتك" : "متوسط سعر الحجز"}</span><b className="num">{sarFmt(price)} ر.س</b>
+            <input type="range" min={isV ? 5000 : 1000} max={isV ? 120000 : 40000} step={isV ? 1000 : 500} value={price} onChange={(e) => setPrice(+e.target.value)} aria-label="السعر" /></label>
+          <label className="pt-row"><span>{isV ? "ليالي فاضية نعبيها لك بالشهر" : "حجوزات زيادة بالشهر"}</span><b className="num">{extra}</b>
+            <input type="range" min={1} max={isV ? 12 : 20} step={1} value={extra} onChange={(e) => setExtra(+e.target.value)} aria-label="العدد" /></label>
+          <div className="pt-out">
+            <div><small>دخل إضافي بالشهر</small><b className="num">{sarFmt(month)}</b><i>ر.س</i></div>
+            <div className="big"><small>بالسنة… كله لك</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
+          </div>
+          <div className="pt-cut"><span>نسبة مناسبتي من سعرك</span><b className="num">0 ر.س</b></div>
+          <small className="pt-note">حسبة توضيحية من الأرقام اللي تختارها، مو وعد بعدد حجوزات.</small>
+          <a className="btn primary lg block" href={isV ? LINKS.venues : LINKS.vendors}>{isV ? "سجّل قاعتك مجاناً" : "سجّل كمورد مجاناً"} <Icon name="ArrowLeft" size={17} /></a>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 /* ───── الواجهة الرئيسية ───── */
 /** الصفحة مطبوعة مسبقاً في HTML؟ إذن لا نعيد حركات الدخول (يستلمها React كما هي بدون وميض) */
 const SSG = typeof document !== "undefined" && !!document.getElementById("root")?.firstElementChild;
@@ -172,7 +218,7 @@ function Hero({ occ }: { occ: Occasion }) {
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
           <div className="logo"><Logo size={28} light animated /></div>
-          <div className="links"><a href="#story">كيف تعمل</a><a href={LINKS.vendors}>للموردين</a><a href={LINKS.venues}>للقاعات</a></div>
+          <div className="links"><a href="#story">كيف تعمل</a><a href="#partners">للقاعات والموردين</a><a href={LINKS.venues}>بوابة القاعات</a></div>
           <div style={{ flex: 1 }} />
           <a className="btn glass sm" href={LINKS.client}>ادخل التطبيق</a>
         </nav>
@@ -217,7 +263,7 @@ const PROMISES: [string, string, string][] = [
   ["ShieldCheck", "حسابات موثّقة", "كل قاعة ومورد يراجعه فريق مناسبتي قبل الظهور"],
   ["MessagesSquare", "محادثة بإشراف الإدارة", "الإدارة وسيط بينك وبين التاجر وتحمي حقك"],
   ["Wallet", "ميزانيتك أنت تحددها", "تكتبها مرة، وتوصل مع كل طلب للتاجر"],
-  ["Sparkles", "بدون رسوم على العميل", "تخطط وتحجز وترسل الدعوات مجاناً"],
+  ["Lock", "موعدك مقفول ومحمي", "رسوم تأكيد واضحة تقفل موعدك، وترجع كاملة لو اعتذر التاجر"],
 ];
 function Signature() {
   return (
@@ -332,6 +378,7 @@ export default function App() {
       <Story occ={occ} />
       <Features />
       <Portals occ={occ} />
+      <Partners />
       <section className="container" style={{ paddingBottom: 20 }}>
         <Reveal className="final lux">
           <div className="lux-seal" aria-hidden="true"><LogoMark size={64} animated /></div>

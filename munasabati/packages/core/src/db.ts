@@ -331,6 +331,13 @@ export const clientPriceFor = (net: number, p: NonNullable<DB["pricing"]> = DEFA
 export const platformTake = (b: Pick<Booking, "quote" | "clientPrice" | "payout">) =>
   b.quote && b.clientPrice ? b.clientPrice - (b.payout ?? b.quote) : 0;
 export const depositFor = (b: Pick<Booking, "clientPrice">, p: NonNullable<DB["pricing"]> = DEFAULT_PRICING) => Math.round(((b.clientPrice ?? 0) * p.depositPct) / 100 / 10) * 10;
+/** الدفع المباشر (الافتراضي): العميل يدفع لمناسبتي «رسوم تأكيد الحجز» فقط، ويدفع الباقي لصاحب القاعة أو المورد مباشرة */
+export const isDirectPay = (db: Pick<DB, "pricing">) => (db.pricing?.payMode ?? "direct") === "direct";
+/** رسوم تأكيد الحجز = حق مناسبتي من الحجز (سعر العميل ناقص حق التاجر) */
+export const confirmFeeFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct"> = DEFAULT_PRICING) =>
+  platformTake(b) || (b.clientPrice ? Math.round((b.clientPrice - b.clientPrice / (1 + p.feePct / 100)) / 10) * 10 : 0);
+/** المبلغ اللي يدفعه العميل للتاجر مباشرة */
+export const directDueFor = (b: Pick<Booking, "quote" | "clientPrice" | "payout">, p: Pick<NonNullable<DB["pricing"]>, "feePct"> = DEFAULT_PRICING) => (b.clientPrice ?? 0) - confirmFeeFor(b, p);
 
 /** التاجر يرسل سعره الصافي. مع التسعير التلقائي يوصل العميل سعر مناسبتي على طول */
 export const sendQuote = (id: string, net: number, text: string): Mutation => (db) => {
@@ -349,17 +356,28 @@ export const priceForClient = (id: string, price: number): Mutation => (db) => (
 });
 /** العميل يقول إنه حوّل العربون */
 /** نسخة بنود عقد الحجز الإلكتروني (ترتفع لما تتغير البنود) */
-export const CONTRACT_VERSION = 1;
+export const CONTRACT_VERSION = 2;
 /** العميل يوقّع عقد الحجز باسمه: نثبت السعر والعربون والتاريخ وقت التوقيع، ولا يتعدل بعدها */
 export const signContract = (id: string, name: string): Mutation => (db) => ({
-  ...db, bookings: db.bookings.map((b) => (b.id !== id || b.contract || !b.clientPrice ? b : { ...b, contract: { at: Date.now(), name: name.trim().slice(0, 60), v: CONTRACT_VERSION, price: b.clientPrice, deposit: depositFor(b, pricingOf(db)), date: b.date } })),
+  ...db, bookings: db.bookings.map((b) => (b.id !== id || b.contract || !b.clientPrice ? b : { ...b, contract: { at: Date.now(), name: name.trim().slice(0, 60), v: CONTRACT_VERSION, price: b.clientPrice, deposit: isDirectPay(db) ? confirmFeeFor(b, pricingOf(db)) : depositFor(b, pricingOf(db)), date: b.date } })),
 });
 export const claimPaid = (id: string): Mutation => (db) => ({
   ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "claimed" as const, claimedAt: Date.now() } })),
 });
 /** الإدارة تأكد استلام العربون، والتاجر يتطمن إن الحجز مدفوع */
 export const confirmPaid = (id: string): Mutation => (db) => ({
-  ...db, bookings: db.bookings.map((b) => (b.id !== id ? b : { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "paid" as const, paidAt: Date.now() }, messages: [...b.messages, { from: "admin" as const, text: "استلمنا العربون عبر مناسبتي، والحجز مؤكد ومضمون.", at: Date.now() }] })),
+  ...db, bookings: db.bookings.map((b) => {
+    if (b.id !== id) return b;
+    let text = "استلمنا العربون عبر مناسبتي، والحجز مؤكد ومضمون.";
+    if (isDirectPay(db)) {
+      // الدفع المباشر: بعد استلام رسوم التأكيد نفتح التواصل بين الطرفين
+      const t = b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId) : db.suppliers.find((s) => s.id === b.targetId);
+      const due = directDueFor(b, pricingOf(db));
+      text = `استلمنا رسوم تأكيد الحجز، وحجزك مؤكد ✓ الباقي ${due.toLocaleString("en-US")} ر.س يُدفع لـ${t?.name ?? "التاجر"} مباشرة حسب اتفاقكم.` +
+        (t?.phone ? ` رقم ${t.name}: ${t.phone}.` : "") + (b.phone ? ` رقم العميل ${b.clientName}: ${b.phone}.` : "");
+    }
+    return { ...b, pay: { ...(b.pay ?? { stage: "due" }), stage: "paid" as const, paidAt: Date.now() }, messages: [...b.messages, { from: "admin" as const, text, at: Date.now() }] };
+  }),
 });
 /** الإدارة حوّلت للتاجر مستحقاته (بعد ختم الليلة) */
 export const markPayout = (id: string): Mutation => (db) => ({
@@ -367,14 +385,16 @@ export const markPayout = (id: string): Mutation => (db) => ({
 });
 
 /** اتفاقية الشراكة: نسخة واحدة يوقعها كل تاجر وصاحب قاعة */
-export const AGREEMENT_VERSION = 2;
+export const AGREEMENT_VERSION = 3;
 export const AGREEMENT_CLAUSES: [string, string][] = [
-  ["التواصل عبر مناسبتي فقط", "كل تواصل مع عملاء مناسبتي يكون داخل المنصة. ما أطلب رقم العميل، وما أعطيه رقمي أو حساباتي، وما أتواصل معه من برّا."],
-  ["الدفع عبر مناسبتي فقط", "العميل يدفع لمناسبتي، ومناسبتي تحوّل لي حقي. ما أستلم أي مبلغ من العميل مباشرة."],
+  ["٠٪ عمولة من سعري", "أستلم سعري كاملاً من العميل مباشرة. مناسبتي تاخذ «رسوم تأكيد الحجز» من العميل نفسه، وما تخصم من حقي شي (إلا لو أعلنت المنصة غير كذا وقبلته)."],
+  ["التواصل يفتح بعد التأكيد", "قبل ما يدفع العميل رسوم التأكيد، التواصل يكون داخل المنصة فقط. بعد التأكيد توصلني بيانات العميل، وأتعامل معه مباشرة لإتمام هذا الحجز."],
+  ["سعر موحّد", "ما أعطي عملاء مناسبتي سعر أعلى من سعري خارجها، وما أعرض على العميل خصم مقابل إنه يحجز من برّا المنصة."],
+  ["لا إلغاء وحجز من ورا المنصة", "لو ألغى العميل وحجز معي نفس المناسبة مباشرة، تبقى رسوم مناسبتي مستحقة، وألتزم أبلّغ الإدارة."],
   ["سعري وحقي واضحين", "أرسل سعري في العرض، وأشوف قبل الإرسال حقي بعد نسبة شراكة مناسبتي المعلنة وقتها (إن وجدت). مناسبتي تضيف خدمتها على العميل، وحقي يتثبت لحظة إرسال العرض."],
-  ["عدم التجاوز ١٢ شهر", "أي عميل وصلني عن طريق مناسبتي، ما أتعامل معه مباشرة لمدة ١٢ شهر من آخر حجز. لو صار، تستحق مناسبتي رسومها كاملة على هذا التعامل، ولها إيقاف حسابي."],
+  ["حجوزات العميل المتكررة ١٨ شهر", "أي عميل وصلني عن طريق مناسبتي، حجوزاته الجاية معي خلال ١٨ شهر تمر عبر المنصة. لو تعاملنا مباشرة، تستحق مناسبتي رسومها على هذا التعامل، ولها إيقاف حسابي."],
   ["الالتزام بالحجز", "ألتزم بالحجز المؤكد. الإلغاء يمر بالإدارة، والإدارة تقدر تحوّل الطلب لتاجر بديل."],
-  ["المستحقات بعد المناسبة", "مستحقاتي تتحوّل لي بعد ما تنتهي المناسبة (ختم الليلة)، أو حسب الاتفاق مع الإدارة."],
+  ["تسجيل الاستلام بأمانة", "أسجّل في المنصة استلامي لباقي المبلغ من العميل، وأي تعديل على قيمة الحجز (ضيوف أو خدمات إضافية)."],
 ];
 export const acceptAgreement = (kind: "supplier" | "venue", id: string, by: string): Mutation => (db) => {
   const agreement = { v: AGREEMENT_VERSION, at: Date.now(), by: by.trim() };

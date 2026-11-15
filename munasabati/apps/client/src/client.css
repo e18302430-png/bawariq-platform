@@ -693,3 +693,20 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
   #contract-print { position: absolute; inset: 0; padding: 32px; background: #fff; color: #000; }
   .no-print { display: none !important; }
 }
+
+/* ═══════════ الدفع المباشر ═══════════ */
+.paybox.direct { gap: 14px; }
+.split-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--ok) 30%, var(--surface-2)); }
+.split-bar i { background: linear-gradient(90deg, #FFB36B, #E5195E); border-radius: 999px; }
+.split-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.split-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.split-legend b { color: var(--text); }
+.split-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.split-legend i.a { background: #E5195E; } .split-legend i.b { background: color-mix(in srgb, var(--ok) 60%, var(--surface-2)); }
+.pay-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pay-steps li { display: flex; gap: 12px; align-items: flex-start; opacity: .6; }
+.pay-steps li.ok, .pay-steps li.now { opacity: 1; }
+.pay-steps li > i { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; background: var(--surface-2); border: 1px solid var(--line); }
+.pay-steps li.ok > i { background: var(--ok); color: #fff; border-color: transparent; }
+.pay-steps li.now > i { background: var(--brand); color: #fff; border-color: transparent; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 20%, transparent); }
+.pay-steps b { display: block; font-size: 14.5px; } .pay-steps small { color: var(--muted); font-size: 12.5px; }

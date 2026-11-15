@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { depositFor, pricingOf, sar, signContract, fmt, type Booking } from "@munasabati/core";
+import { confirmFeeFor, depositFor, isDirectPay, pricingOf, sar, signContract, fmt, type Booking } from "@munasabati/core";
 import { Icon, Sheet, apply, useDB, useToast } from "@munasabati/ui";
 
 /* ═══════════ عقد الحجز الإلكتروني ═══════════
@@ -29,7 +29,8 @@ function ContractBody({ b, name, onDone }: { b: Booking; name: string; onDone: (
   const toast = useToast();
   const p = pricingOf(db);
   const c = b.contract;
-  const price = c?.price ?? b.clientPrice ?? 0, deposit = c?.deposit ?? depositFor(b, p), date = c?.date ?? b.date;
+  const direct = isDirectPay(db);
+  const price = c?.price ?? b.clientPrice ?? 0, deposit = c?.deposit ?? (direct ? confirmFeeFor(b, p) : depositFor(b, p)), date = c?.date ?? b.date;
   const ref = "MNS-" + b.id.slice(-6).toUpperCase();
   const client = db.client.profile?.name || b.clientName || "العميل";
   const [sig, setSig] = useState(db.client.profile?.name ?? "");
@@ -63,18 +64,28 @@ function ContractBody({ b, name, onDone }: { b: Booking; name: string; onDone: (
       <section><h4>المبلغ</h4>
         <dl className="ct-kv">
           <dt>السعر الإجمالي</dt><dd className="num"><b>{sar(price)}</b> <small>(شامل خدمة مناسبتي)</small></dd>
-          <dt>العربون ({p.depositPct}٪)</dt><dd className="num">{sar(deposit)}</dd>
-          <dt>المتبقي</dt><dd className="num">{sar(price - deposit)} <small>قبل المناسبة</small></dd>
+          {direct ? <>
+            <dt>رسوم تأكيد الحجز</dt><dd className="num">{sar(deposit)} <small>تُدفع لمناسبتي</small></dd>
+            <dt>الباقي</dt><dd className="num">{sar(price - deposit)} <small>يُدفع لمقدم الخدمة مباشرة</small></dd>
+          </> : <>
+            <dt>العربون ({p.depositPct}٪)</dt><dd className="num">{sar(deposit)}</dd>
+            <dt>المتبقي</dt><dd className="num">{sar(price - deposit)} <small>قبل المناسبة</small></dd>
+          </>}
         </dl>
       </section>
 
       <section><h4>البنود</h4>
         <ol className="ct-terms">
-          <li>يُدفع العربون لحساب مناسبتي فقط، ومناسبتي تحفظه ولا تحوّله لمقدم الخدمة إلا بعد ختم ليلة المناسبة.</li>
+          {direct ? <>
+            <li>يدفع العميل «رسوم تأكيد الحجز» لمناسبتي لقفل الموعد، وهي جزء من السعر الإجمالي أعلاه، ويدفع الباقي لمقدم الخدمة مباشرة حسب اتفاقهما، ويستلم منه فاتورة.</li>
+            <li>بعد تأكيد استلام الرسوم، تفتح مناسبتي التواصل المباشر بين الطرفين لإتمام الحجز.</li>
+            <li>إذا اعتذر مقدم الخدمة أو ألغى، تُرد رسوم التأكيد للعميل كاملة، وترشّح له مناسبتي بديلاً مناسباً، ويرد مقدم الخدمة أي مبلغ استلمه.</li>
+          </> : <li>يُدفع العربون لحساب مناسبتي فقط، ومناسبتي تحفظه ولا تحوّله لمقدم الخدمة إلا بعد ختم ليلة المناسبة.</li>}
           <li>يلتزم مقدم الخدمة بالتاريخ والتفاصيل المذكورة أعلاه، وأي تعديل يكون بموافقة الطرفين عبر محادثة الطلب في المنصة.</li>
-          <li>إذا اعتذر مقدم الخدمة أو ألغى، يسترجع العميل عربونه كاملاً، وترشّح له مناسبتي بديلاً مناسباً.</li>
+          {!direct && <li>إذا اعتذر مقدم الخدمة أو ألغى، يسترجع العميل عربونه كاملاً، وترشّح له مناسبتي بديلاً مناسباً.</li>}
+          {direct && <li>إذا ألغى العميل الحجز عبر المنصة ثم حجز نفس الخدمة مع مقدم الخدمة مباشرة، لا تُرد رسوم التأكيد.</li>}
           <li>إلغاء العميل يخضع <a href="../cancellation.html" target="_blank" rel="noreferrer">لسياسة الإلغاء والاسترجاع</a> المعلنة في المنصة.</li>
-          <li>كل التواصل والدفع يكون عبر مناسبتي، حفاظاً على حق الطرفين وضمان المتابعة.</li>
+          {!direct && <li>كل التواصل والدفع يكون عبر مناسبتي، حفاظاً على حق الطرفين وضمان المتابعة.</li>}
           <li>منسق مناسبتي يتابع مع مقدم الخدمة ليلة المناسبة، ويبلّغ العميل بحالته.</li>
         </ol>
       </section>
