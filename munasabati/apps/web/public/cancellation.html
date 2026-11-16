@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@600;800&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap">
 <style>
-  :root { --bg: #faf9f7; --surface: #fff; --fg: #17130f; --muted: #6b625a; --line: #e8e2da; --gold: #a87a35; --brand: #d1185a; color-scheme: light; }
+  :root { --bg: #faf9f7; --surface: #fff; --fg: #17130f; --muted: #6b625a; --line: #e8e2da; --gold: #86601f; --brand: #d1185a; color-scheme: light; }
   @media (prefers-color-scheme: dark) { :root { --bg: #0e0b09; --surface: #17120e; --fg: #f4ece0; --muted: #a8998a; --line: #2e251d; --gold: #e2bd7a; --brand: #ff5c93; color-scheme: dark; } }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font-family: "IBM Plex Sans Arabic", Tahoma, sans-serif; font-size: 16px; line-height: 1.85; }
@@ -76,6 +76,12 @@
     <li>الدعوة مجانية حتى ٥٠ ضيف. والباقات المدفوعة يرجع مبلغها كامل إذا طلبت الاسترجاع قبل ما ترسل أي دعوة من حدود الباقة.</li>
   </ul>
 
+  <h2 id="merchants">للقاعات والموردين</h2>
+  <ul>
+    <li><b>اشتراك القاعة:</b> تلغيه بنفسك بضغطة من صفحة «الاشتراك» في بوابة القاعات، بدون ما تتواصل مع أحد. يبقى فعّال لنهاية المدة المدفوعة وما ينجدد، وتقدر تتراجع عن الإلغاء قبل نهايتها.</li>
+    <li><b>رصيد عروض الموردين:</b> الرصيد غير المستخدم من الباقات المدفوعة يُرد عند إغلاق الحساب (بعد استبعاد الرصيد المجاني)، خلال ١٤ يوم عمل.</li>
+  </ul>
+
   <h2 id="force">الظروف القاهرة</h2>
   <p>لو تعذّرت المناسبة لظرف خارج عن إرادة الطرفين (مثل قرار حكومي أو حالة وفاة لا قدّر الله)، نتعامل مع كل حالة بإنصاف: تأجيل بدون رسوم، أو استرجاع بعد خصم ما صرفه التاجر فعلاً.</p>
 
@@ -92,7 +98,7 @@
     // بيانات المنشأة النظامية من إعدادات الإدارة (قراءة عامة)
     fetch("https://yejsuchjmomoaaphazre.supabase.co/rest/v1/settings?key=eq.legal&select=value", { headers: { apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllanN1Y2hqbW9tb2FhcGhhenJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNjM0NDksImV4cCI6MjEwOTczOTQ0OX0.8Bi2erIZuT6ozz9WLPfXkLms-e94F88nOr62ZCMYXM8" } })
       .then(function (r) { return r.json(); }).then(function (rows) { var l = rows && rows[0] && JSON.parse(rows[0].value); if (!l || !l.entity) return;
-        document.getElementById("legal").textContent = [l.entity, l.cr && ("سجل تجاري " + l.cr), l.vat && ("الرقم الضريبي " + l.vat), l.address, l.email].filter(Boolean).join(" · "); }).catch(function () {});
+        document.getElementById("legal").textContent = [l.entity, l.cr && ("سجل تجاري " + l.cr), l.vat && ("الرقم الضريبي " + l.vat), l.ecom && ("موثّق في المركز السعودي للأعمال " + l.ecom), l.address, l.email, l.phone].filter(Boolean).join(" · "); }).catch(function () {});
   </script>
 </div>
 </body>

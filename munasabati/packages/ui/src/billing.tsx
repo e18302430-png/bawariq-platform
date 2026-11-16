@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CREDIT_PACKS, FEATURED_PRICE, VENUE_PLAN, claimVenueSub, creditsOf, requestTopUp, sar, type Supplier, type Venue } from "@munasabati/core";
+import { CREDIT_PACKS, FEATURED_PRICE, VENUE_PLAN, cancelVenueSub, claimVenueSub, creditsOf, requestTopUp, sar, type Supplier, type Venue } from "@munasabati/core";
 import { Icon } from "./icons";
 import { useToast } from "./components";
 import { apply, useDB } from "./data";
@@ -73,6 +73,7 @@ export function WalletPanel({ s }: { s: Supplier }) {
 /** اشتراك القاعة الشهري */
 export function VenueSubCard({ v }: { v: Venue }) {
   const toast = useToast();
+  const [askCancel, setAskCancel] = useState(false);
   const st = v.sub?.plan ?? "trial";
   const ref = "MNS-V-" + v.id.slice(-5).toUpperCase();
   const label = st === "active" ? `فعّال لين ${v.sub?.until}` : st === "overdue" ? "متوقف: قاعتك ما تظهر للعملاء" : `فترة تجربة مجانية${v.sub?.until ? ` لين ${v.sub.until}` : ""}`;
@@ -85,6 +86,15 @@ export function VenueSubCard({ v }: { v: Venue }) {
           <BankRows refCode={ref} />
           <button className="btn primary block" onClick={() => { apply(claimVenueSub(v.id)); toast("وصلنا إشعارك، ونفعّل اشتراكك قريب"); }}><Icon name="CheckCircle2" size={16} /> حوّلت الاشتراك ({sar(VENUE_PLAN.price)})</button>
         </details>
+      )}
+      {v.sub?.cancelAt ? (
+        <div className="req-step"><Icon name="Info" size={15} /> ألغيت التجديد. اشتراكك يبقى فعالاً لنهاية المدة المدفوعة وما ينجدد. <button className="btn sm" onClick={() => { apply(cancelVenueSub(v.id, true)); toast("رجّعنا التجديد"); }}>تراجع عن الإلغاء</button></div>
+      ) : !askCancel ? (
+        <button className="btn sm ghost" style={{ justifySelf: "start", color: "var(--bad)" }} onClick={() => setAskCancel(true)}><Icon name="X" size={14} /> إلغاء الاشتراك</button>
+      ) : (
+        <div className="row wrap"><span className="muted" style={{ fontSize: 13.5 }}>متأكد؟ يبقى فعالاً لنهاية المدة المدفوعة، وبعدها قاعتك ما تظهر للعملاء.</span>
+          <button className="btn sm" style={{ color: "var(--bad)" }} onClick={() => { apply(cancelVenueSub(v.id)); setAskCancel(false); toast("ألغينا التجديد. نرسل لك تأكيد"); }}>نعم، ألغِ الاشتراك</button>
+          <button className="btn sm ghost" onClick={() => setAskCancel(false)}>تراجع</button></div>
       )}
     </section>
   );

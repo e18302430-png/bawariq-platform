@@ -315,3 +315,7 @@
 .qs select option { color: #12081a; }
 .qs button { border: 0; border-radius: 16px; padding: 0 22px; display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 900; font-size: 15px; color: #fff; cursor: pointer; background: linear-gradient(135deg, #FFB36B, #E5195E 60%, #9B3FC9); box-shadow: 0 14px 30px -12px rgba(229, 25, 94, .8); }
 @media (max-width: 760px) { .qs { grid-template-columns: 1fr 1fr; } .qs button { grid-column: 1 / -1; min-height: 50px; justify-content: center; } }
+
+/* وسم المحتوى المولّد بالذكاء الاصطناعي */
+.ai-tag { position: absolute; top: 10px; inset-inline-start: 10px; z-index: 3; font-size: 11.5px; line-height: 1.4; padding: 3px 9px; border-radius: 99px; background: rgba(0, 0, 0, .62); color: #fff; backdrop-filter: blur(4px); pointer-events: none; }
+@media (max-width: 1020px) { .b-bubbles span:nth-child(3) { display: none; } }

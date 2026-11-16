@@ -397,8 +397,8 @@ export function LegalLine() {
   const base = typeof location !== "undefined" && /\/(client|vendors|venues|admin)\//.test(location.pathname) ? "../" : "./";
   return (
     <div className="legal-line">
-      {l?.entity && <span>{l.entity}{l.cr ? ` · سجل تجاري ${l.cr}` : ""}{l.vat ? ` · الرقم الضريبي ${l.vat}` : ""}{l.address ? ` · ${l.address}` : ""}</span>}
-      <span><a href={base + "privacy.html"} target="_blank" rel="noreferrer">الخصوصية والشروط</a> · <a href={base + "cancellation.html"} target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></span>
+      {l?.entity && <span>{[l.entity, l.cr && `سجل تجاري ${l.cr}`, l.vat && `الرقم الضريبي ${l.vat}`, l.ecom && `موثّق في المركز السعودي للأعمال ${l.ecom}`, l.address, l.email, l.phone].filter(Boolean).join(" · ")}</span>}
+      <span><a href={base + "terms.html"} target="_blank" rel="noreferrer">الشروط والأحكام</a> · <a href={base + "privacy.html"} target="_blank" rel="noreferrer">الخصوصية</a> · <a href={base + "cancellation.html"} target="_blank" rel="noreferrer">الإلغاء والاسترجاع</a></span>
     </div>
   );
 }

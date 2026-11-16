@@ -16,7 +16,7 @@ export interface AuthAdapter {
   /** دخول فوري: جلسة آمنة على الجهاز مربوطة برقم الجوال (قديم، للتوافق) */
   quickSignIn(phone: string, name?: string): Promise<AuthUser>;
   /** حساب جديد بالجوال وكلمة مرور (يدخل به من أي جهاز) */
-  signUpPhone(phone: string, password: string, name?: string, consent?: { v: number; at: number }): Promise<AuthUser>;
+  signUpPhone(phone: string, password: string, name?: string, consent?: { v: number; at: number; marketing?: boolean }): Promise<AuthUser>;
   /** حذف الحساب وكل بياناته الشخصية نهائياً (حق المستخدم في نظام حماية البيانات) */
   deleteAccount?(): Promise<void>;
   /** دخول بالجوال وكلمة المرور */

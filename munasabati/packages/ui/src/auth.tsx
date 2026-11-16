@@ -49,16 +49,17 @@ function QuickAuth({ onDone, title, initialPhone, initialName, initialMode }: { 
   const [err, setErr] = useState("");
   const [forgot, setForgot] = useState(false);
   const [agree, setAgree] = useState(false);
+  const [mkt, setMkt] = useState(false);
   const auth = repo.auth!;
   const full = "0" + phone.replace(/\D/g, "").replace(/^0+/, "").slice(0, 9);
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validPhone(full)) { setErr("اكتب رقم جوال سعودي صحيح يبدأ بـ 5"); return; }
     if (pass.length < 6) { setErr("كلمة المرور لازم تكون ٦ أحرف أو أكثر."); return; }
-    if (mode === "signup" && !agree) { setErr("وافق على الشروط وسياسة الإلغاء عشان نكمل."); return; }
+    if (mode === "signup" && !agree) { setErr("أكّد إن عمرك ١٨ سنة أو أكثر ووافق على الشروط عشان نكمل."); return; }
     setBusy(true); setErr("");
     try {
-      if (mode === "signup") await auth.signUpPhone(full, pass, name.trim() || undefined, { v: TERMS_VERSION, at: Date.now() });
+      if (mode === "signup") await auth.signUpPhone(full, pass, name.trim() || undefined, { v: TERMS_VERSION, at: Date.now(), marketing: mkt });
       else await auth.signInPhone(full, pass);
       onDone();
     } catch (x) { const m = (x as Error).message; setErr(m); if (m.includes("مسجّل من قبل")) setMode("login"); } finally { setBusy(false); }
@@ -100,7 +101,8 @@ function QuickAuth({ onDone, title, initialPhone, initialName, initialMode }: { 
         <input id="qa-w" dir="ltr" type={show ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder={mode === "signup" ? "اختر كلمة مرور (٦ أحرف أو أكثر)" : "كلمة المرور"} value={pass} onChange={(e) => setPass(e.target.value)} />
         <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label={show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}><Icon name={show ? "EyeOff" : "Eye"} size={18} /></button>
       </label>
-      {mode === "signup" && <label className="auth-consent"><input id="qa-c" type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>أوافق على <a href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a> و<a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></span></label>}
+      {mode === "signup" && <label className="auth-consent"><input id="qa-c" type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>عمري ١٨ سنة أو أكثر، وأوافق على <a href="../terms.html" target="_blank" rel="noreferrer">الشروط والأحكام</a> و<a href="../privacy.html" target="_blank" rel="noreferrer">سياسة الخصوصية</a> و<a href="../cancellation.html" target="_blank" rel="noreferrer">سياسة الإلغاء</a></span></label>}
+      {mode === "signup" && <label className="auth-consent"><input id="qa-m" type="checkbox" checked={mkt} onChange={(e) => setMkt(e.target.checked)} /><span>(اختياري) أبي توصلني عروض وأفكار للمناسبات. تقدر توقفها متى ما تبي.</span></label>}
       {err && <div className="auth-err" role="alert"><Icon name="Info" size={15} /> {err}</div>}
       <button className="btn primary lg block auth-go" type="submit" disabled={busy}>{busy ? "لحظة…" : mode === "signup" ? "إنشاء الحساب" : "دخول"} {!busy && <Icon name="ArrowLeft" size={18} />}</button>
       {mode === "login" && (!forgot

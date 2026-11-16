@@ -397,6 +397,7 @@ function InvitePlans() {
           {t.id === cur.id ? <small className="faint">باقتك الحالية</small> : t.price > cur.price && (want === t.id ? <small className="faint">طلبك قيد التفعيل</small> : <button className="btn sm primary block" onClick={() => { apply(requestInviteTier(t.id)); toast(`اخترت باقة ${t.name}. حوّل المبلغ ونفعّلها لك`); }}>اختر {t.name}</button>)}
         </div>
       ))}</div>
+      <small className="faint" style={{ fontSize: 12.5 }}>قبل ما تختار: مبلغ الباقة يرجع لك كامل إذا طلبت الاسترجاع قبل ما ترسل أي دعوة من حدودها. <a href="../cancellation.html#invites" target="_blank" rel="noreferrer">سياسة الإلغاء والاسترجاع</a></small>
       {want && db.bank?.iban && <div className="pay-rows">
         <div><small>المبلغ</small><b className="num">{sar(INVITE_TIERS.find((t) => t.id === want)!.price)}</b></div>
         <div><small>البنك</small><b>{db.bank.name}</b></div>

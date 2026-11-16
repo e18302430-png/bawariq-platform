@@ -340,7 +340,7 @@ function Settings() {
 function LegalSettings() {
   const db = useDB();
   const toast = useToast();
-  const [l, setL] = useState({ entity: db.legal?.entity ?? "", cr: db.legal?.cr ?? "", vat: db.legal?.vat ?? "", address: db.legal?.address ?? "", email: db.legal?.email ?? "" });
+  const [l, setL] = useState({ entity: db.legal?.entity ?? "", cr: db.legal?.cr ?? "", vat: db.legal?.vat ?? "", address: db.legal?.address ?? "", email: db.legal?.email ?? "", phone: db.legal?.phone ?? "", ecom: db.legal?.ecom ?? "" });
   return (
     <section className="card form">
       <h3 className="card-title">بيانات المنشأة النظامية</h3>
@@ -351,6 +351,8 @@ function LegalSettings() {
         <div className="field"><label htmlFor="lv">الرقم الضريبي (اختياري)</label><input id="lv" className="input num" dir="ltr" inputMode="numeric" value={l.vat} onChange={(e) => setL({ ...l, vat: e.target.value })} placeholder="لو مسجّل في الضريبة" /></div>
         <div className="field"><label htmlFor="la">العنوان</label><input id="la" className="input" value={l.address} onChange={(e) => setL({ ...l, address: e.target.value })} placeholder="الدمام، حي ..." /></div>
         <div className="field"><label htmlFor="lm">بريد التواصل</label><input id="lm" className="input" dir="ltr" type="email" value={l.email} onChange={(e) => setL({ ...l, email: e.target.value })} /></div>
+        <div className="field"><label htmlFor="lp">جوال التواصل</label><input id="lp" className="input num" dir="ltr" inputMode="tel" value={l.phone} onChange={(e) => setL({ ...l, phone: e.target.value })} placeholder="05xxxxxxxx" /></div>
+        <div className="field"><label htmlFor="lx">رقم توثيق المتجر (المركز السعودي للأعمال)</label><input id="lx" className="input num" dir="ltr" value={l.ecom} onChange={(e) => setL({ ...l, ecom: e.target.value })} placeholder="بعد التوثيق في منصة الأعمال" /></div>
       </div>
       <div className="row"><button className="btn primary" disabled={!l.entity.trim()} onClick={() => { apply(setLegal(l)); toast("حفظنا بيانات المنشأة، وتظهر أسفل كل الصفحات"); }}>حفظ</button></div>
     </section>

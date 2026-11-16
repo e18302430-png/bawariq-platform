@@ -73,7 +73,8 @@ export function Assistant({ appUrl = "client/index.html", via = "site", fab = tr
   const [form, setForm] = useState<"none" | "contact" | "sending" | "done">("none");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [consent, setConsent] = useState(true);
+  const [consent, setConsent] = useState(false);
+  const [mkt, setMkt] = useState(false);
   const [err, setErr] = useState("");
   const idRef = useRef(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -109,7 +110,7 @@ export function Assistant({ appUrl = "client/index.html", via = "site", fab = tr
 
   const start = () => {
     if (started.current) return; started.current = true;
-    bot([<>هلا والله 👋 أنا <b>مساعد مناسبتي</b>.</>, "خلني أطلع لك ميزانية مناسبتك في أقل من دقيقة، ببلاش. وش المناسبة؟"], askOcc);
+    bot([<>هلا والله 👋 أنا <b>مساعد مناسبتي</b> الآلي.</>, "خلني أطلع لك ميزانية مناسبتك في أقل من دقيقة، ببلاش. وش المناسبة؟"], askOcc);
   };
   const openPanel = () => { setOpen(true); setTeaser(false); try { sessionStorage.setItem("mn-assist-teaser", "1"); } catch { /* */ } setTimeout(start, 250); };
   useEffect(() => {
@@ -157,7 +158,7 @@ export function Assistant({ appUrl = "client/index.html", via = "site", fab = tr
     setForm("sending");
     const e = ans.occ && ans.guests && ans.pri ? estimate(ans.occ, ans.guests, ans.pri.k) : null;
     try {
-      await sendLead({ name: name.trim(), phone: ph, consent: true, occasion: ans.occ, guests: String(ans.guests ?? ""), city: ans.city, when: ans.when, priority: ans.pri?.label, via, estimate: e ? `${fmt(e.low)}–${fmt(e.high)} ريال` : "" });
+      await sendLead({ name: name.trim(), phone: ph, consent: true, marketing: mkt, consent_at: new Date().toISOString(), occasion: ans.occ, guests: String(ans.guests ?? ""), city: ans.city, when: ans.when, priority: ans.pri?.label, via, estimate: e ? `${fmt(e.low)}–${fmt(e.high)} ريال` : "" });
       me(`${name.trim()} · ${ph}`);
       setForm("done");
       bot([<SuccessCard key="s" name={name.trim()} />], () => setChips(<div className="as-chips"><a className="as-chip primary" href={appUrl}><Icon name="ArrowLeft" size={14} /> افتح التطبيق وكمّل</a></div>));
@@ -188,7 +189,7 @@ export function Assistant({ appUrl = "client/index.html", via = "site", fab = tr
             initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }} transition={{ type: "spring", stiffness: 360, damping: 32 }}>
             <header className="as-head">
               <div className="as-ava"><LogoMark size={30} mono="#ffffff" /><i /></div>
-              <div className="as-id"><b>مساعد مناسبتي</b><small><span className="as-on" /> متصل الحين · يرد في ثواني</small></div>
+              <div className="as-id"><b>مساعد مناسبتي</b><small><span className="as-on" /> مساعد آلي بأسئلة جاهزة · مو موظف</small></div>
               <button className="as-icon" aria-label="ابدأ من جديد" onClick={restart}><Icon name="RotateCcw" size={17} /></button>
               <button className="as-icon" aria-label="إغلاق" onClick={() => setOpen(false)}><Icon name="X" size={19} /></button>
               <div className="as-prog"><i style={{ width: `${(step / STEPS) * 100}%` }} /></div>
@@ -209,7 +210,8 @@ export function Assistant({ appUrl = "client/index.html", via = "site", fab = tr
                     <input className="as-input" placeholder="اسمك" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus maxLength={60} />
                     <input className="as-input" placeholder="05xxxxxxxx" inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" maxLength={14} />
                   </div>
-                  <label className="as-consent"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /> موافق إن مناسبتي تتواصل معي بخصوص طلبي (<a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a>)</label>
+                  <label className="as-consent"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /> موافق إن مناسبتي تتواصل معي بخصوص طلبي (<a href={(/\/(client|vendors|venues|admin)\//.test(location.pathname) ? "../" : "./") + "privacy.html"} target="_blank" rel="noopener">الخصوصية</a>)</label>
+                  <label className="as-consent"><input type="checkbox" checked={mkt} onChange={(e) => setMkt(e.target.checked)} /> (اختياري) أبي توصلني عروض وأفكار للمناسبات</label>
                   {err && <p className="as-err">{err}</p>}
                   <button className="as-send" disabled={form === "sending"}>{form === "sending" ? <><Icon name="Loader" size={16} className="spin" /> أرسل…</> : <><Icon name="SendHorizontal" size={16} /> أرسل وجهّزوا عرضي</>}</button>
                 </form>

@@ -253,7 +253,7 @@ export const setAnnouncement = (text: string): Mutation => (db) => ({ ...db, ann
 export const setSupportPhone = (phone: string): Mutation => (db) => ({ ...db, supportPhone: phone.replace(/\D/g, "") || undefined });
 export const setLegal = (l: NonNullable<DB["legal"]>): Mutation => (db) => ({ ...db, legal: { entity: l.entity.trim(), cr: l.cr.replace(/\D/g, ""), vat: l.vat.replace(/\D/g, ""), address: l.address.trim(), email: l.email.trim() } });
 /** نسخة الشروط اللي يوافق عليها المستخدم وقت إنشاء الحساب */
-export const TERMS_VERSION = 1;
+export const TERMS_VERSION = 2;
 const pct = (n: number | undefined, max = 60) => Math.max(0, Math.min(max, +(n ?? 0) || 0));
 export const setPricing = (p: NonNullable<DB["pricing"]>): Mutation => (db) => ({ ...db, pricing: { feePct: pct(p.feePct), vendorPct: pct(p.vendorPct, 40), minFee: Math.max(0, p.minFee), depositPct: Math.max(0, Math.min(100, p.depositPct)), auto: !!p.auto, steps: (p.steps ?? []).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.from) && s.feePct >= 0 && s.feePct <= 60).map((s) => ({ from: s.from, feePct: pct(s.feePct), vendorPct: pct(s.vendorPct, 40) })).sort((a, b) => a.from.localeCompare(b.from)) } });
 export const setBank = (b: NonNullable<DB["bank"]>): Mutation => (db) => ({ ...db, bank: { name: b.name.trim(), holder: b.holder.trim(), iban: b.iban.replace(/\s/g, "").toUpperCase() } });
@@ -488,6 +488,8 @@ export const approveTopUp = (supplierId: string): Mutation => (db) => ({
 });
 export const rejectTopUp = (supplierId: string): Mutation => (db) => ({ ...db, suppliers: db.suppliers.map((s) => (s.id !== supplierId || !s.wallet ? s : { ...s, wallet: { ...s.wallet, pending: undefined } })) });
 
+/** القاعة تلغي التجديد بنفسها بضغطة (يبقى فعالاً لنهاية المدة المدفوعة)، أو ترجع عن الإلغاء */
+export const cancelVenueSub = (venueId: string, undo = false): Mutation => (db) => ({ ...db, venues: db.venues.map((v) => (v.id !== venueId ? v : { ...v, sub: { ...(v.sub ?? { plan: "trial" as const }), cancelAt: undo ? undefined : Date.now() } })) });
 /** القاعة تبلّغ إنها حوّلت الاشتراك */
 export const claimVenueSub = (venueId: string): Mutation => (db) => ({ ...db, venues: db.venues.map((v) => (v.id !== venueId ? v : { ...v, sub: { ...(v.sub ?? { plan: "trial" as const }), claimedAt: Date.now() } })) });
 /** الإدارة تأكد الاشتراك: يتفعّل شهر من اليوم (أو من نهاية الشهر الحالي) */

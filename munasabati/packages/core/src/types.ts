@@ -99,7 +99,7 @@ export interface Venue {
   /** رابط دفع خاص بالقاعة يظهر للعميل بعد تأكيد الحجز */
   payLink?: string;
   /** اشتراك القاعة الشهري (بدون أي عمولة على الحجوزات) */
-  sub?: { plan: "trial" | "active" | "overdue"; until?: string; claimedAt?: number; paidAt?: number };
+  sub?: { plan: "trial" | "active" | "overdue"; until?: string; claimedAt?: number; paidAt?: number; cancelAt?: number };
   /** جولة ٣٦٠°: صور بانوراما كروية (نسبة ٢:١) لكل ركن في القاعة */
   tour?: { src: string; label: string }[];
   phone?: string;
@@ -311,7 +311,7 @@ export interface DB {
   /** سياسة التسعير: نسبة مناسبتي، الحد الأدنى، العربون، والتسعير التلقائي */
   pricing?: { feePct: number; vendorPct?: number; minFee: number; depositPct: number; auto: boolean; payMode?: "direct" | "escrow"; steps?: { from: string; feePct: number; vendorPct?: number }[] };
   /** بيانات المنشأة النظامية (نظام التجارة الإلكترونية يطلب ظهورها في المنصة) */
-  legal?: { entity: string; cr: string; vat: string; address: string; email: string };
+  legal?: { entity: string; cr: string; vat: string; address: string; email: string; phone?: string; ecom?: string };
   /** حساب مناسبتي البنكي لتحويل العربون */
   bank?: { name: string; iban: string; holder: string };
   /** غرفة التنسيق: رسائل ليلة المناسبة */

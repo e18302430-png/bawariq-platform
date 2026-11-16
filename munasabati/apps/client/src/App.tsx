@@ -93,8 +93,8 @@ function Main() {
         <a className="btn sm" href={import.meta.env.VITE_HOME_URL ?? "../index.html"}><Icon name="Globe" size={15} /> موقع مناسبتي</a>
         {isCloud && hasAccount() && <LogoutButton />}
         <ResetButton />
-        {isCloud && hasAccount() && <DeleteAccount />}
-        <a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية والشروط</a>
+        {isCloud && hasAccount() && <><ExportData /><DeleteAccount /></>}
+        <a className="side-legal" href="../terms.html" target="_blank" rel="noreferrer">الشروط</a> · <a className="side-legal" href="../privacy.html" target="_blank" rel="noreferrer">الخصوصية</a>
       </>}
     >
       <ErrorBoundary key={route}>
@@ -128,6 +128,19 @@ function LogoutButton() {
     ? <div className="stack" style={{ ["--gap" as string]: "6px" }}><small className="muted" style={{ fontSize: 12.5 }}>مناسبتك محفوظة في حسابك. ترجع تدخل برقمك{phone ? ` ${phone}` : ""} وكلمة المرور.</small>
         <div className="row"><button className="btn sm grow" onClick={() => { void repo.auth?.signOut().then(() => { location.hash = ""; location.reload(); }); }}>تأكيد الخروج</button><button className="btn sm ghost" onClick={() => setAsk(false)}>إلغاء</button></div></div>
     : <button className="btn sm ghost" onClick={() => setAsk(true)}><Icon name="LogOut" size={15} /> تسجيل الخروج</button>;
+}
+
+/** نسخة من بيانات المستخدم بصيغة JSON (حق الوصول في نظام حماية البيانات الشخصية) */
+function ExportData() {
+  const db = useDB();
+  const download = () => {
+    const mine = db.bookings.filter((b) => b.fromClient).map(({ quote: _q, payout: _p, leaks: _l, ...b }) => b);
+    const data = { exportedAt: new Date().toISOString(), platform: "مناسبتي", profile: db.client.profile, event: db.client.event, guests: db.client.guests, budget: db.client.budget, tasks: db.client.tasks, invite: db.client.invite, bookings: mine };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = `munasabati-data-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+  return <button className="btn sm ghost" onClick={download}><Icon name="Download" size={15} /> نزّل نسخة من بياناتي</button>;
 }
 
 /** حذف الحساب وكل البيانات الشخصية نهائياً (حق المستخدم) */

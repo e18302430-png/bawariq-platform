@@ -198,7 +198,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
     },
     async signUpPhone(phone, password, name, consent) {
       const local = phoneLocal(phone);
-      const { data, error } = await sb.auth.signUp({ email: phoneEmail(phone), password, options: { data: { phone: local, name, ...(consent ? { terms_v: consent.v, terms_at: new Date(consent.at).toISOString() } : {}) } } });
+      const { data, error } = await sb.auth.signUp({ email: phoneEmail(phone), password, options: { data: { phone: local, name, ...(consent ? { terms_v: consent.v, terms_at: new Date(consent.at).toISOString(), marketing_opt_in: !!consent.marketing, marketing_at: consent.marketing ? new Date(consent.at).toISOString() : null } : {}) } } });
       if (error) throw new Error(/registered|exists/i.test(error.message) ? "هذا الرقم مسجّل من قبل. اختر «دخول» واكتب كلمة المرور." : /password/i.test(error.message) ? "كلمة المرور لازم تكون ٦ أحرف أو أكثر." : "تعذّر إنشاء الحساب. حاول مرة ثانية.");
       if (!data.session) throw new Error("تم إنشاء الحساب. اختر «دخول» واكتب كلمة المرور.");
       await sb.from("profiles").upsert({ id: data.user!.id, phone: local, ...(name ? { name } : {}) });

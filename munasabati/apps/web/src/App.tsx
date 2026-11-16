@@ -120,6 +120,7 @@ function Features() {
       <div className="bento">
         <Reveal className="b-card b-invite">
           <img src={wcDiriyah} alt="" loading="lazy" />
+          <span className="ai-tag">صورة مولّدة بالذكاء الاصطناعي</span>
           <div className="b-seal"><span>ع</span></div>
           <div className="b-text"><b>دعوة تنفتح في يد ضيفك</b><span>ظرف بلوحة مائية سعودية وختم شمع ذهبي، يفتحه الضيف بلمسة.</span></div>
         </Reveal>
@@ -145,6 +146,7 @@ function Features() {
         </Reveal>
         <Reveal className="b-card b-film" delay={0.15}>
           <img src={stillDesert} alt="" loading="lazy" />
+          <span className="ai-tag">صورة مولّدة بالذكاء الاصطناعي</span>
           <div className="b-text"><b>لكل مناسبة هويتها</b><span>زواج، ملكة، تخرّج، عقيقة، أو لمّة عائلية. التصميم يتغيّر مع مناسبتك.</span></div>
         </Reveal>
       </div>
@@ -269,6 +271,7 @@ function Hero({ occ }: { occ: Occasion }) {
         {film && (
           <motion.div className="film-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFilm(false)} role="dialog" aria-label="فيلم مناسبتي">
             <motion.video initial={{ scale: 0.92 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 28 }} src="./media/film.mp4" poster="./media/film-poster.webp" autoPlay controls playsInline onClick={(e) => e.stopPropagation()} />
+            <span className="ai-tag" style={{ position: "fixed", top: 16, insetInlineStart: 16 }}>فيلم مولّد بالذكاء الاصطناعي</span>
             <button className="btn glass sm film-close" onClick={() => setFilm(false)} aria-label="إغلاق"><Icon name="X" size={16} /> إغلاق</button>
           </motion.div>
         )}
@@ -415,7 +418,8 @@ export default function App() {
       <footer className="container footer">
         <div className="row"><Logo size={24} /><span>{BRAND.goal}</span></div>
         <LegalFooter />
-        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./privacy.html">الخصوصية والشروط</a><a href="./cancellation.html">سياسة الإلغاء</a></nav>
+        <small className="faint" style={{ display: "block", fontSize: 12.5 }}>الصور والفيلم التوضيحية في هذه الصفحة مولّدة بالذكاء الاصطناعي، وما تمثل قاعة أو مورد حقيقي.</small>
+        <nav><a href={LINKS.client}>تطبيق العميل</a><a href={LINKS.vendors}>بوابة الموردين</a><a href={LINKS.venues}>بوابة القاعات</a><a href="./terms.html">الشروط والأحكام</a><a href="./privacy.html">الخصوصية</a><a href="./cancellation.html">سياسة الإلغاء</a><a href="./about.html">من نحن</a></nav>
         <ThemeToggle />
       </footer>
     </>
@@ -430,7 +434,7 @@ function LegalFooter() {
     if (!url || !key) return;
     fetch(`${url}/rest/v1/settings?key=eq.legal&select=value`, { headers: { apikey: key } }).then((r) => r.json()).then((rows: { value: string }[]) => {
       const l = rows?.[0] && JSON.parse(rows[0].value);
-      if (l?.entity) setLine([l.entity, l.cr && `سجل تجاري ${l.cr}`, l.vat && `الرقم الضريبي ${l.vat}`, l.address].filter(Boolean).join(" · "));
+      if (l?.entity) setLine([l.entity, l.cr && `سجل تجاري ${l.cr}`, l.vat && `الرقم الضريبي ${l.vat}`, l.ecom && `موثّق في المركز السعودي للأعمال ${l.ecom}`, l.address, l.email, l.phone].filter(Boolean).join(" · "));
     }).catch(() => {});
   }, []);
   return line ? <small className="legal-line" style={{ display: "block" }}>{line}</small> : null;
