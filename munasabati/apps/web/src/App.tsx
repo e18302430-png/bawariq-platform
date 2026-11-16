@@ -4,6 +4,7 @@ import { INVITE_TIERS, OCCASIONS, type Occasion } from "@munasabati/core";
 import { BRAND, Icon, Logo, LogoMark, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
 import { Concierge } from "./Concierge";
+import { CinemaFX } from "./CinemaFX";
 import { REELS, Reels, ReelViewer, VENUE_REEL } from "./Reels";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
@@ -124,15 +125,15 @@ function Features() {
           <img src={wcDiriyah} alt="" loading="lazy" />
           <span className="ai-tag">صورة مولّدة بالذكاء الاصطناعي</span>
           <div className="b-seal"><span>ع</span></div>
-          <div className="b-text"><b>دعوة تنفتح في يد ضيفك</b><span>ظرف بلوحة مائية سعودية وختم شمع ذهبي، يفتحه الضيف بلمسة.</span></div>
+          <div className="b-text"><b>دعوة تنفتح بيد ضيفك</b><span>ظرف بلوحة مائية وختم شمع ذهبي، يفتحه ضيفك بلمسة ويقول: «وش هالفخامة!»</span></div>
         </Reveal>
         <Reveal className="b-card b-scratch" delay={0.05}>
           <div className="b-foil"><span>اكشط لتعرف الموعد ✦</span></div>
-          <div className="b-text"><b>اكشط لتكشف التاريخ</b><span>طبقة ذهبية يكشطها الضيف بإصبعه، وتنطلق القصاصات.</span></div>
+          <div className="b-text"><b>اكشط وشوف الموعد</b><span>طبقة ذهبية يكشطها الضيف بصبعه، وتطلع القصاصات تحتفل معه.</span></div>
         </Reveal>
         <Reveal className="b-card b-scan" delay={0.1}>
           <div className="b-scanbox"><i /><i /><i /><i /><motion.span className="b-laser" animate={{ top: ["14%", "84%", "14%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
-          <div className="b-text"><b>دخول بالكاميرا</b><span>المنسق يمسح رمز الضيف بكاميرا الجوال ويعرف قسمه وعدد مرافقيه.</span></div>
+          <div className="b-text"><b>الدخول بالكاميرا</b><span>المنسق يمسح رمز الضيف بالجوال، ويعرف قسمه وكم معه، بدون زحمة عند الباب.</span></div>
         </Reveal>
         <Reveal className="b-card b-chat" delay={0.05}>
           <div className="b-bubbles">
@@ -140,16 +141,16 @@ function Features() {
             <span className="out">أكيد، نضيفه للباقة ونرسل لك العرض الآن.</span>
             <span className="in">ممتاز، بانتظاركم 🤍</span>
           </div>
-          <div className="b-text"><b>محادثة مع كل مورد</b><span>كل طلب له محادثته الخاصة، بدون ضياع بين الأرقام والقروبات.</span></div>
+          <div className="b-text"><b>كل مورد له محادثته</b><span>لا ضياع بين الأرقام والقروبات. كل طلب وكلامه في مكان واحد.</span></div>
         </Reveal>
         <Reveal className="b-card b-journey" delay={0.1}>
           <ol className="b-steps">{["الخطة", "القاعة", "التجهيزات", "الدعوات", "يوم المناسبة"].map((t, i) => <li key={t} className={i < 2 ? "done" : i === 2 ? "now" : ""}><i>{i < 2 ? "✓" : i + 1}</i>{t}</li>)}</ol>
-          <div className="b-text"><b>رحلة واضحة من خمس مراحل</b><span>في كل لحظة خطوة تالية واحدة. ما تحتار وش تسوي.</span></div>
+          <div className="b-text"><b>خمس خطوات وبس</b><span>كل مرة خطوة وحدة واضحة قدامك. ما تحتار وش تسوي بعدين.</span></div>
         </Reveal>
         <Reveal className="b-card b-film" delay={0.15}>
           <img src={stillDesert} alt="" loading="lazy" />
           <span className="ai-tag">صورة مولّدة بالذكاء الاصطناعي</span>
-          <div className="b-text"><b>لكل مناسبة هويتها</b><span>زواج، ملكة، تخرّج، عقيقة، أو لمّة عائلية. التصميم يتغيّر مع مناسبتك.</span></div>
+          <div className="b-text"><b>كل مناسبة لها طابعها</b><span>زواج، ملكة، تخرّج، عقيقة، أو لمّة أهل. الشكل يتغير على حسب مناسبتك.</span></div>
         </Reveal>
       </div>
     </section>
@@ -257,10 +258,10 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
 /** شريط التوقيع: هوية فاخرة بالأسود والذهبي مباشرة بعد الفيلم */
 const SIG_WORDS = ["زواج", "ملكة", "تخرج", "عقيقة", "اجتماع عائلي", "حفل شركة", "كوشة", "تصوير", "ضيافة", "صوت وإضاءة", "بث مباشر", "خيام", "استيدج"];
 const PROMISES: [string, string, string][] = [
-  ["ShieldCheck", "حسابات موثّقة", "كل قاعة ومورد يراجعه فريق مناسبتي قبل الظهور"],
-  ["MessagesSquare", "محادثة بإشراف الإدارة", "الإدارة وسيط بينك وبين التاجر وتحمي حقك"],
-  ["Wallet", "ميزانيتك أنت تحددها", "تكتبها مرة، وتوصل مع كل طلب للتاجر"],
-  ["Sparkles", "بدون أي رسوم إضافية عليك", "تدفع سعر القاعة أو المورد نفسه، وموعدك مقفول ومحمي بعقد"],
+  ["ShieldCheck", "كلهم موثّقين", "كل قاعة ومورد نراجعه بأنفسنا قبل ما يطلع لك"],
+  ["MessagesSquare", "منسقتك معك", "هي اللي تكلم القاعة والموردين عنك، وتحفظ حقك"],
+  ["Wallet", "ميزانيتك أنت تحددها", "تقولها مرة وحدة، ونمشي عليها في كل شي"],
+  ["Sparkles", "ولا ريال زيادة عليك", "تدفع سعر القاعة والمورد نفسه، وموعدك مقفول بعقد"],
 ];
 function Signature() {
   return (
@@ -316,7 +317,7 @@ function Story({ occ }: { occ: Occasion }) {
   }, []);
   return (
     <section className="sec container" id="how">
-      <Reveal className="sec-head"><span className="eyebrow">كيف نشتغل</span><h2>أنت تحتفل… <span className="grad-text">ونحن نشتغل</span></h2><p>من أول رسالة لين آخر ضيف يطلع من القاعة، منسقة وحدة تعرف كل تفاصيل مناسبتك.</p></Reveal>
+      <Reveal className="sec-head"><span className="eyebrow">كيف نشتغل</span><h2>أنت تحتفل… <span className="grad-text">واحنا نشتغل</span></h2><p>من أول رسالة لين آخر ضيف يطلع من القاعة، منسقة وحدة تعرف كل تفاصيل مناسبتك.</p></Reveal>
       <div className="story">
         <div className="story-steps">
           {STEPS.map((s, i) => (
@@ -353,6 +354,7 @@ export default function App() {
 
   return (
     <>
+      <CinemaFX />
       <Hero occ={occ} onPick={(o) => { setOcc(o); setLocked(true); }} />
       <Signature />
       <Reels />
