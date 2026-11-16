@@ -5,6 +5,7 @@ import { BRAND, Icon, Logo, LogoMark, Reveal, ScrollNav, ThemeToggle, photoUrl }
 import { LiveFilm } from "./LiveFilm";
 import { Concierge } from "./Concierge";
 import { CinemaFX } from "./CinemaFX";
+import { HeroTalk, shouldTalk } from "./HeroTalk";
 import { REELS, Reels, ReelViewer, VENUE_REEL } from "./Reels";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
@@ -213,6 +214,8 @@ const SSG = typeof document !== "undefined" && !!document.getElementById("root")
 
 function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void }) {
   const [film, setFilm] = useState(false);
+  const [talk, setTalk] = useState(false);
+  useEffect(() => { if (shouldTalk()) setTalk(true); }, []);
   // الصورة الأولى تظهر فوراً من HTML، ثم يبدأ الفيلم الحي فوقها
   const onFilmReady = () => { const boot = document.getElementById("boot-hero"); if (boot) { boot.style.transition = "opacity .6s"; boot.style.opacity = "0"; setTimeout(() => boot.remove(), 700); } };
   const doors: [string, string, string, string][] = [
@@ -233,6 +236,7 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
         </nav>
         <div className="hero-body">
           <span className="live"><i /> {BRAND.goal}</span>
+          <AnimatePresence mode="wait" initial={false}>{talk ? <HeroTalk key="talk" onDone={() => setTalk(false)} /> : <motion.div key="main" className="hero-main" initial={SSG ? false : { opacity: 0, y: 24, filter: "blur(10px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
           <h1>
             <span className="word-slot">
               <AnimatePresence mode="wait" initial={!SSG}>
@@ -243,7 +247,9 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
           </h1>
           <p className="lead">قل لنا ميزانيتك بس. منسقتك تختار لك القاعة وتنسق كل شي ضمنها، وأنت تدفع نفس السعر بدون أي زيادة.</p>
           <Concierge onOcc={(id) => { const o = OCCASIONS.find((x) => x.id === id); if (o) onPick(o); }} />
+          </motion.div>}</AnimatePresence>
           <div className="hero-mini">
+            {!talk && <button className="hero-link talk-replay" onClick={() => setTalk(true)}><Icon name="MessageCircle" size={15} /> اسمع منسقتك من جديد</button>}
             <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد الفيلم</button>
             {doors.slice(1).map(([href, ic, t]) => <a key={t} href={href} className="hero-link"><Icon name={ic} size={15} /> {t}</a>)}
             <a href={LINKS.client} className="hero-link"><Icon name="LogIn" size={15} /> عندي حساب</a>
