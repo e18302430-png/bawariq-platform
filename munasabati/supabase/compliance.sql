@@ -74,6 +74,8 @@ begin
 end $$;
 revoke all on function public.munasabati_retention() from public, anon, authenticated;
 
--- ٤) التشغيل التلقائي اليومي — ⚠️ لا تفعّله إلا بعد موافقتك (يحذف بيانات نهائياً)
--- create extension if not exists pg_cron;
--- select cron.schedule('munasabati-retention', '17 3 * * *', $$select public.munasabati_retention()$$);
+-- ٤) التشغيل التلقائي اليومي (٣:١٧ فجراً بتوقيت UTC) — بموافقة صاحب المنصة
+-- لو طلع خطأ في pg_cron: فعّله من Database → Extensions → pg_cron ثم أعد تشغيل هذا الجزء
+create extension if not exists pg_cron;
+select cron.unschedule('munasabati-retention') where exists (select 1 from cron.job where jobname = 'munasabati-retention');
+select cron.schedule('munasabati-retention', '17 3 * * *', $$select public.munasabati_retention()$$);

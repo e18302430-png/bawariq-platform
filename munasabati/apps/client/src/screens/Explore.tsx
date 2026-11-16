@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { venueVisible,
   CATEGORIES, CITIES, OCCASIONS, budgetFor, busyDays, normPhone, patchClient, validPhone, createBooking, fmt, hallCapacity, hallPrice, toggleFavorite,
-  venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue,
-} from "@munasabati/core";
+  venueCapacity, venueFrom, isActive, type CategoryId, type OccasionId, type Supplier, type Venue, isDemo } from "@munasabati/core";
 import { Calendar, Empty, Icon, Media, Segmented, TourButton, photoUrl, Sheet, StatusPill, apply, isCloud, useDB, useToast } from "@munasabati/ui";
 import { go } from "../nav";
 
@@ -72,7 +71,7 @@ function ItemCard({ item, fav, guests }: { item: Item; fav: boolean; guests: num
         <button className={"fav" + (fav ? " on" : "")} aria-label={fav ? "إزالة من المفضلة" : "أضف للمفضلة"} aria-pressed={fav} onClick={(e) => { e.stopPropagation(); apply(toggleFavorite(v.id)); }}><Icon name="Heart" size={18} fill={fav ? "currentColor" : "none"} /></button>
       </div>
       <div className="body">
-        <div className="row between"><h3>{v.name}</h3>{v.reviews ? <span className="rate num"><Icon name="Star" size={13} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews})</span></span> : v.verified ? <span className="pill ok"><Icon name="BadgeCheck" size={12} /> موثّق</span> : <span className="pill neutral">جديد</span>}</div>
+        <div className="row between"><h3>{v.name}</h3>{isDemo(v.id) ? <span className="pill neutral">تجريبي</span> : v.reviews ? <span className="rate num"><Icon name="Star" size={13} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews})</span></span> : v.verified ? <span className="pill ok"><Icon name="BadgeCheck" size={12} /> موثّق</span> : <span className="pill neutral">جديد</span>}</div>
         <div className="m">
           <span><Icon name="MapPin" size={13} />{v.city}</span>
           {item.kind === "venue" ? <span><Icon name="Users" size={13} />{venueCapacity(item.v) ? `حتى ${fmt(venueCapacity(item.v))}` : `${item.v.halls.length} ${item.v.halls.length > 1 ? "قاعات" : "قاعة"}`}</span> : <span><Icon name="Layers" size={13} />{item.v.cats.length} خدمات</span>}
@@ -113,6 +112,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
     ev.preventDefault();
     setTried(true);
     if (errs.name || errs.phone || errs.guests) { toast("أكمل البيانات المطلوبة"); return; }
+    if (isDemo(v.id)) { toast("هذا نشاط تجريبي، ما يمكن طلبه"); return; }
     apply(createBooking({
       kind, targetId: v.id, hallId, packageId: pkgId, clientName: form.name.trim(), phone: normPhone(form.phone), occasion: form.occasion, city: e.city, date, guests: +form.guests,
       note: [pkg ? `الباقة: ${pkg.name}` : hall ? `القاعة: ${hall.name}` : "", form.note].filter(Boolean).join(" · "), estimate: price ?? 0, fromClient: true, budget: +form.budget || undefined,
@@ -142,6 +142,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
           <div>
             <div className="row wrap" style={{ ["--gap" as string]: "6px", marginBottom: 8 }}>{v.tags.map((t) => <span key={t} className="tag">{t}</span>)}</div>
             <h1 className="page-title">{v.name}</h1>
+            {isDemo(v.id) && <div className="req-step" role="note"><Icon name="Info" size={15} /> <b>تجريبي، ليس نشاطاً حقيقياً.</b> صفحة توضيحية لشكل المنصة، والصور مولّدة بالذكاء الاصطناعي. ما يمكن طلبه أو حجزه.</div>}
             <div className="row wrap muted" style={{ fontSize: 14, marginTop: 4 }}><span className="row" style={{ ["--gap" as string]: "4px" }}><Icon name="MapPin" size={15} />{v.city} · {venue ? venue.district : supplier!.area}</span>{v.reviews ? <span className="rate num"><Icon name="Star" size={14} />{v.rating} <span className="faint" style={{ fontWeight: 400 }}>({v.reviews} تقييم)</span></span> : <span className="pill neutral">لا توجد تقييمات بعد</span>}{v.verified && <span className="pill ok"><Icon name="BadgeCheck" size={12} /> موثّق من مناسبتي</span>}</div>
           </div>
           <p className="muted" style={{ fontSize: 15.5 }}>{v.about}</p>
@@ -175,7 +176,7 @@ export function Detail({ kind, id }: { kind: "venue" | "supplier"; id: string })
         <aside className="card book-card stack">
           <div><div className="stat-label">{hall?.name ?? pkg?.name ?? "اطلب عرض سعر"}</div><div className="display" style={{ fontSize: 17, fontWeight: 700 }}>السعر الحقيقي يوصلك في عرض خاص</div></div>
           <Calendar busy={busy} value={date} onPick={setDate} />
-          <button className="btn primary lg block" disabled={!date} onClick={() => setOpen(true)}>{date ? `اطلب عرض سعر · ${date}` : "اختر يوماً متاحاً"}</button>
+          <button className="btn primary lg block" disabled={!date || isDemo(v.id)} onClick={() => setOpen(true)}>{isDemo(v.id) ? "نشاط تجريبي، ما يمكن طلبه" : date ? `اطلب عرض سعر · ${date}` : "اختر يوماً متاحاً"}</button>
           <div className="row faint" style={{ fontSize: 12.5, ["--gap" as string]: "6px" }}><Icon name="ShieldCheck" size={15} /> طلبك يروح للإدارة، ونطلب لك عرض السعر من صاحب القاعة. بدون أي دفع.</div>
           {mine.length > 0 && <div className="list">{mine.map((b) => <div key={b.id} className="list-row"><div className="t"><b className="num">{b.date}</b><small>{fmt(b.guests)} ضيف</small></div><StatusPill status={b.status} /></div>)}</div>}
         </aside>

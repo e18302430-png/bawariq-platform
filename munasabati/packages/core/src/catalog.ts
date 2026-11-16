@@ -99,3 +99,8 @@ export const SAMPLE_TASKS: [string, string, number, boolean][] = [
   ["قائمة الأغاني والزفة", "العروس", 10, false],
   ["استلام الشبكة", "العريس", 7, false],
 ];
+
+/** نشاطات تجريبية للعرض فقط (أسماء وصور غير حقيقية): تُعلَّم «تجريبي» ويُمنع طلبها (نظام التجارة الإلكترونية: عدم تضليل المستهلك).
+ *  «بوارق» (s1) نشاط حقيقي فما يدخل هنا. */
+export const DEMO_IDS: ReadonlySet<string> = new Set(["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "s2", "s3", "s4", "s5", "s6", "s7", "s9", "s10", "s11", "s12", "s13"]);
+export const isDemo = (id: string) => DEMO_IDS.has(id);

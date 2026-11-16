@@ -548,7 +548,8 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
                   <div className="stepper"><button onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="أقل">−</button><b className="num">{count}</b><button onClick={() => setCount((c) => Math.min(20, c + 1))} aria-label="أكثر">+</button></div>
                 </div>
                 <label className="sr" htmlFor="gx-diet">ملاحظة أكل أو حساسية</label>
-                <input id="gx-diet" className="input" placeholder="عندك حساسية أو نظام أكل خاص؟ (اختياري)" value={diet} onChange={(e) => setDiet(e.target.value.slice(0, 120))} />
+                <input id="gx-diet" className="input" aria-describedby="gx-diet-hint" placeholder="نظام أكل خاص أو حساسية؟ (اختياري)" value={diet} onChange={(e) => setDiet(e.target.value.slice(0, 120))} />
+                <small id="gx-diet-hint" className="faint" style={{ fontSize: 12 }}>اختياري. اكتب كلمة مختصرة بس (مثل: نباتي، بدون مكسرات). لا تكتب معلومات صحية تفصيلية. تشوفها صاحبة المناسبة فقط، وتنمسح بعد المناسبة.</small>
                 <label className="sr" htmlFor="gx-wish">تهنئة للعروسين</label>
                 <textarea id="gx-wish" className="input gx-wish" rows={2} placeholder="اكتب لهم تهنئة من قلبك… (اختياري)" value={wish} onChange={(e) => setWish(e.target.value.slice(0, 280))} />
                 <button className="btn lg block gx-yes" onClick={() => { rsvp(g.id, { status: "yes", count, diet: diet.trim() || undefined, wish: wish.trim() || undefined }); setHearts((f) => f + 1); playYes(); }}>بحضر إن شاء الله</button>
