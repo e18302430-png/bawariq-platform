@@ -748,3 +748,10 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .cg-ok { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
 .wc-ai { position: absolute; top: 10px; inset-inline-start: 10px; z-index: 4; pointer-events: none; }
 .wc-card, .gx-window { position: relative; }
+
+/* فيديو الدعوة */
+.film-cv, .film-out { width: min(100%, 300px); aspect-ratio: 9 / 16; border-radius: 22px; background: #0b0710; justify-self: center; display: block; }
+.film-cv.hide { display: none; }
+.film-prog { position: relative; height: 34px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.film-prog b { position: absolute; inset-block: 0; inset-inline-start: 0; background: linear-gradient(90deg, var(--brand), #f7b56b); }
+.film-prog span { position: relative; display: grid; place-items: center; height: 100%; font-size: 13px; font-weight: 600; }

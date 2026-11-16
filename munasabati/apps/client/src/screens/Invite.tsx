@@ -9,6 +9,7 @@ import diriyahSm from "../assets/invite/diriyah-sm.webp";
 import ula from "../assets/invite/ula.webp";
 import ulaSm from "../assets/invite/ula-sm.webp";
 import arch from "../assets/invite/arch.webp";
+import { InviteFilmButton } from "./inviteFilm";
 import { FilmIntro, Hearts, Particles, SealBurst, playSeal, playYes, reducedMotion, useAmbient } from "./inviteFx";
 
 /* ═══════════ الدعوات: لوحات مائية سعودية + ظرف بختم + اكشط لتكشف ═══════════ */
@@ -307,6 +308,7 @@ export function Invites() {
           </div>
           {isCloud && <StudioPanel feature="invite-art" title="ارسم خلفية خاصة لدعوتك" sub="اختر الطابع والألوان، ونرسم لك لوحة مائية ما تتكرر. بدون أي أشخاص." onUse={(art) => { setInv({ art, template: WATERCOLOR[invite.template] ? invite.template : "diriyah" }); toast("صارت خلفية دعوتك"); }} />}
           {invite.art && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setInv({ art: undefined })}><Icon name="RotateCcw" size={14} /> رجّع خلفية القالب الأصلية</button>}
+          <FilmFor />
           <div className="field"><label htmlFor="i-c">اسما العروسين</label><input id="i-c" className="input" placeholder="مثال: عبدالله ونورة" value={invite.couple ?? info?.couple ?? ""} onChange={(e) => setInv({ couple: e.target.value })} /></div>
           <div className="form-2">
             <div className="field"><label htmlFor="i-d">التاريخ</label><input id="i-d" type="date" className="input num" value={db.client.event!.date} onChange={(e) => e.target.value && apply(updateEvent({ date: e.target.value }))} /></div>
@@ -351,6 +353,7 @@ export function Invites() {
         </section>
         )}
       </div>
+      {!editing && <FilmFor />}
 
       <InvitePlans />
 
@@ -619,4 +622,13 @@ export function GuestInvite({ code }: { code: string }) {
     void repo.invite!.rsvp(code, { status: patch.status ?? snap.guest.status, count: patch.count, diet: patch.diet, wish: patch.wish }).then((g) => g && setSnap((s) => (s ? { ...s, guest: { ...s.guest, ...g } } : s)));
   };
   return <DBProvider value={view}><GuestInviteView code={code} rsvp={rsvp} /></DBProvider>;
+}
+
+/** فيديو الدعوة ببيانات المناسبة الحالية ولوحة الدعوة */
+function FilmFor() {
+  const db = useDB();
+  const info = useEventInfo();
+  if (!info) return null;
+  const wc = artOf(db.client.invite.template, db.client.invite.art) ?? { ...WATERCOLOR.diriyah!, ai: false };
+  return <InviteFilmButton info={{ couple: info.couple, line: OCC_LINE[info.e.occasion] ?? "يسعدنا حضوركم", day: info.day, num: info.num, month: info.month, hijri: info.hijri, time: info.timeLabel, place: info.place, img: wc.img, tint: wc.tint, deep: wc.deep, ai: wc.ai }} />;
 }
