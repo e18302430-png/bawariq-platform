@@ -77,7 +77,7 @@ export function Reels() {
   return (
     <section className="sec container" id="films">
       <Reveal className="sec-head"><span className="eyebrow">أفلام مناسبتي</span><h2>شوفها… <span className="grad-text">وحسّ فيها</span></h2><p>أفلام قصيرة صنعناها لك. اضغط على أي فيلم وشغّله بالصوت.</p></Reveal>
-      <div className="fr-row" role="list">{REELS.map((r, i) => <Preview key={r.id} r={r} i={i} onOpen={() => setOpen(i)} />)}</div>
+      <div className="fr-row">{REELS.map((r, i) => <Preview key={r.id} r={r} i={i} onOpen={() => setOpen(i)} />)}</div>
       <AnimatePresence>{open != null && <ReelViewer list={REELS} start={open} onClose={() => setOpen(null)} />}</AnimatePresence>
     </section>
   );
