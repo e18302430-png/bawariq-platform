@@ -64,7 +64,7 @@ export function Inbox({ bookings, defaultQuote, describe, quoteTemplate, credits
   credits?: number; onTopUp?: () => void;
 }) {
   const toast = useToast();
-  const pr = pricingOf(useDB());
+  const pr = pricingOf(useDB(), bookings[0]?.kind);
   const [filter, setFilter] = useState<"new" | "quoted" | "confirmed" | "declined" | "all">("new");
   const [quoting, setQuoting] = useState<Booking | null>(null);
   const [q, setQ] = useState({ amount: 0, msg: "" });

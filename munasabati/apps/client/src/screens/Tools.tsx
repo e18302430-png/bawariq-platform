@@ -83,7 +83,7 @@ function PayBox({ b, name }: { b: Booking; name: string }) {
 function DirectPay({ b, name }: { b: Booking; name: string }) {
   const db = useDB();
   const toast = useToast();
-  const p = pricingOf(db);
+  const p = pricingOf(db, b.kind);
   const fee = confirmFeeFor(b, p), due = directDueFor(b, p);
   const ref = "MNS-" + b.id.slice(-6).toUpperCase();
   const target = b.kind === "venue" ? db.venues.find((v) => v.id === b.targetId) : db.suppliers.find((s) => s.id === b.targetId);

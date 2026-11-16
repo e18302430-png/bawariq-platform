@@ -27,7 +27,7 @@ export function ContractButton({ b, name }: { b: Booking; name: string }) {
 function ContractBody({ b, name, onDone }: { b: Booking; name: string; onDone: () => void }) {
   const db = useDB();
   const toast = useToast();
-  const p = pricingOf(db);
+  const p = pricingOf(db, b.kind);
   const c = b.contract;
   const direct = isDirectPay(db);
   const price = c?.price ?? b.clientPrice ?? 0, deposit = c?.deposit ?? (direct ? confirmFeeFor(b, p) : depositFor(b, p)), date = c?.date ?? b.date;

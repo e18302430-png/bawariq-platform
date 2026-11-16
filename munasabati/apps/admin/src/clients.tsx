@@ -270,7 +270,7 @@ export function BookingAdmin({ b, provider, onClient }: { b: Booking; provider: 
 function MoneyBox({ b }: { b: Booking }) {
   const db = useDB();
   const toast = useToast();
-  const p = pricingOf(db);
+  const p = pricingOf(db, b.kind);
   const [price, setPrice] = useState(String(b.clientPrice ?? (b.quote ? clientPriceFor(b.quote, p) : "")));
   if (!b.quote && !b.clientPrice) return null;
   const margin = platformTake(b);

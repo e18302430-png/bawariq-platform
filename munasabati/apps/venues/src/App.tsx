@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { hasAgreement, normPhone, CITIES, OCCASIONS, fmt, hallCapacity, isoDay, sar, setSession, uid, upsertVenue, type Hall, type Venue } from "@munasabati/core";
-import { AppShell, BRAND, PartnerAgreementGate, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, TourManager, VenueSubCard, PayLinkField, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
+import { AppShell, BRAND, PartnerAgreementGate, NextAction, SupportCenter, Empty, Gate, Icon, Media, PhoneAuth, PhotoManager, TourManager, PartnerShare, isCloud, repo, Inbox, KPIs, MonthBoard, RevenueChart, Segmented, Sheet, ToastProvider, apply, useDB, useToast, Splash, useReady, SignedInBar, hasAccount, RequestAlerts } from "@munasabati/ui";
 
 const PALETTE: [string, string, string, string] = ["#86F2CF", "#17A897", "#0E4F6E", "#06192A"];
 const HOME = import.meta.env.VITE_HOME_URL ?? "../index.html";
@@ -190,7 +190,7 @@ function Portal({ v }: { v: Venue }) {
     { id: "calendar", label: "التقويم", icon: "CalendarRange" },
     { id: "halls", label: "القاعات", icon: "DoorOpen" },
     { id: "profile", label: "الملف التعريفي", icon: "Building2" },
-    { id: "plan", label: "الاشتراك", icon: "CreditCard", count: v.sub?.plan === "overdue" ? 1 : undefined },
+    { id: "plan", label: "شراكتك", icon: "Handshake" },
     { id: "support", label: "الدعم", icon: "LifeBuoy", count: (db.tickets ?? []).filter((t) => t.from === "venue" && t.fromId === v.id && t.status === "answered").length },
   ];
   const hallName = (id?: string) => v.halls.find((h) => h.id === (id ?? "a"))?.name ?? "";
@@ -200,7 +200,6 @@ function Portal({ v }: { v: Venue }) {
       <AnimatePresence initial={false}>
         <motion.div key={tab} className="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}>
           {v.status === "suspended" && <div className="suspended-bar"><Icon name="ShieldAlert" size={18} /> حسابك معلّق مؤقتاً ولا يظهر للعملاء. تواصل مع الدعم.</div>}
-          {v.sub?.plan === "overdue" && v.status !== "suspended" && <div className="suspended-bar"><Icon name="CreditCard" size={18} /> اشتراكك متأخر، وقاعتك ما تظهر للعملاء الحين. <button className="btn sm" onClick={() => setTab("plan")}>جدد الاشتراك</button></div>}
           {tab === "overview" && <Overview v={v} go={setTab} />}
           {tab === "bookings" && <Inbox bookings={mine}
             describe={(b) => <span className="row" style={{ ["--gap" as string]: "5px" }}><Icon name="DoorOpen" size={14} />{hallName(b.hallId)}</span>}
@@ -209,7 +208,7 @@ function Portal({ v }: { v: Venue }) {
           {tab === "calendar" && <Calendar v={v} />}
           {tab === "halls" && <Halls v={v} />}
           {tab === "profile" && <Profile v={v} />}
-          {tab === "plan" && <><div><h1 className="page-title">الاشتراك</h1><p className="page-sub">بدون أي عمولة على حجوزاتك. العميل يدفع لك سعرك كامل مباشرة.</p></div><VenueSubCard v={v} /><section className="card"><PayLinkField value={v.payLink} onSave={(payLink) => apply(upsertVenue({ ...v, payLink }))} /></section></>}
+          {tab === "plan" && <PartnerShare kind="venue" payLink={v.payLink} onPayLink={(payLink) => apply(upsertVenue({ ...v, payLink }))} />}
           {tab === "support" && <SupportCenter from="venue" fromId={v.id} fromName={v.name} />}
         </motion.div>
       </AnimatePresence>

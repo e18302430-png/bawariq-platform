@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Billing } from "./billing";
 import {
   CATEGORIES, CITIES, OCCASIONS, adminClients, adminDelete, setPromoted, trustOf, fmt, normPhone, sar, adminSetStatus, adminSetVerified, replyTicket, setAnnouncement, setSupportPhone, closeTicket, reopenTicket,
-  upsertSupplier, upsertVenue, today, pricingOf, clientPriceFor, payoutFor, setPricing, setBank, setLegal, hasAgreement, feeOn, vendorOn, launchSteps, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
+  upsertSupplier, upsertVenue, today, pricingOf, payoutFor, setPricing, setBank, setLegal, hasAgreement, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
   AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady, ding,
@@ -364,33 +364,17 @@ function PricingSettings() {
   const db = useDB();
   const toast = useToast();
   const cur = pricingOf(db);
-  const [p, setP] = useState({ ...cur });
+  const [p, setP] = useState({ ...cur, venuePct: cur.venuePct ?? 3 });
   const [bk, setBk] = useState({ name: db.bank?.name ?? "", holder: db.bank?.holder ?? "", iban: db.bank?.iban ?? "" });
-  const now = { ...p, feePct: feeOn(p), vendorPct: vendorOn(p) };
-  const ex = clientPriceFor(20000, now), exPay = payoutFor(20000, now);
+  const hallCut = 30000 - payoutFor(30000, { vendorPct: p.venuePct }), venCut = 10000 - payoutFor(10000, p);
   return (
     <section className="card form">
-      <h3 className="card-title">التسعير والتحويل</h3>
-      <p className="muted" style={{ fontSize: 14 }}>النسبة لها شقين: <b>على العميل</b> تنضاف لسعر المورد، و<b>على المورد</b> تنخصم من سعره. مثال اليوم: مورد بـ{sar(20000)} ← العميل يدفع <b className="num">{sar(ex)}</b>، والمورد ياخذ <b className="num">{sar(exPay)}</b>، ولك <b className="num">{sar(ex - exPay)}</b>.</p>
-      <div className="field"><span className="label">طريقة الدفع</span>
-        <Segmented value={p.payMode ?? "direct"} onChange={(v) => setP({ ...p, payMode: v as "direct" | "escrow" })} options={[["direct", "مباشر: الرسوم لنا والباقي للتاجر"], ["escrow", "عبر حسابنا: العربون كامل لنا"]]} />
-        <small className="faint" style={{ fontSize: 12.5 }}>{(p.payMode ?? "direct") === "direct" ? "العميل يحوّل لنا رسوم تأكيد الحجز (حقنا من الحجز) ويدفع الباقي للتاجر مباشرة. بيانات الطرفين تنفتح بعد ما تأكد استلام الرسوم." : "العميل يحوّل العربون كامل لحسابنا، ونحوّل للتاجر بعد ختم الليلة."}</small>
-      </div>
+      <h3 className="card-title">نسبة الشراكة والتحويل</h3>
+      <p className="muted" style={{ fontSize: 14 }}>العميل يدفع سعر التاجر نفسه بدون أي إضافة. نسبتنا <b>تنخصم من سعر التاجر</b> على الحجز المؤكد فقط، ونستلمها من العميل كـ«رسوم تأكيد الحجز» قبل ما نفتح التواصل. مثال: قاعة بـ{sar(30000)} ← لنا <b className="num">{sar(hallCut)}</b> · مورد بـ{sar(10000)} ← لنا <b className="num">{sar(venCut)}</b>.</p>
       <div className="grid-3">
-        <div className="field"><label htmlFor="pf">على العميل ٪</label><input id="pf" className="input num" type="number" min={0} max={60} value={p.feePct} onChange={(e) => setP({ ...p, feePct: +e.target.value })} /></div>
-        <div className="field"><label htmlFor="pv">من المورد ٪</label><input id="pv" className="input num" type="number" min={0} max={40} value={p.vendorPct ?? 0} onChange={(e) => setP({ ...p, vendorPct: +e.target.value })} /></div>
-        <div className="field"><label htmlFor="pm">أقل ربح للطلب (ر.س)</label><input id="pm" className="input num" type="number" min={0} value={p.minFee} onChange={(e) => setP({ ...p, minFee: +e.target.value })} /></div>
-        <div className="field"><label htmlFor="pd">العربون ٪</label><input id="pd" className="input num" type="number" min={0} max={100} value={p.depositPct} onChange={(e) => setP({ ...p, depositPct: +e.target.value })} /></div>
-      </div>
-      <div className="stack" style={{ ["--gap" as string]: "8px" }}>
-        <div className="row between wrap"><b style={{ fontSize: 15 }}>جدول النسبة (تتغير تلقائياً في موعدها)</b><button type="button" className="btn sm" onClick={() => setP({ ...p, steps: launchSteps() })}>خطة الإطلاق: ١٠٪ ← ١٥٪ ← ٨٪ عميل + ١٠٪ مورد</button></div>
-        {(p.steps ?? []).map((s, i) => <div key={i} className="row" style={{ ["--gap" as string]: "8px" }}>
-          <label className="sr" htmlFor={"sf" + i}>من تاريخ</label><input id={"sf" + i} className="input num" type="date" style={{ width: 180 }} value={s.from} onChange={(e) => setP({ ...p, steps: p.steps!.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)) })} />
-          <label className="sr" htmlFor={"sp" + i}>النسبة</label><input id={"sp" + i} className="input num" type="number" min={0} max={60} style={{ width: 90 }} value={s.feePct} onChange={(e) => setP({ ...p, steps: p.steps!.map((x, j) => (j === i ? { ...x, feePct: +e.target.value } : x)) })} /><span>٪ عميل</span>
-          <label className="sr" htmlFor={"sv" + i}>من المورد</label><input id={"sv" + i} className="input num" type="number" min={0} max={40} style={{ width: 80 }} value={s.vendorPct ?? 0} onChange={(e) => setP({ ...p, steps: p.steps!.map((x, j) => (j === i ? { ...x, vendorPct: +e.target.value } : x)) })} /><span>٪ مورد</span>
-          <button type="button" className="icon-btn sm" aria-label="حذف" onClick={() => setP({ ...p, steps: p.steps!.filter((_, j) => j !== i) })}><Icon name="X" size={14} /></button>
-        </div>)}
-        <div className="row wrap" style={{ ["--gap" as string]: "8px" }}><button type="button" className="btn sm ghost" onClick={() => setP({ ...p, steps: [...(p.steps ?? []), { from: today(), feePct: p.feePct, vendorPct: p.vendorPct ?? 0 }] })}><Icon name="Plus" size={14} /> أضف مرحلة</button><span className="muted" style={{ fontSize: 13.5 }}>السارية اليوم: <b className="num">{feeOn(p)}٪</b> على العميل{vendorOn(p) ? <> + <b className="num">{vendorOn(p)}٪</b> من المورد</> : null}</span></div>
+        <div className="field"><label htmlFor="pq">نسبة القاعات ٪</label><input id="pq" className="input num" type="number" min={0} max={15} step={0.5} value={p.venuePct} onChange={(e) => setP({ ...p, venuePct: +e.target.value })} /></div>
+        <div className="field"><label htmlFor="pv">نسبة الموردين ٪</label><input id="pv" className="input num" type="number" min={0} max={30} value={p.vendorPct ?? 10} onChange={(e) => setP({ ...p, vendorPct: +e.target.value })} /></div>
+        <div className="field"><label htmlFor="pf">إضافة على العميل ٪</label><input id="pf" className="input num" type="number" min={0} max={20} value={p.feePct} onChange={(e) => setP({ ...p, feePct: +e.target.value })} /><small className="faint" style={{ fontSize: 12 }}>المعتمد: صفر</small></div>
       </div>
       <label className="row" style={{ ["--gap" as string]: "8px", fontSize: 14.5 }}><input type="checkbox" checked={p.auto} onChange={(e) => setP({ ...p, auto: e.target.checked })} /> تسعير تلقائي: أول ما يرسل التاجر سعره، يوصل العميل سعر مناسبتي فوراً (بدون انتظار)</label>
       <h3 className="card-title" style={{ marginTop: 8 }}>حساب مناسبتي لتحويل العربون</h3>
@@ -399,7 +383,7 @@ function PricingSettings() {
         <div className="field"><label htmlFor="bh">اسم المستفيد</label><input id="bh" className="input" value={bk.holder} onChange={(e) => setBk({ ...bk, holder: e.target.value })} /></div>
         <div className="field"><label htmlFor="bi">الآيبان</label><input id="bi" className="input num" dir="ltr" value={bk.iban} onChange={(e) => setBk({ ...bk, iban: e.target.value })} placeholder="SA00 0000 0000 0000 0000 0000" /></div>
       </div>
-      <div className="row"><button className="btn primary" onClick={() => { apply(setPricing(p)); if (bk.iban.trim()) apply(setBank(bk)); toast("حفظنا التسعير والحساب"); }}>حفظ</button></div>
+      <div className="row"><button className="btn primary" onClick={() => { apply(setPricing({ ...p, payMode: "direct", steps: undefined })); if (bk.iban.trim()) apply(setBank(bk)); toast("حفظنا التسعير والحساب"); }}>حفظ</button></div>
     </section>
   );
 }

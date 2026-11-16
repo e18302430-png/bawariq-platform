@@ -735,3 +735,14 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .tier.cur { border-color: var(--ok); }
 .tier.rec { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 12%, transparent); }
 .tier-tag { position: absolute; top: -10px; inset-inline-start: 12px; padding: 2px 10px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 800; }
+
+/* «خلّها علينا»: كرت الكونسيرج في الرئيسية */
+.cg-card { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 22px; margin-bottom: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 12%, var(--surface)), var(--surface)); border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line)); }
+.cg-card.on { align-items: center; }
+.cg-card b { display: block; font-family: var(--f-display); font-size: 16px; }
+.cg-card small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+.cg-card small b { display: inline; font-size: inherit; color: var(--fg); }
+.cg-ico { width: 42px; height: 42px; flex: none; border-radius: 14px; display: grid; place-items: center; background: var(--brand); color: #fff; }
+.cg-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.cg-form .input { max-width: 170px; }
+.cg-ok { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }

@@ -1,46 +1,37 @@
-import { CREDIT_PACKS, INVITE_TIERS, VENUE_PLAN, adminSetInviteTier, approveTopUp, confirmVenueSub, creditsOf, rejectTopUp, sar, setVenueSub, spaces } from "@munasabati/core";
+import { INVITE_TIERS, adminSetInviteTier, confirmPaid, pricingOf, platformTake, sar, spaces } from "@munasabati/core";
 import { Empty, Icon, apply, useDB, useToast } from "@munasabati/ui";
 
-/* ═══════════ دخل مناسبتي: اشتراكات القاعات، رصيد الموردين، باقات الدعوات ═══════════ */
+/* ═══════════ دخل مناسبتي: نسبة الشراكة على الحجوزات المؤكدة + باقات الدعوات ═══════════
+   النسبة تُحصَّل من العميل كـ«رسوم تأكيد الحجز» (جزء من سعر التاجر)، وبعد استلامها يفتح التواصل. */
 export function Billing() {
   const db = useDB();
   const toast = useToast();
-  const topups = db.suppliers.filter((s) => s.wallet?.pending);
   const invites = spaces(db).filter((s) => s.data.invitePlan);
-  const venueClaims = db.venues.filter((v) => v.sub?.claimedAt && v.sub.plan !== "active");
-  const active = db.venues.filter((v) => v.sub?.plan === "active").length;
-  const mrr = active * VENUE_PLAN.price;
-  const spent = db.suppliers.reduce((n, s) => n + (s.wallet?.spent ?? 0), 0);
-  const pendingCount = topups.length + invites.length + venueClaims.length;
+  const conf = db.bookings.filter((b) => b.status === "confirmed" && b.quote);
+  const due = conf.filter((b) => b.pay?.stage !== "paid" && platformTake(b) > 0);
+  const paid = conf.filter((b) => b.pay?.stage === "paid");
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+  const month = paid.filter((b) => (b.pay?.paidAt ?? 0) >= monthStart.getTime()).reduce((n, b) => n + platformTake(b), 0);
+  const dueSum = due.reduce((n, b) => n + platformTake(b), 0);
+  const nameOf = (k: string, id: string) => (k === "venue" ? db.venues.find((v) => v.id === id)?.name : db.suppliers.find((x) => x.id === id)?.name) ?? "";
+  const pv = pricingOf(db, "venue").vendorPct, ps = pricingOf(db, "supplier").vendorPct;
   return (
     <div className="stack">
-      <div><h1 className="page-title">الفوترة والدخل</h1><p className="page-sub">مناسبتي ما تستلم فلوس العملاء. دخلنا من اشتراك القاعات، ورصيد عروض الموردين، وباقات الدعوات.</p></div>
+      <div><h1 className="page-title">الفوترة والدخل</h1><p className="page-sub">نسبة الشراكة على الحجز المؤكد فقط: القاعات {pv}٪ والموردين {ps}٪، تنخصم من سعر التاجر وتُحصَّل من العميل كرسوم تأكيد. وباقات الدعوات.</p></div>
       <div className="stats">
-        <div className="card"><div className="stat-label"><Icon name="Building2" size={15} /> قاعات مشتركة</div><div className="stat-value">{active}</div><div className="stat-sub num">{sar(mrr)} شهرياً</div></div>
-        <div className="card"><div className="stat-label"><Icon name="Send" size={15} /> عروض أرسلها الموردين</div><div className="stat-value">{spent}</div><div className="stat-sub">رصيد مستهلك</div></div>
-        <div className="card"><div className="stat-label"><Icon name="Hourglass" size={15} /> بانتظار تأكيدك</div><div className="stat-value brand">{pendingCount}</div><div className="stat-sub">تحويلات تحتاج مراجعة</div></div>
+        <div className="card"><div className="stat-label"><Icon name="Wallet" size={15} /> دخل هذا الشهر</div><div className="stat-value num">{month ? sar(month) : "0 ر.س"}</div><div className="stat-sub">رسوم تأكيد مستلمة</div></div>
+        <div className="card"><div className="stat-label"><Icon name="Hourglass" size={15} /> بانتظار الاستلام</div><div className="stat-value brand num">{due.length}</div><div className="stat-sub num">{dueSum ? sar(dueSum) : "—"}</div></div>
+        <div className="card"><div className="stat-label"><Icon name="CheckCircle2" size={15} /> حجوزات مؤكدة</div><div className="stat-value num">{conf.length}</div><div className="stat-sub">كل الوقت</div></div>
       </div>
 
-      <section className="card stack"><h3 className="card-title">شحن رصيد الموردين</h3>
-        {topups.length ? <div className="list">{topups.map((s) => { const p = s.wallet!.pending!; return (
-          <div key={s.id} className="list-row" style={{ flexWrap: "wrap" }}>
-            <span className="avatar"><Icon name="Store" size={16} /></span>
-            <div className="t"><b>{s.name}</b><small className="num">{p.credits} عرض · {sar(p.amount)} · الرصيد الحالي {creditsOf(s)} · مرجع MNS-W-{s.id.slice(-5).toUpperCase()}</small></div>
-            <button className="btn sm primary" onClick={() => { apply(approveTopUp(s.id)); toast(`أضفنا ${p.credits} عرض لـ${s.name}`); }}><Icon name="Check" size={14} /> استلمت المبلغ</button>
-            <button className="btn sm ghost" onClick={() => apply(rejectTopUp(s.id))}>رفض</button>
-          </div>); })}</div> : <Empty icon="Coins" title="ما فيه طلبات شحن" />}
-        <small className="faint">الباقات: {CREDIT_PACKS.map((p) => `${p.credits} عرض بـ${p.price}`).join(" · ")}</small>
-      </section>
-
-      <section className="card stack"><h3 className="card-title">اشتراكات القاعات ({sar(VENUE_PLAN.price)} بالشهر)</h3>
-        <div className="list">{db.venues.map((v) => { const st = v.sub?.plan ?? "trial"; return (
-          <div key={v.id} className="list-row" style={{ flexWrap: "wrap" }}>
-            <span className="avatar"><Icon name="Building2" size={16} /></span>
-            <div className="t"><b>{v.name}</b><small style={{ color: st === "active" ? "var(--ok)" : st === "overdue" ? "var(--bad)" : undefined }}>{st === "active" ? `فعّال لين ${v.sub?.until}` : st === "overdue" ? "متأخر (مخفية عن العملاء)" : `تجربة${v.sub?.until ? ` لين ${v.sub.until}` : ""}`}{v.sub?.claimedAt && st !== "active" ? " · بلّغت إنها حوّلت" : ""}{v.sub?.cancelAt ? " · ألغت التجديد" : ""}</small></div>
-            <button className="btn sm primary" onClick={() => { apply(confirmVenueSub(v.id)); toast(`فعّلنا اشتراك ${v.name} شهر`); }}><Icon name="Check" size={14} /> استلمت شهر</button>
-            {st !== "trial" && <button className="btn sm ghost" onClick={() => { const d = new Date(); d.setDate(d.getDate() + VENUE_PLAN.trialDays); apply(setVenueSub(v.id, { plan: "trial", until: d.toISOString().slice(0, 10) })); }}>تجربة {Math.round(VENUE_PLAN.trialDays / 30)} شهور</button>}
-            {st !== "overdue" && <button className="btn sm ghost" style={{ color: "var(--bad)" }} onClick={() => { apply(setVenueSub(v.id, { ...(v.sub ?? { plan: "trial" }), plan: "overdue", claimedAt: undefined })); toast(`أوقفنا ظهور ${v.name}`); }}>إيقاف</button>}
-          </div>); })}</div>
+      <section className="card stack"><h3 className="card-title">رسوم تأكيد بانتظار الاستلام</h3>
+        {due.length ? <div className="list">{due.map((b) => (
+          <div key={b.id} className="list-row" style={{ flexWrap: "wrap" }}>
+            <span className="avatar"><Icon name={b.kind === "venue" ? "Building2" : "Store"} size={16} /></span>
+            <div className="t"><b>{b.clientName} ← {nameOf(b.kind, b.targetId)}</b><small className="num">{b.date} · السعر {sar(b.clientPrice)} · نسبتنا {sar(platformTake(b))} · مرجع MNS-{b.id.slice(-6).toUpperCase()}</small></div>
+            <button className="btn sm primary" onClick={() => { apply(confirmPaid(b.id)); toast("استلمنا الرسوم، وفتحنا التواصل بين الطرفين"); }}><Icon name="Check" size={14} /> استلمت الرسوم</button>
+          </div>))}</div> : <Empty icon="Wallet" title="ما فيه رسوم معلقة" />}
+        <small className="faint">بعد «استلمت الرسوم» يوصل للعميل رقم التاجر والمبلغ الباقي، ويوصل للتاجر رقم العميل. وأصدر فاتورة النسبة للتاجر من مزوّد الفوترة.</small>
       </section>
 
       <section className="card stack"><h3 className="card-title">طلبات باقات الدعوات</h3>

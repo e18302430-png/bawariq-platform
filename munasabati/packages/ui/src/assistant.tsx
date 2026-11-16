@@ -41,7 +41,7 @@ function guestOptions(occ: OccasionId) {
 
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-async function sendLead(body: Record<string, unknown>) {
+export async function sendLead(body: Record<string, unknown>) {
   if (!SUPA_URL || !SUPA_KEY) { await new Promise((r) => setTimeout(r, 700)); return true; }
   const r = await fetch(`${SUPA_URL}/rest/v1/rpc/assistant_lead`, { method: "POST", headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ p: body }) });
   if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error((e as { message?: string }).message || "fail"); }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { OCCASIONS, fmt, journey, nextStage, sar, type Stage } from "@munasabati/core";
-import { Counter, Icon, useDB } from "@munasabati/ui";
+import { OCCASIONS, fmt, journey, nextStage, requestConcierge, sar, type Stage } from "@munasabati/core";
+import { Counter, Icon, apply, sendLead, useDB, useToast } from "@munasabati/ui";
 import f1 from "../assets/scenes/f1-wedding.webp";
 import f2 from "../assets/scenes/f2-milka.webp";
 import f4 from "../assets/scenes/f4-rooftop.webp";
@@ -52,6 +52,7 @@ export default function Home() {
         </div>
       </div>
 
+      <ConciergeCard />
       <section className="event-card compact">
         <img className="ec-photo" src={SCENE[occ.id] ?? f1} alt="" decoding="async" />
         <div className="meta"><span className="pill" style={{ background: "rgba(255,255,255,.2)", color: "#fff", backdropFilter: "blur(10px)" }}>{occ.name} · {e.city} · {fmt(e.guests)} ضيف</span><span className="num" style={{ opacity: 0.9 }}>{e.date}</span></div>
@@ -103,5 +104,45 @@ export default function Home() {
         <button onClick={() => go("tasks")}><Icon name="ListChecks" size={17} /><span><b className="num">{db.client.tasks.filter((t) => t.done).length}/{db.client.tasks.length}</b><small>مهام العائلة</small></span></button>
       </div>
     </>
+  );
+}
+
+/** «خلّها علينا»: العميل يطلب منسقة تختار له ٣ قاعات ضمن ميزانيته وتنسق كل شي */
+function ConciergeCard() {
+  const db = useDB();
+  const toast = useToast();
+  const e = db.client.event!;
+  const [phone, setPhone] = useState(db.client.profile?.phone ?? "");
+  const [ok, setOk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (e.coordinator) return (
+    <section className="cg-card on"><span className="cg-ico"><Icon name="HeartHandshake" size={20} /></span><div className="grow"><b>منسقتك {e.coordinator.name}</b><small>ترتب لك كل شي ضمن ميزانيتك</small></div>
+      <a className="btn sm" href={`https://wa.me/966${e.coordinator.phone.replace(/\D/g, "").replace(/^0/, "")}`} target="_blank" rel="noreferrer"><Icon name="MessageCircle" size={15} /> واتساب</a></section>
+  );
+  if (e.concierge) return (
+    <section className="cg-card on"><span className="cg-ico"><Icon name="Hourglass" size={20} /></span><div className="grow"><b>طلبك وصل، ومنسقتك بتتواصل معك</b><small>٣ خيارات قاعات ضمن ميزانيتك خلال ٢٤ ساعة على الواتساب</small></div></section>
+  );
+  const ph = phone.replace(/\D/g, "").replace(/^966/, "0"), valid = /^05\d{8}$/.test(ph);
+  const send = async () => {
+    if (!valid) { toast("اكتب رقم جوال صحيح يبدأ بـ 05"); return; }
+    if (!ok) { toast("وافق على تواصلنا معك"); return; }
+    setBusy(true);
+    try {
+      await sendLead({ name: db.client.profile?.name || e.title, phone: ph, consent: true, consent_at: new Date().toISOString(), via: "concierge", occasion: e.occasion, guests: String(e.guests), city: e.city, when: e.date, budget: String(e.budget ?? ""), priority: "تنسيق كامل من التطبيق", estimate: e.budget ? `${fmt(e.budget)} ريال` : "" });
+      apply(requestConcierge()); toast("وصل طلبك. منسقتك بتكلمك قريب");
+    } catch { toast("ما وصل الطلب، جرّب مرة ثانية"); }
+    setBusy(false);
+  };
+  return (
+    <section className="cg-card">
+      <span className="cg-ico"><Icon name="Sparkles" size={20} /></span>
+      <div className="grow"><b>خلّها علينا من الألف للياء</b><small>منسقة تختار لك ٣ قاعات ضمن {e.budget ? <b className="num">{fmt(e.budget)}</b> : "ميزانيتك"} وتنسق كل التجهيزات، وتدفع نفس السعر بدون زيادة.</small>
+        <div className="cg-form">
+          {!db.client.profile?.phone && <><label className="sr" htmlFor="cg-p">جوالك</label><input id="cg-p" className="input num" dir="ltr" inputMode="tel" placeholder="05xxxxxxxx" value={phone} onChange={(x) => setPhone(x.target.value.slice(0, 16))} /></>}
+          <label className="cg-ok"><input type="checkbox" checked={ok} onChange={(x) => setOk(x.target.checked)} /> موافق إن مناسبتي تتواصل معي بخصوص طلبي</label>
+          <button className="btn primary sm" disabled={busy} onClick={() => void send()}>{busy ? "لحظة…" : "رتّبوها لي"}</button>
+        </div>
+      </div>
+    </section>
   );
 }

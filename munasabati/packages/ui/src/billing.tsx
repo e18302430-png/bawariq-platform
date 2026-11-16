@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CREDIT_PACKS, FEATURED_PRICE, VENUE_PLAN, cancelVenueSub, claimVenueSub, creditsOf, requestTopUp, sar, type Supplier, type Venue } from "@munasabati/core";
+import { CREDIT_PACKS, FEATURED_PRICE, VENUE_PLAN, cancelVenueSub, claimVenueSub, creditsOf, payoutFor, pricingOf, requestTopUp, sar, type Supplier, type Venue } from "@munasabati/core";
 import { Icon } from "./icons";
 import { useToast } from "./components";
 import { apply, useDB } from "./data";
@@ -111,6 +111,29 @@ export function PayLinkField({ value, onSave }: { value?: string; onSave: (v: st
       <div className="row"><input id="pay-link" className="input grow num" dir="ltr" placeholder="https://..." value={v} onChange={(e) => setV(e.target.value)} />
         <button type="button" className="btn" disabled={!ok} onClick={() => { onSave(v.trim() || undefined); toast(v.trim() ? "حفظنا رابط الدفع" : "شلنا رابط الدفع"); }}>حفظ</button></div>
       <small className="faint" style={{ fontSize: 12.5 }}>رابط من بنكك أو بوابتك (مثل رابط دفع STC Pay أو ميسر). يظهر للعميل بعد ما يأكد الحجز، ويدفع لك مباشرة.</small>
+    </div>
+  );
+}
+
+/** شراكة التاجر مع مناسبتي: نسبة على الحجز المؤكد فقط. لا اشتراك ولا رسوم مقدمة */
+export function PartnerShare({ kind, payLink, onPayLink }: { kind: "venue" | "supplier"; payLink?: string; onPayLink: (v: string | undefined) => void }) {
+  const db = useDB();
+  const pct = pricingOf(db, kind).vendorPct;
+  const ex = 20000, cut = ex - payoutFor(ex, pricingOf(db, kind));
+  return (
+    <div className="stack">
+      <div><h1 className="page-title">شراكتك مع مناسبتي</h1><p className="page-sub">ما فيه اشتراك ولا رسوم مقدمة. تدفع بس لما يتأكد حجز جبناه لك.</p></div>
+      <section className="wallet-hero">
+        <div><small>نسبة الشراكة</small><b className="num">{pct}٪</b><span>من الحجز المؤكد فقط</span></div>
+        <ul>
+          <li><Icon name="Check" size={15} /> صفر اشتراك، صفر رسوم تسجيل، وصفر على الطلبات اللي ما تتأكد</li>
+          <li><Icon name="Check" size={15} /> العميل يدفع سعرك نفسه بدون أي إضافة منا</li>
+          <li><Icon name="Check" size={15} /> نستلم نسبتنا من العميل كـ«رسوم تأكيد الحجز» وتنخصم من سعرك، والباقي يوصلك مباشرة</li>
+          <li><Icon name="Check" size={15} /> نوصلك العميل جاهز: الميزانية والتاريخ والضيوف، ومنسقنا يتابع معك للنهاية</li>
+        </ul>
+      </section>
+      <section className="card row between wrap"><span className="muted">مثال: حجز بسعر <b className="num">{sar(ex)}</b></span><span>نصيب مناسبتي <b className="num">{sar(cut)}</b> · يوصلك <b className="num" style={{ color: "var(--ok)" }}>{sar(ex - cut)}</b></span></section>
+      <section className="card"><PayLinkField value={payLink} onSave={onPayLink} /></section>
     </div>
   );
 }

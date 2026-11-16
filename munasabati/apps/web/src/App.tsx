@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { OCCASIONS, type Occasion } from "@munasabati/core";
-import { Assistant, BRAND, Icon, Logo, LogoMark, MeshGradient, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
+import { INVITE_TIERS, OCCASIONS, type Occasion } from "@munasabati/core";
+import { BRAND, Icon, Logo, LogoMark, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
+import { Concierge } from "./Concierge";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
 
@@ -13,7 +14,7 @@ const LINKS = {
   venues: import.meta.env.VITE_VENUES_URL ?? "venues/index.html",
 };
 
-const HERO_WORD: Record<string, string> = { wedding: "زواجك", milka: "ملكتك", grad: "تخرّجك", aqiqa: "عقيقتك", family: "لمّتكم", corp: "حفل شركتك" };
+const HERO_WORD: Record<string, string> = { wedding: "زواجك", milka: "ملكتك", grad: "تخرّجك", aqiqa: "عقيقتك", family: "لمّتكم", corp: "حفل شركتك", birthday: "عيد ميلادك" };
 const grad = (o: Occasion) => `linear-gradient(135deg, ${o.palette[0]}, ${o.palette[1]} 45%, ${o.palette[2]} 80%, ${o.palette[3]})`;
 
 /* ───── شاشات الجوال المصغرة ───── */
@@ -155,25 +156,6 @@ function Features() {
 }
 
 /* ───── البداية السريعة: المناسبة والتاريخ والضيوف والمدينة، وتدخل التطبيق والإجابات جاهزة ───── */
-function QuickStart({ occ }: { occ: Occasion }) {
-  const [o, setO] = useState<string>(occ.id);
-  const [date, setDate] = useState("");
-  const [guests, setGuests] = useState("300");
-  const [city, setCity] = useState("الدمام");
-  useEffect(() => setO(occ.id), [occ.id]);
-  const go = (e: React.FormEvent) => { e.preventDefault(); const q = new URLSearchParams({ occ: o, guests, city }); if (date) q.set("date", date); location.href = `${LINKS.client}?${q.toString()}`; };
-  return (
-    <form className="qs" onSubmit={go} aria-label="ابدأ مناسبتك">
-      <label><span>المناسبة</span><select value={o} onChange={(e) => setO(e.target.value)}>{OCCASIONS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-      <label><span>المدينة</span><select value={city} onChange={(e) => setCity(e.target.value)}>{["الدمام", "الخبر", "الظهران", "القطيف", "الأحساء", "الجبيل"].map((c) => <option key={c}>{c}</option>)}</select></label>
-      <label><span>التاريخ</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-      <label><span>الضيوف</span><input type="number" inputMode="numeric" min={10} max={3000} value={guests} onChange={(e) => setGuests(e.target.value.slice(0, 4))} /></label>
-      <button type="submit"><Icon name="Sparkles" size={17} /> شوف خطتك</button>
-    </form>
-  );
-}
-
-/* ───── للقاعات والموردين: «نجيب لك العميل، وأنت تحتفظ بكل ريال» + حاسبة من أرقامهم ───── */
 const sarFmt = (n: number) => Math.round(n).toLocaleString("en-US");
 function Partners() {
   const [kind, setKind] = useState<"venue" | "vendor">("venue");
@@ -181,9 +163,10 @@ function Partners() {
   const [price, setPrice] = useState(25000);
   const [extra, setExtra] = useState(3);
   useEffect(() => { setPrice(isV ? 25000 : 6000); setExtra(isV ? 3 : 4); }, [isV]);
-  const month = price * extra, cost = isV ? 399 : Math.round((extra * 3) * 32), year = (month - cost) * 12;
+  const pct = isV ? 3 : 10;
+  const month = price * extra, cost = Math.round((month * pct) / 100), year = (month - cost) * 12;
   const FACTS: [string, string, string][] = [
-    ["BadgePercent", "0% عمولة على حجوزاتك", "العميل يدفع لك سعرك كامل مباشرة، ومهما كبر الحجز ما نلمسه."],
+    ["BadgePercent", "صفر اشتراك وصفر رسوم مقدمة", `تدفع نسبة بسيطة (${isV ? "٣٪ للقاعات" : "١٠٪ للموردين"}) على الحجز اللي يتأكد بس. ما جاك حجز؟ ما تدفع شي.`],
     ["UserCheck", "عميل جاد ومؤكد", "ما يوصلك رقم العميل إلا بعد ما يقفل موعده ويدفع رسوم التأكيد."],
     ["CalendarCheck", "أيامك الفاضية تتعبى", "نوصّلك طلبات بالتاريخ والميزانية وعدد الضيوف، وأنت تختار."],
     ["FileSignature", "عقد إلكتروني وفاتورة", "كل حجز له عقد موقّع وشهادة، فما فيه خلاف ولا ضياع."],
@@ -192,8 +175,8 @@ function Partners() {
     <section className="sec container partners" id="partners">
       <Reveal className="sec-head">
         <span className="eyebrow">للقاعات والموردين</span>
-        <h2>نجيب لك العميل… <span className="grad-text">وأنت تحتفظ بكل ريال</span></h2>
-        <p>صفر عمولة على حجوزاتك. العميل يدفع لك سعرك كامل مباشرة. القاعات باشتراك شهري ثابت، والموردين يدفعون بس على كل عميل جاد يردون عليه.</p>
+        <h2>نجيب لك العميل… <span className="grad-text">وتدفع بس لما تكسب</span></h2>
+        <p>ما فيه اشتراك ولا رسوم تسجيل. نوصّلك عملاء جاهزين بميزانيتهم، ونستلم نسبتنا بس لما يتأكد الحجز: <b>٣٪ للقاعات</b> و<b>١٠٪ للموردين</b>، تنخصم من سعرك والعميل ما يدفع زيادة.</p>
       </Reveal>
       <div className="pt-grid">
         <div className="pt-facts">{FACTS.map(([ic, t, d], i) => <Reveal key={t} delay={i * 0.05} className="pt-fact"><span><Icon name={ic} size={20} /></span><div><b>{t}</b><small>{d}</small></div></Reveal>)}</div>
@@ -208,10 +191,10 @@ function Partners() {
             <input type="range" min={1} max={isV ? 12 : 20} step={1} value={extra} onChange={(e) => setExtra(+e.target.value)} aria-label="العدد" /></label>
           <div className="pt-out">
             <div><small>حجوزات إضافية بالشهر</small><b className="num">{sarFmt(month)}</b><i>ر.س</i></div>
-            <div className="big"><small>صافي لك بالسنة بعد رسومنا</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
+            <div className="big"><small>صافي لك بالسنة بعد نسبتنا</small><b className="num">{sarFmt(year)}</b><i>ر.س</i></div>
           </div>
-          <div className="pt-cut"><span>{isV ? "اشتراكك الشهري (بدون أي عمولة)" : "رصيد العروض بالشهر (تقريباً)"}</span><b className="num">{sarFmt(cost)} ر.س</b></div>
-          <small className="pt-note">حسبة توضيحية من أرقامك. {isV ? "أول ٣ شهور مجاناً للقاعات المؤسسة." : "تقديرها: ٣ عروض لكل حجز، بمتوسط ٣٢ ريال للعرض. وأول ٥ عروض مجاناً."}</small>
+          <div className="pt-cut"><span>نسبة مناسبتي بالشهر ({pct}٪ من الحجوزات المؤكدة فقط)</span><b className="num">{sarFmt(cost)} ر.س</b></div>
+          <small className="pt-note">حسبة توضيحية من أرقامك. النسبة على الحجوزات اللي جبناها لك وتأكدت فقط.</small>
           <a className="btn primary lg block" href={isV ? LINKS.venues : LINKS.vendors}>{isV ? "سجّل قاعتك مجاناً" : "سجّل كمورد مجاناً"} <Icon name="ArrowLeft" size={17} /></a>
         </Reveal>
       </div>
@@ -223,7 +206,7 @@ function Partners() {
 /** الصفحة مطبوعة مسبقاً في HTML؟ إذن لا نعيد حركات الدخول (يستلمها React كما هي بدون وميض) */
 const SSG = typeof document !== "undefined" && !!document.getElementById("root")?.firstElementChild;
 
-function Hero({ occ }: { occ: Occasion }) {
+function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void }) {
   const [film, setFilm] = useState(false);
   // الصورة الأولى تظهر فوراً من HTML، ثم يبدأ الفيلم الحي فوقها
   const onFilmReady = () => { const boot = document.getElementById("boot-hero"); if (boot) { boot.style.transition = "opacity .6s"; boot.style.opacity = "0"; setTimeout(() => boot.remove(), 700); } };
@@ -233,13 +216,13 @@ function Hero({ occ }: { occ: Occasion }) {
     [LINKS.venues, "Building2", "عندي قاعة", "أدر الحجوزات والأسعار"],
   ];
   return (
-    <div className="hero-frame">
+    <div className="hero-frame" id="top">
       <section className="hero">
         <div className="hero-video-box"><LiveFilm onReady={onFilmReady} /></div>
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
           <div className="logo"><Logo size={28} light animated /></div>
-          <div className="links"><a href="#story">كيف تعمل</a><a href="#partners">للقاعات والموردين</a><a href={LINKS.venues}>بوابة القاعات</a></div>
+          <div className="links"><a href="#how">كيف نشتغل</a><a href="#invites">الدعوات</a><a href="#partners">للقاعات والموردين</a></div>
           <div style={{ flex: 1 }} />
           <a className="btn glass sm" href={LINKS.client}>ادخل التطبيق</a>
         </nav>
@@ -251,19 +234,14 @@ function Hero({ occ }: { occ: Occasion }) {
                 <motion.span key={occ.id} initial={{ opacity: 0, y: 30, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -24, filter: "blur(10px)" }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>{HERO_WORD[occ.id]}،</motion.span>
               </AnimatePresence>
             </span>
-            <br />من الفكرة لآخر ضيف.
+            <br />علينا من الألف للياء.
           </h1>
-          <p className="lead">خطوة بخطوة: القاعة، ثم التجهيزات، ثم الدعوات، حتى يوم المناسبة. كل شيء في تطبيق واحد.</p>
-          <QuickStart occ={occ} />
-          <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد فيلم مناسبتي</button>
-          <div className="doors">
-            {doors.map(([href, ic, t, d], i) => (
-              <motion.a key={t} href={href} className={"door" + (i === 0 ? " main" : "")} initial={SSG ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
-                <span className="door-ico"><Icon name={ic} size={22} /></span>
-                <span className="grow"><b>{t}</b><small>{d}</small></span>
-                <Icon name="ArrowLeft" size={19} />
-              </motion.a>
-            ))}
+          <p className="lead">قل لنا ميزانيتك بس. منسقتك تختار لك القاعة وتنسق كل شي ضمنها، وأنت تدفع نفس السعر بدون أي زيادة.</p>
+          <Concierge onOcc={(id) => { const o = OCCASIONS.find((x) => x.id === id); if (o) onPick(o); }} />
+          <div className="hero-mini">
+            <button className="play-film" onClick={() => setFilm(true)}><span><Icon name="Play" size={16} fill="currentColor" /></span>شاهد الفيلم</button>
+            {doors.slice(1).map(([href, ic, t]) => <a key={t} href={href} className="hero-link"><Icon name={ic} size={15} /> {t}</a>)}
+            <a href={LINKS.client} className="hero-link"><Icon name="LogIn" size={15} /> عندي حساب</a>
           </div>
         </div>
       </section>
@@ -304,51 +282,32 @@ function Signature() {
   );
 }
 
-function Portals({ occ }: { occ: Occasion }) {
+function Invites() {
   return (
-    <section className="sec container" id="portals">
+    <section className="sec container" id="invites">
       <Reveal className="sec-head">
-        <span className="eyebrow">ثلاث منصات مستقلة</span>
-        <h2>لكل طرف <span className="grad-text">منصته الخاصة</span></h2>
-        <p>العائلات والموردين وأصحاب القاعات. كل طرف له تطبيقه ودخوله وأدواته، وكلها متصلة ببعض: الطلب يوصل للمورد لحظة إرساله.</p>
+        <span className="eyebrow">الدعوات</span>
+        <h2>دعوة سينمائية… <span className="grad-text">بسعر فنجان قهوة</span></h2>
+        <p>ظرف يفتحه ضيفك بلمسة، ورد بضغطة، ورمز دخول عند الباب. مجانية لين ١٠٠ ضيف، وبعدها بأسعار رمزية.</p>
       </Reveal>
-      <div className="portals">
-        <Reveal><a className="portal feature" href={LINKS.client}>
-          <MeshGradient palette={occ.palette} />
-          <span className="badge-ind">تطبيق العميل</span>
-          <span className="p-ico"><Icon name="Heart" size={24} /></span>
-          <h3>لأصحاب المناسبات</h3>
-          <p>من أول فكرة إلى آخر ضيف يدخل الباب.</p>
-          <ul>{["مساعد يخطط معك ويحسب الميزانية والضيافة", "ضيوف بقسمين ودعوات واتساب برمز QR", "مهام للعائلة وحجوزات وعروض أسعار", "شاشة استقبال الضيوف يوم المناسبة"].map((t) => <li key={t}><Icon name="Check" size={16} />{t}</li>)}</ul>
-          <span className="btn white go">ابدأ مجاناً <Icon name="ArrowLeft" size={17} /></span>
-        </a></Reveal>
-        <Reveal delay={0.08}><a className="portal" href={LINKS.vendors}>
-          <span className="badge-ind">بوابة الموردين</span>
-          <span className="p-ico"><Icon name="Store" size={24} /></span>
-          <h3>للموردين</h3>
-          <p>كوشة، تصوير، صوت وإضاءة، بث مباشر، ضيافة، خيام، مولدات، واستيدج.</p>
-          <ul>{["صندوق طلبات وعروض أسعار", "باقات وأسعار تعدلها بنفسك", "تقويم وإيرادات ومعدل تحويل"].map((t) => <li key={t}><Icon name="Check" size={16} />{t}</li>)}</ul>
-          <span className="btn primary go">افتح بوابة الموردين</span>
-        </a></Reveal>
-        <Reveal delay={0.16}><a className="portal" href={LINKS.venues}>
-          <span className="badge-ind">بوابة القاعات</span>
-          <span className="p-ico"><Icon name="Building2" size={24} /></span>
-          <h3>لأصحاب القاعات</h3>
-          <p>أدر قاعاتك وأقسامها وأسعار أيام الأسبوع والويكند من مكان واحد.</p>
-          <ul>{["أكثر من قاعة بقسم رجال وقسم نساء", "تقويم إشغال وإغلاق أيام", "تسعير ذكي للويكند والمواسم"].map((t) => <li key={t}><Icon name="Check" size={16} />{t}</li>)}</ul>
-          <span className="btn primary go">افتح بوابة القاعات</span>
-        </a></Reveal>
-      </div>
+      <div className="inv-tiers">{INVITE_TIERS.map((t, i) => (
+        <Reveal key={t.id} delay={i * 0.06} className={"inv-tier" + (t.id === "plus" ? " hot" : "")}>
+          {t.id === "plus" && <span className="inv-tag">الأكثر اختياراً</span>}
+          <b>{t.name}</b>
+          <div className="inv-price">{t.price ? <><span className="num">{t.price}</span><small>ريال · مرة وحدة</small></> : <span>مجاناً</span>}</div>
+          <ul>{t.perks.map((p) => <li key={p}><Icon name="Check" size={15} />{p}</li>)}</ul>
+        </Reveal>
+      ))}</div>
     </section>
   );
 }
 
 const STEPS = [
-  { t: "خطط في دقيقة", d: "خمسة أسئلة سريعة، وتطلع لك ميزانية تقديرية وكميات الضيافة وأنسب القاعات في مدينتك.", s: (o: Occasion) => <MiniPlan occ={o} /> },
-  { t: "احجز القاعة", d: "قاعات بأسعار واضحة وتقويم توفر حقيقي. اطلب الحجز، وصاحب القاعة يرد بعرض سعر داخل التطبيق.", s: (o: Occasion) => <MiniMarket occ={o} /> },
-  { t: "جهّز مناسبتك", d: "الكوشة والتصوير والضيافة. قائمة واضحة تعرف منها وش تأكد ووش باقي.", s: () => <MiniPrep /> },
-  { t: "ادعُ ضيوفك", d: "لكل ضيف رابط دعوة خاص على الواتساب. يرد بضغطة، ويوصله رمز دخول خاص فيه.", s: (o: Occasion) => <MiniInvite occ={o} /> },
-  { t: "استقبلهم بالاسم", d: "شاشة المنسق عند الباب تمسح الرمز وتعرف القسم وعدد المرافقين، والعدّاد يتحدث لحظياً.", s: () => <MiniDoor /> },
+  { t: "قل لنا ميزانيتك", d: "المناسبة وعدد الضيوف والميزانية. دقيقة وحدة، بدون ما تدوّر بين عشرات القاعات.", s: (o: Occasion) => <MiniPlan occ={o} /> },
+  { t: "نختار لك ٣ قاعات", d: "منسقتك تختار ٣ خيارات ضمن ميزانيتك، بالصور والجولة ٣٦٠. تزورها أنت والأهل وتختارون براحتكم.", s: (o: Occasion) => <MiniMarket occ={o} /> },
+  { t: "ننسق كل التجهيزات", d: "الكوشة والتصوير والضيافة والصوت. نتفاوض نيابة عنك، وكل شي بعقد واضح وبنفس سعر التاجر.", s: () => <MiniPrep /> },
+  { t: "دعوات شبه مجانية", d: "لكل ضيف رابط دعوة خاص على الواتساب. يرد بضغطة، ويوصله رمز دخول خاص فيه.", s: (o: Occasion) => <MiniInvite occ={o} /> },
+  { t: "ليلتك… ونحن معك", d: "منسق مناسبتي يتابع الموردين ليلة الحفل، ويستقبل ضيوفك بالاسم عند الباب.", s: () => <MiniDoor /> },
 ];
 
 function Story({ occ }: { occ: Occasion }) {
@@ -360,13 +319,13 @@ function Story({ occ }: { occ: Occasion }) {
     return () => io.disconnect();
   }, []);
   return (
-    <section className="sec container" id="story">
-      <Reveal className="sec-head"><span className="eyebrow">كيف تعمل</span><h2>خمس مراحل واضحة إلى <span className="grad-text">ليلة العمر</span></h2><p>نفس المسار تمشي عليه داخل التطبيق، وفي كل مرحلة خطوة واحدة تالية. ما تحتار.</p></Reveal>
+    <section className="sec container" id="how">
+      <Reveal className="sec-head"><span className="eyebrow">كيف نشتغل</span><h2>أنت تحتفل… <span className="grad-text">ونحن نشتغل</span></h2><p>من أول رسالة لين آخر ضيف يطلع من القاعة، منسقة وحدة تعرف كل تفاصيل مناسبتك.</p></Reveal>
       <div className="story">
         <div className="story-steps">
           {STEPS.map((s, i) => (
             <div key={s.t} ref={(el) => { refs.current[i] = el; }} data-i={i} className={"story-step" + (active === i ? " on" : "")}>
-              <span className="n num">المرحلة {i + 1} من 5</span>
+              <span className="n num">{i + 1} / 5</span>
               <h3>{s.t}</h3>
               <p>{s.d}</p>
               <div className="inline-phone"><Phone tilt={false}>{s.s(occ)}</Phone></div>
@@ -389,32 +348,33 @@ function Story({ occ }: { occ: Occasion }) {
 
 export default function App() {
   const [occ, setOcc] = useState<Occasion>(OCCASIONS[0]);
+  const [locked, setLocked] = useState(false);
   useEffect(() => {
+    if (locked) return;
     const t = setInterval(() => setOcc((o) => OCCASIONS[(OCCASIONS.indexOf(o) + 1) % OCCASIONS.length]), 4200);
     return () => clearInterval(t);
-  }, []);
+  }, [locked]);
 
   return (
     <>
-      <Hero occ={occ} />
+      <Hero occ={occ} onPick={(o) => { setOcc(o); setLocked(true); }} />
       <Signature />
       <Story occ={occ} />
       <Features />
-      <Portals occ={occ} />
+      <Invites />
       <Partners />
       <section className="container" style={{ paddingBottom: 20 }}>
         <Reveal className="final lux">
           <div className="lux-seal" aria-hidden="true"><LogoMark size={64} animated /></div>
-          <span className="lux-eyebrow">✦ مجاناً لأصحاب المناسبات ✦</span>
+          <span className="lux-eyebrow">✦ بدون أي رسوم زيادة عليك ✦</span>
           <h2>جاهز؟<br /><span className="gold-text">خلّنا نبدأ فرحتك.</span></h2>
           <div className="hero-cta" style={{ justifyContent: "center" }}>
-            <a className="btn lg lux-btn" href={LINKS.client}>ابدأ الآن <Icon name="ArrowLeft" size={18} /></a>
+            <a className="btn lg lux-btn" href="#top">قل لنا ميزانيتك <Icon name="ArrowLeft" size={18} /></a>
             <a className="btn glass lg" href={LINKS.venues}>سجّل قاعتك</a>
           </div>
         </Reveal>
       </section>
       <ScrollNav bottom="24px" />
-      <Assistant appUrl={LINKS.client} />
       <footer className="container footer">
         <div className="row"><Logo size={24} /><span>{BRAND.goal}</span></div>
         <LegalFooter />
