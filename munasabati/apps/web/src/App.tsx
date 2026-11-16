@@ -4,6 +4,7 @@ import { INVITE_TIERS, OCCASIONS, type Occasion } from "@munasabati/core";
 import { BRAND, Icon, Logo, LogoMark, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
 import { Concierge } from "./Concierge";
+import { REELS, Reels, ReelViewer, VENUE_REEL } from "./Reels";
 import wcDiriyah from "./assets/film/watercolor-diriyah.webp";
 import stillDesert from "./assets/film/f5-desert.webp";
 
@@ -164,6 +165,7 @@ function Partners() {
   const [extra, setExtra] = useState(3);
   useEffect(() => { setPrice(isV ? 25000 : 6000); setExtra(isV ? 3 : 4); }, [isV]);
   const pct = isV ? 3 : 10;
+  const [reel, setReel] = useState(false);
   const month = price * extra, cost = Math.round((month * pct) / 100), year = (month - cost) * 12;
   const FACTS: [string, string, string][] = [
     ["BadgePercent", "صفر اشتراك وصفر رسوم مقدمة", `تدفع نسبة بسيطة (${isV ? "٣٪ للقاعات" : "١٠٪ للموردين"}) على الحجز اللي يتأكد بس. ما جاك حجز؟ ما تدفع شي.`],
@@ -195,9 +197,11 @@ function Partners() {
           </div>
           <div className="pt-cut"><span>نسبة مناسبتي بالشهر ({pct}٪ من الحجوزات المؤكدة فقط)</span><b className="num">{sarFmt(cost)} ر.س</b></div>
           <small className="pt-note">حسبة توضيحية من أرقامك. النسبة على الحجوزات اللي جبناها لك وتأكدت فقط.</small>
+          {isV && <button type="button" className="btn ghost block" onClick={() => setReel(true)}><Icon name="PlayCircle" size={17} /> شاهد فيديو القاعات (٣٠ ثانية)</button>}
           <a className="btn primary lg block" href={isV ? LINKS.venues : LINKS.vendors}>{isV ? "سجّل قاعتك مجاناً" : "سجّل كمورد مجاناً"} <Icon name="ArrowLeft" size={17} /></a>
         </Reveal>
       </div>
+      <AnimatePresence>{reel && <ReelViewer list={[VENUE_REEL]} start={0} onClose={() => setReel(false)} />}</AnimatePresence>
     </section>
   );
 }
@@ -245,15 +249,7 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
           </div>
         </div>
       </section>
-      <AnimatePresence>
-        {film && (
-          <motion.div className="film-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFilm(false)} role="dialog" aria-label="فيلم مناسبتي">
-            <motion.video initial={{ scale: 0.92 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 28 }} src="./media/film.mp4" poster="./media/film-poster.webp" autoPlay controls playsInline onClick={(e) => e.stopPropagation()} />
-            <span className="ai-tag" style={{ position: "fixed", top: 16, insetInlineStart: 16 }}>فيلم مولّد بالذكاء الاصطناعي</span>
-            <button className="btn glass sm film-close" onClick={() => setFilm(false)} aria-label="إغلاق"><Icon name="X" size={16} /> إغلاق</button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{film && <ReelViewer list={REELS} start={0} onClose={() => setFilm(false)} />}</AnimatePresence>
     </div>
   );
 }
@@ -359,6 +355,7 @@ export default function App() {
     <>
       <Hero occ={occ} onPick={(o) => { setOcc(o); setLocked(true); }} />
       <Signature />
+      <Reels />
       <Story occ={occ} />
       <Features />
       <Invites />

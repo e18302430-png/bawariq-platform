@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مناسبتي · قل لنا ميزانيتك</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=block">
+<style>
+:root { --ink: #FFF8F0; --gold: #FFD27A; --rose: #FF3D7F; --grad: linear-gradient(135deg, #FFB36B 0%, #FF6B5A 28%, #E5195E 60%, #9B3FC9 100%); }
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: "Cairo", Tahoma, sans-serif; color: var(--ink); }
+#wrap { position: absolute; inset: 0; display: grid; place-items: center; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: radial-gradient(100% 70% at 50% 40%, #2A1030 0%, #07030a 75%); transform-origin: center; }
+.abs { position: absolute; will-change: transform, opacity; }
+.line { left: 0; right: 0; text-align: center; font-weight: 900; text-shadow: 0 16px 50px rgba(0,0,0,.7); }
+.g { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.bg { position: absolute; inset: 0; overflow: hidden; background-size: cover; background-position: center; will-change: transform, opacity; }
+#dim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,2,8,.85) 0%, rgba(5,2,8,.5) 35%, rgba(5,2,8,.55) 55%, rgba(5,2,8,.9) 100%); }
+
+/* الفوضى: رسائل تتكدس */
+#chaos { position: absolute; inset: 0; }
+.bub { position: absolute; max-width: 620px; padding: 22px 30px; border-radius: 34px 34px 34px 10px; background: rgba(255,255,255,.95); color: #1a1220; font-size: 40px; font-weight: 700; box-shadow: 0 20px 50px rgba(0,0,0,.45); white-space: nowrap; will-change: transform, opacity; }
+.bub.me { background: #DCF8C6; border-radius: 34px 34px 10px 34px; }
+.bub small { display: block; font-size: 24px; font-weight: 700; color: #8a7f8f; margin-bottom: 2px; }
+#cnt { left: 0; right: 0; top: 230px; text-align: center; font-size: 64px; font-weight: 900; color: #fff; text-shadow: 0 10px 40px rgba(0,0,0,.8); }
+#cnt span { color: var(--rose); }
+
+#burst { position: absolute; left: 50%; top: 45%; width: 1800px; height: 1800px; margin: -900px 0 0 -900px; border-radius: 50%; background: radial-gradient(circle, rgba(255,245,220,.95) 0%, rgba(255,170,90,.55) 22%, rgba(229,25,94,.22) 45%, transparent 68%); will-change: transform, opacity; }
+#rays { position: absolute; left: 50%; top: 45%; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; background: repeating-conic-gradient(from 0deg, rgba(255,210,122,.25) 0deg 4deg, transparent 4deg 13deg); -webkit-mask: radial-gradient(circle, #000 0%, transparent 60%); mask: radial-gradient(circle, #000 0%, transparent 60%); will-change: transform, opacity; }
+#hand { top: 760px; font-size: 200px; line-height: 1.15; }
+
+/* الميزانية */
+#bt { top: 300px; font-size: 76px; color: var(--gold); }
+#bnum { top: 470px; font-size: 230px; line-height: 1; letter-spacing: -6px; direction: ltr; }
+#bunit { top: 740px; font-size: 64px; font-weight: 800; }
+#bars { left: 120px; right: 120px; top: 930px; display: grid; gap: 34px; }
+.bar { display: grid; grid-template-columns: 300px 1fr 200px; align-items: center; gap: 26px; font-size: 46px; font-weight: 800; will-change: transform, opacity; }
+.bar i { height: 26px; border-radius: 30px; background: rgba(255,255,255,.14); overflow: hidden; display: block; }
+.bar i b { display: block; height: 100%; border-radius: 30px; background: linear-gradient(90deg, #fff, #FFD27A); transform-origin: right; }
+.bar em { font-style: normal; color: var(--gold); direction: ltr; text-align: left; font-size: 42px; }
+
+/* الخيارات الثلاثة */
+#ot { top: 250px; font-size: 92px; line-height: 1.2; }
+#ot small { display: block; font-size: 60px; color: var(--gold); font-weight: 800; }
+.opt { left: 290px; top: 640px; width: 500px; height: 760px; border-radius: 46px; overflow: hidden; background-size: cover; background-position: center; border: 4px solid rgba(255,255,255,.85); box-shadow: 0 50px 100px -30px rgba(0,0,0,.9); will-change: transform, opacity; }
+.opt span { position: absolute; left: 24px; right: 24px; bottom: 24px; padding: 16px 22px; border-radius: 26px; background: rgba(15,8,18,.72); font-size: 40px; font-weight: 800; text-align: center; }
+#ai { left: 60px; bottom: 200px; font-size: 26px; font-weight: 700; color: rgba(255,255,255,.65); }
+#stampx { z-index: 6; left: 360px; top: 1180px; width: 360px; height: 360px; border-radius: 50%; display: grid; place-items: center; text-align: center; font-size: 62px; font-weight: 900; line-height: 1.1; color: #3A1A05; background: radial-gradient(circle at 35% 30%, #FFE7B0, #FFB84D 55%, #E08A1E); box-shadow: 0 30px 80px rgba(255,184,77,.55); border: 10px solid rgba(255,255,255,.6); will-change: transform, opacity; }
+
+/* المهام */
+#card { left: 90px; right: 90px; top: 1150px; padding: 36px 40px; border-radius: 44px; background: rgba(18,8,20,.62); border: 2px solid rgba(255,255,255,.14); backdrop-filter: blur(18px); display: flex; align-items: center; gap: 34px; box-shadow: 0 40px 90px -30px rgba(0,0,0,.8); }
+#check { position: relative; flex: none; width: 150px; height: 150px; }
+#check .c { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFE7B0, #FFB84D 55%, #E08A1E); box-shadow: 0 16px 40px rgba(255,184,77,.5); will-change: transform; }
+#check svg { position: absolute; inset: 30px; width: 90px; height: 90px; will-change: transform; }
+#ctext b { display: block; font-size: 92px; font-weight: 900; line-height: 1.1; }
+#ctext small { display: block; margin-top: 6px; font-size: 48px; font-weight: 800; color: var(--gold); }
+#tt { top: 330px; font-size: 80px; }
+#prog { left: 140px; right: 140px; top: 520px; height: 18px; border-radius: 20px; background: rgba(255,255,255,.15); overflow: hidden; }
+#prog b { display: block; height: 100%; background: var(--grad); transform-origin: right; }
+
+/* السعر */
+#p1 { top: 640px; font-size: 130px; }
+#p2 { top: 820px; font-size: 200px; line-height: 1.1; }
+#p3 { top: 1110px; font-size: 64px; color: var(--gold); font-weight: 800; }
+
+/* الختام */
+#logo { left: 315px; top: 470px; width: 450px; height: 450px; object-fit: contain; }
+#e1 { top: 960px; font-size: 112px; }
+#e2 { top: 1150px; font-size: 50px; color: var(--gold); font-weight: 800; }
+#e3 { left: 50%; top: 1290px; transform: translateX(-50%); direction: ltr; white-space: nowrap; font-size: 42px; font-weight: 800; padding: 16px 44px; border-radius: 999px; background: var(--grad); color: #fff; box-shadow: 0 30px 60px -24px rgba(229,25,94,.8); }
+
+#grain { position: absolute; inset: 0; background-size: 1080px 1920px; mix-blend-mode: overlay; opacity: .13; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(75% 55% at 50% 50%, transparent 55%, rgba(0,0,0,.6) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+
+#ui { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: rgba(20,12,22,.88); border: 1px solid rgba(255,255,255,.12); font: 700 13px "Cairo", sans-serif; color: #fff; }
+#ui button { cursor: pointer; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; border-radius: 10px; padding: 6px 12px; font: inherit; }
+#ui input[type=range] { width: 220px; accent-color: #E5195E; }
+#ui .t { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; direction: ltr; }
+body.rec #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="bgs"></div>
+  <div id="dim"></div>
+  <div id="chaos"></div>
+  <div class="abs line" id="cnt"><span id="cq">٠</span> قاعة · <span id="cm">٠</span> رسالة</div>
+  <div id="burst"></div><div id="rays"></div>
+  <div class="abs line" id="hand">خلّها<br><span class="g">علينا.</span></div>
+
+  <div class="abs line" id="bt">قل لنا ميزانيتك بس</div>
+  <div class="abs line" id="bnum">0</div>
+  <div class="abs line" id="bunit">ريال · ٣٠٠ ضيف</div>
+  <div class="abs" id="bars"></div>
+
+  <div class="abs line" id="ot">٣ خيارات ضمنها<small>خلال ٢٤ ساعة</small></div>
+  <div class="abs opt" id="o0" style="background-image:url(img/f4-rooftop.webp)"><span>الخيار ١</span></div>
+  <div class="abs opt" id="o1" style="background-image:url(img/f1-wedding.webp)"><span>الخيار ٢</span></div>
+  <div class="abs opt" id="o2" style="background-image:url(img/f2-milka.webp)"><span>الخيار ٣</span></div>
+  <div class="abs" id="stampx">تم<br>الحجز ✓</div>
+  <div class="abs" id="ai">صور توضيحية مولّدة بالذكاء الاصطناعي</div>
+
+  <div class="abs line" id="tt">ونرتب الباقي</div>
+  <div class="abs" id="prog"><b id="progb"></b></div>
+  <div class="abs" id="card">
+    <div id="check"><div class="c"></div><svg viewBox="0 0 24 24" fill="none" stroke="#3A1A05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div id="ctext"><b id="ctitle">الكوشة</b><small id="cst">تتجهز</small></div>
+  </div>
+
+  <div class="abs line" id="p1">وتدفع…</div>
+  <div class="abs line" id="p2"><span class="g">نفس السعر.</span></div>
+  <div class="abs line" id="p3">بدون أي زيادة عليك</div>
+
+  <img class="abs" id="logo" src="logo.png" alt="مناسبتي">
+  <div class="abs line" id="e1">مناسبتك <span class="g">علينا.</span></div>
+  <div class="abs line" id="e2">قل لنا ميزانيتك… والباقي علينا</div>
+  <div class="abs" id="e3">munasabati-sigma.vercel.app</div>
+
+  <div id="vig"></div><div id="grain"></div><div id="black"></div><div id="flash"></div>
+</div></div>
+
+<div id="ui"><button id="play">تشغيل</button><button id="restart">من البداية</button><input id="seek" type="range" min="0" max="30" step="0.01" value="0" aria-label="الوقت"><span class="t" id="time">0.00 / 30.00</span></div>
+<audio id="music" src="audio/mix.m4a" preload="auto"></audio>
+
+<script>
+/* ═══ الخط الزمني (يطابق audio/make_audio.py) ═══ */
+const DUR = 30;
+const FREEZE = 3.6, HAND = 4.0, BUDGET = 5.6, OPTS = 11.8, PICK = 15.2, STAMP = 16.0, TASKS = 18.3, PRICE = 23.9, END = 26.8;
+const MSGS = [
+  ["قاعة الندى", "كم سعر الخميس؟"], ["أنا", "متاح ٢٠ شوال؟", 1], ["قروب العيلة 👨‍👩‍👧", "شفتوا القاعة الثانية؟"], ["كوشة", "أرسل لي الصور"],
+  ["أنا", "كم العربون؟", 1], ["مصورة", "محجوزة ذاك اليوم 😔"], ["قاعة", "السعر بدون العشاء"], ["أمي", "لا، صغيرة!"],
+  ["أنا", "فيه قسم نساء منفصل؟", 1], ["ضيافة", "كم عدد الضيوف؟"], ["قاعة", "رد بعد العيد"], ["خالتي", "ليش ما سألتوا عن…"],
+  ["أنا", "ميزانيتنا ما تكفي 😩", 1], ["قاعة", "الأسعار تغيرت"], ["أختي", "وش رأيك بهذي؟"], ["مورد", "تواصل معي خاص"],
+  ["أنا", "طيب والكوشة؟", 1], ["قروب العيلة 👨‍👩‍👧", "٤٧ رسالة جديدة"], ["قاعة", "مشغولين الحين"], ["أنا", "متى تردون؟!", 1],
+];
+const BARS = [["القاعة", .32, "25,600"], ["العشاء والضيافة", .27, "21,600"], ["الكوشة والتنسيق", .12, "9,600"], ["التصوير", .08, "6,400"]];
+const TASK = [["الكوشة", "تتجهز", "img/f2-milka.webp"], ["التصوير", "مؤكد", "img/f4-rooftop.webp"], ["الضيافة", "مؤكدة", "img/f3-coffee.webp"], ["الدعوات", "وصلت للضيوف", "img/invite.png"]];
+const TASK_AT = [18.5, 19.8, 21.1, 22.4];
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eo5 = (x) => 1 - Math.pow(1 - x, 5);
+const eio = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 2.0; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const p = (t, a, b, e = eo) => e(clamp((t - a) / (b - a)));
+const css = (el, o, tr) => { el.style.opacity = o; el.style.transform = tr || ""; };
+const hit = (t, a, d = .25) => (t >= a && t < a + d ? 1 - (t - a) / d : 0);
+const ar = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+
+/* فقاعات الفوضى: مواقع ثابتة شبه عشوائية */
+let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+const BUBS = MSGS.map(([who, txt, me], i) => {
+  const el = document.createElement("div"); el.className = "bub" + (me ? " me" : "");
+  el.innerHTML = `<small>${who}</small>${txt}`; $("chaos").appendChild(el);
+  const x = 40 + rnd() * 420, y = 360 + rnd() * 1300, r = (rnd() - .5) * 14;
+  el.style.left = x + "px"; el.style.top = y + "px";
+  return { el, at: .45 + i * .15, r, dx: (rnd() - .5) * 1600, dy: (rnd() - .5) * 2200 };
+});
+/* الخلفيات */
+const mkbg = (src) => { const d = document.createElement("div"); d.className = "bg"; d.style.backgroundImage = `url(${src})`; $("bgs").appendChild(d); return d; };
+const BG_CHAOS = mkbg("img/f3-coffee.webp"), BG_TASK = TASK.map((x) => mkbg(x[2])), BG_PRICE = mkbg("img/f1-wedding.webp");
+BARS.forEach(([l, , v]) => { const d = document.createElement("div"); d.className = "bar"; d.innerHTML = `<span>${l}</span><i><b></b></i><em>${v}</em>`; $("bars").appendChild(d); });
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  let flash = 0, shake = 0;
+
+  /* ── الفوضى ── */
+  const inChaos = t < FREEZE + .4;
+  BG_CHAOS.style.opacity = t < HAND ? 1 : 0; BG_CHAOS.style.transform = `scale(${1.08 + .06 * p(t, 0, FREEZE, (x) => x)})`; BG_CHAOS.style.filter = `blur(${6 * p(t, 0, FREEZE)}px) saturate(.7)`;
+  BUBS.forEach((b) => {
+    const k = p(t, b.at, b.at + .22, back), fly = p(t, HAND, HAND + .5, eo5);
+    css(b.el, t >= b.at && t < HAND + .5 ? k * (1 - fly) : 0, `translate(${b.dx * fly}px, ${b.dy * fly}px) rotate(${b.r + 40 * fly}deg) scale(${(.4 + .6 * k) * (1 + .3 * fly)})`);
+  });
+  const nq = Math.round(47 * p(t, .4, FREEZE, (x) => x)), nm = Math.round(213 * p(t, .4, FREEZE, (x) => x * x));
+  $("cq").textContent = ar(nq); $("cm").textContent = ar(nm);
+  css($("cnt"), inChaos && t < HAND ? p(t, .3, .6) : 0, `translateX(${Math.sin(t * 50) * 8 * p(t, 2, FREEZE)}px)`);
+  if (t > 1.5 && t < FREEZE) shake = 5 * p(t, 1.5, FREEZE);
+  $("black").style.opacity = t >= FREEZE && t < HAND ? 1 : 0;
+
+  /* ── «خلّها علينا.» ── */
+  const hi = p(t, HAND, HAND + .3, back), ho = p(t, BUDGET - .35, BUDGET, eio);
+  css($("hand"), t >= HAND && t < BUDGET ? 1 - ho : 0, `scale(${1.8 - .8 * hi + .04 * p(t, HAND, BUDGET, (x) => x)})`);
+  const bi = p(t, HAND, HAND + .45, eo5), burstOn = (t >= HAND && t < BUDGET) || (t >= PRICE && t < END + 2);
+  const bAt = t >= PRICE ? PRICE : HAND;
+  css($("burst"), burstOn ? (1 - .55 * p(t, bAt + .3, bAt + 1.6)) * (t < BUDGET || t >= PRICE ? 1 : 0) : 0, `scale(${.2 + 1.2 * p(t, bAt, bAt + .45, eo5)})`);
+  css($("rays"), burstOn ? .75 : 0, `rotate(${(t - bAt) * 12}deg) scale(${.6 + .5 * p(t, bAt, bAt + .45, eo5)})`);
+  flash = Math.max(flash, hit(t, HAND, .45)); shake = Math.max(shake, hit(t, HAND, .4) * 18);
+
+  /* ── الميزانية ── */
+  const inB = t >= BUDGET && t < OPTS;
+  const bo = p(t, OPTS - .4, OPTS, eio);
+  css($("bt"), inB ? p(t, BUDGET, BUDGET + .4) * (1 - bo) : 0, `translateY(${(1 - p(t, BUDGET, BUDGET + .4)) * 30}px)`);
+  const cnt = p(t, BUDGET + .4, BUDGET + 2.3, eio);
+  $("bnum").textContent = (Math.round(80000 * cnt / 1000) * 1000).toLocaleString("en-US");
+  css($("bnum"), inB ? p(t, BUDGET + .3, BUDGET + .6) * (1 - bo) : 0, `scale(${1 + .06 * hit(t, BUDGET + 2.3, .3)})`);
+  css($("bunit"), inB ? p(t, BUDGET + 2.2, BUDGET + 2.6) * (1 - bo) : 0, "");
+  flash = Math.max(flash, hit(t, BUDGET + 2.3, .2) * .4);
+  [...$("bars").children].forEach((el, i) => { const a = BUDGET + 2.8 + i * .45, k = p(t, a, a + .35, back); css(el, inB ? k * (1 - bo) : 0, `translateX(${(1 - k) * -80}px)`); el.querySelector("b").style.transform = `scaleX(${BARS[i][1] * 2.6 * p(t, a + .1, a + .9, eo5)})`; });
+
+  /* ── الخيارات الثلاثة ── */
+  const inO = t >= OPTS && t < TASKS;
+  const oo = p(t, TASKS - .35, TASKS, eio);
+  css($("ot"), inO ? p(t, OPTS, OPTS + .4, back) * (1 - oo) : 0, `scale(${1.2 - .2 * p(t, OPTS, OPTS + .4)})`);
+  [0, 1, 2].forEach((i) => {
+    const a = OPTS + .6 + i * .35, k = p(t, a, a + .45, back), pk = p(t, PICK, PICK + .5, eo5);
+    const fan = (i - 1), chosen = i === 1;
+    const x = fan * 330 * (1 - (chosen ? pk : 0)) + fan * 200 * (chosen ? 0 : pk), rot = fan * 9 * (1 - (chosen ? pk : 0));
+    const sc = (.86 + .14 * k) * (chosen ? 1 + .14 * pk : 1 - .12 * pk), op = k * (chosen ? 1 : 1 - .75 * pk);
+    css($("o" + i), inO ? op * (1 - oo) : 0, `translate(${x}px, ${(1 - k) * 260}px) rotate(${rot}deg) scale(${sc})`);
+    $("o" + i).style.zIndex = chosen ? 3 : 1;
+  });
+  const sk = p(t, STAMP, STAMP + .25, back);
+  css($("stampx"), t >= STAMP && inO ? (1 - oo) : 0, `scale(${2.2 - 1.2 * sk}) rotate(${-14 + 6 * sk}deg)`);
+  flash = Math.max(flash, hit(t, STAMP, .3) * .6); shake = Math.max(shake, hit(t, STAMP, .3) * 14);
+  css($("ai"), inO ? p(t, OPTS + .6, OPTS + 1) * (1 - oo) : 0, "");
+
+  /* ── المهام ── */
+  const inT = t >= TASKS && t < PRICE;
+  const to = p(t, PRICE - .35, PRICE, eio);
+  css($("tt"), inT ? p(t, TASKS, TASKS + .4) * (1 - to) : 0, "");
+  css($("prog"), inT ? p(t, TASKS, TASKS + .4) * (1 - to) : 0, "");
+  const done = TASK_AT.filter((a) => t >= a + .6).length;
+  $("progb").style.transform = `scaleX(${Math.min(1, (done + p(t, TASK_AT[Math.min(done, 3)] + .1, TASK_AT[Math.min(done, 3)] + .6) * (done < 4 ? 1 : 0)) / 4)})`;
+  const di = TASK_AT.findIndex((a, i) => t >= a && (i === 3 ? t < PRICE : t < TASK_AT[i + 1]));
+  BG_TASK.forEach((b, i) => { const on = inT && i === di; b.style.opacity = on ? p(t, TASK_AT[i], TASK_AT[i] + .35) : 0; b.style.transform = `scale(${1.12 - .08 * p(t, TASK_AT[i], TASK_AT[i] + 1.3)})`; });
+  if (di >= 0 && inT) {
+    const a = TASK_AT[di]; $("ctitle").textContent = TASK[di][0]; $("cst").textContent = TASK[di][1];
+    const ci = p(t, a + .1, a + .4, back), co = di === 3 ? to : p(t, TASK_AT[di + 1] - .15, TASK_AT[di + 1], eio);
+    css($("card"), ci * (1 - co), `translateY(${(1 - ci) * 120}px) scale(${.92 + .08 * ci})`);
+    const st = p(t, a + .45, a + .7, back);
+    $("check").querySelector(".c").style.transform = `scale(${st})`; $("check").querySelector("svg").style.transform = `scale(${st}) rotate(${(1 - st) * -30}deg)`;
+    flash = Math.max(flash, hit(t, a + .45, .12) * .3);
+  } else $("card").style.opacity = 0;
+
+  /* ── نفس السعر ── */
+  const inP = t >= PRICE && t < END;
+  BG_PRICE.style.opacity = t >= PRICE ? 1 : 0; BG_PRICE.style.transform = `scale(${1.2 - .12 * p(t, PRICE, END + 3, (x) => x)})`; BG_PRICE.style.filter = `brightness(${.8 + .4 * hit(t, PRICE + .8, .8)})`;
+  const po = p(t, END - .3, END, eio);
+  [["p1", PRICE + .1, eo], ["p2", PRICE + .8, back], ["p3", PRICE + 1.6, eo]].forEach(([id, a, f]) => { const k = p(t, a, a + .3, f); css($(id), inP && t >= a ? k * (1 - po) : 0, `scale(${(id === "p2" ? 1.6 : 1.2) - (id === "p2" ? .6 : .2) * k})`); });
+  flash = Math.max(flash, hit(t, PRICE + .8, .4)); shake = Math.max(shake, hit(t, PRICE + .8, .35) * 16);
+  $("dim").style.opacity = 1; $("dim").style.background = t >= PRICE && t < END ? "rgba(5,2,8,.72)" : t >= END ? "rgba(5,2,8,.55)" : "";
+
+  /* ── الختام ── */
+  const e = END, lg = p(t, e, e + .4, back);
+  css($("logo"), t >= e ? 1 : 0, `scale(${2 - lg})`);
+  if (t >= e) { css($("burst"), .6 - .35 * p(t, e + .2, e + 1.5), `scale(${.3 + p(t, e, e + .4, eo5)})`); css($("rays"), .55, `rotate(${(t - e) * 10}deg)`); flash = Math.max(flash, hit(t, e, .35)); }
+  [["e1", e + .5, back], ["e2", e + 1.0, eo]].forEach(([id, a, f]) => { const k = p(t, a, a + .35, f); css($(id), t >= a ? k : 0, `scale(${1.3 - .3 * k})`); });
+  const k3 = p(t, e + 1.4, e + 1.8, back); css($("e3"), t >= e + 1.4 ? k3 : 0, `translateX(-50%) scale(${.6 + .4 * k3})`);
+
+  $("flash").style.opacity = flash * .8;
+  $("grain").style.backgroundImage = `url(grain/g${Math.floor(t * 24) % 6}.png)`;
+  shake = Math.max(shake, hit(t, e, .35) * 16);
+  $("stage").style.transform = (document.body.classList.contains("rec") ? "" : `scale(${window.__fit || 1}) `) + `translate(${Math.sin(t * 90) * shake}px, ${Math.cos(t * 77) * shake}px)`;
+}
+window.__render = render; window.__DUR = DUR;
+
+/* ═══ المعاينة ═══ */
+const music = $("music"), seek = $("seek"), timeEl = $("time");
+let playing = false, t0 = 0, base = 0, raf = 0;
+const now = () => (playing ? (music.readyState >= 2 && !music.error ? music.currentTime : base + (performance.now() - t0) / 1000) : base);
+function loop() { const t = now(); if (t >= DUR) { pause(); base = DUR; } render(t); seek.value = t; timeEl.textContent = `${t.toFixed(2)} / ${DUR.toFixed(2)}`; if (playing) raf = requestAnimationFrame(loop); }
+function play() { if (base >= DUR) base = 0; playing = true; t0 = performance.now(); try { music.currentTime = base; void music.play(); } catch {} $("play").textContent = "إيقاف"; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); }
+function pause() { base = now(); playing = false; music.pause(); $("play").textContent = "تشغيل"; cancelAnimationFrame(raf); }
+$("play").onclick = () => (playing ? pause() : play());
+$("restart").onclick = () => { pause(); base = 0; play(); };
+seek.oninput = () => { base = +seek.value; try { music.currentTime = base; } catch {} render(base); timeEl.textContent = `${base.toFixed(2)} / ${DUR.toFixed(2)}`; };
+const fit = () => { window.__fit = Math.min(innerWidth / 1080, (innerHeight - 70) / 1920); render(+seek.value); };
+addEventListener("resize", fit);
+if (new URLSearchParams(location.search).has("record")) { document.body.classList.add("rec"); $("wrap").style.placeItems = "start"; }
+else fit();
+render(0);
+</script>
+</body>
+</html>
