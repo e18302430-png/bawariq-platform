@@ -1,89 +1,86 @@
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Icon, LogoMark } from "@munasabati/ui";
 
-/* ═══════════ «منسقتك تكلمك»: مقدمة الواجهة ═══════════
-   شخصية مناسبتي تسولف مع الزائر بلهجتنا: كلام يطلع كلمة كلمة مثل الكلام، وموجة صوت تتحرك،
-   وصوت «سوالف» اختياري (مولّد بالمتصفح). بعدها تسلّمه لمعالج الميزانية. تشتغل مرة بالجلسة. */
+/* ═══════════ «منسقتك تكلمك»: مقدمة الواجهة بأسلوب مواقع الجوائز ═══════════
+   خط زمني ثابت متزامن مع موسيقى مولّدة بالكود (media/talk.m4a، مصدرها brand/video-talk/make_audio.py).
+   الصوت ينفتح بلمسة ختم الباب عند الدخول (المتصفحات تمنع أي صوت قبل أول لمسة)،
+   ولو ما فيه باب نشغله مباشرة، وإلا مع أول لمسة على الصفحة. */
 
-const LINES: { t: string; hold?: number; big?: boolean }[] = [
-  { t: "هلا والله 👋", big: true },
-  { t: "عندك مناسبة… وضايع بين القاعات والموردين والقروبات؟" },
-  { t: "لا تشيل هم." , big: true },
-  { t: "أنا منسقتك في مناسبتي." },
-  { t: "قل لي ميزانيتك بس…" },
-  { t: "وأختار لك ٣ قاعات تناسبك خلال ٢٤ ساعة." },
-  { t: "وأرتب الكوشة والتصوير والضيافة والدعوات… من الألف للياء." },
-  { t: "وتدفع نفس السعر، ولا ريال زيادة." , big: true },
-  { t: "يلا نبدأ؟ 🤍", big: true, hold: 900 },
+type Line = { at: number; t: string; big?: boolean };
+const LINES: Line[] = [
+  { at: 0.4, t: "هلا والله 👋", big: true },
+  { at: 2.6, t: "عندك مناسبة… وضايع بين القاعات والموردين والقروبات؟" },
+  { at: 6.6, t: "لا تشيل هم.", big: true },
+  { at: 8.8, t: "أنا منسقتك في مناسبتي." },
+  { at: 11.0, t: "قل لي ميزانيتك بس…" },
+  { at: 13.4, t: "وأختار لك ٣ قاعات تناسبك خلال ٢٤ ساعة." },
+  { at: 16.6, t: "وأرتب الكوشة والتصوير والضيافة والدعوات… من الألف للياء." },
+  { at: 20.4, t: "وتدفع نفس السعر، ولا ريال زيادة.", big: true },
+  { at: 23.6, t: "يلا نبدأ؟ 🤍", big: true },
 ];
-const WORD_MS = 210, GAP_MS = 850;
+const WORD = 0.21, END = 26.0;
 
-/** صوت «سوالف» ناعم: نغمات قصيرة مع كل كلمة (بدون أي تسجيل صوتي) */
-function useBlips() {
-  const ac = useRef<AudioContext | null>(null);
-  const on = useRef(false);
-  const enable = () => { on.current = true; if (!ac.current) ac.current = new AudioContext(); void ac.current.resume(); };
-  const disable = () => { on.current = false; };
-  const blip = (k: number) => {
-    const c = ac.current; if (!on.current || !c) return;
-    const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
-    const base = [523, 587, 659, 698, 784][k % 5] * (0.92 + Math.random() * 0.16);
-    o.type = "triangle"; o.frequency.setValueAtTime(base, c.currentTime); o.frequency.exponentialRampToValueAtTime(base * 0.86, c.currentTime + .09);
-    f.type = "lowpass"; f.frequency.value = 2200;
-    g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(.06, c.currentTime + .012); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .11);
-    o.connect(f).connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .13);
-  };
-  return { enable, disable, blip, isOn: () => on.current };
-}
+declare global { interface Window { __mnsTalk?: HTMLAudioElement; __mnsTalkStarted?: boolean; __mnsGateOpen?: boolean } }
 
 export function HeroTalk({ onDone }: { onDone: () => void }) {
-  const [line, setLine] = useState(0);
-  const [words, setWords] = useState(0);
-  const [sound, setSound] = useState(false);
-  const [talking, setTalking] = useState(true);
-  const b = useBlips();
+  const [now, setNow] = useState(-1);
+  const [muted, setMuted] = useState(false);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const t0 = useRef(0);
   const done = useRef(false);
-  const finish = () => { if (done.current) return; done.current = true; try { sessionStorage.setItem("mns-talk", "1"); } catch { /* */ } onDone(); };
+  const finish = () => { if (done.current) return; done.current = true; audio.current?.pause(); try { sessionStorage.setItem("mns-talk", "1"); } catch { /* */ } onDone(); };
 
   useEffect(() => {
-    const cur = LINES[line]; if (!cur) { finish(); return; }
-    const n = cur.t.split(" ").length;
-    if (words < n) { setTalking(true); const id = setTimeout(() => { setWords((w) => w + 1); b.blip(words + line); }, words === 0 ? 120 : WORD_MS); return () => clearTimeout(id); }
-    setTalking(false);
-    const id = setTimeout(() => { if (line + 1 >= LINES.length) finish(); else { setLine(line + 1); setWords(0); } }, GAP_MS + (cur.hold ?? 0) + n * 40);
-    return () => clearTimeout(id);
-  }, [line, words]); // eslint-disable-line react-hooks/exhaustive-deps
+    let raf = 0, started = false;
+    const a = window.__mnsTalk ?? new Audio("./media/talk.m4a");
+    window.__mnsTalk = a; audio.current = a; a.preload = "auto";
+    const clock = () => (!a.paused && a.currentTime > 0 ? a.currentTime : (performance.now() - t0.current) / 1000);
+    const loop = () => { const c = clock(); setNow(c); if (c >= END) { finish(); return; } raf = requestAnimationFrame(loop); };
+    const tryPlay = (from: number) => { a.currentTime = from; window.__mnsTalkStarted = true; return a.play().then(() => true).catch(() => false); };
+    const onGesture = () => { const c = (performance.now() - t0.current) / 1000; if (c < END) void tryPlay(c); off(); };
+    const off = () => { ["pointerdown", "keydown", "touchend"].forEach((e) => removeEventListener(e, onGesture)); };
+    const start = () => {
+      if (started) return; started = true; t0.current = performance.now();
+      void tryPlay(0).then((ok) => { if (!ok) ["pointerdown", "keydown", "touchend"].forEach((e) => addEventListener(e, onGesture, { once: true })); });
+      raf = requestAnimationFrame(loop);
+    };
+    const gate = document.getElementById("gate");
+    if (gate && !window.__mnsGateOpen) addEventListener("mns-gate-open", () => setTimeout(start, 650), { once: true }); else start();
+    return () => { cancelAnimationFrame(raf); off(); a.pause(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cur = LINES[Math.min(line, LINES.length - 1)];
-  const shown = cur.t.split(" ");
-  const toggle = () => { if (sound) { b.disable(); setSound(false); } else { b.enable(); setSound(true); } };
+  const li = LINES.reduce((k, l, i) => (now >= l.at - 0.05 ? i : k), -1);
+  const line = li >= 0 ? LINES[li] : null;
+  const words = line ? line.t.split(" ") : [];
+  const nextAt = li + 1 < LINES.length ? LINES[li + 1].at : END;
+  const shownWords = line ? Math.floor((now - line.at) / WORD) + 1 : 0;
+  const leaving = line ? now > nextAt - 0.35 : false;
+  const speaking = !!line && shownWords <= words.length;
+  const toggle = () => { const a = audio.current; if (!a) return; a.muted = !a.muted; setMuted(a.muted); if (a.paused) { a.currentTime = Math.max(0, now); void a.play().catch(() => {}); } };
 
   return (
-    <motion.div className="talk" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20, filter: "blur(10px)" }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
+    <motion.div className="talk" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.04, filter: "blur(14px)" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
       <div className="talk-who">
-        <span className={"talk-avatar" + (talking ? " on" : "")}><LogoMark size={46} animated /><i /><i /></span>
-        <div><b>منسقتك من مناسبتي</b><span className="talk-wave" aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6].map((k) => <i key={k} className={talking ? "on" : ""} style={{ animationDelay: `${k * 0.09}s` }} />)}</span></div>
+        <span className={"talk-avatar" + (speaking ? " on" : "")}><LogoMark size={40} animated /><i /><i /></span>
+        <span className="talk-name">منسقتك من مناسبتي</span>
+        <span className="talk-wave" aria-hidden="true">{Array.from({ length: 9 }, (_, k) => <i key={k} className={speaking ? "on" : ""} style={{ animationDelay: `${(k % 5) * 0.08}s` }} />)}</span>
       </div>
-      <div className="talk-stage" aria-live="polite">
-        <AnimatePresence mode="wait">
-          <motion.p key={line} className={"talk-line" + (cur.big ? " big" : "")} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -14, filter: "blur(8px)" }} transition={{ duration: 0.35 }}>
-            {shown.map((w, i) => (
-              <span key={i}><motion.span initial={{ opacity: 0, y: 14, filter: "blur(6px)" }} animate={i < words ? { opacity: 1, y: 0, filter: "blur(0px)" } : { opacity: 0, y: 14, filter: "blur(6px)" }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>{w}</motion.span>{i < shown.length - 1 ? " " : ""}</span>
-            ))}
-          </motion.p>
-        </AnimatePresence>
-      </div>
+      <p className={"talk-line" + (line?.big ? " big" : "") + (leaving ? " out" : "")} aria-live="polite" key={li}>
+        {words.map((w, i) => (
+          <span key={i} className="tw"><span className={"twi" + (i < shownWords ? " in" : "") + (i === shownWords - 1 && speaking ? " now" : "")}>{w}</span>{i < words.length - 1 ? " " : ""}</span>
+        ))}
+      </p>
       <div className="talk-foot">
-        <div className="talk-prog" aria-hidden="true">{LINES.map((_, i) => <i key={i} className={i < line ? "done" : i === line ? "now" : ""} />)}</div>
-        <button className="talk-btn" onClick={toggle} aria-pressed={sound} aria-label={sound ? "اكتم الصوت" : "شغّل الصوت"}><Icon name={sound ? "Volume2" : "VolumeX"} size={16} />{sound ? "الصوت شغال" : "شغّل الصوت"}</button>
+        <div className="talk-prog" aria-hidden="true"><b style={{ width: `${Math.max(0, Math.min(1, now / END)) * 100}%` }} /></div>
+        <button className="talk-btn" onClick={toggle} aria-pressed={!muted} aria-label={muted ? "شغّل الصوت" : "اكتم الصوت"}><Icon name={muted ? "VolumeX" : "Volume2"} size={16} /></button>
         <button className="talk-btn" onClick={finish}>تخطي <Icon name="ArrowLeft" size={15} /></button>
       </div>
     </motion.div>
   );
 }
 
-/** هل نعرض المقدمة؟ (مرة بالجلسة، وما نعرضها مع تقليل الحركة) */
+/** نعرض المقدمة مرة بالجلسة، وما نعرضها مع «تقليل الحركة» */
 export const shouldTalk = () => {
   try { if (sessionStorage.getItem("mns-talk")) return false; } catch { /* */ }
   return typeof matchMedia === "undefined" || !matchMedia("(prefers-reduced-motion: reduce)").matches;

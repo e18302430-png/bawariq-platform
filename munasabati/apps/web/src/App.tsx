@@ -225,7 +225,7 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
   ];
   return (
     <div className="hero-frame" id="top">
-      <section className="hero">
+      <section className={"hero" + (talk ? " is-talking" : "")}>
         <div className="hero-video-box"><LiveFilm onReady={onFilmReady} /></div>
         <div className="hero-shade" />
         <nav className="hero-nav" aria-label="التنقل">
