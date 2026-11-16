@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from
 import { INVITE_TIERS, OCCASIONS, type Occasion } from "@munasabati/core";
 import { BRAND, Icon, Logo, LogoMark, Reveal, ScrollNav, ThemeToggle, photoUrl } from "@munasabati/ui";
 import { LiveFilm } from "./LiveFilm";
-import { Concierge } from "./Concierge";
+import { ConciergeChat } from "./ConciergeChat";
 import { CinemaFX } from "./CinemaFX";
 import { HeroTalk, shouldTalk } from "./HeroTalk";
 import { REELS, Reels, ReelViewer, VENUE_REEL } from "./Reels";
@@ -246,7 +246,7 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
             <br />علينا من الألف للياء.
           </h1>
           <p className="lead">قل لنا ميزانيتك بس. منسقتك تختار لك القاعة وتنسق كل شي ضمنها، وأنت تدفع نفس السعر بدون أي زيادة.</p>
-          <Concierge onOcc={(id) => { const o = OCCASIONS.find((x) => x.id === id); if (o) onPick(o); }} />
+          <ConciergeChat onOcc={(id) => { const o = OCCASIONS.find((x) => x.id === id); if (o) onPick(o); }} />
           </motion.div>}</AnimatePresence>
           <div className="hero-mini">
             {!talk && <button className="hero-link talk-replay" onClick={() => setTalk(true)}><Icon name="MessageCircle" size={15} /> اسمع منسقتك من جديد</button>}
