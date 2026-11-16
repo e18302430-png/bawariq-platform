@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem, type StoryChapter, INVITE_TIERS, inviteTierOf, requestInviteTier, sar } from "@munasabati/core";
-import { Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
+import { AiTag, Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, StudioPanel, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
 import diriyah from "../assets/invite/diriyah.webp";
@@ -24,6 +24,9 @@ const WATERCOLOR: Partial<Record<InviteTemplate, { img: string; sm: string; tint
   diriyah: { img: diriyah, sm: diriyahSm, tint: "#c98a5e", deep: "#6b3b25" },
   ula: { img: ula, sm: ulaSm, tint: "#b07a8a", deep: "#5b3346" },
 };
+/** خلفية الاستوديو (لو اختارها العميل) تحل محل لوحة القالب، وتبقى ألوان القالب */
+const artOf = (t: InviteTemplate, art?: string) => { const base = WATERCOLOR[t] ?? (art ? WATERCOLOR.diriyah! : undefined); return base && art && /^https:\/\//.test(art) ? { ...base, img: art, ai: true } : base ? { ...base, ai: false } : undefined; };
+
 const TEMPLATES: { id: InviteTemplate; name: string; desc: string }[] = [
   { id: "diriyah", name: "الدرعية", desc: "غروب نجدي" },
   { id: "balad", name: "جدة التاريخية", desc: "رواشين وأبواب" },
@@ -110,7 +113,7 @@ export function InviteCard({ template, guest, showPass = false, scratch }: { tem
   const t = template ?? db.client.invite.template;
   const info = useEventInfo();
   if (!info) return null;
-  const wc = WATERCOLOR[t];
+  const wc = artOf(t, db.client.invite.art);
   const dateBlock = (
     <div className="inv-date">
       <span>{info.day}</span>
@@ -123,6 +126,7 @@ export function InviteCard({ template, guest, showPass = false, scratch }: { tem
     return (
       <div className="wc-card" style={{ ["--wc-tint" as string]: wc.tint, ["--wc-deep" as string]: wc.deep }}>
         <img className="wc-scene" src={wc.img} alt="" loading="lazy" decoding="async" />
+        {wc.ai && <span className="wc-ai"><AiTag label="خلفية بالذكاء الاصطناعي" /></span>}
         <img className="wc-arch" src={arch} alt="" loading="lazy" decoding="async" />
         <div className="wc-body">
           <Monogram initials={info.initials} size={96} color={wc.deep} />
@@ -301,6 +305,8 @@ export function Invites() {
               ))}
             </div>
           </div>
+          {isCloud && <StudioPanel feature="invite-art" title="ارسم خلفية خاصة لدعوتك" sub="اختر الطابع والألوان، ونرسم لك لوحة مائية ما تتكرر. بدون أي أشخاص." onUse={(art) => { setInv({ art, template: WATERCOLOR[invite.template] ? invite.template : "diriyah" }); toast("صارت خلفية دعوتك"); }} />}
+          {invite.art && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setInv({ art: undefined })}><Icon name="RotateCcw" size={14} /> رجّع خلفية القالب الأصلية</button>}
           <div className="field"><label htmlFor="i-c">اسما العروسين</label><input id="i-c" className="input" placeholder="مثال: عبدالله ونورة" value={invite.couple ?? info?.couple ?? ""} onChange={(e) => setInv({ couple: e.target.value })} /></div>
           <div className="form-2">
             <div className="field"><label htmlFor="i-d">التاريخ</label><input id="i-d" type="date" className="input num" value={db.client.event!.date} onChange={(e) => e.target.value && apply(updateEvent({ date: e.target.value }))} /></div>
@@ -436,7 +442,7 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
 
   if (!g || !ev || !info) return <div className="container" style={{ paddingBlock: 60 }}><Empty icon="MailX" title="الدعوة غير موجودة">تأكد من الرابط أو تواصل مع صاحب المناسبة.</Empty></div>;
   const t = db.client.invite.template;
-  const wc = WATERCOLOR[t] ?? WATERCOLOR.diriyah!;
+  const wc = artOf(t, db.client.invite.art) ?? { ...WATERCOLOR.diriyah!, ai: false };
   const first = g.name.split(/[،,\s]/)[0];
   const start = new Date(`${ev.date}T${db.client.invite.time ?? "20:30"}:00`);
   const fmtCal = (x: Date) => x.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -476,7 +482,7 @@ function GuestInviteView({ code, rsvp }: { code: string; rsvp: (id: string, patc
           <motion.div key="env" className="gx-env" exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
             <div className="gx-env-in">
               <Monogram initials={info.initials} size={110} color={wc.deep} />
-              <div className={"gx-window" + (stage === "opening" ? " opening" : "")}><img src={wc.img} alt="" /></div>
+              <div className={"gx-window" + (stage === "opening" ? " opening" : "")}><img src={wc.img} alt="" />{wc.ai && <span className="wc-ai"><AiTag label="خلفية بالذكاء الاصطناعي" /></span>}</div>
               <div className={"gx-flaps" + (stage === "opening" ? " opening" : "")} aria-hidden="true"><i className="l" /><i className="r" /><i className="b" /></div>
               <SealBurst fire={burst} />
               <motion.button className="gx-seal" onClick={open} aria-label="افتح الدعوة" animate={stage === "opening" ? { scale: [1, 1.15, 0], opacity: [1, 1, 0], rotate: [0, -8, 20] } : { scale: [1, 1.04, 1] }} transition={stage === "opening" ? { duration: 0.7 } : { duration: 2.2, repeat: Infinity }}>

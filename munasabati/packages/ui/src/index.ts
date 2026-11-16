@@ -12,3 +12,4 @@ export * from "./ops";
 export * from "./assistant";
 export * from "./pano";
 export * from "./billing";
+export * from "./studio";

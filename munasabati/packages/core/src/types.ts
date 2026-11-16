@@ -256,7 +256,7 @@ export interface ClientSpace {
   doorKey?: string;
   tasks: Task[];
   favorites: string[];
-  invite: { template: InviteTemplate; message: string; time?: string; couple?: string; program?: ProgramItem[]; kids?: boolean; story?: StoryChapter[]; music?: boolean; tier?: InviteTier };
+  invite: { template: InviteTemplate; message: string; time?: string; /** خلفية مولّدة بالذكاء الاصطناعي من استوديو مناسبتي (رابط في تخزين المنصة) */ art?: string; couple?: string; program?: ProgramItem[]; kids?: boolean; story?: StoryChapter[]; music?: boolean; tier?: InviteTier };
   /** طلب ترقية باقة الدعوة (العميل يحوّل، والإدارة تأكد وتفعّل tier) */
   invitePlan?: { want: InviteTier; claimedAt: number };
   /** تفضيلات يتعلمها النظام من اختيارات العميل: اللي اختاره واللي رفضه */

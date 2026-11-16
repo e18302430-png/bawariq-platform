@@ -176,6 +176,7 @@ export function createSupabaseRepository(url: string, anonKey: string, authMode:
   const auth: AuthAdapter = {
     mode: authMode,
     user: () => user,
+    async token() { const { data } = await sb.auth.getSession(); return data.session?.access_token ?? null; },
     async quickSignIn(phone, name) {
       const local = phone.replace(/\D/g, "");
       const { data, error } = await sb.auth.signInAnonymously({ options: { data: { phone: local, name } } });

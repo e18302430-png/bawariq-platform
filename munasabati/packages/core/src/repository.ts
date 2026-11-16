@@ -13,6 +13,8 @@ export interface AuthAdapter {
   /** phone: رمز SMS (يحتاج مزود رسائل) · quick: دخول فوري بالاسم والجوال بدون رمز */
   mode: "phone" | "quick";
   user(): AuthUser | null;
+  /** توكن الجلسة الحالية (لاستدعاء دوال الخادم مثل استوديو الذكاء الاصطناعي) */
+  token?(): Promise<string | null>;
   /** دخول فوري: جلسة آمنة على الجهاز مربوطة برقم الجوال (قديم، للتوافق) */
   quickSignIn(phone: string, name?: string): Promise<AuthUser>;
   /** حساب جديد بالجوال وكلمة مرور (يدخل به من أي جهاز) */

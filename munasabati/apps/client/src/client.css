@@ -746,3 +746,5 @@ img.tpl-swatch { width: 100%; aspect-ratio: 5 / 6; object-fit: cover; border-rad
 .cg-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
 .cg-form .input { max-width: 170px; }
 .cg-ok { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.wc-ai { position: absolute; top: 10px; inset-inline-start: 10px; z-index: 4; pointer-events: none; }
+.wc-card, .gx-window { position: relative; }

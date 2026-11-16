@@ -661,3 +661,20 @@ body { background:
 .sub-card.overdue { border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
 .sub-pay summary { cursor: pointer; font-weight: 800; display: flex; gap: 8px; align-items: center; padding: 8px 0; }
 .sub-pay[open] { display: grid; gap: 12px; }
+
+/* ═══ استوديو مناسبتي ═══ */
+.ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; line-height: 1.4; padding: 3px 8px; border-radius: 99px; background: rgba(15, 10, 20, 0.66); color: #fff; backdrop-filter: blur(6px); white-space: nowrap; }
+.studio .st-row { display: grid; gap: 6px; }
+.studio .st-l { font-size: 13px; color: var(--muted); font-weight: 600; }
+.studio .st-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.studio .st-sw i { width: 14px; height: 14px; border-radius: 99px; display: inline-block; margin-inline-end: 6px; vertical-align: -2px; border: 1px solid rgba(0, 0, 0, 0.12); }
+.st-spin { width: 15px; height: 15px; border-radius: 99px; border: 2px solid currentColor; border-top-color: transparent; display: inline-block; animation: st-spin .8s linear infinite; vertical-align: -3px; }
+@keyframes st-spin { to { transform: rotate(360deg); } }
+.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.st-grid.decor { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.st-grid figure { position: relative; margin: 0; border-radius: 18px; overflow: hidden; background: var(--surface-2); aspect-ratio: 3 / 4; }
+.st-grid.decor figure { aspect-ratio: 4 / 3; }
+.st-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.st-grid .ai-badge { position: absolute; top: 8px; inset-inline-start: 8px; }
+.st-grid figcaption { position: absolute; inset-inline: 0; bottom: 0; display: flex; gap: 6px; justify-content: center; padding: 10px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); }
+@media (prefers-reduced-motion: reduce) { .st-spin { animation: none; } }
