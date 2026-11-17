@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>استوديو النصوص</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:wght@400;700&family=Anton&family=Bebas+Neue&family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=El+Messiri:wght@400;700&family=Harmattan:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Inter:wght@400;700;900&family=Lalezar&family=Lato:wght@400;700;900&family=Markazi+Text:wght@400;700&family=Montserrat:wght@400;700;900&family=Noto+Kufi+Arabic:wght@400;700;900&family=Noto+Naskh+Arabic:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;700;900&family=Readex+Pro:wght@400;700&family=Reem+Kufi:wght@400;700&family=Roboto:wght@400;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --soft:#f1f5f9;
+  --brand:#3b6ef5; --brand-2:#2a56d6; --ok:#10b981; --warn:#f59e0b; --bad:#f43f5e; --chk1:#e2e8f0; --chk2:#cbd5e1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1020; --panel:#0f172a; --ink:#e2e8f0; --muted:#94a3b8; --line:#1e293b; --soft:#162033; --chk1:#0f172a; --chk2:#1e293b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1020; --panel:#0f172a; --ink:#e2e8f0; --muted:#94a3b8; --line:#1e293b; --soft:#162033; --chk1:#0f172a; --chk2:#1e293b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;font-size:14px;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+header{height:56px;display:flex;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+.logo i{width:30px;height:30px;border-radius:8px;background:var(--brand);display:grid;place-items:center;color:#fff;font-style:normal;font-size:16px}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-2)}
+.btn.on{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.ico{width:36px;height:36px;padding:0;justify-content:center}
+main{display:flex;height:calc(100% - 56px)}
+#stage{position:relative;flex:1;overflow:hidden;background-color:var(--chk1);
+  background-image:linear-gradient(45deg,var(--chk2) 25%,transparent 25%),linear-gradient(-45deg,var(--chk2) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--chk2) 75%),linear-gradient(-45deg,transparent 75%,var(--chk2) 75%);
+  background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0;direction:ltr;touch-action:none}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:0 20px 50px -20px rgba(0,0,0,.45)}
+#world canvas{display:block}
+#overlay{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#overlay polygon{fill:rgba(255,255,255,0);stroke:#38bdf8;stroke-dasharray:6 4;cursor:pointer;vector-effect:non-scaling-stroke;stroke-width:1.5}
+#overlay polygon:hover{fill:rgba(59,110,245,.12);stroke:var(--brand)}
+#overlay polygon.edited{stroke:var(--ok);stroke-dasharray:none}
+#overlay polygon.removed{stroke:var(--bad);stroke-dasharray:none}
+#overlay polygon.sel{stroke:var(--brand);stroke-width:2.5;stroke-dasharray:none;fill:rgba(59,110,245,.08)}
+#overlay rect{fill:rgba(245,158,11,.1);stroke:#f59e0b;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;stroke-width:2}
+aside{width:370px;flex-shrink:0;border-inline-start:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+.sec h3{margin:0 0 8px;font-size:12px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between}
+#list{list-style:none;margin:0;padding:0;max-height:190px;overflow:auto}
+#list li{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer}
+#list li:hover{background:var(--soft)}
+#list li.sel{background:rgba(59,110,245,.12)}
+#list .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex-shrink:0}
+#list .dot.e{background:var(--ok)} #list .dot.r{background:var(--bad)}
+#list .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}
+#insp{flex:1;overflow:auto;padding:16px}
+.lbl{display:block;font-size:12px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+.field{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 10px;outline:none}
+.field:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,110,245,.18)}
+textarea.field{min-height:72px;resize:vertical;font-size:16px;line-height:1.7;unicode-bidi:plaintext}
+.orig{background:var(--soft);border-radius:9px;padding:8px 10px;color:var(--muted);unicode-bidi:plaintext}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.col{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:4px 8px}
+.col input[type=color]{width:34px;height:28px;border:0;background:none;padding:0;cursor:pointer}
+.col input[type=text]{border:0;outline:0;background:none;width:100%;font-family:monospace;font-size:12px;direction:ltr}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--soft);padding:4px;border-radius:9px}
+.seg button{border:0;background:none;padding:6px;border-radius:7px;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.badge{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600}
+.b-ok{background:rgba(16,185,129,.15);color:#059669}.b-warn{background:rgba(245,158,11,.15);color:#b45309}.b-bad{background:rgba(244,63,94,.15);color:#e11d48}
+.hint{color:var(--muted);line-height:1.9}
+details{border:1px solid var(--line);border-radius:12px;padding:4px 12px 12px;margin-top:16px}
+summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
+#drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl}
+#drop .box{max-width:640px;width:100%;text-align:center;background:var(--panel);border:2px dashed var(--line);border-radius:24px;padding:48px 24px;cursor:pointer}
+#drop .box:hover,#drop.over .box{border-color:var(--brand)}
+#drop h1{font-size:26px;margin:0 0 6px}
+#drop .up{width:64px;height:64px;border-radius:18px;background:var(--brand);color:#fff;display:grid;place-items:center;margin:22px auto 14px;font-size:30px;box-shadow:0 10px 30px -10px var(--brand)}
+#busy{position:absolute;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:5;direction:rtl}
+#busy .card{background:var(--panel);padding:22px 26px;border-radius:16px;min-width:300px;text-align:center}
+#busy .bar{height:8px;background:var(--soft);border-radius:8px;overflow:hidden;margin-top:12px}
+#busy .bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+.zoom{position:absolute;left:12px;bottom:12px;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.zoom button{border:0;background:none;padding:8px 11px;cursor:pointer}
+.zoom button:hover{background:var(--soft)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;display:none;z-index:20}
+.pill{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#fff;padding:6px 14px;border-radius:99px;display:none;direction:rtl}
+.fontopt{font-size:15px}
+@media (max-width:800px){
+  body{overflow:auto}
+  main{flex-direction:column;height:auto}
+  #stage{height:55vh;flex:none}
+  aside{width:100%;border:0}
+  .hide-sm{display:none}
+  header{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i>ن</i><span class="hide-sm">استوديو النصوص</span></div>
+  <button class="btn ico" id="undo" title="تراجع (Ctrl+Z)" disabled>↶</button>
+  <button class="btn ico" id="redo" title="إعادة (Ctrl+Shift+Z)" disabled>↷</button>
+  <button class="btn" id="hold" title="اضغط مطولًا لرؤية الأصل" disabled>👁 <span class="hide-sm">الأصل</span></button>
+  <div class="sp"></div>
+  <button class="btn" id="addBox" disabled title="ارسم مربعًا حول نص لم يُكتشف">⬚ <span class="hide-sm">إضافة نص</span></button>
+  <button class="btn" id="findBtn" disabled title="بحث واستبدال">⇄ <span class="hide-sm">بحث واستبدال</span></button>
+  <button class="btn ico" id="theme" title="المظهر">◐</button>
+  <button class="btn" id="newBtn" disabled>＋ <span class="hide-sm">صورة جديدة</span></button>
+  <select class="btn" id="fmt" title="صيغة التصدير" disabled><option value="png">PNG</option><option value="jpeg">JPG</option><option value="webp">WEBP</option></select>
+  <button class="btn primary" id="exportBtn" disabled>⬇ تصدير</button>
+</header>
+<main>
+  <section id="stage">
+    <div id="world"><canvas id="view"></canvas><svg id="overlay"></svg></div>
+    <div id="drop">
+      <div class="box" id="dropBox">
+        <h1>استبدل أي نص داخل الصورة في نفس مكانه وبنفس شكله</h1>
+        <div class="up">⬆</div>
+        <b>اسحب الصورة هنا أو انقر للاختيار</b>
+        <p class="hint">أو الصق من الحافظة (Ctrl+V) — PNG / JPG / WEBP<br>كل المعالجة تتم داخل متصفحك، لا تُرفع الصورة لأي خادم</p>
+      </div>
+      <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+    </div>
+    <div class="zoom" id="zoomBar" style="display:none"><button id="zout">−</button><button id="zfit">ملاءمة</button><button id="zin">+</button></div>
+    <div class="pill" id="pill">اسحب مربعًا حول النص</div>
+    <div id="busy"><div class="card"><b id="busyMsg">جارٍ التحميل…</b><div class="bar"><i id="busyBar"></i></div><p class="hint" id="busySub" style="margin:10px 0 0;font-size:12px"></p></div></div>
+  </section>
+  <aside>
+    <div class="sec">
+      <h3><span id="countLbl">النصوص</span><span id="timeLbl"></span></h3>
+      <ul id="list"></ul>
+    </div>
+    <div id="insp"><p class="hint">ارفع صورة لتبدأ. بعد الاكتشاف انقر على أي نص في الصورة أو في القائمة لتعديله.</p></div>
+  </aside>
+</main>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   استوديو النصوص — نسخة HTML مستقلة
+   1) Tesseract.js يكتشف أسطر النص (عربي + إنجليزي) ويقرؤها
+   2) لكل سطر: إطار مقوَّم (يدعم الميلان من خط الأساس)، نموذج خلفية، قناع النص،
+      اللون، الحدود، مطابقة الخط بصريًا، الحجم وخط الأساس بدقة البكسل
+   3) المسح: نموذج الخلفية + ضجيج مطابق، أو انتشار (diffusion) للخلفيات غير السادة
+   4) الرسم: Canvas (تشكيل عربي صحيح من المتصفح) بنفس الموضع والزاوية
+   ===================================================================== */
+
+const FONTS = [
+  // [family, weights, script]
+  ["Cairo",[400,700,900],"ar"],["Tajawal",[400,700,900],"ar"],["Almarai",[400,700,800],"ar"],
+  ["Noto Kufi Arabic",[400,700,900],"ar"],["IBM Plex Sans Arabic",[400,700],"ar"],["Changa",[400,700],"ar"],
+  ["El Messiri",[400,700],"ar"],["Lalezar",[400],"ar"],["Readex Pro",[400,700],"ar"],["Reem Kufi",[400,700],"ar"],
+  ["Amiri",[400,700],"ar"],["Noto Naskh Arabic",[400,700],"ar"],["Harmattan",[400,700],"ar"],["Markazi Text",[400,700],"ar"],
+  ["Roboto",[400,700,900],"la"],["Inter",[400,700,900],"la"],["Montserrat",[400,700,900],"la"],["Poppins",[400,700,900],"la"],
+  ["Open Sans",[400,700],"la"],["Lato",[400,700,900],"la"],["Oswald",[400,700],"la"],["Playfair Display",[400,700],"la"],
+  ["Bebas Neue",[400],"la"],["Anton",[400],"la"],
+];
+const FONT_LIST = FONTS.flatMap(([f,ws,s]) => ws.map(w => ({id:`${f}|${w}`, family:f, weight:w, script:s})));
+const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
+const hasAr = t => AR_RE.test(t || "");
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const toastEl = $("toast");
+function toast(m, ms=3000){ toastEl.textContent = m; toastEl.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.style.display = "none", ms); }
+const hex = (r,g,b) => "#" + [r,g,b].map(v => clamp(Math.round(v),0,255).toString(16).padStart(2,"0")).join("");
+const unhex = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+const fontCss = (id, size) => { const [f,w] = id.split("|"); return `${w} ${size}px "${f}"`; };
+const median = a => { if (!a.length) return 0; const s = Float64Array.from(a).sort(); return s[s.length >> 1]; };
+
+/* ------------------------------------------------------------- الحالة */
+const S = {
+  img: null, W: 0, H: 0, orig: null, origData: null,
+  blocks: [], edits: {}, past: [], future: [], sel: null,
+  showOrig: false, addMode: false, worker: null, fontsReady: new Set(),
+  xf: { s: 1, x: 0, y: 0 },
+};
+
+/* ------------------------------------------------------------- Tesseract */
+const TESS_OPTS = { workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+                    corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1" };
+let progressCb = null;
+async function getWorkers(){
+  if (S.wa) return { wa: S.wa, we: S.we };
+  const mk = lang => Tesseract.createWorker(lang, 1, Object.assign({ logger: m => progressCb && progressCb(m) }, TESS_OPTS));
+  [S.wa, S.we] = await Promise.all([mk("ara"), mk("eng")]);
+  return { wa: S.wa, we: S.we };
+}
+async function getWorker(){ return (await getWorkers()).wa; }
+
+/* ثنائية تكيفية محلية: صورة للنص الداكن وأخرى للنص الفاتح (Tesseract يحتاج نصًا داكنًا على فاتح) */
+function adaptiveVariants(src){
+  const w = src.width, h = src.height, d = src.getContext("2d").getImageData(0,0,w,h).data;
+  const g = new Float32Array(w*h); for (let i=0;i<w*h;i++) g[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+  const ii = new Float64Array((w+1)*(h+1));
+  for (let y=0;y<h;y++){ let row=0; for (let x=0;x<w;x++){ row += g[y*w+x]; ii[(y+1)*(w+1)+x+1] = ii[y*(w+1)+x+1] + row; } }
+  const r = Math.max(8, Math.round(Math.min(w,h)/18)), k = 14;
+  const mk = () => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+  const dark = mk(), light = mk(), dd = dark.getContext("2d").createImageData(w,h), ld = light.getContext("2d").createImageData(w,h);
+  for (let y=0;y<h;y++){ const y0=Math.max(0,y-r), y1=Math.min(h,y+r+1);
+    for (let x=0;x<w;x++){ const x0=Math.max(0,x-r), x1=Math.min(w,x+r+1);
+      const mean = (ii[y1*(w+1)+x1] - ii[y0*(w+1)+x1] - ii[y1*(w+1)+x0] + ii[y0*(w+1)+x0]) / ((y1-y0)*(x1-x0));
+      const v = g[y*w+x], i = (y*w+x)*4;
+      const a = v < mean - k ? 0 : 255, b = v > mean + k ? 0 : 255;
+      dd.data[i]=dd.data[i+1]=dd.data[i+2]=a; dd.data[i+3]=255; ld.data[i]=ld.data[i+1]=ld.data[i+2]=b; ld.data[i+3]=255; } }
+  dark.getContext("2d").putImageData(dd,0,0); light.getContext("2d").putImageData(ld,0,0);
+  return [dark, light];
+}
+
+/* قراءة سطر من قناعه النظيف: مقياسان × وضعان (PSM 7/13) لكل لغة ثم قراءة الإجماع */
+function similarity(a, b){ a = a.replace(/\s/g,""); b = b.replace(/\s/g,""); if (!a||!b) return 0;
+  const d = Array.from({length: b.length+1}, (_,j)=>j);
+  for (let i=1;i<=a.length;i++){ let prev = d[0]; d[0] = i; for (let j=1;j<=b.length;j++){ const t = d[j]; d[j] = Math.min(d[j]+1, d[j-1]+1, prev + (a[i-1]!==b[j-1])); prev = t; } }
+  return 1 - d[b.length] / Math.max(a.length, b.length); }
+function maskCanvas(mask, w, h, H){
+  const bb = inkBox(mask, w, h); if (!bb) return null;
+  const cw = bb[2]-bb[0], ch = bb[3]-bb[1], s = H / ch, pad = Math.round(H/3);
+  const c = document.createElement("canvas"); c.width = Math.round(cw*s) + 2*pad; c.height = H + 2*pad;
+  const t = document.createElement("canvas"); t.width = cw; t.height = ch; const tx = t.getContext("2d"), id = tx.createImageData(cw, ch);
+  for (let y=0;y<ch;y++) for (let x=0;x<cw;x++){ const v = mask[(y+bb[1])*w + x+bb[0]] ? 0 : 255, i=(y*cw+x)*4; id.data[i]=id.data[i+1]=id.data[i+2]=v; id.data[i+3]=255; }
+  tx.putImageData(id,0,0);
+  const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); x.imageSmoothingQuality = "high"; x.drawImage(t, pad, pad, c.width-2*pad, H);
+  return c;
+}
+async function readLang(worker, mask, w, h){
+  const reads = [];
+  for (const H of [40, 64]){
+    const c = maskCanvas(mask, w, h, H); if (!c) return ["", 0];
+    for (const psm of ["7","13"]){
+      await worker.setParameters({ tessedit_pageseg_mode: psm });
+      const { data } = await worker.recognize(c);
+      const t = (data.text || "").replace(/[\u200e\u200f\u0640]/g,"").replace(/\s+/g," ").trim();
+      if (t) reads.push([t, (data.confidence||0)/100]);
+    }
+    if (reads.length >= 2 && reads[0][0] === reads[1][0] && Math.min(reads[0][1], reads[1][1]) >= 0.85) break;
+  }
+  await worker.setParameters({ tessedit_pageseg_mode: "3" });
+  if (!reads.length) return ["", 0];
+  let best = null;
+  for (const [t,c] of reads){ const sup = reads.reduce((s,[t2,c2]) => s + c2*similarity(t,t2), 0); if (!best || sup > best[0]) best = [sup, t]; }
+  const agree = reads.filter(([t2]) => similarity(best[1], t2) > 0.85).map(r => r[1]);
+  return [best[1], agree.reduce((a,b)=>a+b,0)/agree.length * Math.min(1, 0.55 + 0.15*agree.length)];
+}
+const scriptRatio = t => { const L = [...t].filter(c => /\p{L}/u.test(c)); if (!L.length) return [0,0];
+  return [L.filter(c => AR_RE.test(c)).length / L.length, L.filter(c => /[A-Za-z\u00C0-\u024F]/.test(c)).length / L.length]; };
+async function readLine(mask, w, h, hint){
+  const { wa, we } = await getWorkers(), cands = [];
+  const [ta, ca] = await readLang(wa, mask, w, h); const [ar] = scriptRatio(ta); if (ta && ar >= 0.5) cands.push([ta, ca*(0.85+0.15*ar)]);
+  const [te, ce] = await readLang(we, mask, w, h); const [, la] = scriptRatio(te); if (te && (la >= 0.5 || !/\p{L}/u.test(te))) cands.push([te, ce*0.95]);
+  if (!cands.length) return [hint || "", 0];
+  cands.sort((a,b) => b[1]-a[1]); return cands[0];
+}
+
+async function ensureFont(id, sample){
+  if (S.fontsReady.has(id)) return;
+  try { await document.fonts.load(fontCss(id, 40), sample || "أبجد Abc"); } catch(e) {}
+  S.fontsReady.add(id);
+}
+
+/* ------------------------------------------------------------- الإطار المقوَّم
+   frame: مركز (cx,cy) وزاوية a ومقاس (fw,fh) بوحدة بكسل الصورة، ومقياس sc (بكسلات الإطار لكل بكسل صورة).
+   core: مستطيل السطر داخل الإطار بإحداثيات الإطار. */
+function makeFrame(cx, cy, L, T, a){
+  const mx = 0.45*T + 3, my = 0.5*T + 3;
+  const sc = clamp(64 / Math.max(T,1), 1, 3);
+  const fw = L + 2*mx, fh = T + 2*my;
+  return { cx, cy, a, fw, fh, sc, w: Math.round(fw*sc), h: Math.round(fh*sc),
+           core: [mx*sc, my*sc, (mx+L)*sc, (my+T)*sc], L, T };
+}
+function frameCanvas(fr, srcCanvas){
+  const c = new OffscreenCanvas(fr.w, fr.h), x = c.getContext("2d", { willReadFrequently: true });
+  x.imageSmoothingQuality = "high";
+  x.setTransform(1,0,0,1,0,0);
+  x.translate(fr.w/2, fr.h/2); x.scale(fr.sc, fr.sc); x.rotate(-fr.a); x.translate(-fr.cx, -fr.cy);
+  x.drawImage(srcCanvas, 0, 0);
+  return c;
+}
+/* يرسم طبقة بحجم الإطار فوق سياق الصورة بنفس التحويل العكسي */
+function drawFrameLayer(ctx, fr, layer, ox=0, oy=0){
+  ctx.save();
+  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a); ctx.scale(1/fr.sc, 1/fr.sc); ctx.translate(-fr.w/2, -fr.h/2);
+  ctx.drawImage(layer, 0, 0);
+  ctx.restore();
+}
+function frameToImage(fr, u, v){
+  const x = (u - fr.w/2) / fr.sc, y = (v - fr.h/2) / fr.sc;
+  const c = Math.cos(fr.a), s = Math.sin(fr.a);
+  return [fr.cx + x*c - y*s, fr.cy + x*s + y*c];
+}
+
+/* ------------------------------------------------------------- أدوات أقنعة */
+function otsu(vals, maxV){
+  const bins = 128, hist = new Float64Array(bins);
+  for (const v of vals) hist[Math.min(bins-1, (v/maxV*bins)|0)]++;
+  const total = vals.length; let sum = 0; for (let i=0;i<bins;i++) sum += i*hist[i];
+  let sB=0, wB=0, best=0, thr=0;
+  for (let i=0;i<bins;i++){ wB += hist[i]; if(!wB) continue; const wF = total-wB; if(!wF) break;
+    sB += i*hist[i]; const mB=sB/wB, mF=(sum-sB)/wF, between = wB*wF*(mB-mF)**2; if (between>best){best=between;thr=i;} }
+  return (thr+0.5)/bins*maxV;
+}
+function components(mask, w, h){
+  const lab = new Int32Array(w*h), stats = [0]; let n = 0; const st = [];
+  for (let i=0;i<w*h;i++){ if(!mask[i]||lab[i]) continue; n++; let area=0, x0=1e9,y0=1e9,x1=-1,y1=-1; st.push(i); lab[i]=n;
+    while(st.length){ const p=st.pop(); area++; const x=p%w, y=(p/w)|0; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){ const xx=x+dx, yy=y+dy; if(xx<0||yy<0||xx>=w||yy>=h) continue; const q=yy*w+xx; if(mask[q]&&!lab[q]){lab[q]=n; st.push(q);} } }
+    stats.push({area,x0,y0,x1,y1}); }
+  return { lab, stats, n };
+}
+function distTransform(mask, w, h){ // chamfer 3-4 تقريبي (بوحدة البكسل)
+  const d = new Float32Array(w*h); const INF = 1e9;
+  for (let i=0;i<w*h;i++) d[i] = mask[i] ? INF : 0;
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){ const i=y*w+x; if(!d[i]) continue; let v=d[i];
+    if(x>0) v=Math.min(v,d[i-1]+3); if(y>0){ v=Math.min(v,d[i-w]+3); if(x>0) v=Math.min(v,d[i-w-1]+4); if(x<w-1) v=Math.min(v,d[i-w+1]+4);} d[i]=v; }
+  for (let y=h-1;y>=0;y--) for (let x=w-1;x>=0;x--){ const i=y*w+x; if(!d[i]) continue; let v=d[i];
+    if(x<w-1) v=Math.min(v,d[i+1]+3); if(y<h-1){ v=Math.min(v,d[i+w]+3); if(x<w-1) v=Math.min(v,d[i+w+1]+4); if(x>0) v=Math.min(v,d[i+w-1]+4);} d[i]=v; }
+  for (let i=0;i<w*h;i++) d[i] = d[i]/3;
+  return d;
+}
+function dilate(mask, w, h, r){
+  if (r<=0) return mask.slice();
+  let cur = mask;
+  for (let k=0;k<r;k++){ const o = new Uint8Array(w*h);
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++){ const i=y*w+x; if(cur[i]){o[i]=1;continue;}
+      if((x>0&&cur[i-1])||(x<w-1&&cur[i+1])||(y>0&&cur[i-w])||(y<h-1&&cur[i+w])) o[i]=1; }
+    cur = o; }
+  return cur;
+}
+function inkBox(mask, w, h){
+  let x0=w,y0=h,x1=-1,y1=-1;
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++) if(mask[y*w+x]){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  return x1<0 ? null : [x0,y0,x1+1,y1+1];
+}
+function kmeans2(px){ // px: Array of [r,g,b]
+  let c0 = px[0].slice(), c1 = px[0].slice(), far = 0;
+  for (const p of px){ const d=(p[0]-c0[0])**2+(p[1]-c0[1])**2+(p[2]-c0[2])**2; if(d>far){far=d;c1=p.slice();} }
+  const lab = new Uint8Array(px.length);
+  for (let it=0; it<12; it++){
+    const s=[[0,0,0,0],[0,0,0,0]];
+    px.forEach((p,i)=>{ const d0=(p[0]-c0[0])**2+(p[1]-c0[1])**2+(p[2]-c0[2])**2, d1=(p[0]-c1[0])**2+(p[1]-c1[1])**2+(p[2]-c1[2])**2;
+      const k = d1<d0 ? 1 : 0; lab[i]=k; s[k][0]+=p[0]; s[k][1]+=p[1]; s[k][2]+=p[2]; s[k][3]++; });
+    if (s[0][3]) c0 = [s[0][0]/s[0][3], s[0][1]/s[0][3], s[0][2]/s[0][3]];
+    if (s[1][3]) c1 = [s[1][0]/s[1][3], s[1][1]/s[1][3], s[1][2]/s[1][3]];
+  }
+  return { lab, c: [c0, c1] };
+}
+
+/* ------------------------------------------------------------- رسم نص كقناع */
+function textMask(text, fontId, size, strokeW=0){
+  const c = new OffscreenCanvas(8,8); let x = c.getContext("2d", { willReadFrequently: true });
+  x.font = fontCss(fontId, size); x.direction = hasAr(text) ? "rtl" : "ltr"; x.textAlign = "left";
+  const m = x.measureText(text);
+  const pad = Math.ceil(4 + strokeW);
+  const w = Math.ceil(m.actualBoundingBoxLeft + m.actualBoundingBoxRight) + 2*pad;
+  const h = Math.ceil(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) + 2*pad;
+  c.width = Math.max(w,1); c.height = Math.max(h,1);
+  x = c.getContext("2d", { willReadFrequently: true });
+  x.font = fontCss(fontId, size); x.direction = hasAr(text) ? "rtl" : "ltr"; x.textAlign = "left";
+  const ox = pad + m.actualBoundingBoxLeft, oy = pad + m.actualBoundingBoxAscent;
+  x.fillStyle = "#000";
+  if (strokeW>0){ x.lineWidth = strokeW*2; x.lineJoin = "round"; x.strokeStyle = "#000"; x.strokeText(text, ox, oy); }
+  x.fillText(text, ox, oy);
+  const d = x.getImageData(0,0,c.width,c.height).data, mask = new Uint8Array(c.width*c.height);
+  for (let i=0;i<mask.length;i++) mask[i] = d[i*4+3] > 127 ? 1 : 0;
+  return { mask, w: c.width, h: c.height, ox, oy };   // (ox,oy) = نقطة الأصل على خط الأساس داخل القناع
+}
+function resizeMask(mask, w, h, nw, nh){
+  const o = new Float32Array(nw*nh);
+  for (let y=0;y<nh;y++){ const sy0 = y*h/nh, sy1 = (y+1)*h/nh;
+    for (let x=0;x<nw;x++){ const sx0 = x*w/nw, sx1 = (x+1)*w/nw; let s=0, n=0;
+      for (let yy=Math.floor(sy0); yy<Math.ceil(sy1); yy++) for (let xx=Math.floor(sx0); xx<Math.ceil(sx1); xx++){ s += mask[yy*w+xx]||0; n++; }
+      o[y*nw+x] = n ? s/n : 0; } }
+  return o;
+}
+function crop(mask, w, box){
+  const [x0,y0,x1,y1] = box, cw = x1-x0, ch = y1-y0, o = new Uint8Array(cw*ch);
+  for (let y=0;y<ch;y++) for (let x=0;x<cw;x++) o[y*cw+x] = mask[(y+y0)*w + x+x0];
+  return { m:o, w:cw, h:ch };
+}
+function strokeRatio(mask, w, h){
+  const d = distTransform(mask, w, h); const peaks = [];
+  for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++){ const i=y*w+x, v=d[i]; if(v<0.5) continue;
+    if (v>=d[i-1]&&v>=d[i+1]&&v>=d[i-w]&&v>=d[i+w]) peaks.push(v); }
+  return (peaks.length ? 2*median(peaks) : 1) / Math.max(h,1);
+}
+function bodyBand(mask, w, h){
+  const rows = new Float32Array(h); let mx = 0;
+  for (let y=0;y<h;y++){ let s=0; for (let x=0;x<w;x++) s+=mask[y*w+x]; rows[y]=s; if(s>mx) mx=s; }
+  let n=0; for (let y=0;y<h;y++) if (rows[y] > 0.35*mx) n++; return n;
+}
+
+/* ------------------------------------------------------------- تحليل سطر */
+async function analyzeLine(line){
+  let { text, conf, cx, cy, L, T, a } = line;
+  const fr = makeFrame(cx, cy, L, T, a);
+  const fc = frameCanvas(fr, S.orig);
+  const w = fr.w, h = fr.h;
+  const data = fc.getContext("2d", { willReadFrequently: true }).getImageData(0,0,w,h).data;
+  const [u0,v0,u1,v1] = fr.core, ch = v1-v0;
+  const inRect = (x,y,m) => x>=u0-m && x<u1+m && y>=v0-m && y<v1+m;
+
+  // 1) نموذج الخلفية: مستوى خطي لكل قناة على حلقة المحيط (ملاءمة متينة)
+  const ring = [];
+  for (let y=0;y<h;y+=1) for (let x=0;x<w;x+=1) if(!inRect(x,y,0.12*ch)) ring.push(y*w+x);
+  const step = Math.max(1, (ring.length/6000)|0), ri = ring.filter((_,i)=>i%step===0);
+  let coef = [[0,0,0],[0,0,0],[0,0,0]], keep = ri.map(()=>true);
+  const solve3 = (A,b) => { // حل 3x3
+    const m = A.map((r,i)=>[...r,b[i]]);
+    for (let i=0;i<3;i++){ let p=i; for(let k=i+1;k<3;k++) if(Math.abs(m[k][i])>Math.abs(m[p][i])) p=k; [m[i],m[p]]=[m[p],m[i]];
+      if (Math.abs(m[i][i])<1e-9) return [b[0]/Math.max(A[0][0],1),0,0];
+      for (let k=0;k<3;k++){ if(k===i) continue; const f=m[k][i]/m[i][i]; for(let j=i;j<4;j++) m[k][j]-=f*m[i][j]; } }
+    return [m[0][3]/m[0][0], m[1][3]/m[1][1], m[2][3]/m[2][2]];
+  };
+  let noise = 0;
+  for (let it=0; it<3; it++){
+    for (let c=0;c<3;c++){
+      const A=[[0,0,0],[0,0,0],[0,0,0]], b=[0,0,0];
+      ri.forEach((p,i)=>{ if(!keep[i]) return; const f=[1,(p%w)/w,((p/w)|0)/h], v=data[p*4+c];
+        for(let r=0;r<3;r++){ b[r]+=f[r]*v; for(let s=0;s<3;s++) A[r][s]+=f[r]*f[s]; } });
+      coef[c] = solve3(A,b);
+    }
+    const res = ri.map(p => { const u=(p%w)/w, v=((p/w)|0)/h; let s=0; for(let c=0;c<3;c++){ const e=data[p*4+c]-(coef[c][0]+coef[c][1]*u+coef[c][2]*v); s+=e*e; } return Math.sqrt(s); });
+    const med = median(res); keep = res.map(r => r <= med*2.2 + 2); noise = med*1.4826;
+  }
+  const bgAt = (x,y,c) => coef[c][0] + coef[c][1]*x/w + coef[c][2]*y/h;
+
+  // 2) قناع النص: المسافة اللونية عن الخلفية
+  const dist = new Float32Array(w*h), zone = new Uint8Array(w*h), core = new Uint8Array(w*h);
+  const zvals = [];
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){ const i=y*w+x;
+    const dr=data[i*4]-bgAt(x,y,0), dg=data[i*4+1]-bgAt(x,y,1), db=data[i*4+2]-bgAt(x,y,2);
+    dist[i] = Math.sqrt(dr*dr+dg*dg+db*db);
+    if (inRect(x,y,0.3*ch)) { zone[i]=1; zvals.push(dist[i]); }
+    if (inRect(x,y,0)) core[i]=1; }
+  const ot = otsu(zvals, 442);
+  const thr = Math.max(3*noise + 14, Math.min(ot, 45));
+  let fg = new Uint8Array(w*h);
+  for (let i=0;i<w*h;i++) fg[i] = zone[i] && dist[i] > thr ? 1 : 0;
+  // إزالة المكونات الصغيرة والبعيدة عن السطر (مع الحفاظ على نقاط الحروف العربية)
+  { const minA = Math.max(3, (0.045*ch)**2), cc = components(fg, w, h), near = dilate(core, w, h, Math.round(0.12*ch));
+    const ok = new Uint8Array(cc.n+1);
+    for (let i=0;i<w*h;i++) if (cc.lab[i] && near[i]) ok[cc.lab[i]] = 1;
+    for (let k=1;k<=cc.n;k++) if (cc.stats[k].area < minA) ok[k] = 0;
+    for (let i=0;i<w*h;i++) fg[i] = cc.lab[i] && ok[cc.lab[i]] ? 1 : 0;
+    // ذيول الحروف خارج المنطقة: نضم المكونات المتصلة على مستوى الإطار كله ما لم تلمس حافته
+    const full = new Uint8Array(w*h); for (let i=0;i<w*h;i++) full[i] = dist[i] > thr ? 1 : 0;
+    const c2 = components(full, w, h), touch = new Uint8Array(c2.n+1), edge = new Uint8Array(c2.n+1);
+    for (let i=0;i<w*h;i++) if (fg[i] && c2.lab[i]) touch[c2.lab[i]] = 1;
+    for (let k=1;k<=c2.n;k++){ const s=c2.stats[k]; if (s.x0===0||s.y0===0||s.x1===w-1||s.y1===h-1) edge[k]=1; }
+    for (let i=0;i<w*h;i++){ const k=c2.lab[i]; if (k && touch[k] && !edge[k]) fg[i]=1; } }
+
+  let nfg = 0; for (let i=0;i<w*h;i++) nfg += fg[i];
+
+  // تقدير الزاوية من بكسلات النص نفسها (المحور الرئيسي PCA) — أدق من خط أساس Tesseract للنص المائل
+  if (!line._refined && nfg > 50){
+    let mu=0, mv=0; const pts = [];
+    for (let i=0;i<w*h;i++) if (fg[i]){ const u=i%w, v=(i/w)|0; pts.push(u,v); mu+=u; mv+=v; }
+    const n = pts.length/2; mu/=n; mv/=n;
+    let suu=0, svv=0, suv=0; for (let k=0;k<pts.length;k+=2){ const du=pts[k]-mu, dv=pts[k+1]-mv; suu+=du*du; svv+=dv*dv; suv+=du*dv; }
+    const th = 0.5*Math.atan2(2*suv, suu-svv), elong = (suu+svv) / Math.max(Math.sqrt((suu-svv)**2 + 4*suv*suv), 1e-6);
+    if (Math.abs(th) > 0.025 && Math.abs(th) < 0.8 && elong < 1.6){
+      const c=Math.cos(th), s2=Math.sin(th), A=[], B=[];
+      for (let k=0;k<pts.length;k+=2){ const du=pts[k]-mu, dv=pts[k+1]-mv; A.push(du*c+dv*s2); B.push(-du*s2+dv*c); }
+      A.sort((x,y)=>x-y); B.sort((x,y)=>x-y);
+      const q = (arr,p) => arr[Math.min(arr.length-1, Math.max(0, Math.round(p*(arr.length-1))))];
+      const a0=q(A,0.002), a1=q(A,0.998), b0=q(B,0.01), b1=q(B,0.99);
+      const mA=(a0+a1)/2, mB=(b0+b1)/2;
+      const [ncx, ncy] = frameToImage(fr, mu + mA*c - mB*s2, mv + mA*s2 + mB*c);
+      return analyzeLine(Object.assign({}, line, { cx: ncx, cy: ncy, L: (a1-a0)/fr.sc + 2, T: (b1-b0)/fr.sc + 2, a: fr.a + th, _refined: true }));
+    }
+  }
+  const res = { id: line.id, text, ocrText: text, conf, fr, noise, coef, textured: noise > 9,
+    style: { font: hasAr(text) ? "Cairo|700" : "Roboto|700", size: T*0.8, color: "#000000", strokeW: 0, strokeColor: "#000000",
+             shadow: null, align: hasAr(text) ? "right" : "left", blur: 0 },
+    candidates: [], ink: [u0,v0,u1,v1], baseline: v1, glyph: fg, w, h };
+  if (nfg < 10) return res;
+
+  // 3) فصل الحشو عن الحدود
+  const dt = distTransform(fg, w, h);
+  const idx = []; for (let i=0;i<w*h;i++) if (fg[i]) idx.push(i);
+  const sub = idx.filter((_,k)=>k % Math.max(1,(idx.length/15000)|0) === 0);
+  const km = kmeans2(sub.map(i => [data[i*4], data[i*4+1], data[i*4+2]]));
+  const depth = [0,0], cnt = [0,0]; sub.forEach((p,k)=>{ depth[km.lab[k]] += dt[p]; cnt[km.lab[k]]++; });
+  const inner = (depth[0]/Math.max(cnt[0],1)) >= (depth[1]/Math.max(cnt[1],1)) ? 0 : 1, outer = 1-inner;
+  const de = Math.hypot(km.c[0][0]-km.c[1][0], km.c[0][1]-km.c[1][1], km.c[0][2]-km.c[1][2]);
+  const fracO = cnt[outer] / Math.max(sub.length,1);
+  // هل اللون الخارجي مجرد مزج (تنعيم حواف) بين الحشو والخلفية؟
+  const bgc = [0,1,2].map(c => median(sub.slice(0,400).map(p => bgAt(p%w,(p/w)|0,c))));
+  const seg = km.c[inner].map((v,c)=>v-bgc[c]), ov = km.c[outer].map((v,c)=>v-bgc[c]);
+  const tt = clamp((seg[0]*ov[0]+seg[1]*ov[1]+seg[2]*ov[2]) / Math.max(seg[0]**2+seg[1]**2+seg[2]**2,1e-6), 0, 1);
+  const offLine = Math.hypot(ov[0]-tt*seg[0], ov[1]-tt*seg[1], ov[2]-tt*seg[2]);
+  let fill = fg, stroke = null, strokeW = 0, strokeRGB = [0,0,0];
+  if (de > 60 && fracO > 0.12 && fracO < 0.85 && offLine > Math.max(25, 0.25*de)){
+    const lab = new Uint8Array(w*h);
+    for (const i of idx){ const p=[data[i*4],data[i*4+1],data[i*4+2]];
+      const d0=(p[0]-km.c[inner][0])**2+(p[1]-km.c[inner][1])**2+(p[2]-km.c[inner][2])**2;
+      const d1=(p[0]-km.c[outer][0])**2+(p[1]-km.c[outer][1])**2+(p[2]-km.c[outer][2])**2;
+      lab[i] = d0 <= d1 ? 1 : 2; }
+    const fi = new Uint8Array(w*h), so = new Uint8Array(w*h); let nf=0;
+    for (let i=0;i<w*h;i++){ if(lab[i]===1){fi[i]=1;nf++;} else if(lab[i]===2) so[i]=1; }
+    if (nf > 0.1*idx.length){
+      const edges = [];
+      for (let y=1;y<h-1;y++) for (let x=1;x<w-1;x++){ const i=y*w+x; if (fi[i] && (!fi[i-1]||!fi[i+1]||!fi[i-w]||!fi[i+w])) edges.push(dt[i]); }
+      const sw = median(edges);
+      if (sw >= 1.2){ fill = fi; stroke = so; strokeW = sw; strokeRGB = km.c[outer]; }
+    }
+  }
+
+  // 4) اللون: وسيط البكسلات الداخلية العميقة
+  const dtf = distTransform(fill, w, h), fd = []; for (let i=0;i<w*h;i++) if (fill[i]) fd.push(dtf[i]);
+  const dthr = Math.max(1, median(fd));
+  const deep = []; for (let i=0;i<w*h;i++) if (fill[i] && dtf[i] >= dthr) deep.push(i);
+  const useIdx = deep.length > 5 ? deep : idx;
+  const color = [0,1,2].map(c => median(useIdx.map(i => data[i*4+c])));
+
+  // 5) الحافة الحقيقية للحرف (تغطية 50%) — يمنع انحياز الوزن نحو الأثقل
+  {
+    const f50 = new Uint8Array(w*h), near = dilate(fg, w, h, 1); let n50=0, nf=0;
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++){ const i=y*w+x; if (!near[i]) continue;
+      const un = stroke ? strokeRGB : [bgAt(x,y,0), bgAt(x,y,1), bgAt(x,y,2)];
+      const v = [color[0]-un[0], color[1]-un[1], color[2]-un[2]], p = [data[i*4]-un[0], data[i*4+1]-un[1], data[i*4+2]-un[2]];
+      const t = (p[0]*v[0]+p[1]*v[1]+p[2]*v[2]) / Math.max(v[0]**2+v[1]**2+v[2]**2, 1);
+      if (t > 0.5) { f50[i]=1; n50++; } }
+    for (let i=0;i<w*h;i++) nf += fill[i];
+    if (n50 > 0.5*nf && n50 < 2*nf){
+      const fd1 = dilate(fill, w, h, 1); for (let i=0;i<w*h;i++) f50[i] = f50[i] && fd1[i] ? 1 : 0;
+      fill = f50;
+    }
+  }
+  const glyph = new Uint8Array(w*h); for (let i=0;i<w*h;i++) glyph[i] = fill[i] || (stroke && stroke[i]) ? 1 : 0;
+  res.glyph = fg; // للمسح: كل بكسلات النص (حشو + حدود + تنعيم)
+
+  // إعادة القراءة من القناع النظيف (أسود على أبيض) — أدق بكثير من قراءة الصورة الملونة
+  { const [t2, c2] = await readLine(fill, w, h, text);
+    if (t2 && (c2*100 >= conf*0.8 || !text.trim())) { text = t2; res.text = t2; res.conf = Math.round(c2*100); } }
+
+  // 6) مطابقة الخط + الحجم + خط الأساس
+  const ib = inkBox(fill, w, h); if (!ib) return res;
+  const tgt = crop(fill, w, ib), Ht = tgt.h, Wt = tgt.w;
+  const cands = FONT_LIST.filter(f => hasAr(text) ? f.script === "ar" : true);
+  const NH = 40, tw = Math.max(1, Math.round(Wt * NH / Ht));
+  const tgtN = resizeMask(tgt.m, tgt.w, tgt.h, tw, NH), swT = strokeRatio(tgt.m, tgt.w, tgt.h);
+  const scores = [];
+  if (text.trim()){
+    await Promise.all(cands.map(f => ensureFont(f.id, text)));
+    for (const f of cands){
+      const tm = textMask(text, f.id, 48), bb = inkBox(tm.mask, tm.w, tm.h); if (!bb) continue;
+      const rc = crop(tm.mask, tm.w, bb);
+      const ar = (rc.w * NH / rc.h) / tw;
+      const rN = resizeMask(rc.m, rc.w, rc.h, tw, NH);
+      let mn=0, mxs=0; for (let i=0;i<rN.length;i++){ mn += Math.min(rN[i], tgtN[i]); mxs += Math.max(rN[i], tgtN[i]); }
+      const iou = mn / Math.max(mxs, 1e-6);
+      const swR = strokeRatio(rc.m, rc.w, rc.h);
+      scores.push({ id: f.id, score: iou * Math.exp(-2*Math.abs(Math.log(Math.max(ar,1e-3)))) * Math.exp(-2.5*Math.abs(Math.log(Math.max(swR,1e-3)/Math.max(swT,1e-3)))) });
+    }
+    scores.sort((a,b) => b.score - a.score);
+  }
+  const font = scores.length ? scores[0].id : res.style.font;
+  // الحجم: وسيط (الارتفاع، جسم السطر، العرض)
+  let size = Ht / 0.72;
+  if (text.trim()){
+    const tm = textMask(text, font, 100), bb = inkBox(tm.mask, tm.w, tm.h);
+    if (bb){
+      const rc = crop(tm.mask, tm.w, bb), est = [100*Ht/rc.h, 100*Wt/rc.w];
+      const bt = bodyBand(tgt.m, tgt.w, tgt.h), br = bodyBand(rc.m, rc.w, rc.h); if (bt>2 && br>2) est.push(100*bt/br);
+      est.sort((a,b)=>a-b); size = est.length === 3 ? est[1] : est[0];
+    }
+  }
+  const dir = hasAr(text) ? "rtl" : "ltr";
+  const imgCx = frameToImage(fr, (ib[0]+ib[2])/2, (ib[1]+ib[3])/2)[0];
+  const align = Math.abs(imgCx - S.W/2) < 0.04*S.W ? "center" : (dir === "rtl" ? "right" : "left");
+  // خط الأساس: حافة الحبر العليا تطابق الأصل
+  let baseline = ib[3];
+  if (text.trim()){ const tm = textMask(text, font, size), bb = inkBox(tm.mask, tm.w, tm.h); if (bb) baseline = ib[1] + (tm.oy - bb[1]); }
+  Object.assign(res, { candidates: scores.slice(0,5), ink: ib, baseline, fill, glyphFS: glyph });
+  res.style = { font, size: size / fr.sc, color: hex(...color), strokeW: strokeW / fr.sc, strokeColor: hex(...strokeRGB),
+                shadow: null, align, blur: 0, fit: "shrink" };
+  // 7) ضبط دقيق للموضع: إزاحة ±3px تعظّم التطابق مع الأصل
+  if (text.trim()) refine(res);
+  return res;
+}
+
+function renderLayer(b, e, forMatch=false){
+  // يرسم نص الكتلة (مع التعديلات e) في طبقة بحجم الإطار. يرجع OffscreenCanvas
+  const fr = b.fr, st = Object.assign({}, b.style, e || {});
+  const text = e && e.text !== undefined ? e.text : b.text;
+  const c = new OffscreenCanvas(fr.w, fr.h), x = c.getContext("2d", { willReadFrequently: true });
+  if (!text.trim()) return { c, size: 0 };
+  let size = st.size * fr.sc;
+  const sw = (st.strokeW || 0) * fr.sc;
+  const dir = hasAr(text) ? "rtl" : "ltr";
+  x.direction = dir; x.textAlign = "left"; x.font = fontCss(st.font, size);
+  let m = x.measureText(text);
+  const avail = (b.ink[2] - b.ink[0]) * (st.widthFactor || 1);
+  let inkW = m.actualBoundingBoxLeft + m.actualBoundingBoxRight, factor = 1;
+  const fit = (e && e.size !== undefined && !e.fit) ? "none" : (st.fit || "shrink");
+  if (!forMatch && fit !== "none" && inkW > 0){
+    const r = avail / inkW;
+    if (fit === "shrink" && r < 1) factor = Math.max(r, 0.3);
+    if (fit === "fill") factor = clamp(r, 0.3, 1.3);
+  }
+  size *= factor; x.font = fontCss(st.font, size); m = x.measureText(text);
+  const cyInk = (b.ink[1] + b.ink[3]) / 2, base = cyInk + (b.baseline - cyInk) * factor;
+  const L = m.actualBoundingBoxLeft, R = m.actualBoundingBoxRight;
+  const anchor = st.align === "right" ? b.ink[2] : st.align === "center" ? (b.ink[0]+b.ink[2])/2 : b.ink[0];
+  let ox = st.align === "right" ? anchor - R : st.align === "center" ? anchor - (R - L)/2 : anchor + L;
+  ox += (b.dxF || 0); const oy = base + (b.dyF || 0);
+  if (st.blur > 0) x.filter = `blur(${st.blur * fr.sc}px)`;
+  if (st.shadow){ x.save(); x.shadowColor = st.shadow.color; x.shadowBlur = st.shadow.blur * fr.sc; x.shadowOffsetX = st.shadow.dx * fr.sc; x.shadowOffsetY = st.shadow.dy * fr.sc;
+    x.fillStyle = st.shadow.color; if (sw>0){ x.lineWidth = sw*2*factor; x.lineJoin="round"; x.strokeStyle = st.shadow.color; x.strokeText(text, ox, oy); } x.fillText(text, ox, oy); x.restore();
+    x.save(); x.globalCompositeOperation = "destination-out"; if (sw>0){ x.lineWidth = sw*2*factor; x.lineJoin="round"; x.strokeText(text, ox, oy);} x.fillText(text, ox, oy); x.restore(); }
+  if (sw > 0){ x.lineWidth = sw*2*factor; x.lineJoin = "round"; x.strokeStyle = st.strokeColor; x.strokeText(text, ox, oy); }
+  x.fillStyle = st.color; x.fillText(text, ox, oy);
+  return { c, size };
+}
+
+function refine(b){
+  const g = b.fill, w = b.w, h = b.h;
+  const layer = renderLayer(b, null, true).c, d = layer.getContext("2d").getImageData(0,0,w,h).data;
+  const a = new Uint8Array(w*h); for (let i=0;i<w*h;i++) a[i] = d[i*4+3] > 127 ? 1 : 0;
+  const bb = b.ink, r = 3; let best = -1, bd = [0,0];
+  const y0 = Math.max(0, bb[1]-6), y1 = Math.min(h, bb[3]+6), x0 = Math.max(0, bb[0]-6), x1 = Math.min(w, bb[2]+6);
+  for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++){
+    let inter=0, uni=0;
+    for (let y=y0;y<y1;y+=1) for (let x=x0;x<x1;x+=1){ const sx=x-dx, sy=y-dy; const av = (sx>=0&&sy>=0&&sx<w&&sy<h) ? a[sy*w+sx] : 0; const gv = g[y*w+x];
+      if (av&&gv) inter++; if (av||gv) uni++; }
+    const s = inter / Math.max(uni,1); if (s > best + 1e-4){ best = s; bd = [dx,dy]; } }
+  b.dxF = bd[0]; b.dyF = bd[1]; b.match = best;
+}
+
+/* ------------------------------------------------------------- المسح وإعادة بناء الخلفية */
+function cleanLayer(b){
+  if (b.clean) return b.clean;
+  const fr = b.fr, w = fr.w, h = fr.h;
+  const fc = frameCanvas(fr, S.orig), x = fc.getContext("2d", { willReadFrequently: true });
+  const id = x.getImageData(0,0,w,h), d = id.data;
+  const r = Math.max(2, Math.round(0.07 * (fr.core[3]-fr.core[1]))) + Math.round(fr.sc);
+  const mask = dilate(b.glyph, w, h, r);
+  const bgAt = (xx,yy,c) => b.coef[c][0] + b.coef[c][1]*xx/w + b.coef[c][2]*yy/h;
+  // تحقق: هل النموذج الخطي يطابق الخلفية حول القناع؟
+  const ringM = dilate(mask, w, h, 4); let err = 0, n = 0;
+  for (let i=0;i<w*h;i++) if (ringM[i] && !mask[i]){ const xx=i%w, yy=(i/w)|0; for (let c=0;c<3;c++) err += Math.abs(d[i*4+c]-bgAt(xx,yy,c)); n += 3; }
+  err = n ? err/n : 99;
+  let seed = 12345; const rnd = () => { seed = (seed*1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const gauss = () => { let u=0,v=0; while(!u) u=rnd(); v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  const grain = Math.min(b.noise / 1.7, 12);
+  if (err < 7 && !b.textured){
+    for (let i=0;i<w*h;i++) if (mask[i]){ const xx=i%w, yy=(i/w)|0; for (let c=0;c<3;c++) d[i*4+c] = bgAt(xx,yy,c) + gauss()*grain; }
+    b.method = "model";
+  } else {
+    // انتشار متعدد المستويات: نملأ من الحواف للداخل (يحافظ على التدرجات والألوان المحيطة)
+    const f = new Float32Array(w*h*3);
+    for (let i=0;i<w*h;i++) for (let c=0;c<3;c++) f[i*3+c] = mask[i] ? bgAt(i%w,(i/w)|0,c) : d[i*4+c];
+    const iters = 260;
+    for (let it=0; it<iters; it++){
+      for (let y=1;y<h-1;y++) for (let xx=1;xx<w-1;xx++){ const i=y*w+xx; if (!mask[i]) continue;
+        for (let c=0;c<3;c++) f[i*3+c] = (f[(i-1)*3+c] + f[(i+1)*3+c] + f[(i-w)*3+c] + f[(i+w)*3+c]) * 0.25; }
+    }
+    for (let i=0;i<w*h;i++) if (mask[i]) for (let c=0;c<3;c++) d[i*4+c] = f[i*3+c] + gauss()*grain;
+    b.method = "diffusion";
+  }
+  // ألفا مُنعّمة: فقط منطقة القناع تُرسم فوق الصورة
+  const soft = dilate(mask, w, h, 1);
+  for (let i=0;i<w*h;i++) d[i*4+3] = mask[i] ? 255 : soft[i] ? 110 : 0;
+  x.putImageData(id, 0, 0);
+  b.clean = fc;
+  return fc;
+}
+
+/* ------------------------------------------------------------- التركيب والعرض */
+const view = $("view"), vctx = view.getContext("2d");
+function compose(target, edits){
+  const x = target.getContext("2d");
+  x.drawImage(S.orig, 0, 0);
+  const list = Object.values(edits);
+  for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (b) drawFrameLayer(x, b.fr, cleanLayer(b)); }
+  for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (!b || e.remove || !(e.text||"").trim()) continue;
+    const { c } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0); }
+}
+let raf = 0;
+function redraw(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
+  if (!S.orig) return;
+  if (S.showOrig) vctx.drawImage(S.orig, 0, 0); else compose(view, S.edits);
+  drawOverlay(); renderList(); }); }
+
+function polyOf(b){
+  const fr = b.fr, [u0,v0,u1,v1] = fr.core;
+  return [[u0,v0],[u1,v0],[u1,v1],[u0,v1]].map(([u,v]) => frameToImage(fr,u,v));
+}
+function drawOverlay(){
+  const svg = $("overlay"); svg.setAttribute("viewBox", `0 0 ${S.W} ${S.H}`);
+  svg.innerHTML = "";
+  if (S.showOrig) return;
+  for (const b of S.blocks){
+    const p = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+    p.setAttribute("points", polyOf(b).map(q => q.join(",")).join(" "));
+    const e = S.edits[b.id];
+    p.setAttribute("class", (b.id === S.sel ? "sel " : "") + (e ? (e.remove ? "removed" : "edited") : ""));
+    const t = document.createElementNS("http://www.w3.org/2000/svg","title"); t.textContent = b.text; p.appendChild(t);
+    p.addEventListener("pointerdown", ev => { if (S.addMode) return; ev.stopPropagation(); select(b.id); });
+    svg.appendChild(p);
+  }
+}
+function renderList(){
+  $("countLbl").textContent = `النصوص (${S.blocks.length})`;
+  const ul = $("list"); ul.innerHTML = "";
+  for (const b of S.blocks){
+    const e = S.edits[b.id], li = document.createElement("li");
+    if (b.id === S.sel) li.className = "sel";
+    li.innerHTML = `<span class="dot ${e ? (e.remove ? "r" : "e") : ""}"></span><span class="t"></span>`;
+    li.querySelector(".t").textContent = e && !e.remove ? e.text : (b.text || "—");
+    li.onclick = () => select(b.id);
+    ul.appendChild(li);
+  }
+}
+
+/* ------------------------------------------------------------- التاريخ (تراجع/إعادة) */
+function commit(next, merge=false){
+  if (!(merge && S.past.length)) S.past.push(S.edits);
+  if (S.past.length > 500) S.past.shift();
+  S.edits = next; S.future = [];
+  $("undo").disabled = !S.past.length; $("redo").disabled = true;
+  redraw();
+}
+function undo(){ if (!S.past.length) return; S.future.unshift(S.edits); S.edits = S.past.pop(); afterHist(); }
+function redo(){ if (!S.future.length) return; S.past.push(S.edits); S.edits = S.future.shift(); afterHist(); }
+function afterHist(){ $("undo").disabled = !S.past.length; $("redo").disabled = !S.future.length; redraw(); if (S.sel) renderInspector(); }
+let lastKey = "", lastT = 0;
+function patch(b, p, mergeKey){
+  const next = Object.assign({}, S.edits);
+  if (p === null) delete next[b.id];
+  else next[b.id] = Object.assign({ id: b.id, text: b.text }, S.edits[b.id] || {}, p);
+  const now = Date.now(), merge = !!mergeKey && mergeKey === lastKey && now - lastT < 1200;
+  lastKey = mergeKey || ""; lastT = now;
+  commit(next, merge);
+}
+
+/* ------------------------------------------------------------- لوحة التعديل */
+function select(id){ S.sel = id; renderInspector(); redraw(); }
+function renderInspector(){
+  const box = $("insp"), b = S.blocks.find(k => k.id === S.sel);
+  if (!b){ box.innerHTML = `<p class="hint">انقر على أي نص في الصورة أو في القائمة لتعديله.<br><small>اختصارات: Ctrl+Z تراجع · Ctrl+Shift+Z إعادة · Esc إلغاء التحديد</small></p>`; return; }
+  const e = S.edits[b.id] || {}, st = Object.assign({}, b.style, e);
+  const confPct = Math.round(b.conf);
+  const cls = confPct >= 80 ? "b-ok" : confPct >= 55 ? "b-warn" : "b-bad";
+  const sugg = b.candidates.map(c => c.id);
+  const opt = f => `<option class="fontopt" value="${f.id}" style="font-family:'${f.family}';font-weight:${f.weight}" ${f.id===st.font?"selected":""}>${f.family} · ${f.weight}${sugg.includes(f.id) ? "  (" + Math.round(b.candidates.find(c=>c.id===f.id).score*100) + "%)" : ""}</option>`;
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl" style="margin:0">النص المكتشف</span><span class="badge ${cls}">الثقة ${confPct}%</span></div>
+    <div class="orig" style="margin-top:6px"></div>
+    <label class="lbl">النص الجديد</label>
+    <textarea class="field" id="iText" dir="auto" placeholder="اكتب النص الجديد…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="iErase">${e.remove ? "↺ استعادة" : "⌫ مسح النص فقط"}</button>
+      <button class="btn" id="iReset" ${S.edits[b.id] ? "" : "disabled"}>⟲ إعادة للأصل</button>
+    </div>
+    <label class="lbl">الخط</label>
+    <select class="field" id="iFont">
+      ${sugg.length ? `<optgroup label="مقترحة (مطابقة بصرية)">${FONT_LIST.filter(f=>sugg.includes(f.id)).sort((a,b)=>sugg.indexOf(a.id)-sugg.indexOf(b.id)).map(opt).join("")}</optgroup>` : ""}
+      <optgroup label="خطوط عربية">${FONT_LIST.filter(f=>f.script==="ar").map(opt).join("")}</optgroup>
+      <optgroup label="خطوط لاتينية">${FONT_LIST.filter(f=>f.script==="la").map(opt).join("")}</optgroup>
+    </select>
+    <div class="row">
+      <div><label class="lbl">الحجم (px)</label><input class="field" id="iSize" type="number" step="0.5" min="2" value="${(+st.size).toFixed(1)}" dir="ltr"></div>
+      <div><label class="lbl">اللون</label><div class="col"><input type="color" id="iColor" value="${st.color}"><input type="text" id="iColorT" value="${st.color}"></div></div>
+    </div>
+    <label class="lbl">المحاذاة</label>
+    <div class="seg" id="iAlign">${[["right","يمين"],["center","وسط"],["left","يسار"]].map(([a,l])=>`<button data-a="${a}" class="${st.align===a?"on":""}">${l}</button>`).join("")}</div>
+    <label class="lbl">الملاءمة</label>
+    <select class="field" id="iFit"><option value="shrink">تصغير عند الحاجة</option><option value="fill">ملء نفس العرض</option><option value="none">حجم ثابت</option></select>
+    <details ${e.strokeW!==undefined||e.shadow||e.dx||e.dy||e.blur?"open":""}><summary>ضبط يدوي</summary>
+      <div class="row">
+        <div><label class="lbl">الحدود (px)</label><input class="field" id="iSW" type="number" step="0.5" min="0" value="${(+st.strokeW).toFixed(1)}" dir="ltr"></div>
+        <div><label class="lbl">لون الحدود</label><div class="col"><input type="color" id="iSC" value="${st.strokeColor}"><input type="text" id="iSCT" value="${st.strokeColor}"></div></div>
+      </div>
+      <label class="lbl"><input type="checkbox" id="iSh" ${st.shadow?"checked":""}> ظل</label>
+      <div class="row" id="iShBox" style="${st.shadow?"":"display:none"}">
+        <input class="field" id="iShX" type="number" step="0.5" value="${st.shadow?st.shadow.dx:2}" title="إزاحة أفقية" dir="ltr">
+        <input class="field" id="iShY" type="number" step="0.5" value="${st.shadow?st.shadow.dy:2}" title="إزاحة رأسية" dir="ltr">
+        <input class="field" id="iShB" type="number" step="0.5" min="0" value="${st.shadow?st.shadow.blur:2}" title="تمويه" dir="ltr">
+        <div class="col"><input type="color" id="iShC" value="${st.shadow?st.shadow.color:"#000000"}"><input type="text" id="iShCT" value="${st.shadow?st.shadow.color:"#000000"}"></div>
+      </div>
+      <div class="row">
+        <div><label class="lbl">نعومة الحواف</label><input class="field" id="iBlur" type="number" step="0.1" min="0" value="${(+st.blur||0).toFixed(1)}" dir="ltr"></div>
+        <div><label class="lbl">إزاحة x / y</label><div class="row" style="gap:6px"><input class="field" id="iDX" type="number" step="0.5" value="${e.dx||0}" dir="ltr"><input class="field" id="iDY" type="number" step="0.5" value="${e.dy||0}" dir="ltr"></div></div>
+      </div>
+      <p class="hint" style="font-size:11px;margin:12px 0 0">تطابق إعادة الرسم مع الأصل: ${Math.round((b.match||0)*100)}% · الزاوية ${(b.fr.a*180/Math.PI).toFixed(1)}° · المسح: ${b.method || "—"}</p>
+    </details>`;
+  box.querySelector(".orig").textContent = b.text || "—";
+  const ta = $("iText"); ta.value = e.remove ? "" : (e.text !== undefined ? e.text : b.text);
+  ta.oninput = () => patch(b, { text: ta.value, remove: false }, "text" + b.id);
+  setTimeout(() => ta.focus(), 0);
+  $("iErase").onclick = () => { patch(b, e.remove ? { remove: false } : { remove: true, text: "" }); renderInspector(); };
+  $("iReset").onclick = () => { patch(b, null); renderInspector(); };
+  $("iFont").onchange = async ev => { await ensureFont(ev.target.value, b.text); patch(b, { font: ev.target.value }); };
+  $("iSize").oninput = ev => { const v = parseFloat(ev.target.value); if (v > 0) patch(b, { size: v }, "size" + b.id); };
+  const colorPair = (a, t, key) => { const set = v => { if (/^#[0-9a-f]{6}$/i.test(v)){ $(a).value = v; $(t).value = v; patch(b, { [key]: v }, key + b.id); } };
+    $(a).oninput = ev => set(ev.target.value); $(t).oninput = ev => set(ev.target.value); };
+  colorPair("iColor", "iColorT", "color"); colorPair("iSC", "iSCT", "strokeColor");
+  $("iAlign").querySelectorAll("button").forEach(btn => btn.onclick = () => { patch(b, { align: btn.dataset.a }); renderInspector(); });
+  $("iFit").value = st.fit || "shrink"; $("iFit").onchange = ev => patch(b, { fit: ev.target.value });
+  $("iSW").oninput = ev => patch(b, { strokeW: Math.max(0, parseFloat(ev.target.value) || 0) }, "sw" + b.id);
+  const shadowNow = () => ({ dx: +$("iShX").value || 0, dy: +$("iShY").value || 0, blur: Math.max(0, +$("iShB").value || 0), color: $("iShCT").value });
+  $("iSh").onchange = ev => { $("iShBox").style.display = ev.target.checked ? "" : "none"; patch(b, { shadow: ev.target.checked ? shadowNow() : null }); };
+  ["iShX","iShY","iShB"].forEach(k => $(k).oninput = () => patch(b, { shadow: shadowNow() }, "sh" + b.id));
+  $("iShC").oninput = ev => { $("iShCT").value = ev.target.value; patch(b, { shadow: shadowNow() }, "sh" + b.id); };
+  $("iShCT").oninput = ev => { if (/^#[0-9a-f]{6}$/i.test(ev.target.value)){ $("iShC").value = ev.target.value; patch(b, { shadow: shadowNow() }, "sh" + b.id); } };
+  $("iBlur").oninput = ev => patch(b, { blur: Math.max(0, parseFloat(ev.target.value) || 0) }, "blur" + b.id);
+  $("iDX").oninput = ev => patch(b, { dx: parseFloat(ev.target.value) || 0 }, "dx" + b.id);
+  $("iDY").oninput = ev => patch(b, { dy: parseFloat(ev.target.value) || 0 }, "dy" + b.id);
+}
+
+/* ------------------------------------------------------------- تحميل الصورة والاكتشاف */
+function busy(on, msg, pct, sub){ $("busy").style.display = on ? "flex" : "none"; if (msg) $("busyMsg").textContent = msg; if (pct !== undefined) $("busyBar").style.width = (pct*100).toFixed(0) + "%"; $("busySub").textContent = sub || ""; }
+
+async function loadFile(file){
+  if (!file || !/^image\/(png|jpe?g|webp)$/.test(file.type)){ toast("الصيغ المدعومة: PNG / JPG / WEBP"); return; }
+  const url = URL.createObjectURL(file);
+  const img = new Image(); img.src = url; await img.decode();
+  S.name = (file.name || "image").replace(/\.[^.]+$/, "");
+  S.W = img.naturalWidth; S.H = img.naturalHeight;
+  S.orig = document.createElement("canvas"); S.orig.width = S.W; S.orig.height = S.H;
+  S.orig.getContext("2d").drawImage(img, 0, 0);
+  view.width = S.W; view.height = S.H;
+  S.blocks = []; S.edits = {}; S.past = []; S.future = []; S.sel = null;
+  $("drop").style.display = "none"; $("zoomBar").style.display = "flex";
+  fit(); redraw();
+  await detectAll();
+}
+
+async function detectAll(){
+  const t0 = performance.now();
+  try {
+    busy(true, "جارٍ تحميل محرك التعرف (أول مرة فقط ~15MB)…", 0.02);
+    progressCb = m => { if (m.status && m.status !== "recognizing text" && m.progress !== undefined) busy(true, "جارٍ تحميل محرك التعرف (أول مرة فقط)…", 0.02 + 0.18*m.progress, m.status); };
+    const wk = await getWorker();
+    progressCb = null;
+    // صورة العمل: تكبير الصور الصغيرة يحسن القراءة
+    const sc = clamp(2200 / Math.max(S.W, S.H), 0.5, 2);
+    const work = document.createElement("canvas"); work.width = Math.round(S.W*sc); work.height = Math.round(S.H*sc);
+    const wx = work.getContext("2d"); wx.imageSmoothingQuality = "high"; wx.drawImage(S.orig, 0, 0, work.width, work.height);
+    const variants = [work, ...adaptiveVariants(work)];
+    const raw = [];
+    await wk.setParameters({ tessedit_pageseg_mode: "11" }); // نص متفرق: يلتقط أكبر قدر من النصوص في التصاميم
+    for (let vi=0; vi<variants.length; vi++){
+      busy(true, "جارٍ اكتشاف النصوص…", 0.2 + 0.5*vi/variants.length);
+      const { data } = await wk.recognize(variants[vi], {}, { blocks: true, text: false, hocr: false, tsv: false });
+      for (const bl of data.blocks || []) for (const par of bl.paragraphs || []) for (const ln of par.lines || []) raw.push(ln);
+    }
+    await wk.setParameters({ tessedit_pageseg_mode: "3" });
+    // دمج نتائج الصور الثلاث: نحتفظ بالأعلى ثقة بين المتداخلات، وندمج مقاطع نفس السطر
+    const boxIoU = (p, q) => { const ix = Math.max(0, Math.min(p.x1,q.x1) - Math.max(p.x0,q.x0)), iy = Math.max(0, Math.min(p.y1,q.y1) - Math.max(p.y0,q.y0));
+      const inter = ix*iy, a1 = (p.x1-p.x0)*(p.y1-p.y0), a2 = (q.x1-q.x0)*(q.y1-q.y0); return inter / Math.max(Math.min(a1,a2), 1); };
+    raw.sort((p,q) => (q.confidence*(q.bbox.x1-q.bbox.x0)) - (p.confidence*(p.bbox.x1-p.bbox.x0)));
+    const kept = [];
+    for (const ln of raw){
+      const t = (ln.text || "").replace(/\s+/g, " ").trim();
+      if (!t || ln.confidence < 20 || !/[\p{L}\p{N}]/u.test(t)) continue;
+      const bh0 = ln.bbox.y1 - ln.bbox.y0; if (bh0 < 8 / Math.max(sc,1)) continue;
+      if (kept.some(k => boxIoU(k.bbox, ln.bbox) > 0.5)) continue;
+      kept.push(ln);
+    }
+    // مقاطع على نفس السطر (نفس الارتفاع تقريبًا، تداخل رأسي كبير، فجوة صغيرة) تُدمج
+    for (let changed = true; changed; ){
+      changed = false;
+      for (let i=0;i<kept.length && !changed;i++) for (let j=i+1;j<kept.length && !changed;j++){
+        const p = kept[i].bbox, q = kept[j].bbox, hp = p.y1-p.y0, hq = q.y1-q.y0;
+        const ov = Math.min(p.y1,q.y1) - Math.max(p.y0,q.y0), gap = Math.max(q.x0 - p.x1, p.x0 - q.x1);
+        if (ov > 0.6*Math.min(hp,hq) && Math.max(hp,hq)/Math.min(hp,hq) < 1.8 && gap < 1.2*Math.min(hp,hq)){
+          const left = p.x0 < q.x0 ? kept[i] : kept[j], right = left === kept[i] ? kept[j] : kept[i];
+          const rtl = hasAr(kept[i].text + kept[j].text);
+          kept[i] = { text: rtl ? right.text + " " + left.text : left.text + " " + right.text, confidence: Math.min(kept[i].confidence, kept[j].confidence),
+            bbox: { x0: Math.min(p.x0,q.x0), y0: Math.min(p.y0,q.y0), x1: Math.max(p.x1,q.x1), y1: Math.max(p.y1,q.y1) },
+            baseline: (p.x1-p.x0) > (q.x1-q.x0) ? kept[i].baseline : kept[j].baseline };
+          kept.splice(j,1); changed = true;
+        }
+      }
+    }
+    const lines = [];
+    for (const ln of kept){
+      const text = (ln.text || "").replace(/\s+/g, " ").trim();
+      const bb = ln.bbox, bw = (bb.x1 - bb.x0)/sc, bh = (bb.y1 - bb.y0)/sc;
+      if (bw < 6 || bh < 6) continue;
+      let a = 0;
+      if (ln.baseline && ln.baseline.x1 !== ln.baseline.x0) a = Math.atan2(ln.baseline.y1 - ln.baseline.y0, ln.baseline.x1 - ln.baseline.x0);
+      if (Math.abs(a) < 0.012) a = 0;
+      const c = Math.cos(Math.abs(a)), s = Math.sin(Math.abs(a)), den = c*c - s*s;
+      let L = bw, T = bh;
+      if (a && den > 0.2){ L = (bw*c - bh*s)/den; T = (bh*c - bw*s)/den; if (T < bh*0.25 || L < bw*0.5){ L = bw; T = bh; a = 0; } }
+      lines.push({ text, conf: ln.confidence, cx: (bb.x0+bb.x1)/2/sc, cy: (bb.y0+bb.y1)/2/sc, L, T, a });
+    }
+    lines.sort((p,q) => p.cy - q.cy || p.cx - q.cx);
+    S.blocks = [];
+    for (let i=0;i<lines.length;i++){
+      busy(true, "جارٍ تحليل أنماط النصوص (الخط، اللون، الحجم)…", 0.8 + 0.2*i/lines.length, lines[i].text);
+      lines[i].id = "b" + i;
+      try { S.blocks.push(await analyzeLine(lines[i])); } catch (err) { console.warn(err); }
+      await new Promise(r => setTimeout(r, 0));
+    }
+    $("timeLbl").textContent = ((performance.now()-t0)/1000).toFixed(1) + "s";
+    toast(S.blocks.length ? `تم اكتشاف ${S.blocks.length} ${S.blocks.length <= 10 && S.blocks.length > 2 ? "نصوص" : "نص"}` : "لم يُكتشف أي نص — استخدم «إضافة نص» لرسم مربع حوله");
+  } catch (err){
+    console.error(err); toast("تعذّر تحميل محرك التعرف. تأكد من اتصال الإنترنت ثم أعد المحاولة.", 6000);
+  } finally {
+    busy(false);
+    ["undo","redo"].forEach(k => $(k).disabled = true);
+    ["hold","addBox","findBtn","newBtn","fmt","exportBtn"].forEach(k => $(k).disabled = false);
+    redraw(); renderInspector();
+  }
+}
+
+async function addManual(x0,y0,x1,y1){
+  busy(true, "جارٍ تحليل المنطقة…", 0.5);
+  try {
+    const wk = await getWorker();
+    await wk.setParameters({ tessedit_pageseg_mode: "7" });
+    const pad = 4, rect = { left: Math.max(0,Math.round(x0-pad)), top: Math.max(0,Math.round(y0-pad)), width: Math.round(x1-x0+2*pad), height: Math.round(y1-y0+2*pad) };
+    const { data } = await wk.recognize(S.orig, { rectangle: rect });
+    await wk.setParameters({ tessedit_pageseg_mode: "3" });
+    const text = (data.text || "").replace(/\s+/g, " ").trim();
+    const n = S.blocks.reduce((m,b) => Math.max(m, +b.id.slice(1)), -1) + 1;
+    const b = await analyzeLine({ id: "b" + n, text, conf: data.confidence || 0, cx: (x0+x1)/2, cy: (y0+y1)/2, L: x1-x0, T: y1-y0, a: 0 });
+    S.blocks.push(b); select(b.id);
+  } catch (err){ console.error(err); toast("تعذّر تحليل المنطقة"); }
+  finally { busy(false); }
+}
+
+/* ------------------------------------------------------------- التكبير والتحريك */
+const stage = $("stage"), world = $("world");
+function applyXf(){ world.style.transform = `translate(${S.xf.x}px,${S.xf.y}px) scale(${S.xf.s})`; world.style.width = S.W + "px"; world.style.height = S.H + "px"; view.style.width = S.W + "px"; view.style.height = S.H + "px"; }
+function fit(){ const r = stage.getBoundingClientRect(); const s = Math.min(r.width/S.W, r.height/S.H) * 0.94; S.xf = { s, x: (r.width - S.W*s)/2, y: (r.height - S.H*s)/2 }; applyXf(); }
+function zoomAt(f, cx, cy){ const r = stage.getBoundingClientRect(); const px = cx === undefined ? r.width/2 : cx - r.left, py = cy === undefined ? r.height/2 : cy - r.top;
+  const s = clamp(S.xf.s*f, 0.05, 16), k = s/S.xf.s; S.xf = { s, x: px - (px - S.xf.x)*k, y: py - (py - S.xf.y)*k }; applyXf(); }
+const toImg = (cx, cy) => { const r = stage.getBoundingClientRect(); return [(cx - r.left - S.xf.x)/S.xf.s, (cy - r.top - S.xf.y)/S.xf.s]; };
+stage.addEventListener("wheel", e => { if (!S.orig) return; e.preventDefault(); zoomAt(Math.exp(-e.deltaY*(e.ctrlKey ? 0.01 : 0.0015)), e.clientX, e.clientY); }, { passive: false });
+let drag = null;
+stage.addEventListener("pointerdown", e => {
+  if (!S.orig || e.target.closest(".zoom")) return;
+  stage.setPointerCapture(e.pointerId);
+  if (S.addMode){ const [x,y] = toImg(e.clientX, e.clientY); drag = { mode: "draw", x, y }; return; }
+  drag = { mode: "pan", sx: e.clientX, sy: e.clientY, ox: S.xf.x, oy: S.xf.y };
+});
+stage.addEventListener("pointermove", e => {
+  if (!drag) return;
+  if (drag.mode === "pan"){ S.xf.x = drag.ox + e.clientX - drag.sx; S.xf.y = drag.oy + e.clientY - drag.sy; applyXf(); }
+  else { const [x,y] = toImg(e.clientX, e.clientY); drag.x1 = x; drag.y1 = y;
+    let r = $("overlay").querySelector("rect"); if (!r){ r = document.createElementNS("http://www.w3.org/2000/svg","rect"); $("overlay").appendChild(r); }
+    r.setAttribute("x", Math.min(drag.x,x)); r.setAttribute("y", Math.min(drag.y,y)); r.setAttribute("width", Math.abs(x-drag.x)); r.setAttribute("height", Math.abs(y-drag.y)); }
+});
+stage.addEventListener("pointerup", e => {
+  const d = drag; drag = null; if (!d) return;
+  if (d.mode === "pan" && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4 && !e.target.closest("polygon")){ S.sel = null; renderInspector(); redraw(); }
+  if (d.mode === "draw" && d.x1 !== undefined){
+    const x0 = clamp(Math.min(d.x,d.x1),0,S.W), x1 = clamp(Math.max(d.x,d.x1),0,S.W), y0 = clamp(Math.min(d.y,d.y1),0,S.H), y1 = clamp(Math.max(d.y,d.y1),0,S.H);
+    setAdd(false); if (x1-x0 > 6 && y1-y0 > 6) addManual(x0,y0,x1,y1); else redraw();
+  }
+});
+$("zin").onclick = () => zoomAt(1.25); $("zout").onclick = () => zoomAt(0.8); $("zfit").onclick = fit;
+new ResizeObserver(() => S.orig && fit()).observe(stage);
+
+/* ------------------------------------------------------------- الأزرار والاختصارات */
+const fileIn = $("file");
+$("dropBox").onclick = () => fileIn.click();
+fileIn.onchange = () => { loadFile(fileIn.files[0]); fileIn.value = ""; };
+stage.addEventListener("dragover", e => { e.preventDefault(); $("drop").classList.add("over"); });
+stage.addEventListener("dragleave", () => $("drop").classList.remove("over"));
+stage.addEventListener("drop", e => { e.preventDefault(); $("drop").classList.remove("over"); loadFile(e.dataTransfer.files[0]); });
+window.addEventListener("paste", e => { const it = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith("image/")); if (it && !(e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement)){ e.preventDefault(); loadFile(it.getAsFile()); } });
+$("undo").onclick = undo; $("redo").onclick = redo;
+const hold = $("hold");
+const setOrig = v => { S.showOrig = v; redraw(); };
+hold.addEventListener("pointerdown", () => setOrig(true)); ["pointerup","pointerleave"].forEach(ev => hold.addEventListener(ev, () => setOrig(false)));
+function setAdd(v){ S.addMode = v; $("addBox").classList.toggle("on", v); $("pill").style.display = v ? "block" : "none"; stage.style.cursor = v ? "crosshair" : ""; }
+$("addBox").onclick = () => setAdd(!S.addMode);
+$("newBtn").onclick = () => { S.orig = null; S.blocks = []; S.edits = {}; S.sel = null; $("drop").style.display = "flex"; $("zoomBar").style.display = "none"; vctx.clearRect(0,0,view.width,view.height); $("overlay").innerHTML = ""; renderList(); renderInspector(); };
+$("theme").onclick = () => { const r = document.documentElement, dark = getComputedStyle(r).getPropertyValue("--bg").trim() === "#0b1020"; r.dataset.theme = dark ? "light" : "dark"; };
+$("findBtn").onclick = () => {
+  const f = prompt("ابحث عن:"); if (!f) return;
+  const rep = prompt(`استبدل «${f}» بـ:`, ""); if (rep === null) return;
+  const next = Object.assign({}, S.edits); let n = 0;
+  const re = new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text; const nw = cur.replace(re, () => rep);
+    if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
+  if (n){ commit(next); toast(`تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`); } else toast("لا توجد تطابقات");
+};
+$("exportBtn").onclick = () => {
+  const out = document.createElement("canvas"); out.width = S.W; out.height = S.H; compose(out, S.edits);
+  const fmt = $("fmt").value, mime = "image/" + fmt;
+  out.toBlob(blob => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${S.name}-edited.${fmt === "jpeg" ? "jpg" : fmt}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }, mime, 0.95);
+};
+window.addEventListener("keydown", e => {
+  const typing = e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement;
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && e.key.toLowerCase() === "z" && !typing){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (mod && e.key.toLowerCase() === "y" && !typing){ e.preventDefault(); redo(); }
+  else if (e.key === "Escape"){ setAdd(false); S.sel = null; renderInspector(); redraw(); }
+});
+</script>
+</body>
+</html>
