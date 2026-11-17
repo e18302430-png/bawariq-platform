@@ -22,7 +22,7 @@ export function Counter({ value, format = (n: number) => new Intl.NumberFormat("
 /* ───── ظهور عند التمرير (يبدأ من حالة مرئية جزئياً) ───── */
 export function Reveal({ children, delay = 0, className, style }: { children: ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
   return (
-    <motion.div className={className} style={style} initial={{ opacity: 0.35, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}>
+    <motion.div className={className} style={style} initial={{ opacity: 0.5, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px 0px 80px 0px" }} transition={{ duration: 0.4, delay: Math.min(delay, 0.12), ease: [0.22, 1, 0.36, 1] }}>
       {children}
     </motion.div>
   );

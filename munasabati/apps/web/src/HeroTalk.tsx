@@ -59,7 +59,7 @@ export function HeroTalk({ onDone }: { onDone: () => void }) {
           stops.current.push(() => { clearInterval(tick); stop(); res(); });
         });
       }
-      setProg(1); if (!cancelled) setTimeout(finish, 450);
+      setProg(1); if (!cancelled) setTimeout(finish, 150);
     };
 
     /** الوضع ٢: موسيقى متزامنة بخط زمني ثابت */
@@ -99,7 +99,7 @@ export function HeroTalk({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <motion.div className="talk" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, filter: "blur(10px)" }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
+    <motion.div className="talk" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.15 } }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} style={{ position: "relative" }}>
       <div className="talk-who">
         <span className={"talk-avatar" + (speaking ? " on" : "")}><LogoMark size={36} animated /><i /></span>
         <span className="talk-name">منسقتك من مناسبتي</span>

@@ -236,7 +236,7 @@ function Hero({ occ, onPick }: { occ: Occasion; onPick: (o: Occasion) => void })
         </nav>
         <div className="hero-body">
           <span className="live"><i /> {BRAND.goal}</span>
-          <AnimatePresence mode="wait" initial={false}>{talk ? <HeroTalk key="talk" onDone={() => setTalk(false)} /> : <motion.div key="main" className="hero-main" initial={SSG ? false : { opacity: 0, y: 24, filter: "blur(10px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+          <AnimatePresence initial={false}>{talk ? <HeroTalk key="talk" onDone={() => setTalk(false)} /> : <motion.div key="main" className="hero-main" initial={SSG ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
           <h1>
             <span className="word-slot">
               <AnimatePresence mode="wait" initial={!SSG}>

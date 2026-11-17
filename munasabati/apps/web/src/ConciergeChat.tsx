@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, splitBudget, type OccasionId } from "@munasabati/core";
 import { Icon, LogoMark, sendLead } from "@munasabati/ui";
-import { arabicVoice, speak } from "./voice";
+import { arabicVoice, speak, stopSpeech } from "./voice";
 
 /* ═══════════ «سالفة مع منسقتك»: معالج الميزانية كمحادثة ═══════════
    المنسقة تسأل، والعميل يجاوب بلمسة، وترد عليه برد شخصي باللهجة السعودية، بصوت «سوالف» مع كل كلمة. */
@@ -29,7 +29,7 @@ function BotLine({ t, onDone }: { t: string; onDone?: () => void }) {
         if (v && !window.__mnsMuted) stop = speak(t, v, { onWord: (k) => setN((x) => Math.max(x, k + 1)), onEnd: end });
         else setTimeout(end, words.length * 150 + 200);
       });
-    }, 420);
+    }, 220);
     return () => { alive = false; clearTimeout(typing); clearInterval(tick); stop(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return <span>{n === 0 ? <i className="ch-typing"><b /><b /><b /></i> : words.map((w, i) => <span key={i} className={"ch-w" + (i < n ? " in" : "")}>{w}{i < words.length - 1 ? " " : ""}</span>)}</span>;
@@ -48,7 +48,8 @@ export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
   const root = useRef<HTMLDivElement>(null);
   const split = useMemo(() => splitBudget(f.budget, (f.occ || "wedding") as OccasionId).slice(0, 3), [f.budget, f.occ]);
   const totalBots = msgs.filter((m) => m.who === "bot").length;
-  const ready = shown >= totalBots;
+  // الأزرار تطلع أول ما يبدأ السؤال (آخر رسالة)، بدون انتظار نهاية الكلام
+  const ready = shown >= totalBots - 1;
   useEffect(() => {
     box.current?.scrollTo({ top: box.current.scrollHeight, behavior: "smooth" });
     // نخلي أدوات الجواب ظاهرة في الشاشة (خصوصاً بالجوال)
@@ -56,6 +57,7 @@ export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
   }, [msgs, shown, step]);
 
   const say = (me: string, bots: string[], next: Step) => {
+    stopSpeech(); setShown(msgs.filter((m) => m.who === "bot").length); // جاوب قبل ما تكمل؟ نوقف الكلام ونكمل
     setMsgs((m) => [...m, { who: "me", t: me }, ...bots.map((t) => ({ who: "bot" as const, t }))]);
     setStep(next); setErr("");
   };
