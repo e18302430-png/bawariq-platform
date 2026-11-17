@@ -19,17 +19,11 @@ export const VENUE_REEL: Reel = { id: "venues", title: "لأصحاب القاع�
 const src = (id: string) => `./media/reels/${id}.mp4`, poster = (id: string) => `./media/reels/${id}.webp`;
 
 function Preview({ r, onOpen, i }: { r: Reel; onOpen: () => void; i: number }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const v = ref.current; if (!v) return;
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting && !reduce) { v.preload = "auto"; void v.play().catch(() => {}); } else v.pause(); }, { threshold: 0.6 });
-    io.observe(v); return () => io.disconnect();
-  }, []);
+  // صورة الغلاف فقط (خفيفة)؛ الفيديو ما يتحمّل إلا لما العميل يفتحه
   return (
     <Reveal delay={i * 0.05} className="fr">
       <button className="fr-btn" onClick={onOpen} aria-label={`شغّل فيلم ${r.title}`}>
-        <video ref={ref} src={src(r.id)} poster={poster(r.id)} muted loop playsInline preload="none" aria-hidden="true" tabIndex={-1} />
+        <img src={poster(r.id)} alt="" loading="lazy" decoding="async" />
         <span className="fr-shade" />
         {r.ai && <span className="fr-ai">مولّد بالذكاء الاصطناعي</span>}
         <span className="fr-play"><Icon name="Play" size={18} fill="currentColor" /></span>

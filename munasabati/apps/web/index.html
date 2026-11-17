@@ -118,7 +118,7 @@
         // صوت «منسقتك تكلمك»: نفتحه بلمسة الختم (المتصفحات ما تسمح بالصوت قبل أول لمسة)
         function unlockTalk() { try { if (window.speechSynthesis && !window.__mnsSpeechUnlocked) { var su = new SpeechSynthesisUtterance(" "); su.volume = 0; window.speechSynthesis.speak(su); window.__mnsSpeechUnlocked = true; } } catch (e) {}
           try { var bd = window.__mnsBed || (window.__mnsBed = new Audio("./media/bed.m4a")); bd.loop = true; bd.preload = "auto"; if (!window.__mnsBedUnlocked) { window.__mnsBedUnlocked = true; var bp = bd.play(); if (bp && bp.then) bp.then(function () { if (!window.__mnsTalkStarted) { bd.pause(); bd.currentTime = 0; } }).catch(function () { window.__mnsBedUnlocked = false; }); } } catch (e) {}
-          try { var t = window.__mnsTalk || (window.__mnsTalk = new Audio("./media/talk.m4a")); t.preload = "auto"; if (!window.__mnsTalkUnlocked) { var pr = t.play(); window.__mnsTalkUnlocked = true; if (pr && pr.then) pr.then(function () { if (!window.__mnsTalkStarted) { t.pause(); t.currentTime = 0; } }).catch(function () { window.__mnsTalkUnlocked = false; }); } } catch (e) {} }
+          window.__mnsTalkUnlocked = true; }
         if (seen || /[?&]nogate/.test(location.search) || (location.hash && location.hash.length > 1)) { g.parentNode.removeChild(g); return; }
         var root = document.documentElement; root.classList.add("gating");
         var HOLD = 1500, p = 0, holding = false, done = false, last = 0, tick = 0, raf = 0;

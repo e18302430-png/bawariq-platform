@@ -45,7 +45,10 @@ export function LiveFilm({ onReady }: { onReady?: () => void }) {
     const S = { gold: sprite("rgba(255,214,150,1)"), warm: sprite("rgba(255,190,120,1)"), pink: sprite("rgba(255,170,200,1)"), white: sprite("rgba(255,240,225,1)"), blue: sprite("rgba(140,170,255,1)"), fire: sprite("rgba(255,150,60,1)") };
     let W = 0, H = 0, raf = 0, visible = true, t0 = performance.now();
 
-    SCENES.forEach((s, i) => { const im = new Image(); im.decoding = "async"; im.onload = () => { imgs[i] = im; if (i === 0) { setReady(true); onReady?.(); } }; im.src = s.src; });
+    // أول مشهد فوراً، والباقي بعد ما تهدأ الصفحة (ما ينافس تحميل الواجهة)
+    const load = (i: number) => { const im = new Image(); im.decoding = "async"; im.onload = () => { imgs[i] = im; if (i === 0) { setReady(true); onReady?.(); } }; im.src = SCENES[i].src; };
+    load(0);
+    const later = window.setTimeout(() => SCENES.forEach((_, i) => i && load(i)), 4500);
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, small ? 1 : 1.5);
@@ -117,7 +120,7 @@ export function LiveFilm({ onReady }: { onReady?: () => void }) {
     const vis = () => { if (document.hidden) visible = false; else { visible = true; } };
     document.addEventListener("visibilitychange", vis);
     resize(); t0 = performance.now(); raf = requestAnimationFrame(frame);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); document.removeEventListener("visibilitychange", vis); };
+    return () => { clearTimeout(later); cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); document.removeEventListener("visibilitychange", vis); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

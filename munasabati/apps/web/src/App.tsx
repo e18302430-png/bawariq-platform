@@ -89,7 +89,7 @@ function MiniDoor() {
       </div>
       <div style={{ borderRadius: 22, background: "#121016", height: 150, display: "grid", placeItems: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ width: 96, height: 96, border: "2.5px solid #fff", borderRadius: 18, opacity: 0.9 }} />
-        <motion.div style={{ position: "absolute", left: "30%", right: "30%", height: 2, background: "var(--brand)", boxShadow: "0 0 14px var(--brand)" }} animate={{ top: ["28%", "70%", "28%"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }} />
+        <div className="mini-laser" />
       </div>
       <div className="ms-card" style={{ background: "var(--ok-soft)", borderColor: "transparent", display: "flex", gap: 8, alignItems: "center" }}><Icon name="CheckCircle2" size={20} style={{ color: "var(--ok)" }} /><div><b className="display">أهلاً تركي المطيري</b><div className="faint" style={{ fontSize: 11 }}>قسم الرجال · 4 أشخاص</div></div></div>
     </div>
@@ -133,7 +133,7 @@ function Features() {
           <div className="b-text"><b>اكشط وشوف الموعد</b><span>طبقة ذهبية يكشطها الضيف بصبعه، وتطلع القصاصات تحتفل معه.</span></div>
         </Reveal>
         <Reveal className="b-card b-scan" delay={0.1}>
-          <div className="b-scanbox"><i /><i /><i /><i /><motion.span className="b-laser" animate={{ top: ["14%", "84%", "14%"] }} transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }} /></div>
+          <div className="b-scanbox"><i /><i /><i /><i /><span className="b-laser" /></div>
           <div className="b-text"><b>الدخول بالكاميرا</b><span>المنسق يمسح رمز الضيف بالجوال، ويعرف قسمه وكم معه، بدون زحمة عند الباب.</span></div>
         </Reveal>
         <Reveal className="b-card b-chat" delay={0.05}>

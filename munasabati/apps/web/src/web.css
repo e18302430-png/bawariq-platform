@@ -221,7 +221,12 @@
 .b-scanbox i:nth-child(2) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
 .b-scanbox i:nth-child(3) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
 .b-scanbox i:nth-child(4) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
-.b-laser { position: absolute; left: 8%; right: 8%; height: 2px; background: #ff3d7f; box-shadow: 0 0 16px #ff3d7f; }
+.b-laser { position: absolute; left: 8%; right: 8%; top: 14%; height: 2px; background: #ff3d7f; box-shadow: 0 0 16px #ff3d7f; animation: laser-y 2.6s ease-in-out infinite; will-change: transform; }
+/* حركة على المعالج الرسومي (transform) بدل top اللي يعيد حساب الصفحة كل إطار */
+@keyframes laser-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--laser-run, 140px)); } }
+.mini-laser { position: absolute; left: 30%; right: 30%; top: 28%; height: 2px; background: var(--brand); box-shadow: 0 0 14px var(--brand); --laser-run: 90px; animation: laser-y 2.4s ease-in-out infinite; will-change: transform; }
+.b-scanbox { --laser-run: 150px; }
+@media (prefers-reduced-motion: reduce) { .b-laser, .mini-laser { animation: none; } }
 .b-chat { grid-column: span 2; }
 .b-bubbles { display: grid; gap: 8px; padding: 22px 22px 0; margin-bottom: auto; font-size: 13.5px; }
 .b-bubbles span { padding: 9px 13px; border-radius: 16px 16px 16px 5px; background: var(--surface-2); border: 1px solid var(--line); max-width: 86%; justify-self: start; }
@@ -393,7 +398,7 @@
 .fr-btn { position: relative; display: block; width: 100%; aspect-ratio: 9 / 16; border-radius: 26px; overflow: hidden; border: 0; padding: 0; cursor: pointer; background: #120b16; color: #fff; text-align: start; box-shadow: 0 24px 50px -28px rgba(0, 0, 0, .7); transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
 .fr-btn:hover { transform: translateY(-6px) scale(1.01); }
 .fr-btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
-.fr-btn video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fr-btn video, .fr-btn img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .fr-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .25), transparent 30%, transparent 55%, rgba(0, 0, 0, .8)); }
 .fr-ai { position: absolute; top: 10px; inset-inline-start: 10px; font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: rgba(0, 0, 0, .62); color: #fff; }
 .fr-ai.static { position: static; }
@@ -417,20 +422,11 @@
 .frv-cta { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap; }
 
 /* ═══════════ المونتاج السينمائي ═══════════ */
-.cine-bars { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
-.cine-bars i { position: absolute; inset-inline: 0; height: calc(5.5vh * var(--bars, 1)); background: #000; transition: height .1s linear; }
-.cine-bars i:first-child { top: 0; } .cine-bars i:last-child { bottom: 0; }
-html:not(.cine) .cine-bars, html.cine-static .cine-grain { display: none; }
 /* أرقام الفصول */
 body { counter-reset: chap; }
 .cine .sec-head .eyebrow::after { counter-increment: chap; content: " — " counter(chap, decimal-leading-zero); font-family: var(--f-display); letter-spacing: .08em; opacity: .6; }
-.cine .hero { padding-top: calc(5.5vh * var(--bars, 1)); }
+
 /* القطع الضوئي مع دخول القسم */
-.cine .sec, .cine .sig, .cine .final { position: relative; }
-.cine .cut-in::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5; border-radius: inherit; background: linear-gradient(100deg, transparent 30%, rgba(255, 236, 200, .55) 48%, rgba(255, 120, 160, .25) 52%, transparent 70%); background-size: 260% 100%; mix-blend-mode: screen; animation: cine-cut .9s cubic-bezier(.22, 1, .36, 1) both; }
-@keyframes cine-cut { from { background-position: 120% 0; opacity: 1; } to { background-position: -40% 0; opacity: 0; } }
-.cine .sec-head h2 { transition: filter .9s cubic-bezier(.22, 1, .36, 1), letter-spacing .9s cubic-bezier(.22, 1, .36, 1), opacity .9s; }
-.cine .sec:not(.cut-in) .sec-head h2 { filter: blur(12px); letter-spacing: .06em; opacity: .2; }
 
 /* ═══════════ «منسقتك تكلمك» بأسلوب مواقع الجوائز ═══════════ */
 .hero-main { display: flex; flex-direction: column; align-items: stretch; }
