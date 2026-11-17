@@ -95,10 +95,13 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
 @media (max-width:800px){
   body{overflow:auto}
   main{flex-direction:column;height:auto}
-  #stage{height:55vh;flex:none}
+  #stage{height:46vh;flex:none;position:sticky;top:0;z-index:3;border-bottom:1px solid var(--line)}
   aside{width:100%;border:0}
   .hide-sm{display:none}
-  header{overflow-x:auto}
+  header{overflow-x:auto;gap:4px;padding:0 8px}
+  header .btn{padding:6px 9px}
+  .ico{width:34px;height:34px}
+  #theme,#fmt{display:none}
 }
 </style>
 </head>
@@ -124,9 +127,9 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
         <h1>استبدل أي نص داخل الصورة في نفس مكانه وبنفس شكله</h1>
         <div class="up">⬆</div>
         <b>اسحب الصورة هنا أو انقر للاختيار</b>
-        <p class="hint">أو الصق من الحافظة (Ctrl+V) — PNG / JPG / WEBP<br>كل المعالجة تتم داخل متصفحك، لا تُرفع الصورة لأي خادم</p>
+        <p class="hint">أو الصق من الحافظة (Ctrl+V) — JPG / PNG / WEBP / HEIC (صور الآيفون)<br>كل المعالجة تتم داخل متصفحك، لا تُرفع الصورة لأي خادم</p>
       </div>
-      <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <input type="file" id="file" accept="image/*,.heic,.heif" hidden>
     </div>
     <div class="zoom" id="zoomBar" style="display:none"><button id="zout">−</button><button id="zfit">ملاءمة</button><button id="zin">+</button></div>
     <div class="pill" id="pill">اسحب مربعًا حول النص</div>
@@ -417,7 +420,8 @@ async function ensureFont(id, sample){
    core: مستطيل السطر داخل الإطار بإحداثيات الإطار. */
 function makeFrame(cx, cy, L, T, a){
   const mx = 0.45*T + 3, my = 0.5*T + 3;
-  const sc = clamp(64 / Math.max(T,1), 1, 3);
+  // مقياس التحليل: نص صغير يُكبَّر (حتى ×3)، ونص كبير يُصغَّر (ارتفاع ~110px يكفي للتحليل ويسرّع كثيرًا على الجوال)
+  const sc = clamp(64 / Math.max(T,1), Math.min(1, 110 / Math.max(T,1)), 3);
   const fw = L + 2*mx, fh = T + 2*my;
   return { cx, cy, a, fw, fh, sc, w: Math.round(fw*sc), h: Math.round(fh*sc),
            core: [mx*sc, my*sc, (mx+L)*sc, (my+T)*sc], L, T };
@@ -431,9 +435,9 @@ function frameCanvas(fr, srcCanvas){
   return c;
 }
 /* يرسم طبقة بحجم الإطار فوق سياق الصورة بنفس التحويل العكسي */
-function drawFrameLayer(ctx, fr, layer, ox=0, oy=0, rot=0){
+function drawFrameLayer(ctx, fr, layer, ox=0, oy=0, rot=0, k=1){
   ctx.save();
-  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a + rot*Math.PI/180); ctx.scale(1/fr.sc, 1/fr.sc); ctx.translate(-fr.w/2, -fr.h/2);
+  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a + rot*Math.PI/180); ctx.scale(1/(fr.sc*k), 1/(fr.sc*k)); ctx.translate(-fr.w*k/2, -fr.h*k/2);
   ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
@@ -769,9 +773,11 @@ function renderLayer(b, e, forMatch=false){
   // يرسم نص الكتلة (مع التعديلات e) في طبقة بحجم الإطار. يرجع OffscreenCanvas
   const fr = b.fr, st = Object.assign({}, b.style, e || {});
   const text = e && e.text !== undefined ? toArabicDigits(e.text) : b.text;
-  const c = new OffscreenCanvas(fr.w, fr.h), x = c.getContext("2d", { willReadFrequently: true });
+  const k = forMatch ? 1 : Math.max(1, 1 / fr.sc);   // دقة الرسم النهائي = دقة الصورة الأصلية على الأقل
+  const c = new OffscreenCanvas(Math.round(fr.w*k), Math.round(fr.h*k)), x = c.getContext("2d", { willReadFrequently: true });
+  if (k !== 1) x.scale(k, k);
   const hs = st.hscale || 1;
-  if (!text.trim()) return { c, size: 0 };
+  if (!text.trim()) return { c, size: 0, k };
   let size = st.size * fr.sc;
   const sw = (st.strokeW || 0) * fr.sc;
   const dir = hasAr(text) ? "rtl" : "ltr";
@@ -798,7 +804,7 @@ function renderLayer(b, e, forMatch=false){
     x.save(); x.globalCompositeOperation = "destination-out"; if (sw>0){ x.lineWidth = sw*2*factor; x.lineJoin="round"; x.strokeText(text, ox, oy);} x.fillText(text, ox, oy); x.restore(); }
   if (sw > 0){ x.lineWidth = sw*2*factor; x.lineJoin = "round"; x.strokeStyle = st.strokeColor; x.strokeText(text, ox, oy); }
   x.fillStyle = st.color; x.fillText(text, ox, oy);
-  return { c, size };
+  return { c, size, k };
 }
 
 function layerAlpha(b, e){
@@ -901,7 +907,7 @@ function compose(target, edits){
   const list = Object.values(edits);
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (b) drawFrameLayer(x, b.fr, cleanLayer(b)); }
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (!b || e.remove || !(e.text||"").trim()) continue;
-    const { c } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0, e.rot || 0); }
+    const { c, k } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0, e.rot || 0, k); }
 }
 let raf = 0;
 function redraw(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
@@ -1042,7 +1048,7 @@ function renderInspector(){
     const v = toArabicDigits(ta.value);
     if (v !== ta.value){ const pos = ta.selectionStart; ta.value = v; ta.setSelectionRange(pos, pos); }
     patch(b, { text: v, remove: false }, "text" + b.id); };
-  setTimeout(() => ta.focus(), 0);
+  if (!matchMedia("(max-width:800px), (pointer:coarse)").matches) setTimeout(() => ta.focus(), 0);  // على الجوال لا نفتح لوحة المفاتيح تلقائيًا
   $("iErase").onclick = () => { patch(b, e.remove ? { remove: false } : { remove: true, text: "" }); renderInspector(); };
   $("iReset").onclick = () => { patch(b, null); renderInspector(); };
   $("iFont").onchange = async ev => { await ensureFont(ev.target.value, b.text); patch(b, { font: ev.target.value }); };
@@ -1076,18 +1082,48 @@ function syncPos(){ const e = S.edits[S.sel] || {}; for (const [k,v] of [["iDX",
 /* ------------------------------------------------------------- تحميل الصورة والاكتشاف */
 function busy(on, msg, pct, sub){ $("busy").style.display = on ? "flex" : "none"; if (msg) $("busyMsg").textContent = msg; if (pct !== undefined) $("busyBar").style.width = (pct*100).toFixed(0) + "%"; $("busySub").textContent = sub || ""; }
 
+/* فك ترميز الصورة بشكل متين على الجوال: createImageBitmap ثم <img>، وتحويل HEIC (صور الآيفون) عند الحاجة */
+function loadScript(src){ return new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = src; sc.onload = ok; sc.onerror = () => no(new Error("تعذّر تحميل " + src)); document.head.appendChild(sc); }); }
+function imgFromBlob(blob){ return new Promise((ok, no) => { const url = URL.createObjectURL(blob), im = new Image();
+  im.onload = () => ok(im); im.onerror = () => { URL.revokeObjectURL(url); no(new Error("decode")); }; im.src = url; }); }
+async function decodeImage(file){
+  try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) {}
+  try { return await imgFromBlob(file); } catch (e) {}
+  // HEIC/HEIF: نحوّلها إلى JPEG داخل المتصفح
+  const isHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || "");
+  if (isHeic || !file.type){
+    busy(true, "جارٍ تحويل صورة HEIC…", 0.05);
+    if (!window.heic2any) await loadScript("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js");
+    let out = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
+    if (Array.isArray(out)) out = out[0];
+    try { return await createImageBitmap(out); } catch (e) { return await imgFromBlob(out); }
+  }
+  throw new Error("unsupported");
+}
+const MAX_PIXELS = 16_000_000; // حد Canvas في متصفحات الجوال (iOS ~16.7 ميغابكسل)
+
 async function loadFile(file){
-  if (!file || !/^image\/(png|jpe?g|webp)$/.test(file.type)){ toast("الصيغ المدعومة: PNG / JPG / WEBP"); return; }
-  const url = URL.createObjectURL(file);
-  const img = new Image(); img.src = url; await img.decode();
-  S.name = (file.name || "image").replace(/\.[^.]+$/, "");
-  S.W = img.naturalWidth; S.H = img.naturalHeight;
-  S.orig = document.createElement("canvas"); S.orig.width = S.W; S.orig.height = S.H;
-  S.orig.getContext("2d").drawImage(img, 0, 0);
-  view.width = S.W; view.height = S.H;
-  S.blocks = []; S.edits = {}; S.past = []; S.future = []; S.sel = null;
-  $("drop").style.display = "none"; $("zoomBar").style.display = "flex";
-  fit(); redraw();
+  if (!file){ return; }
+  const looksImage = !file.type || file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|hei[cf]|avif)$/i.test(file.name || "");
+  if (!looksImage){ toast("هذا الملف ليس صورة"); return; }
+  let src;
+  try { busy(true, "جارٍ فتح الصورة…", 0.02); src = await decodeImage(file); }
+  catch (err){ console.error(err); busy(false);
+    toast(/hei[cf]/i.test(file.type + file.name) ? "تعذّر فتح صورة HEIC. من إعدادات الكاميرا اختر «الأكثر توافقًا» أو أرسل الصورة كـ JPG" : "تعذّر فتح الصورة. جرّب صيغة JPG أو PNG", 7000); return; }
+  try {
+    let W = src.naturalWidth || src.width, H = src.naturalHeight || src.height;
+    const sc = Math.min(1, Math.sqrt(MAX_PIXELS / (W*H)));
+    if (sc < 1){ W = Math.round(W*sc); H = Math.round(H*sc); toast(`الصورة كبيرة جدًا للمتصفح فصُغّرت إلى ${W}×${H}`, 5000); }
+    S.name = (file.name || "image").replace(/\.[^.]+$/, "");
+    S.W = W; S.H = H;
+    S.orig = document.createElement("canvas"); S.orig.width = W; S.orig.height = H;
+    const ox = S.orig.getContext("2d"); ox.imageSmoothingQuality = "high"; ox.drawImage(src, 0, 0, W, H);
+    if (src.close) src.close();
+    view.width = W; view.height = H;
+    S.blocks = []; S.edits = {}; S.past = []; S.future = []; S.sel = null;
+    $("drop").style.display = "none"; $("zoomBar").style.display = "flex";
+    fit(); redraw();
+  } catch (err){ console.error(err); busy(false); toast("تعذّر تجهيز الصورة: " + err.message, 7000); return; }
   await detectAll();
 }
 
@@ -1227,7 +1263,7 @@ new ResizeObserver(() => S.orig && fit()).observe(stage);
 
 /* ------------------------------------------------------------- الأزرار والاختصارات */
 const fileIn = $("file");
-$("dropBox").onclick = () => fileIn.click();
+$("dropBox").onclick = () => { fileIn.value = ""; fileIn.click(); };
 fileIn.onchange = () => { loadFile(fileIn.files[0]); fileIn.value = ""; };
 stage.addEventListener("dragover", e => { e.preventDefault(); $("drop").classList.add("over"); });
 stage.addEventListener("dragleave", () => $("drop").classList.remove("over"));
