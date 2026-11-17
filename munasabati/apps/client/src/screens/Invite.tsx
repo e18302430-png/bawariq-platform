@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { OCCASIONS, greetingFor, inviteMessage, patchClient, removeGuest, renewGuestCode, resetInvite, today, updateEvent, updateGuest, type DB, type Guest, type InviteTemplate, type ProgramItem, type StoryChapter, INVITE_TIERS, inviteTierOf, requestInviteTier, sar } from "@munasabati/core";
-import { AiTag, Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, StudioPanel, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
+import { AiTag, Assistant, DBProvider, Empty, Icon, QR, Segmented, Splash, apply, isCloud, photoUrl, repo, useDB, useToast, openAssistant } from "@munasabati/ui";
 import balad from "../assets/invite/balad.webp";
 import baladSm from "../assets/invite/balad-sm.webp";
 import diriyah from "../assets/invite/diriyah.webp";
@@ -26,7 +26,8 @@ const WATERCOLOR: Partial<Record<InviteTemplate, { img: string; sm: string; tint
   ula: { img: ula, sm: ulaSm, tint: "#b07a8a", deep: "#5b3346" },
 };
 /** خلفية الاستوديو (لو اختارها العميل) تحل محل لوحة القالب، وتبقى ألوان القالب */
-const artOf = (t: InviteTemplate, art?: string) => { const base = WATERCOLOR[t] ?? (art ? WATERCOLOR.diriyah! : undefined); return base && art && /^https:\/\//.test(art) ? { ...base, img: art, ai: true } : base ? { ...base, ai: false } : undefined; };
+// ai = صورة من استوديو الذكاء الاصطناعي (ملفها ai-…)، أما المرسومة بالكود فما تنعلَّم ذكاء اصطناعي
+const artOf = (t: InviteTemplate, art?: string) => { const base = WATERCOLOR[t] ?? (art ? WATERCOLOR.diriyah! : undefined); return base && art && /^(https:\/\/|data:image\/)/.test(art) ? { ...base, img: art, ai: /\/ai-[\w-]+\.\w+$/.test(art) } : base ? { ...base, ai: false } : undefined; };
 
 const TEMPLATES: { id: InviteTemplate; name: string; desc: string }[] = [
   { id: "diriyah", name: "الدرعية", desc: "غروب نجدي" },
@@ -306,7 +307,6 @@ export function Invites() {
               ))}
             </div>
           </div>
-          {isCloud && <StudioPanel feature="invite-art" title="ارسم خلفية خاصة لدعوتك" sub="اختر الطابع والألوان، ونرسم لك لوحة مائية ما تتكرر. بدون أي أشخاص." onUse={(art) => { setInv({ art, template: WATERCOLOR[invite.template] ? invite.template : "diriyah" }); toast("صارت خلفية دعوتك"); }} />}
           {invite.art && <button className="btn sm ghost" style={{ justifySelf: "start" }} onClick={() => setInv({ art: undefined })}><Icon name="RotateCcw" size={14} /> رجّع خلفية القالب الأصلية</button>}
           <FilmFor />
           <div className="field"><label htmlFor="i-c">اسما العروسين</label><input id="i-c" className="input" placeholder="مثال: عبدالله ونورة" value={invite.couple ?? info?.couple ?? ""} onChange={(e) => setInv({ couple: e.target.value })} /></div>

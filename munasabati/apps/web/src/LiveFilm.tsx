@@ -48,7 +48,7 @@ export function LiveFilm({ onReady }: { onReady?: () => void }) {
     SCENES.forEach((s, i) => { const im = new Image(); im.decoding = "async"; im.onload = () => { imgs[i] = im; if (i === 0) { setReady(true); onReady?.(); } }; im.src = s.src; });
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, small ? 1 : 1.5);
       W = canvas.clientWidth; H = canvas.clientHeight;
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       x.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -89,9 +89,11 @@ export function LiveFilm({ onReady }: { onReady?: () => void }) {
       fx(SCENES[i], local + i * 7, map, k);
       return true;
     };
+    let last = 0; const minGap = small ? 1000 / 30 : 1000 / 45; // سقف إطارات: أخف على المعالج والبطارية
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (!visible || !imgs[0]) return;
+      if (!visible || !imgs[0] || now - last < minGap) return;
+      last = now;
       const t = reduce ? 1 : (now - t0) / 1000;
       const loaded = imgs.filter(Boolean).length;
       const order = SCENES.map((_, i) => i).filter((i) => imgs[i]);

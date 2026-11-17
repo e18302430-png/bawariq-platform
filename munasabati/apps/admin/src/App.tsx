@@ -6,7 +6,7 @@ import {
   upsertSupplier, upsertVenue, today, pricingOf, payoutFor, setPricing, setBank, setLegal, hasAgreement, type Booking, type BookingStatus, type Supplier, type Ticket, type Venue,
 } from "@munasabati/core";
 import {
-  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady, ding, StudioPanel } from "@munasabati/ui";
+  AppShell, Empty, ErrorBoundary, Icon, Media, Segmented, Sheet, StatusPill, Thread, TicketStatusPill, ToastProvider, TOPICS, AdminLogin, apply, isCloud, repo, useDB, useOpsAlerts, useToast, Splash, useReady, ding } from "@munasabati/ui";
 import { AccountTools, BookingAdmin, Clients } from "./clients";
 import { LiveBadge, LiveFeed, LiveToasts, useLive, type LiveEvent } from "./live";
 import { OpsRoom, liveRooms, openAlerts } from "./ops";
@@ -466,7 +466,6 @@ function Panel() {
     { id: "suppliers", label: "الموردون", icon: "Store" },
     { id: "venues", label: "القاعات", icon: "Building2" },
     { id: "billing", label: "الفوترة", icon: "Receipt", count: db.bookings.filter((b) => b.status === "confirmed" && b.quote && b.pay?.stage !== "paid").length + (db.clients ?? []).filter((c) => c.data.invitePlan).length || undefined },
-    { id: "studio", label: "الاستوديو", icon: "Sparkles" },
     { id: "settings", label: "الإعدادات", icon: "Settings" },
   ];
   return (
@@ -485,7 +484,6 @@ function Panel() {
           {tab === "suppliers" && <Accounts kind="supplier" focus={focus} />}
           {tab === "venues" && <Accounts kind="venue" focus={focus} />}
           {tab === "billing" && <Billing />}
-          {tab === "studio" && <><div><h1 className="page-title">استوديو المنسقة</h1><p className="page-sub">لوحة ذوق للعميل مع خياراته الثلاثة: اختر المكان والطابع وألوانه، ونرسم تصوّر للتجهيز بدون أشخاص. أرسلها له واتساب مع وسم «تصور بالذكاء الاصطناعي، مو صورة القاعة الحقيقية».</p></div><StudioPanel feature="decor" title="تصوّر التجهيز" sub="كوشة، طاولات، مدخل، أو مسرح، بطابع العميل وألوانه." /></>}
           {tab === "settings" && <Settings />}
         </motion.div>
       </AnimatePresence>

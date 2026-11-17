@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CITIES, OCCASIONS, fmt, splitBudget, type OccasionId } from "@munasabati/core";
 import { Icon, LogoMark, sendLead } from "@munasabati/ui";
+import { arabicVoice, speak } from "./voice";
 
 /* ═══════════ «سالفة مع منسقتك»: معالج الميزانية كمحادثة ═══════════
    المنسقة تسأل، والعميل يجاوب بلمسة، وترد عليه برد شخصي باللهجة السعودية، بصوت «سوالف» مع كل كلمة. */
@@ -14,35 +15,27 @@ const CONGRATS: Record<string, string> = {
 type Msg = { who: "bot" | "me"; t: string };
 type Step = "occ" | "guests" | "when" | "budget" | "city" | "contact" | "done";
 
-/** صوت سوالف ناعم مع كل كلمة (المتصفح يسمح فيه لأن الزائر لمس الشاشة عند الباب) */
-function useVoice() {
-  const ac = useRef<AudioContext | null>(null);
-  return (k: number) => {
-    try {
-      const c = ac.current ?? (ac.current = new AudioContext()); if (c.state === "suspended") void c.resume();
-      const o = c.createOscillator(), g = c.createGain(), f = [587, 659, 740, 880, 988][k % 5] * (0.95 + Math.random() * 0.1);
-      o.type = "triangle"; o.frequency.setValueAtTime(f, c.currentTime); o.frequency.exponentialRampToValueAtTime(f * 0.85, c.currentTime + .08);
-      g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(.045, c.currentTime + .01); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .1);
-      o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .12);
-    } catch { /* */ }
-  };
-}
-
-function BotLine({ t, onDone, voice }: { t: string; onDone?: () => void; voice: (k: number) => void }) {
+/** ردود المنسقة: تنقال بالصوت العربي المدمج بالجوال لو موجود، والكلمات تظهر مع الكلام */
+function BotLine({ t, onDone }: { t: string; onDone?: () => void }) {
   const words = t.split(" ");
   const [n, setN] = useState(0);
   useEffect(() => {
-    if (n >= words.length) { const id = setTimeout(() => onDone?.(), 260); return () => clearTimeout(id); }
-    const id = setTimeout(() => { setN(n + 1); voice(n); }, n === 0 ? 380 : 150);
-    return () => clearTimeout(id);
-  }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <span>{n === 0 ? <i className="ch-typing"><b /><b /><b /></i> : words.map((w, i) => <span key={i} className={"ch-w" + (i < n ? " in" : "")}>{w}{i < words.length - 1 ? " " : ""}</span>)}</span>
-  );
+    let alive = true, stop = () => {}, tick = 0;
+    const end = () => { if (!alive) return; clearInterval(tick); setN(words.length); setTimeout(() => alive && onDone?.(), 280); };
+    const typing = setTimeout(() => {
+      void arabicVoice().then((v) => {
+        if (!alive) return;
+        tick = window.setInterval(() => setN((x) => Math.min(words.length, x + 1)), v ? 330 : 150);
+        if (v && !window.__mnsMuted) stop = speak(t, v, { onWord: (k) => setN((x) => Math.max(x, k + 1)), onEnd: end });
+        else setTimeout(end, words.length * 150 + 200);
+      });
+    }, 420);
+    return () => { alive = false; clearTimeout(typing); clearInterval(tick); stop(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return <span>{n === 0 ? <i className="ch-typing"><b /><b /><b /></i> : words.map((w, i) => <span key={i} className={"ch-w" + (i < n ? " in" : "")}>{w}{i < words.length - 1 ? " " : ""}</span>)}</span>;
 }
 
 export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
-  const voice = useVoice();
   const h = new Date().getHours();
   const greet = h >= 4 && h < 12 ? "صباح الخير ☀️" : h < 17 ? "يا هلا 👋" : "مساء الخير 🌙";
   const [msgs, setMsgs] = useState<Msg[]>([{ who: "bot", t: `${greet} خلّنا نبدأ: وش المناسبة؟` }]);
@@ -90,7 +83,7 @@ export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
         {msgs.map((m, i) => {
           if (m.who === "me") return <motion.p key={i} className="ch-me" initial={{ opacity: 0, y: 10, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }}>{m.t}</motion.p>;
           b++; if (b > shown) return null;
-          return <motion.p key={i} className="ch-bot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>{b === shown ? <BotLine t={m.t} voice={voice} onDone={() => setShown((x) => x + 1)} /> : m.t}</motion.p>;
+          return <motion.p key={i} className="ch-bot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>{b === shown ? <BotLine t={m.t} onDone={() => setShown((x) => x + 1)} /> : m.t}</motion.p>;
         })}
       </div>
       <AnimatePresence mode="wait">{ready && step !== "done" && (

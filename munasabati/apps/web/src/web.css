@@ -417,8 +417,6 @@
 .frv-cta { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 3; white-space: nowrap; }
 
 /* ═══════════ المونتاج السينمائي ═══════════ */
-.cine-grain { position: fixed; inset: -50%; z-index: 90; pointer-events: none; opacity: .06; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); animation: cine-grain 1.2s steps(6) infinite; mix-blend-mode: overlay; }
-@keyframes cine-grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); } 60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); } }
 .cine-bars { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
 .cine-bars i { position: absolute; inset-inline: 0; height: calc(5.5vh * var(--bars, 1)); background: #000; transition: height .1s linear; }
 .cine-bars i:first-child { top: 0; } .cine-bars i:last-child { bottom: 0; }
@@ -451,14 +449,14 @@ body { counter-reset: chap; }
 .talk-wave i { width: 3px; height: 4px; border-radius: 4px; background: #ffd9a0; }
 .talk-wave i.on { animation: talk-wave .55s ease-in-out infinite alternate; }
 @keyframes talk-wave { from { height: 3px; } to { height: 20px; } }
-.talk-line { margin: 0; min-height: 2.6em; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; font-family: var(--f-display); font-weight: 800; font-size: clamp(34px, 6.2vw, 96px); line-height: 1.12; letter-spacing: -0.035em; transition: opacity .35s, filter .35s, transform .35s; }
-.talk-line.big { font-size: clamp(52px, 8.6vw, 128px); line-height: 1.08; }
-.talk-line.out { opacity: 0; filter: blur(10px); transform: translateY(-18px); }
-.talk-line .tw { display: inline-block; overflow: hidden; padding-block: .2em; margin-block: -.12em; white-space: pre; }
-.talk-line .twi { display: inline-block; transform: translateY(105%) rotate(4deg); opacity: 0; transition: transform .55s cubic-bezier(.16, 1, .3, 1), opacity .4s, color .4s, text-shadow .4s; }
-.talk-line .twi.in { transform: none; opacity: 1; }
-.talk-line .twi.now { color: #ffe3b0; text-shadow: 0 0 40px rgba(255, 196, 120, .55); }
-.talk-line.big .twi.in { background: linear-gradient(120deg, #fff 20%, #ffd79a 50%, #ff8fb1 85%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+.talk-line { margin: 0; max-width: 17ch; min-height: 3.4em; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 5.2vw, 72px); line-height: 1.25; letter-spacing: -0.02em; animation: talk-in .5s cubic-bezier(.22, 1, .36, 1) both; }
+.talk-line.big { font-size: clamp(38px, 7vw, 96px); min-height: 2.6em; }
+@keyframes talk-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+/* كاريوكي: الجملة كاملة باهتة بمكانها، وكل كلمة تنور لما تنقال، والحالية ذهبية */
+.talk-line .tw { white-space: pre; color: rgba(255, 255, 255, .22); transition: color .25s, text-shadow .25s; }
+.talk-line .tw.in { color: #fff; }
+.talk-line .tw.now { color: #ffd79a; text-shadow: 0 0 28px rgba(255, 190, 110, .45); }
+.talk-line.big .tw.in:not(.now) { color: #ffe9c7; }
 .talk-foot { display: flex; align-items: center; gap: 10px; width: min(520px, 100%); }
 .talk-prog { flex: 1; height: 3px; border-radius: 4px; background: rgba(255, 255, 255, .2); overflow: hidden; }
 .talk-prog b { display: block; height: 100%; background: linear-gradient(90deg, #ffd79a, #ff6b9a); }
@@ -468,7 +466,7 @@ body { counter-reset: chap; }
 @media (prefers-reduced-motion: reduce) { .talk-wave i.on, .talk-avatar.on i { animation: none; } .talk-line .twi { transition: none; } }
 
 /* مؤشر مخصص وأزرار مغناطيسية (أجهزة الماوس فقط) */
-.aw-cursor { position: fixed; left: 0; top: 0; z-index: 300; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; mix-blend-mode: difference; pointer-events: none; transition: width .3s, height .3s, margin .3s, opacity .3s; opacity: 0; }
+.aw-cursor { position: fixed; left: 0; top: 0; z-index: 300; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; mix-blend-mode: difference; pointer-events: none; transition: width .3s, height .3s, margin .3s, opacity .3s, transform .08s linear; opacity: 0; will-change: transform; }
 .aw-cursor.on { opacity: 1; }
 .aw-cursor.big { width: 64px; height: 64px; margin: -32px 0 0 -32px; }
 @media (hover: none), (pointer: coarse) { .aw-cursor { display: none; } }
@@ -511,3 +509,6 @@ body { counter-reset: chap; }
 .ch-err { margin: 0; font-size: 13.5px; color: #ffd0dc; }
 @media (prefers-reduced-motion: reduce) { .ch-typing b { animation: none; } .ch-w { transition: none; } }
 @media (max-width: 640px) { .hero-main h1 { font-size: 38px; margin-top: 10px; } .hero-main .lead { font-size: 14.5px; margin-top: 8px; } .ch { margin-top: 14px; } .ch-body { max-height: 210px; } }
+
+/* خفة على الجوال: بدون ضبابية خلفية (أثقل شي على المعالج) */
+@media (max-width: 760px) { .ch, .talk-who, .talk-btn, .cc, .door, .live, .btn.glass { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } .ch { background: rgba(18, 11, 24, .82); } .talk-who { background: rgba(18, 11, 24, .6); } }
