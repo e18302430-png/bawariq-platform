@@ -6,7 +6,7 @@
 <title>استوديو النصوص</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:wght@400;700&family=Anton&family=Bebas+Neue&family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=El+Messiri:wght@400;700&family=Harmattan:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Inter:wght@400;700;900&family=Lalezar&family=Lato:wght@400;700;900&family=Markazi+Text:wght@400;700&family=Montserrat:wght@400;700;900&family=Noto+Kufi+Arabic:wght@400;700;900&family=Noto+Naskh+Arabic:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;700;900&family=Readex+Pro:wght@400;700&family=Reem+Kufi:wght@400;700&family=Roboto:wght@400;700;900&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Tajawal:wght@300;400;500;700;800;900&family=Almarai:wght@300;400;700;800&family=Noto+Kufi+Arabic:wght@100..900&family=Noto+Sans+Arabic:wght@100..900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Readex+Pro:wght@200..800&family=Changa:wght@200..800&family=El+Messiri:wght@400..700&family=Reem+Kufi:wght@400..700&family=Alexandria:wght@100..900&family=Vazirmatn:wght@100..900&family=Rubik:wght@300..900&family=Kufam:wght@400..900&family=Baloo+Bhaijaan+2:wght@400..800&family=Lemonada:wght@300..700&family=Marhey:wght@300..700&family=Lalezar&family=Rakkas&family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400..700&family=Scheherazade+New:wght@400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Harmattan:wght@400;500;600;700&family=Markazi+Text:wght@400..700&family=Aref+Ruqaa:wght@400;700&family=Mirza:wght@400;500;600;700&family=Roboto:wght@100..900&family=Inter:wght@100..900&family=Montserrat:wght@100..900&family=Poppins:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300..800&family=Lato:wght@300;400;700;900&family=Oswald:wght@200..700&family=Playfair+Display:wght@400..900&family=Bebas+Neue&family=Anton&family=Raleway:wght@100..900&family=Nunito:wght@200..1000&family=Archivo+Black&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <style>
 :root{
@@ -154,18 +154,32 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
    ===================================================================== */
 
 const FONTS = [
-  // [family, weights, script]
-  ["Cairo",[400,700,900],"ar"],["Tajawal",[400,700,900],"ar"],["Almarai",[400,700,800],"ar"],
-  ["Noto Kufi Arabic",[400,700,900],"ar"],["IBM Plex Sans Arabic",[400,700],"ar"],["Changa",[400,700],"ar"],
-  ["El Messiri",[400,700],"ar"],["Lalezar",[400],"ar"],["Readex Pro",[400,700],"ar"],["Reem Kufi",[400,700],"ar"],
-  ["Amiri",[400,700],"ar"],["Noto Naskh Arabic",[400,700],"ar"],["Harmattan",[400,700],"ar"],["Markazi Text",[400,700],"ar"],
-  ["Roboto",[400,700,900],"la"],["Inter",[400,700,900],"la"],["Montserrat",[400,700,900],"la"],["Poppins",[400,700,900],"la"],
-  ["Open Sans",[400,700],"la"],["Lato",[400,700,900],"la"],["Oswald",[400,700],"la"],["Playfair Display",[400,700],"la"],
-  ["Bebas Neue",[400],"la"],["Anton",[400],"la"],
+  // [family, weights, script]  — "ar" تدعم العربية واللاتينية، "la" لاتينية فقط
+  ["Cairo",[300,400,500,600,700,800,900],"ar"],["Tajawal",[300,400,500,700,800,900],"ar"],["Almarai",[300,400,700,800],"ar"],
+  ["Noto Kufi Arabic",[300,400,500,600,700,800,900],"ar"],["Noto Sans Arabic",[300,400,500,600,700,800,900],"ar"],
+  ["IBM Plex Sans Arabic",[300,400,500,600,700],"ar"],["Readex Pro",[300,400,500,600,700],"ar"],["Changa",[300,400,500,600,700,800],"ar"],
+  ["El Messiri",[400,500,600,700],"ar"],["Reem Kufi",[400,500,600,700],"ar"],["Alexandria",[300,400,500,600,700,800,900],"ar"],
+  ["Vazirmatn",[300,400,500,600,700,800,900],"ar"],["Rubik",[300,400,500,600,700,800,900],"ar"],["Kufam",[400,500,600,700,800,900],"ar"],
+  ["Baloo Bhaijaan 2",[400,500,600,700,800],"ar"],["Lemonada",[300,400,500,600,700],"ar"],["Marhey",[300,400,500,600,700],"ar"],
+  ["Lalezar",[400],"ar"],["Rakkas",[400],"ar"],["Amiri",[400,700],"ar"],["Noto Naskh Arabic",[400,500,600,700],"ar"],
+  ["Scheherazade New",[400,500,600,700],"ar"],["Lateef",[300,400,500,600,700,800],"ar"],["Harmattan",[400,500,600,700],"ar"],
+  ["Markazi Text",[400,500,600,700],"ar"],["Aref Ruqaa",[400,700],"ar"],["Mirza",[400,500,600,700],"ar"],
+  ["Roboto",[300,400,500,700,900],"la"],["Inter",[300,400,500,600,700,800,900],"la"],["Montserrat",[300,400,500,600,700,800,900],"la"],
+  ["Poppins",[300,400,500,600,700,800,900],"la"],["Open Sans",[300,400,600,700,800],"la"],["Lato",[300,400,700,900],"la"],
+  ["Oswald",[300,400,500,600,700],"la"],["Playfair Display",[400,700,900],"la"],["Bebas Neue",[400],"la"],["Anton",[400],"la"],
+  ["Raleway",[300,400,500,700,900],"la"],["Nunito",[300,400,600,700,900],"la"],["Archivo Black",[400],"la"],
 ];
 const FONT_LIST = FONTS.flatMap(([f,ws,s]) => ws.map(w => ({id:`${f}|${w}`, family:f, weight:w, script:s})));
 const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
 const hasAr = t => AR_RE.test(t || "");
+/* كل رقم في النص الجديد يتحول إجباريًا للأرقام العربية ٠١٢٣٤٥٦٧٨٩ (ومعه ٪ والفاصلة العشرية العربية) */
+const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+function toArabicDigits(t){
+  if (!t) return t;
+  t = t.replace(/[0-9]/g, d => AR_DIGITS[+d]).replace(/[۰-۹]/g, d => AR_DIGITS[d.charCodeAt(0) - 0x06F0]);
+  return t.replace(/([٠-٩])\s*%|%\s*([٠-٩])/g, (m, a, b) => a ? a + "٪" : "٪" + b)
+          .replace(/([٠-٩])\.(?=[٠-٩])/g, "$1٫").replace(/([٠-٩]),(?=[٠-٩]{3})/g, "$1٬");
+}
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const toastEl = $("toast");
@@ -250,12 +264,146 @@ async function readLang(worker, mask, w, h){
 }
 const scriptRatio = t => { const L = [...t].filter(c => /\p{L}/u.test(c)); if (!L.length) return [0,0];
   return [L.filter(c => AR_RE.test(c)).length / L.length, L.filter(c => /[A-Za-z\u00C0-\u024F]/.test(c)).length / L.length]; };
+const DIGIT_WL = "٠١٢٣٤٥٦٧٨٩٪٫٬.,:/-+()";
+const isNumTok = t => /[0-9٠-٩۰-۹%٪]/.test(t) || (!/\p{L}/u.test(t) && t.length > 0);
+async function readDigits(wa, canvas, psm){
+  await wa.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: DIGIT_WL });
+  const { data } = await wa.recognize(canvas);
+  await wa.setParameters({ tessedit_pageseg_mode: "3", tessedit_char_whitelist: "" });
+  return [(data.text || "").replace(/\s+/g, "").replace(/[.]/g, "٫").replace(/,/g, "٬"), (data.confidence || 0)/100];
+}
+/* ===== مُعرِّف الأرقام العربية (٠-٩ و ٪): مطابقة أشكال مع قوالب مرسومة بعدة خطوط عربية =====
+   نموذج Tesseract العربي ضعيف جدًا في الأرقام الهندية، لذا نقسّم الرقم إلى رموز (مكونات متصلة)
+   ونقارن كل رمز بقوالب ٠١٢٣٤٥٦٧٨٩٪ مرسومة بالخطوط الشائعة. */
+const DIGIT_CHARS = "٠١٢٣٤٥٦٧٨٩٪";
+const TPL_FONTS = ["Cairo|400","Cairo|700","Cairo|900","Tajawal|400","Tajawal|700","Almarai|400","Almarai|800","Noto Kufi Arabic|400",
+  "Noto Kufi Arabic|700","Noto Sans Arabic|400","Noto Sans Arabic|700","Noto Naskh Arabic|400","Noto Naskh Arabic|700","Amiri|400",
+  "IBM Plex Sans Arabic|400","IBM Plex Sans Arabic|700","El Messiri|700","Changa|700","Alexandria|700","Readex Pro|400","Vazirmatn|400","Vazirmatn|700"];
+const NG = 24;
+function glyphFeat(m, w, h, refH){ // m: Uint8Array ثنائي لرمز واحد مقصوص
+  const g = resizeMask(m, w, h, NG, NG); return { g, ar: w / Math.max(h,1), rh: h / Math.max(refH,1) };
+}
+let TPL = null;
+async function digitTemplates(){
+  if (TPL) return TPL;
+  await Promise.all(TPL_FONTS.map(f => ensureFont(f, "٠١٢٣٤٥٦٧٨٩٪ عرض")));
+  TPL = [];
+  for (const f of TPL_FONTS){
+    const ref = textMask("عرض لفترة", f, 64), rb = inkBox(ref.mask, ref.w, ref.h); if (!rb) continue; const refH = rb[3]-rb[1];
+    for (const ch of DIGIT_CHARS){ const tm = textMask(ch, f, 64), bb = inkBox(tm.mask, tm.w, tm.h); if (!bb) continue;
+      const c = crop(tm.mask, tm.w, bb); TPL.push(Object.assign({ ch, f }, glyphFeat(c.m, c.w, c.h, refH))); }
+  }
+  return TPL;
+}
+function classifyGlyph(feat){
+  let best = { ch: null, d: 9 };
+  for (const t of TPL){ let mn=0, mx=0; for (let i=0;i<NG*NG;i++){ mn += Math.min(feat.g[i], t.g[i]); mx += Math.max(feat.g[i], t.g[i]); }
+    const d = (1 - mn/Math.max(mx,1e-6)) + 0.35*Math.abs(Math.log(feat.ar/t.ar)) + 0.3*Math.abs(Math.log(Math.max(feat.rh,1e-3)/Math.max(t.rh,1e-3)));
+    if (d < best.d) best = { ch: t.ch, d }; }
+  return best;
+}
+/* يقرأ منطقة رقمية من صورة ثنائية (bin: 1=حبر) بين x0..x1 ويرجع النص المنطقي أو null */
+function readDigitRegion(bin, W, H, x0, x1, refH){
+  const w = x1 - x0, sub = new Uint8Array(w*H);
+  for (let y=0;y<H;y++) for (let x=0;x<w;x++) sub[y*w+x] = bin[y*W + x + x0];
+  const cc = components(sub, w, H); if (!cc.n) return null;
+  // مكونات متداخلة بقوة تُدمج مبدئيًا؛ ثم برمجة ديناميكية تختار أفضل تجميع (1-3 مكونات لكل رمز)
+  let groups = cc.stats.slice(1).map((s,k) => ({ ids: [k+1], x0: s.x0, x1: s.x1, y0: s.y0, y1: s.y1, area: s.area })).filter(g => g.area >= 4);
+  groups.sort((p,q) => p.x0 - q.x0);
+  for (let changed = true; changed; ){ changed = false;
+    for (let i=0;i<groups.length-1 && !changed;i++){ const p = groups[i], q = groups[i+1];
+      const ov = Math.min(p.x1,q.x1) - Math.max(p.x0,q.x0), mw = Math.min(p.x1-p.x0, q.x1-q.x0) + 1;
+      if (ov >= 0.7*mw){ groups.splice(i, 2, { ids: p.ids.concat(q.ids), x0: Math.min(p.x0,q.x0), x1: Math.max(p.x1,q.x1), y0: Math.min(p.y0,q.y0), y1: Math.max(p.y1,q.y1), area: p.area+q.area }); changed = true; } } }
+  const n = groups.length; if (!n) return null;
+  const cache = {};
+  const classifyRange = (i, j) => { // groups[i..j)
+    const key = i + "-" + j; if (cache[key]) return cache[key];
+    const gs = groups.slice(i, j), X0 = Math.min(...gs.map(g=>g.x0)), X1 = Math.max(...gs.map(g=>g.x1)), Y0 = Math.min(...gs.map(g=>g.y0)), Y1 = Math.max(...gs.map(g=>g.y1));
+    const gw = X1-X0+1, gh = Y1-Y0+1, m = new Uint8Array(gw*gh), set = new Set(gs.flatMap(g=>g.ids));
+    for (let y=0;y<gh;y++) for (let x=0;x<gw;x++) m[y*gw+x] = set.has(cc.lab[(y+Y0)*w + x+X0]) ? 1 : 0;
+    return cache[key] = classifyGlyph(glyphFeat(m, gw, gh, refH));
+  };
+  const cost = new Float64Array(n+1).fill(Infinity), back = new Int32Array(n+1); cost[0] = 0;
+  for (let j=1;j<=n;j++) for (let k=1;k<=3 && k<=j;k++){
+    const r = classifyRange(j-k, j); const c = cost[j-k] + r.d * k + 0.05;  // الدمج يجب أن يطابق فعلًا
+    if (c < cost[j]){ cost[j] = c; back[j] = k; } }
+  const out = []; let worst = 0;
+  for (let j=n; j>0; j-=back[j]){ const r = classifyRange(j-back[j], j); out.unshift(r.ch); worst = Math.max(worst, r.d); }
+  if (worst > 0.75 || cost[n]/n > 0.6) return null;
+  // الأرقام تُكتب من اليسار لليمين داخل النص العربي، وعلامة ٪ تلحق الرقم منطقيًا
+  const digits = out.filter(c => c !== "٪").join(""), pct = out.includes("٪") ? "٪" : "";
+  return digits ? digits + pct : null;
+}
+function binOf(canvas){
+  const x = canvas.getContext("2d"), d = x.getImageData(0,0,canvas.width,canvas.height).data, b = new Uint8Array(canvas.width*canvas.height);
+  for (let i=0;i<b.length;i++) b[i] = d[i*4] < 128 ? 1 : 0; return b;
+}
+/* في الأسطر العربية: الكلمات الرقمية (حسب Tesseract) تُقرأ بمُعرِّف الأرقام العربية */
+async function fixArabicDigits(wa, mask, w, h, text){
+  const c = maskCanvas(mask, w, h, 64); if (!c) return text;
+  await wa.setParameters({ tessedit_pageseg_mode: "7" });
+  const { data } = await wa.recognize(c, {}, { blocks: true });
+  await wa.setParameters({ tessedit_pageseg_mode: "3" });
+  const words = [];
+  for (const bl of data.blocks || []) for (const par of bl.paragraphs || []) for (const ln of par.lines || []) for (const wd of ln.words || []) words.push(wd);
+  if (!words.length) return text;
+  const looksNum = wd => isNumTok(wd.text);  // يحتوي أرقامًا (لاتينية/عربية) أو لا يحتوي حروفًا إطلاقًا
+  if (!words.some(looksNum)) return text;
+  await digitTemplates();
+  const bin = binOf(c), W = c.width, H = c.height;
+  // مقاطع الحبر الأفقية (فجوات بين الكلمات/الأرقام)
+  const col = new Uint16Array(W); for (let x=0;x<W;x++){ let s=0; for (let y=0;y<H;y++) s += bin[y*W+x]; col[x] = s; }
+  const segs = []; let st = -1, gap = 0, G = 9;
+  for (let x=0;x<W;x++){ if (col[x]){ if (st < 0) st = x; gap = 0; } else if (st >= 0 && ++gap > G){ segs.push([st, x-gap+1]); st = -1; gap = 0; } }
+  if (st >= 0) segs.push([st, W]);
+  // ارتفاع مرجعي = ارتفاع حبر السطر (يقابل "عرض لفترة" في القوالب)
+  const refH = 64;
+  words.sort((p,q) => q.bbox.x1 - p.bbox.x1); // ترتيب القراءة العربية: من اليمين لليسار
+  const outW = [];
+  for (let i=0;i<words.length;i++){
+    if (!looksNum(words[i])){ outW.push(words[i].text); continue; }
+    let j = i; while (j+1 < words.length && looksNum(words[j+1])) j++;   // كلمات رقمية متتالية = رقم واحد
+    const bx0 = Math.min(...words.slice(i,j+1).map(q=>q.bbox.x0)), bx1 = Math.max(...words.slice(i,j+1).map(q=>q.bbox.x1));
+    const over = segs.filter(([a,b]) => Math.min(b, bx1) - Math.max(a, bx0) > 0.3*(b-a));
+    let t = null;
+    if (over.length){
+      let x0 = Math.min(...over.map(s=>s[0])), x1 = Math.max(...over.map(s=>s[1]));
+      t = readDigitRegion(bin, W, H, x0, x1, refH);
+      // علامة ٪ قد تكون مقطعًا مستقلًا قريبًا (على يسار الرقم أو يمينه): نضمها إن قُرئت ٪
+      if (t && !t.includes("٪")){
+        for (const sg of segs){
+          if (sg[1] <= x0 && x0 - sg[1] < 24 || sg[0] >= x1 && sg[0] - x1 < 24){
+            const p = readDigitRegion(bin, W, H, sg[0], sg[1], refH);
+            if (p === null){ const one = readDigitRegion(bin, W, H, Math.min(x0, sg[0]), Math.max(x1, sg[1]), refH); if (one && one.endsWith("٪") && one.replace("٪","") === t) t = one; }
+          }
+        }
+      }
+    }
+    outW.push(t || words.slice(i,j+1).map(q=>q.text).join(" "));
+    i = j;
+  }
+  return outW.join(" ").replace(/[\u200e\u200f]/g, "").replace(/\s+/g, " ").trim();
+}
 async function readLine(mask, w, h, hint){
   const { wa, we } = await getWorkers(), cands = [];
-  const [ta, ca] = await readLang(wa, mask, w, h); const [ar] = scriptRatio(ta); if (ta && ar >= 0.5) cands.push([ta, ca*(0.85+0.15*ar)]);
+  let [ta, ca] = await readLang(wa, mask, w, h); const [ar] = scriptRatio(ta);
+  if (ta && ar >= 0.5){ ta = await fixArabicDigits(wa, mask, w, h, ta); cands.push([ta, ca*(0.85+0.15*ar)]); }
+  // سطر أرقام عربية فقط (مثل رقم هاتف)
   const [te, ce] = await readLang(we, mask, w, h); const [, la] = scriptRatio(te); if (te && (la >= 0.5 || !/\p{L}/u.test(te))) cands.push([te, ce*0.95]);
+  // سطر أرقام عربية فقط (مثل رقم هاتف): فقط إذا لم تجد القراءتان حروفًا
+  const letters = t => [...(t||"")].filter(ch => /\p{L}/u.test(ch)).length;
+  if (letters(ta) < 2 && letters(te) < 2){ const c = maskCanvas(mask, w, h, 64); if (c){ await digitTemplates();
+      const td = readDigitRegion(binOf(c), c.width, c.height, 0, c.width, 64); if (td && td.length >= 3) cands.push([td, 0.88]); } }
   if (!cands.length) return [hint || "", 0];
-  cands.sort((a,b) => b[1]-a[1]); return cands[0];
+  // القراءة العربية مقدَّمة ما لم تكن الإنجليزية أوثق بوضوح (Tesseract الإنجليزي يقرأ العربية كحروف لاتينية عشوائية)
+  for (const c of cands) if (scriptRatio(c[0])[0] >= 0.5) c[0] = c[0].replace(/\s*[.,،:;'"`]+$/u, "").replace(/^[.,،:;'"`]+\s*/u, "");
+  const arC = cands.find(c => scriptRatio(c[0])[0] >= 0.5 && c[1] >= 0.45);
+  cands.sort((a,b) => b[1]-a[1]);
+  const enC = cands.find(c => scriptRatio(c[0])[1] >= 0.8 && letters(c[0]) >= 3);
+  // قراءة إنجليزية واثقة لحروف لاتينية واضحة تُقدَّم (Tesseract العربي يقرأ اللاتيني كعربي عشوائي)
+  if (enC && enC[1] >= 0.75 && (!arC || arC[1] < enC[1] + 0.05)) return enC;
+  if (arC && arC !== cands[0] && (letters(cands[0][0]) === 0 || arC[1] >= cands[0][1] - 0.15)) return arC;
+  return cands[0];
 }
 
 async function ensureFont(id, sample){
@@ -283,9 +431,9 @@ function frameCanvas(fr, srcCanvas){
   return c;
 }
 /* يرسم طبقة بحجم الإطار فوق سياق الصورة بنفس التحويل العكسي */
-function drawFrameLayer(ctx, fr, layer, ox=0, oy=0){
+function drawFrameLayer(ctx, fr, layer, ox=0, oy=0, rot=0){
   ctx.save();
-  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a); ctx.scale(1/fr.sc, 1/fr.sc); ctx.translate(-fr.w/2, -fr.h/2);
+  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a + rot*Math.PI/180); ctx.scale(1/fr.sc, 1/fr.sc); ctx.translate(-fr.w/2, -fr.h/2);
   ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
@@ -463,8 +611,16 @@ async function analyzeLine(line){
     for (let i=0;i<w*h;i++) if (fg[i]){ const u=i%w, v=(i/w)|0; pts.push(u,v); mu+=u; mv+=v; }
     const n = pts.length/2; mu/=n; mv/=n;
     let suu=0, svv=0, suv=0; for (let k=0;k<pts.length;k+=2){ const du=pts[k]-mu, dv=pts[k+1]-mv; suu+=du*du; svv+=dv*dv; suv+=du*dv; }
-    const th = 0.5*Math.atan2(2*suv, suu-svv), elong = (suu+svv) / Math.max(Math.sqrt((suu-svv)**2 + 4*suv*suv), 1e-6);
-    if (Math.abs(th) > 0.025 && Math.abs(th) < 0.8 && elong < 1.6){
+    const thPca = 0.5*Math.atan2(2*suv, suu-svv), elong = (suu+svv) / Math.max(Math.sqrt((suu-svv)**2 + 4*suv*suv), 1e-6);
+    // تصحيح الميلان بأسلوب "حدة الإسقاط الأفقي": الزاوية التي تجعل صفوف الحبر أحدّ ما يمكن
+    // (أدق من PCA للعربية لأن النوازل والنقاط تحرف المحور الرئيسي)
+    const profileScore = (ang) => { const c = Math.cos(ang), sn = Math.sin(ang), rows = new Map();
+      for (let k=0;k<pts.length;k+=4){ const r = Math.round(-(pts[k]-mu)*sn + (pts[k+1]-mv)*c); rows.set(r, (rows.get(r)||0) + 1); }
+      let s2 = 0; for (const v of rows.values()) s2 += v*v; return s2; };
+    const center = Math.abs(thPca) > 0.05 ? thPca : 0;
+    let th = center, bestP = -1;
+    for (let d = -0.05; d <= 0.0501; d += 0.0025){ const sc2 = profileScore(center + d); if (sc2 > bestP){ bestP = sc2; th = center + d; } }
+    if (Math.abs(th) > 0.0035 && Math.abs(th) < 0.8 && elong < 1.6){
       const c=Math.cos(th), s2=Math.sin(th), A=[], B=[];
       for (let k=0;k<pts.length;k+=2){ const du=pts[k]-mu, dv=pts[k+1]-mv; A.push(du*c+dv*s2); B.push(-du*s2+dv*c); }
       A.sort((x,y)=>x-y); B.sort((x,y)=>x-y);
@@ -472,7 +628,8 @@ async function analyzeLine(line){
       const a0=q(A,0.002), a1=q(A,0.998), b0=q(B,0.01), b1=q(B,0.99);
       const mA=(a0+a1)/2, mB=(b0+b1)/2;
       const [ncx, ncy] = frameToImage(fr, mu + mA*c - mB*s2, mv + mA*s2 + mB*c);
-      return analyzeLine(Object.assign({}, line, { cx: ncx, cy: ncy, L: (a1-a0)/fr.sc + 2, T: (b1-b0)/fr.sc + 2, a: fr.a + th, _refined: true }));
+      let na = fr.a + th; if (Math.abs(na) < 0.004) na = 0;
+      return analyzeLine(Object.assign({}, line, { cx: ncx, cy: ncy, L: (a1-a0)/fr.sc + 2, T: (b1-b0)/fr.sc + 2, a: na, _refined: true }));
     }
   }
   const res = { id: line.id, text, ocrText: text, conf, fr, noise, coef, textured: noise > 9,
@@ -538,7 +695,7 @@ async function analyzeLine(line){
 
   // إعادة القراءة من القناع النظيف (أسود على أبيض) — أدق بكثير من قراءة الصورة الملونة
   { const [t2, c2] = await readLine(fill, w, h, text);
-    if (t2 && (c2*100 >= conf*0.8 || !text.trim())) { text = t2; res.text = t2; res.conf = Math.round(c2*100); } }
+    if (t2 && (c2 >= 0.3 || /[٠-٩]/.test(t2) || !text.trim())) { text = t2; res.text = t2; res.conf = Math.round(Math.max(c2*100, 50)); } }
 
   // 6) مطابقة الخط + الحجم + خط الأساس
   const ib = inkBox(fill, w, h); if (!ib) return res;
@@ -561,26 +718,48 @@ async function analyzeLine(line){
     }
     scores.sort((a,b) => b.score - a.score);
   }
-  const font = scores.length ? scores[0].id : res.style.font;
   // الحجم: وسيط (الارتفاع، جسم السطر، العرض)
-  let size = Ht / 0.72;
-  if (text.trim()){
-    const tm = textMask(text, font, 100), bb = inkBox(tm.mask, tm.w, tm.h);
+  const fitSize = (fid) => {
+    let size = Ht / 0.72;
+    if (!text.trim()) return size;
+    const tm = textMask(text, fid, 100), bb = inkBox(tm.mask, tm.w, tm.h);
     if (bb){
       const rc = crop(tm.mask, tm.w, bb), est = [100*Ht/rc.h, 100*Wt/rc.w];
       const bt = bodyBand(tgt.m, tgt.w, tgt.h), br = bodyBand(rc.m, rc.w, rc.h); if (bt>2 && br>2) est.push(100*bt/br);
       est.sort((a,b)=>a-b); size = est.length === 3 ? est[1] : est[0];
     }
+    return size;
+  };
+  const baseFor = (fid, size) => { const tm = textMask(text, fid, size), bb = inkBox(tm.mask, tm.w, tm.h); return bb ? ib[1] + (tm.oy - bb[1]) : ib[3]; };
+  // إعادة ترتيب أفضل 8 مرشحين بالتركيب الفعلي: نرسم كل خط بحجمه وموضعه الملائم ونقيس التطابق بكسلًا ببكسل
+  let font = scores.length ? scores[0].id : res.style.font;
+  if (text.trim() && scores.length > 1){
+    const box = [Math.max(0,ib[0]-8), Math.max(0,ib[1]-8), Math.min(w,ib[2]+8), Math.min(h,ib[3]+8)];
+    let bestS = -1;
+    const fillD = dilate(fill, w, h, 1);   // مقارنة متسامحة ببكسل واحد (الخطوط الرفيعة حساسة جدًا للإزاحة)
+    const cyI = (ib[1]+ib[3])/2;
+    for (const c of scores.slice(0, 8)){
+      const sz = fitSize(c.id), base = baseFor(c.id, sz); let best = 0;
+      for (const f of [0.96, 1, 1.04]){
+        const tmp = { fr, ink: ib, w, h, text, style: { font: c.id, size: sz*f / fr.sc, color: "#000", strokeW: 0, align: dir0(), fit: "none", hscale: 1 }, baseline: cyI + (base - cyI)*f };
+        const al = dilate(layerAlpha(tmp), w, h, 1);
+        for (let dy=-3; dy<=3; dy++) for (let dx=-3; dx<=3; dx++) best = Math.max(best, iouShift(al, fillD, w, h, box, dx, dy));
+      }
+      c.fit = best;
+      if (best > bestS){ bestS = best; font = c.id; }
+    }
+    scores.sort((p,q) => (q.fit||0) - (p.fit||0));
   }
+  function dir0(){ const cxi = frameToImage(fr, (ib[0]+ib[2])/2, (ib[1]+ib[3])/2)[0]; return Math.abs(cxi - S.W/2) < 0.04*S.W ? "center" : (hasAr(text) ? "right" : "left"); }
+  const size = fitSize(font);
   const dir = hasAr(text) ? "rtl" : "ltr";
   const imgCx = frameToImage(fr, (ib[0]+ib[2])/2, (ib[1]+ib[3])/2)[0];
   const align = Math.abs(imgCx - S.W/2) < 0.04*S.W ? "center" : (dir === "rtl" ? "right" : "left");
   // خط الأساس: حافة الحبر العليا تطابق الأصل
-  let baseline = ib[3];
-  if (text.trim()){ const tm = textMask(text, font, size), bb = inkBox(tm.mask, tm.w, tm.h); if (bb) baseline = ib[1] + (tm.oy - bb[1]); }
-  Object.assign(res, { candidates: scores.slice(0,5), ink: ib, baseline, fill, glyphFS: glyph });
+  const baseline = text.trim() ? baseFor(font, size) : ib[3];
+  Object.assign(res, { candidates: scores.slice(0,5), ink: ib, baseline, fill, glyphFS: glyph, data });
   res.style = { font, size: size / fr.sc, color: hex(...color), strokeW: strokeW / fr.sc, strokeColor: hex(...strokeRGB),
-                shadow: null, align, blur: 0, fit: "shrink" };
+                shadow: null, align, blur: 0, fit: "shrink", hscale: 1 };
   // 7) ضبط دقيق للموضع: إزاحة ±3px تعظّم التطابق مع الأصل
   if (text.trim()) refine(res);
   return res;
@@ -589,8 +768,9 @@ async function analyzeLine(line){
 function renderLayer(b, e, forMatch=false){
   // يرسم نص الكتلة (مع التعديلات e) في طبقة بحجم الإطار. يرجع OffscreenCanvas
   const fr = b.fr, st = Object.assign({}, b.style, e || {});
-  const text = e && e.text !== undefined ? e.text : b.text;
+  const text = e && e.text !== undefined ? toArabicDigits(e.text) : b.text;
   const c = new OffscreenCanvas(fr.w, fr.h), x = c.getContext("2d", { willReadFrequently: true });
+  const hs = st.hscale || 1;
   if (!text.trim()) return { c, size: 0 };
   let size = st.size * fr.sc;
   const sw = (st.strokeW || 0) * fr.sc;
@@ -598,7 +778,7 @@ function renderLayer(b, e, forMatch=false){
   x.direction = dir; x.textAlign = "left"; x.font = fontCss(st.font, size);
   let m = x.measureText(text);
   const avail = (b.ink[2] - b.ink[0]) * (st.widthFactor || 1);
-  let inkW = m.actualBoundingBoxLeft + m.actualBoundingBoxRight, factor = 1;
+  let inkW = (m.actualBoundingBoxLeft + m.actualBoundingBoxRight) * hs, factor = 1;
   const fit = (e && e.size !== undefined && !e.fit) ? "none" : (st.fit || "shrink");
   if (!forMatch && fit !== "none" && inkW > 0){
     const r = avail / inkW;
@@ -610,7 +790,8 @@ function renderLayer(b, e, forMatch=false){
   const L = m.actualBoundingBoxLeft, R = m.actualBoundingBoxRight;
   const anchor = st.align === "right" ? b.ink[2] : st.align === "center" ? (b.ink[0]+b.ink[2])/2 : b.ink[0];
   let ox = st.align === "right" ? anchor - R : st.align === "center" ? anchor - (R - L)/2 : anchor + L;
-  ox += (b.dxF || 0); const oy = base + (b.dyF || 0);
+  if (hs !== 1){ x.translate(anchor, 0); x.scale(hs, 1); x.translate(-anchor, 0); }
+  ox += (b.dxF || 0) / hs; const oy = base + (b.dyF || 0);
   if (st.blur > 0) x.filter = `blur(${st.blur * fr.sc}px)`;
   if (st.shadow){ x.save(); x.shadowColor = st.shadow.color; x.shadowBlur = st.shadow.blur * fr.sc; x.shadowOffsetX = st.shadow.dx * fr.sc; x.shadowOffsetY = st.shadow.dy * fr.sc;
     x.fillStyle = st.shadow.color; if (sw>0){ x.lineWidth = sw*2*factor; x.lineJoin="round"; x.strokeStyle = st.shadow.color; x.strokeText(text, ox, oy); } x.fillText(text, ox, oy); x.restore();
@@ -620,18 +801,57 @@ function renderLayer(b, e, forMatch=false){
   return { c, size };
 }
 
+function layerAlpha(b, e){
+  const c = renderLayer(b, e, true).c, d = c.getContext("2d").getImageData(0,0,b.w,b.h).data, a = new Uint8Array(b.w*b.h);
+  for (let i=0;i<a.length;i++) a[i] = d[i*4+3] > 127 ? 1 : 0;
+  return a;
+}
+function iouShift(a, g, w, h, box, dx, dy){
+  let inter=0, uni=0; const [x0,y0,x1,y1] = box;
+  for (let y=y0;y<y1;y++) for (let x=x0;x<x1;x++){ const sx=x-dx, sy=y-dy; const av = (sx>=0&&sy>=0&&sx<w&&sy<h) ? a[sy*w+sx] : 0; const gv = g[y*w+x];
+    if (av&&gv) inter++; if (av||gv) uni++; }
+  return inter / Math.max(uni,1);
+}
+/* ضبط دقيق بالتركيب: نبحث عن الحجم والإزاحة والتمديد الأفقي التي تجعل النص المعاد رسمه ينطبق على الأصل،
+   ثم سماكة الحدود ونعومة الحواف بمقارنة البكسلات الفعلية بالنص المركّب فوق نموذج الخلفية. */
 function refine(b){
-  const g = b.fill, w = b.w, h = b.h;
-  const layer = renderLayer(b, null, true).c, d = layer.getContext("2d").getImageData(0,0,w,h).data;
-  const a = new Uint8Array(w*h); for (let i=0;i<w*h;i++) a[i] = d[i*4+3] > 127 ? 1 : 0;
-  const bb = b.ink, r = 3; let best = -1, bd = [0,0];
-  const y0 = Math.max(0, bb[1]-6), y1 = Math.min(h, bb[3]+6), x0 = Math.max(0, bb[0]-6), x1 = Math.min(w, bb[2]+6);
-  for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++){
-    let inter=0, uni=0;
-    for (let y=y0;y<y1;y+=1) for (let x=x0;x<x1;x+=1){ const sx=x-dx, sy=y-dy; const av = (sx>=0&&sy>=0&&sx<w&&sy<h) ? a[sy*w+sx] : 0; const gv = g[y*w+x];
-      if (av&&gv) inter++; if (av||gv) uni++; }
-    const s = inter / Math.max(uni,1); if (s > best + 1e-4){ best = s; bd = [dx,dy]; } }
-  b.dxF = bd[0]; b.dyF = bd[1]; b.match = best;
+  const g = b.fill, w = b.w, h = b.h, bb = b.ink;
+  const box = [Math.max(0,bb[0]-8), Math.max(0,bb[1]-8), Math.min(w,bb[2]+8), Math.min(h,bb[3]+8)];
+  const cy = (bb[1]+bb[3])/2, base0 = b.baseline, size0 = b.style.size;
+  let best = { s: -1, f: 1, dx: 0, dy: 0 };
+  for (const f of [0.96, 0.98, 0.99, 1, 1.01, 1.02, 1.04]){
+    b.style.size = size0 * f; b.baseline = cy + (base0 - cy) * f;
+    const a = layerAlpha(b);
+    for (let dy=-3; dy<=3; dy++) for (let dx=-3; dx<=3; dx++){ const sc = iouShift(a, g, w, h, box, dx, dy); if (sc > best.s + 1e-4) best = { s: sc, f, dx, dy }; }
+  }
+  b.style.size = size0 * best.f; b.baseline = cy + (base0 - cy) * best.f; b.dxF = best.dx; b.dyF = best.dy; b.match = best.s;
+  // التمديد الأفقي: إذا كانت القراءة موثوقة نطابق عرض الحبر تمامًا
+  if (b.conf >= 70){
+    const a = layerAlpha(b), rb = inkBox(a, w, h);
+    if (rb){ const hs = clamp((bb[2]-bb[0]) / Math.max(rb[2]-rb[0], 1), 0.88, 1.15);
+      if (Math.abs(hs-1) > 0.01){ b.style.hscale = hs; const s2 = iouShift(layerAlpha(b), g, w, h, box, b.dxF, b.dyF); if (s2 > b.match) b.match = s2; else b.style.hscale = 1; } }
+  }
+  // تركيب فوق نموذج الخلفية ومقارنة البكسلات
+  const bgAt = (x,y,c) => b.coef[c][0] + b.coef[c][1]*x/w + b.coef[c][2]*y/h;
+  const reg = dilate(b.glyph, w, h, Math.max(2, Math.round(0.12*(bb[3]-bb[1]))));
+  const synth = (e) => { const c = renderLayer(b, e, true).c; return c.getContext("2d").getImageData(0,0,w,h).data; };
+  const mse = (d) => { let s=0, n=0; for (let i=0;i<w*h;i++){ if (!reg[i]) continue; const x=i%w, y=(i/w)|0, al=d[i*4+3]/255;
+      for (let c=0;c<3;c++){ const v = d[i*4+c]*al + bgAt(x,y,c)*(1-al) - b.data[i*4+c]; s += v*v; } n++; } return s/Math.max(n,1); };
+  if (b.style.strokeW > 0){
+    const sw0 = b.style.strokeW; let bestE = Infinity, bestF = 1;
+    for (const f of [0.6,0.7,0.8,0.9,1,1.1,1.2]){ b.style.strokeW = sw0*f; const e = mse(synth()); if (e < bestE){ bestE = e; bestF = f; } }
+    b.style.strokeW = sw0*bestF;
+  }
+  // نعومة الحواف: نطابق حدة الحواف (المئين 95 لشدة التدرج) بالدقة الأصلية
+  const sharp = (d, isLayer) => { const vals = []; const sc = Math.max(1, Math.round(b.fr.sc));
+    const L = (x,y) => { const i=(y*w+x)*4; if (!isLayer) return 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      const al=d[i+3]/255; let v=0; const k=[0.299,0.587,0.114]; for (let c=0;c<3;c++) v += k[c]*(d[i+c]*al + bgAt(x,y,c)*(1-al)); return v; };
+    for (let y=box[1]+sc; y<box[3]-sc; y+=sc) for (let x=box[0]+sc; x<box[2]-sc; x+=sc){ if (!reg[y*w+x]) continue;
+      vals.push(Math.hypot(L(x+sc,y)-L(x-sc,y), L(x,y+sc)-L(x,y-sc))); }
+    vals.sort((p,q)=>p-q); return vals.length ? vals[Math.floor(vals.length*0.95)] : 0; };
+  const target = sharp(b.data, false); let bestB = 0, bestD = Infinity;
+  for (const bl of [0, 0.3, 0.5, 0.8, 1.1, 1.5, 2]){ const d = Math.abs(sharp(synth({ blur: bl }), true) - target); if (d < bestD - 0.5){ bestD = d; bestB = bl; } }
+  b.style.blur = bestB;
 }
 
 /* ------------------------------------------------------------- المسح وإعادة بناء الخلفية */
@@ -681,7 +901,7 @@ function compose(target, edits){
   const list = Object.values(edits);
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (b) drawFrameLayer(x, b.fr, cleanLayer(b)); }
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (!b || e.remove || !(e.text||"").trim()) continue;
-    const { c } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0); }
+    const { c } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0, e.rot || 0); }
 }
 let raf = 0;
 function redraw(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
@@ -690,8 +910,10 @@ function redraw(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => 
   drawOverlay(); renderList(); }); }
 
 function polyOf(b){
-  const fr = b.fr, [u0,v0,u1,v1] = fr.core;
-  return [[u0,v0],[u1,v0],[u1,v1],[u0,v1]].map(([u,v]) => frameToImage(fr,u,v));
+  const fr = b.fr, [u0,v0,u1,v1] = fr.core, e = S.edits[b.id] || {};
+  const dx = e.dx || 0, dy = e.dy || 0, r = (e.rot || 0)*Math.PI/180, c = Math.cos(r), s = Math.sin(r);
+  return [[u0,v0],[u1,v0],[u1,v1],[u0,v1]].map(([u,v]) => { const [x,y] = frameToImage(fr,u,v), px = x-fr.cx, py = y-fr.cy;
+    return [fr.cx + dx + px*c - py*s, fr.cy + dy + px*s + py*c]; });
 }
 function drawOverlay(){
   const svg = $("overlay"); svg.setAttribute("viewBox", `0 0 ${S.W} ${S.H}`);
@@ -703,7 +925,16 @@ function drawOverlay(){
     const e = S.edits[b.id];
     p.setAttribute("class", (b.id === S.sel ? "sel " : "") + (e ? (e.remove ? "removed" : "edited") : ""));
     const t = document.createElementNS("http://www.w3.org/2000/svg","title"); t.textContent = b.text; p.appendChild(t);
-    p.addEventListener("pointerdown", ev => { if (S.addMode) return; ev.stopPropagation(); select(b.id); });
+    p.addEventListener("pointerdown", ev => {
+      if (S.addMode) return; ev.stopPropagation();
+      if (b.id === S.sel){ // سحب النص المحدد لتحريكه
+        const e = S.edits[b.id] || {};
+        stage.setPointerCapture(ev.pointerId);
+        drag = { mode: "move", b, sx: ev.clientX, sy: ev.clientY, dx0: e.dx || 0, dy0: e.dy || 0 };
+        return;
+      }
+      select(b.id); });
+    if (b.id === S.sel) p.style.cursor = "move";
     svg.appendChild(p);
   }
 }
@@ -772,6 +1003,19 @@ function renderInspector(){
     </div>
     <label class="lbl">المحاذاة</label>
     <div class="seg" id="iAlign">${[["right","يمين"],["center","وسط"],["left","يسار"]].map(([a,l])=>`<button data-a="${a}" class="${st.align===a?"on":""}">${l}</button>`).join("")}</div>
+    <label class="lbl">الموضع والتدوير <small style="font-weight:400">— اسحب النص المحدد بالماوس أو استخدم الأسهم (Shift = ١٠px)</small></label>
+    <div class="row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="col" title="إزاحة أفقية"><span style="color:var(--muted)">↔</span><input type="text" inputmode="decimal" id="iDX" value="${e.dx||0}"></div>
+      <div class="col" title="إزاحة رأسية"><span style="color:var(--muted)">↕</span><input type="text" inputmode="decimal" id="iDY" value="${e.dy||0}"></div>
+      <div class="col" title="تدوير (درجة)"><span style="color:var(--muted)">⟳</span><input type="text" inputmode="decimal" id="iRot" value="${e.rot||0}"></div>
+    </div>
+    <div class="seg" style="grid-template-columns:repeat(5,1fr);margin-top:6px" id="iNudge">
+      <button data-d="0,-1" title="أعلى">▲</button><button data-d="0,1" title="أسفل">▼</button>
+      <button data-d="1,0" title="يمين">▶</button><button data-d="-1,0" title="يسار">◀</button>
+      <button data-d="reset" title="إعادة الموضع">⟲</button>
+    </div>
+    <label class="lbl">عرض النص (تمديد أفقي) <span id="iHsV">${Math.round((st.hscale||1)*100)}%</span></label>
+    <input type="range" id="iHs" min="60" max="160" value="${Math.round((st.hscale||1)*100)}" style="width:100%;accent-color:var(--brand)">
     <label class="lbl">الملاءمة</label>
     <select class="field" id="iFit"><option value="shrink">تصغير عند الحاجة</option><option value="fill">ملء نفس العرض</option><option value="none">حجم ثابت</option></select>
     <details ${e.strokeW!==undefined||e.shadow||e.dx||e.dy||e.blur?"open":""}><summary>ضبط يدوي</summary>
@@ -788,13 +1032,16 @@ function renderInspector(){
       </div>
       <div class="row">
         <div><label class="lbl">نعومة الحواف</label><input class="field" id="iBlur" type="number" step="0.1" min="0" value="${(+st.blur||0).toFixed(1)}" dir="ltr"></div>
-        <div><label class="lbl">إزاحة x / y</label><div class="row" style="gap:6px"><input class="field" id="iDX" type="number" step="0.5" value="${e.dx||0}" dir="ltr"><input class="field" id="iDY" type="number" step="0.5" value="${e.dy||0}" dir="ltr"></div></div>
+        <div><label class="lbl">الأرقام</label><div class="orig" style="font-size:12px">تتحول تلقائيًا إلى ٠١٢٣٤٥٦٧٨٩</div></div>
       </div>
       <p class="hint" style="font-size:11px;margin:12px 0 0">تطابق إعادة الرسم مع الأصل: ${Math.round((b.match||0)*100)}% · الزاوية ${(b.fr.a*180/Math.PI).toFixed(1)}° · المسح: ${b.method || "—"}</p>
     </details>`;
   box.querySelector(".orig").textContent = b.text || "—";
   const ta = $("iText"); ta.value = e.remove ? "" : (e.text !== undefined ? e.text : b.text);
-  ta.oninput = () => patch(b, { text: ta.value, remove: false }, "text" + b.id);
+  ta.oninput = () => {
+    const v = toArabicDigits(ta.value);
+    if (v !== ta.value){ const pos = ta.selectionStart; ta.value = v; ta.setSelectionRange(pos, pos); }
+    patch(b, { text: v, remove: false }, "text" + b.id); };
   setTimeout(() => ta.focus(), 0);
   $("iErase").onclick = () => { patch(b, e.remove ? { remove: false } : { remove: true, text: "" }); renderInspector(); };
   $("iReset").onclick = () => { patch(b, null); renderInspector(); };
@@ -812,9 +1059,19 @@ function renderInspector(){
   $("iShC").oninput = ev => { $("iShCT").value = ev.target.value; patch(b, { shadow: shadowNow() }, "sh" + b.id); };
   $("iShCT").oninput = ev => { if (/^#[0-9a-f]{6}$/i.test(ev.target.value)){ $("iShC").value = ev.target.value; patch(b, { shadow: shadowNow() }, "sh" + b.id); } };
   $("iBlur").oninput = ev => patch(b, { blur: Math.max(0, parseFloat(ev.target.value) || 0) }, "blur" + b.id);
-  $("iDX").oninput = ev => patch(b, { dx: parseFloat(ev.target.value) || 0 }, "dx" + b.id);
-  $("iDY").oninput = ev => patch(b, { dy: parseFloat(ev.target.value) || 0 }, "dy" + b.id);
+  const num = v => parseFloat(String(v).replace(/[٠-٩]/g, d => AR_DIGITS.indexOf(d)).replace("٫",".")) || 0;
+  $("iDX").oninput = ev => patch(b, { dx: num(ev.target.value) }, "dx" + b.id);
+  $("iDY").oninput = ev => patch(b, { dy: num(ev.target.value) }, "dy" + b.id);
+  $("iRot").oninput = ev => patch(b, { rot: clamp(num(ev.target.value), -180, 180) }, "rot" + b.id);
+  $("iNudge").querySelectorAll("button").forEach(btn => btn.onclick = () => {
+    const cur = S.edits[b.id] || {};
+    if (btn.dataset.d === "reset") patch(b, { dx: 0, dy: 0, rot: 0 });
+    else { const [ddx, ddy] = btn.dataset.d.split(",").map(Number); patch(b, { dx: (cur.dx||0) + ddx, dy: (cur.dy||0) + ddy }, "move" + b.id); }
+    syncPos(); });
+  $("iHs").oninput = ev => { $("iHsV").textContent = ev.target.value + "%"; patch(b, { hscale: ev.target.value/100 }, "hs" + b.id); };
 }
+
+function syncPos(){ const e = S.edits[S.sel] || {}; for (const [k,v] of [["iDX", e.dx||0], ["iDY", e.dy||0], ["iRot", e.rot||0]]){ const el = $(k); if (el && document.activeElement !== el) el.value = v; } }
 
 /* ------------------------------------------------------------- تحميل الصورة والاكتشاف */
 function busy(on, msg, pct, sub){ $("busy").style.display = on ? "flex" : "none"; if (msg) $("busyMsg").textContent = msg; if (pct !== undefined) $("busyBar").style.width = (pct*100).toFixed(0) + "%"; $("busySub").textContent = sub || ""; }
@@ -889,7 +1146,7 @@ async function detectAll(){
       if (bw < 6 || bh < 6) continue;
       let a = 0;
       if (ln.baseline && ln.baseline.x1 !== ln.baseline.x0) a = Math.atan2(ln.baseline.y1 - ln.baseline.y0, ln.baseline.x1 - ln.baseline.x0);
-      if (Math.abs(a) < 0.012) a = 0;
+      if (Math.abs(a) < 0.05) a = 0;   // خط أساس Tesseract غير دقيق للزوايا الصغيرة؛ PCA يصحح لاحقًا
       const c = Math.cos(Math.abs(a)), s = Math.sin(Math.abs(a)), den = c*c - s*s;
       let L = bw, T = bh;
       if (a && den > 0.2){ L = (bw*c - bh*s)/den; T = (bh*c - bw*s)/den; if (T < bh*0.25 || L < bw*0.5){ L = bw; T = bh; a = 0; } }
@@ -949,12 +1206,16 @@ stage.addEventListener("pointerdown", e => {
 stage.addEventListener("pointermove", e => {
   if (!drag) return;
   if (drag.mode === "pan"){ S.xf.x = drag.ox + e.clientX - drag.sx; S.xf.y = drag.oy + e.clientY - drag.sy; applyXf(); }
+  else if (drag.mode === "move"){
+    const dx = Math.round((drag.dx0 + (e.clientX - drag.sx)/S.xf.s)*2)/2, dy = Math.round((drag.dy0 + (e.clientY - drag.sy)/S.xf.s)*2)/2;
+    patch(drag.b, { dx, dy }, "move" + drag.b.id); syncPos(); }
   else { const [x,y] = toImg(e.clientX, e.clientY); drag.x1 = x; drag.y1 = y;
     let r = $("overlay").querySelector("rect"); if (!r){ r = document.createElementNS("http://www.w3.org/2000/svg","rect"); $("overlay").appendChild(r); }
     r.setAttribute("x", Math.min(drag.x,x)); r.setAttribute("y", Math.min(drag.y,y)); r.setAttribute("width", Math.abs(x-drag.x)); r.setAttribute("height", Math.abs(y-drag.y)); }
 });
 stage.addEventListener("pointerup", e => {
   const d = drag; drag = null; if (!d) return;
+  if (d.mode === "move"){ lastKey = ""; return; }
   if (d.mode === "pan" && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4 && !e.target.closest("polygon")){ S.sel = null; renderInspector(); redraw(); }
   if (d.mode === "draw" && d.x1 !== undefined){
     const x0 = clamp(Math.min(d.x,d.x1),0,S.W), x1 = clamp(Math.max(d.x,d.x1),0,S.W), y0 = clamp(Math.min(d.y,d.y1),0,S.H), y1 = clamp(Math.max(d.y,d.y1),0,S.H);
@@ -985,7 +1246,7 @@ $("findBtn").onclick = () => {
   const rep = prompt(`استبدل «${f}» بـ:`, ""); if (rep === null) return;
   const next = Object.assign({}, S.edits); let n = 0;
   const re = new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-  for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text; const nw = cur.replace(re, () => rep);
+  for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text; const nw = toArabicDigits(cur.replace(re, () => rep));
     if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
   if (n){ commit(next); toast(`تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`); } else toast("لا توجد تطابقات");
 };
@@ -1000,6 +1261,11 @@ window.addEventListener("keydown", e => {
   if (mod && e.key.toLowerCase() === "z" && !typing){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && e.key.toLowerCase() === "y" && !typing){ e.preventDefault(); redo(); }
   else if (e.key === "Escape"){ setAdd(false); S.sel = null; renderInspector(); redraw(); }
+  else if (!typing && S.sel && e.key.startsWith("Arrow")){ // تحريك بالأسهم: 1px، ومع Shift: 10px
+    e.preventDefault(); const b = S.blocks.find(k => k.id === S.sel), cur = S.edits[S.sel] || {}, st = e.shiftKey ? 10 : 1;
+    const dx = (cur.dx || 0) + (e.key === "ArrowLeft" ? -st : e.key === "ArrowRight" ? st : 0);
+    const dy = (cur.dy || 0) + (e.key === "ArrowUp" ? -st : e.key === "ArrowDown" ? st : 0);
+    patch(b, { dx, dy }, "move" + b.id); syncPos(); }
 });
 </script>
 </body>
