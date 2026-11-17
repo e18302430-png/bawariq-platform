@@ -27,9 +27,48 @@ from .detect import get_recognizer
 _TATWEEL = "ـ"
 
 
-def _tesseract(img_gray: np.ndarray, lang: str) -> tuple[str, float]:
+def _similarity(a: str, b: str) -> float:
+    a, b = a.replace(" ", ""), b.replace(" ", "")
+    if not a or not b:
+        return 0.0
+    d = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        prev, d[0] = d[0], i
+        for j, cb in enumerate(b, 1):
+            prev, d[j] = d[j], min(d[j] + 1, d[j - 1] + 1, prev + (ca != cb))
+    return 1.0 - d[len(b)] / max(len(a), len(b))
+
+
+def _tesseract_multi(mask: np.ndarray, lang: str) -> tuple[str, float]:
+    """قراءة متعددة المقاييس والأوضاع (ارتفاعان × PSM 7/13) ثم اختيار القراءة "الوسيطة":
+    الأكثر اتفاقًا مع بقية القراءات موزونة بالثقة. Tesseract حساس جدًا لمقياس النص،
+    والإجماع يلغي الأخطاء العشوائية لكل مقياس."""
+    reads: list[tuple[str, float]] = []
+    for h in (40, 64):
+        img = prepare_binary(mask, h)
+        if img is None:
+            return "", 0.0
+        for psm in ("7", "13"):
+            r = _tesseract_psm(img, lang, psm)
+            if r[0]:
+                reads.append(r)
+        if len(reads) >= 2 and reads[0][0] == reads[1][0] and min(reads[0][1], reads[1][1]) >= 0.85:
+            break  # اتفاق قوي من المقياس الأول
+    if not reads:
+        return "", 0.0
+    scored = []
+    for t, c in reads:
+        support = sum(c2 * _similarity(t, t2) for t2, c2 in reads)
+        scored.append((support, t, c))
+    support, text, _ = max(scored)
+    agree = [c2 for t2, c2 in reads if _similarity(text, t2) > 0.85]
+    conf = float(np.mean(agree)) * min(1.0, 0.55 + 0.15 * len(agree))
+    return text, conf
+
+
+def _tesseract_psm(img_gray: np.ndarray, lang: str, psm: str) -> tuple[str, float]:
     try:
-        d = pytesseract.image_to_data(img_gray, lang=lang, config="--psm 7 --oem 1",
+        d = pytesseract.image_to_data(img_gray, lang=lang, config=f"--psm {psm} --oem 1",
                                       output_type=pytesseract.Output.DICT)
     except Exception:  # noqa: BLE001
         return "", 0.0
@@ -91,13 +130,12 @@ def _google_vision(img_bgr: np.ndarray) -> tuple[str, float]:
 def recognize(color_crop_bgr: np.ndarray, text_mask: np.ndarray) -> dict:
     """يرجع {"text", "confidence", "engine", "script"}."""
     cands: list[tuple[str, float, str]] = []
-    binimg = prepare_binary(text_mask)
-    if binimg is not None:
-        ta, ca = _tesseract(binimg, "ara")
+    if prepare_binary(text_mask) is not None:
+        ta, ca = _tesseract_multi(text_mask, "ara")
         ar, _ = _script_ratio(ta)
         if ta and ar >= 0.5:
             cands.append((ta, ca * (0.85 + 0.15 * ar), "tesseract-ara"))
-        te, ce = _tesseract(binimg, "eng")
+        te, ce = _tesseract_multi(text_mask, "eng")
         _, la = _script_ratio(te)
         if te and (la >= 0.5 or not any(c.isalpha() for c in te)):
             cands.append((te, ce * 0.95, "tesseract-eng"))

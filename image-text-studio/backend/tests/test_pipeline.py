@@ -26,21 +26,21 @@ def test_position_accuracy(summary):
 
 
 def test_size_accuracy(summary):
-    assert summary["mean_size_err"] < 0.08
+    assert summary["mean_size_err"] < 0.06
 
 
 def test_font_matching(summary):
-    assert summary["font_top5"] >= 0.8
-    assert summary["font_top1"] >= 0.6
+    assert summary["font_top5"] >= 0.85
+    assert summary["font_top1"] >= 0.75
 
 
 def test_ocr(summary):
-    assert summary["mean_cer"] < 0.2
+    assert summary["mean_cer"] < 0.15
 
 
 def test_erase_leaves_no_trace(summary):
     # متوسط الفرق اللوني عن الخلفية الحقيقية داخل منطقة النص بعد المسح
-    assert summary["mean_erase_residual"] < 6.0
+    assert summary["mean_erase_residual"] < 5.0
 
 
 def test_speed(summary):

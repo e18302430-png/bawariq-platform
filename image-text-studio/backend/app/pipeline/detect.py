@@ -29,13 +29,19 @@ def _get_engine():
     return _engine
 
 
+def _part(new: str, old: str):
+    """توافق مع إصدارات rapidocr-onnxruntime: 1.2.x (text_detector) و 1.3+/1.4 (text_det)."""
+    eng = _get_engine()
+    return getattr(eng, new, None) or getattr(eng, old)
+
+
 def get_recognizer():
     """مُعرِّف PP-OCR (ممتاز للاتينية والأرقام) — يُستخدم ضمن الـ ensemble في ocr.py."""
-    return _get_engine().text_recognizer
+    return _part("text_rec", "text_recognizer")
 
 
 def _run_det(img_bgr: np.ndarray, max_side: int) -> list[np.ndarray]:
-    det = _get_engine().text_detector
+    det = _part("text_det", "text_detector")
     h, w = img_bgr.shape[:2]
     s = min(1.0, max_side / max(h, w))
     small = cv2.resize(img_bgr, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if s < 1 else img_bgr

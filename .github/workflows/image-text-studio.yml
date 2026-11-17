@@ -1,0 +1,45 @@
+name: image-text-studio
+
+on:
+  push:
+    paths: ["image-text-studio/**", ".github/workflows/image-text-studio.yml"]
+  pull_request:
+    paths: ["image-text-studio/**", ".github/workflows/image-text-studio.yml"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: image-text-studio/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: System packages (Tesseract + Arabic, Raqm, fonts)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng \
+            libraqm0 libfribidi0 fonts-hosny-amiri fonts-noto-core fonts-kacst fonts-dejavu-core
+      - run: pip install -r requirements-dev.txt
+      - run: python scripts/build_fonts.py
+      - run: python -m pytest -q tests
+      - run: python scripts/benchmark.py
+
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: image-text-studio/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

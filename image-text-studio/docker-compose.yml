@@ -1,0 +1,31 @@
+# تشغيل المنصة كاملة بأمر واحد:  docker compose up --build
+# الواجهة: http://localhost:3000   ·   الـ API وتوثيقه: http://localhost:8000/docs
+services:
+  backend:
+    build: ./backend
+    environment:
+      # اختياري: مفتاح Google Cloud Vision كمُعرِّف احتياطي للنصوص منخفضة الثقة
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
+      # اختياري: مسار نموذج LaMa بصيغة ONNX داخل الحاوية (ضعه في ./models)
+      LAMA_ONNX_PATH: ${LAMA_ONNX_PATH:-}
+      ITS_SESSION_TTL_HOURS: ${ITS_SESSION_TTL_HOURS:-48}
+    volumes:
+      - its-data:/data
+      - ./models:/models:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  its-data:

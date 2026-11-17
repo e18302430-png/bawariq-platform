@@ -1,10 +1,12 @@
-fastapi>=0.115
-uvicorn[standard]>=0.30
-python-multipart>=0.0.9
-numpy>=1.26
-opencv-contrib-python-headless>=4.10
-pillow>=10.4
-pytesseract>=0.3.10
-rapidocr-onnxruntime>=1.2.3
-fonttools>=4.50
-brotli>=1.1
+# الإصدارات مقيدة بالمدى الذي اختُبرت عليه المنصة
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+python-multipart>=0.0.9,<0.1
+numpy>=1.26,<3
+opencv-contrib-python-headless>=4.10,<6
+pillow>=10.4,<13
+pytesseract>=0.3.10,<0.4
+# مثبّت: الإصدار 1.4 يحمل نموذج اكتشاف مختلفًا أضعف في قياساتنا (CER 22% مقابل 7.5%)
+rapidocr-onnxruntime==1.2.3
+fonttools>=4.50,<5
+brotli>=1.1,<2
