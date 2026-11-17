@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Tajawal:wght@300;400;500;700;800;900&family=Almarai:wght@300;400;700;800&family=Noto+Kufi+Arabic:wght@100..900&family=Noto+Sans+Arabic:wght@100..900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Readex+Pro:wght@200..800&family=Changa:wght@200..800&family=El+Messiri:wght@400..700&family=Reem+Kufi:wght@400..700&family=Alexandria:wght@100..900&family=Vazirmatn:wght@100..900&family=Rubik:wght@300..900&family=Kufam:wght@400..900&family=Baloo+Bhaijaan+2:wght@400..800&family=Lemonada:wght@300..700&family=Marhey:wght@300..700&family=Lalezar&family=Rakkas&family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400..700&family=Scheherazade+New:wght@400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Harmattan:wght@400;500;600;700&family=Markazi+Text:wght@400..700&family=Aref+Ruqaa:wght@400;700&family=Mirza:wght@400;500;600;700&family=Roboto:wght@100..900&family=Inter:wght@100..900&family=Montserrat:wght@100..900&family=Poppins:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300..800&family=Lato:wght@300;400;700;900&family=Oswald:wght@200..700&family=Playfair+Display:wght@400..900&family=Bebas+Neue&family=Anton&family=Raleway:wght@100..900&family=Nunito:wght@200..1000&family=Archivo+Black&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <style>
 :root{
   --bg:#f6f7fb; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --soft:#f1f5f9;
@@ -201,14 +200,36 @@ const S = {
 };
 
 /* ------------------------------------------------------------- Tesseract */
-const TESS_OPTS = { workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
-                    corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1" };
-let progressCb = null;
+/* تحميل محرك التعرف من عدة مرايا: إن فشلت واحدة (حجب/بطء شبكة الجوال) ننتقل للتالية تلقائيًا */
+const CDNS = ["https://cdn.jsdelivr.net/npm", "https://fastly.jsdelivr.net/npm", "https://gcore.jsdelivr.net/npm", "https://unpkg.com"];
+let progressCb = null, engineErrors = [];
+const withTimeout = (pr, ms, what) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error(what + ": انتهت المهلة")), ms))]);
 async function getWorkers(){
   if (S.wa) return { wa: S.wa, we: S.we };
-  const mk = lang => Tesseract.createWorker(lang, 1, Object.assign({ logger: m => progressCb && progressCb(m) }, TESS_OPTS));
-  [S.wa, S.we] = await Promise.all([mk("ara"), mk("eng")]);
-  return { wa: S.wa, we: S.we };
+  engineErrors = [];
+  for (const base of CDNS){
+    const host = new URL(base).host;
+    let wa = null, we = null;
+    try {
+      if (!window.Tesseract){ busy(true, "جارٍ تحميل محرك التعرف…", 0.03, host); await withTimeout(loadScript(`${base}/tesseract.js@5.1.1/dist/tesseract.min.js`), 30000, "tesseract.js"); }
+      const mk = lang => Tesseract.createWorker(lang, 1, {
+        workerPath: `${base}/tesseract.js@5.1.1/dist/worker.min.js`,
+        corePath: `${base}/tesseract.js-core@5.1.1`,
+        langPath: `${base}/@tesseract.js-data/${lang}@1.0.0/4.0.0_best_int`,
+        logger: m => progressCb && progressCb(m, host),
+        errorHandler: e => console.warn("tesseract", host, e),
+      });
+      wa = await withTimeout(mk("ara"), 150000, "العربية");
+      we = await withTimeout(mk("eng"), 150000, "الإنجليزية");
+      S.wa = wa; S.we = we;
+      return { wa, we };
+    } catch (err){
+      console.warn("engine mirror failed", host, err);
+      engineErrors.push(`${host}: ${err && err.message ? err.message : err}`);
+      try { wa && wa.terminate(); we && we.terminate(); } catch (e) {}
+    }
+  }
+  throw new Error(engineErrors.join(" | "));
 }
 async function getWorker(){ return (await getWorkers()).wa; }
 
@@ -1093,7 +1114,8 @@ async function decodeImage(file){
   const isHeic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || "");
   if (isHeic || !file.type){
     busy(true, "جارٍ تحويل صورة HEIC…", 0.05);
-    if (!window.heic2any) await loadScript("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js");
+    for (const base of CDNS){ if (window.heic2any) break; try { await withTimeout(loadScript(`${base}/heic2any@0.0.4/dist/heic2any.min.js`), 40000, "heic2any"); } catch (e) {} }
+    if (!window.heic2any) throw new Error("heic2any");
     let out = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
     if (Array.isArray(out)) out = out[0];
     try { return await createImageBitmap(out); } catch (e) { return await imgFromBlob(out); }
@@ -1131,7 +1153,7 @@ async function detectAll(){
   const t0 = performance.now();
   try {
     busy(true, "جارٍ تحميل محرك التعرف (أول مرة فقط ~15MB)…", 0.02);
-    progressCb = m => { if (m.status && m.status !== "recognizing text" && m.progress !== undefined) busy(true, "جارٍ تحميل محرك التعرف (أول مرة فقط)…", 0.02 + 0.18*m.progress, m.status); };
+    progressCb = (m, host) => { if (m.status && m.status !== "recognizing text" && m.progress !== undefined) busy(true, "جارٍ تحميل محرك التعرف (أول مرة فقط ~5MB)…", 0.02 + 0.18*m.progress, `${m.status} — ${host}`); };
     const wk = await getWorker();
     progressCb = null;
     // صورة العمل: تكبير الصور الصغيرة يحسن القراءة
@@ -1199,12 +1221,25 @@ async function detectAll(){
     $("timeLbl").textContent = ((performance.now()-t0)/1000).toFixed(1) + "s";
     toast(S.blocks.length ? `تم اكتشاف ${S.blocks.length} ${S.blocks.length <= 10 && S.blocks.length > 2 ? "نصوص" : "نص"}` : "لم يُكتشف أي نص — استخدم «إضافة نص» لرسم مربع حوله");
   } catch (err){
-    console.error(err); toast("تعذّر تحميل محرك التعرف. تأكد من اتصال الإنترنت ثم أعد المحاولة.", 6000);
+    console.error(err);
+    S.engineFailed = String(err && err.message || err);
+    toast("تعذّر تحميل محرك التعرف — التفاصيل في اللوحة", 6000);
   } finally {
     busy(false);
     ["undo","redo"].forEach(k => $(k).disabled = true);
     ["hold","addBox","findBtn","newBtn","fmt","exportBtn"].forEach(k => $(k).disabled = false);
     redraw(); renderInspector();
+    if (S.engineFailed){
+      const box = $("insp");
+      box.innerHTML = `<div class="orig" style="color:var(--bad);line-height:1.9"><b>تعذّر تحميل محرك التعرف على النصوص.</b><br>
+        جُرّبت ٤ مرايا (jsDelivr و Fastly و Gcore و unpkg) ولم تنجح.<br>
+        • إن كنت فتحت الملف من واتساب أو من معاينة الملفات: افتحه في Chrome أو Safari.<br>
+        • جرّب شبكة أخرى (واي فاي بدل بيانات الجوال أو العكس)، أو أوقف مانع الإعلانات/الـ VPN.</div>
+        <button class="btn primary" id="retryBtn" style="margin-top:12px;width:100%;justify-content:center">↻ إعادة المحاولة</button>
+        <details style="margin-top:12px"><summary>تفاصيل الخطأ</summary><div class="hint" style="font-size:11px;direction:ltr;text-align:left;word-break:break-all"></div></details>`;
+      box.querySelector("details .hint").textContent = S.engineFailed;
+      $("retryBtn").onclick = () => { S.engineFailed = null; detectAll(); };
+    }
   }
 }
 
