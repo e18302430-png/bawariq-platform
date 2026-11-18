@@ -122,6 +122,7 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
   <button class="btn" id="hold" title="اضغط مطولًا لرؤية الأصل" disabled>👁 <span class="hide-sm">الأصل</span></button>
   <div class="sp"></div>
   <button class="btn" id="addBox" disabled title="ارسم مربعًا حول نص لم يُكتشف">⬚ <span class="hide-sm">إضافة نص</span></button>
+  <button class="btn" id="extractBtn" disabled title="استخراج كل النصوص كنص قابل للنسخ">📄 <span class="hide-sm">استخراج النصوص</span></button>
   <button class="btn" id="findBtn" disabled title="بحث واستبدال">⇄ <span class="hide-sm">بحث واستبدال</span></button>
   <button class="btn ico" id="theme" title="المظهر">◐</button>
   <button class="btn" id="newBtn" disabled>＋ <span class="hide-sm">صورة جديدة</span></button>
@@ -1071,7 +1072,7 @@ function drawOverlay(){
   if (sb) drawHandles(svg, sb);
 }
 function renderList(){
-  $("countLbl").textContent = `النصوص (${S.blocks.length})`;
+  $("countLbl").textContent = `النصوص (${S.blocks.filter(b => !b.isNum).length} سطر · ${S.blocks.filter(b => b.isNum).length} رقم)`;
   const ul = $("list"); ul.innerHTML = "";
   for (const b of S.blocks){
     const e = S.edits[b.id], li = document.createElement("li");
@@ -1363,7 +1364,8 @@ async function detectAll(){
       await new Promise(r => setTimeout(r, 0));
     }
     $("timeLbl").textContent = ((performance.now()-t0)/1000).toFixed(1) + "s";
-    toast(S.blocks.length ? `تم اكتشاف ${S.blocks.length} ${S.blocks.length <= 10 && S.blocks.length > 2 ? "نصوص" : "نص"}` : "لم يُكتشف أي نص — استخدم «إضافة نص» لرسم مربع حوله");
+    { const nl = S.blocks.filter(b => !b.isNum).length, nn = S.blocks.length - nl;
+      toast(nl ? `تم اكتشاف ${nl} ${nl > 2 && nl <= 10 ? "أسطر" : "سطر"}${nn ? ` و ${nn} ${nn > 2 && nn <= 10 ? "أرقام" : "رقم"} منفصلة` : ""}` : "لم يُكتشف أي نص — استخدم «إضافة نص» لرسم مربع حوله"); }
   } catch (err){
     console.error(err);
     S.engineFailed = String(err && err.message || err);
@@ -1371,7 +1373,7 @@ async function detectAll(){
   } finally {
     busy(false);
     ["undo","redo"].forEach(k => $(k).disabled = true);
-    ["hold","addBox","findBtn","newBtn","fmt","exportBtn"].forEach(k => $(k).disabled = false);
+    ["hold","addBox","findBtn","extractBtn","newBtn","fmt","exportBtn"].forEach(k => $(k).disabled = false);
     redraw(); renderInspector();
     if (S.engineFailed){
       const box = $("insp");
@@ -1533,6 +1535,44 @@ $("findBtn").onclick = () => {
       if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
     if (n){ commit(next); $("frMsg").textContent = `تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`; } else $("frMsg").textContent = "لا توجد تطابقات";
   };
+};
+/* استخراج النصوص: كل الأسطر بترتيب القراءة (من الأعلى للأسفل) كنص عادي للنسخ أو الحفظ */
+function extractedText(useEdits){
+  const lines = S.blocks.filter(b => !b.isNum).map(b => {
+    const c = polyOf(b).reduce((a, q) => [a[0] + q[0]/4, a[1] + q[1]/4], [0, 0]), e = S.edits[b.id];
+    let t = b.text;
+    if (useEdits){ if (e && e.remove) t = ""; else if (e) t = toArabicDigits(e.text);
+      else for (const k of S.blocks.filter(n => n.parent === b.id)){ const ek = S.edits[k.id]; if (ek && !ek.remove) t = t.replace(k.text, toArabicDigits(ek.text)); } }
+    return { t, y: c[1], x: c[0], ar: hasAr(b.text) };
+  }).filter(l => l.t && l.t.trim());
+  lines.sort((a, b) => Math.abs(a.y - b.y) < 12 ? (a.ar ? b.x - a.x : a.x - b.x) : a.y - b.y);
+  return lines.map(l => l.t).join("\n");
+}
+$("extractBtn").onclick = () => {
+  S.sel = null; redraw();
+  const box = $("insp"), hasEdits = Object.keys(S.edits).length > 0;
+  box.innerHTML = `<h3 style="margin:0 0 4px;font-size:15px">النصوص المستخرجة من الصورة</h3>
+    <p class="hint" style="font-size:12px;margin:0 0 8px">${S.blocks.filter(b => !b.isNum).length} سطر، بترتيب القراءة. يمكنك تصحيح أي كلمة هنا قبل النسخ.</p>
+    ${hasEdits ? `<div class="seg" id="exWhich" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><button data-v="0" class="on">النص الأصلي</button><button data-v="1">بعد التعديل</button></div>` : ""}
+    <textarea class="field" id="exText" dir="auto" style="min-height:260px;font-size:15px;line-height:1.9"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="exCopy" style="justify-content:center">نسخ الكل</button><button class="btn" id="exSave" style="justify-content:center">حفظ كملف TXT</button></div>
+    <button class="btn" id="exClose" style="width:100%;justify-content:center;margin-top:8px">إغلاق</button>
+    <p class="hint" id="exMsg" style="margin-top:8px"></p>`;
+  const ta = $("exText"); ta.value = extractedText(false);
+  if (hasEdits) $("exWhich").querySelectorAll("button").forEach(bt => bt.onclick = () => {
+    $("exWhich").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === bt)); ta.value = extractedText(bt.dataset.v === "1"); });
+  $("exCopy").onclick = () => {
+    const done = () => { $("exMsg").textContent = "تم نسخ النص"; };
+    try { navigator.clipboard.writeText(ta.value).then(done, () => { ta.focus(); ta.select(); $("exMsg").textContent = "النص محدد الآن — اضغط نسخ من قائمة الجوال أو Ctrl+C"; }); }
+    catch (e) { ta.focus(); ta.select(); $("exMsg").textContent = "النص محدد الآن — اضغط نسخ أو Ctrl+C"; }
+  };
+  $("exSave").onclick = async () => {
+    const filename = `${S.name || "image"}-text.txt`, data = "\ufeff" + ta.value;
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl){ try { await dl.save({ filename, data }); $("exMsg").textContent = "تم حفظ الملف"; } catch (e) { if (e && e.code !== "declined") $("exMsg").textContent = "تعذّر الحفظ: " + (e.message || e.code); } return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain;charset=utf-8" })); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  };
+  $("exClose").onclick = () => renderInspector();
 };
 $("exportBtn").onclick = () => {
   const out = document.createElement("canvas"); out.width = S.W; out.height = S.H; compose(out, S.edits);
