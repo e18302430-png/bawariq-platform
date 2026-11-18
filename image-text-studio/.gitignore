@@ -1,0 +1,3 @@
+standalone/web/*.js
+standalone/web/*.wasm
+standalone/web/index.html

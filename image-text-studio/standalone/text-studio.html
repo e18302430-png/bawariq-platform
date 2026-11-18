@@ -202,31 +202,50 @@ const S = {
 /* ------------------------------------------------------------- Tesseract */
 /* تحميل محرك التعرف من عدة مرايا: إن فشلت واحدة (حجب/بطء شبكة الجوال) ننتقل للتالية تلقائيًا */
 const CDNS = ["https://cdn.jsdelivr.net/npm", "https://fastly.jsdelivr.net/npm", "https://gcore.jsdelivr.net/npm", "https://unpkg.com"];
+const SOURCES = [];
+if (/^https?:$/.test(location.protocol)){
+  // ملفات المحرك منشورة بجانب الصفحة على نفس الرابط
+  const u = f => new URL(f, location.href).href;
+  SOURCES.push({ name: "local", script: u("tesseract.min.js"), worker: u("worker.min.js"), core: u("./").replace(/\/$/, ""), lang: () => u("./").replace(/\/$/, ""), sameOrigin: true,
+    // الصفحة المنشورة لا تخدم ملفات .gz: بيانات اللغة منشورة باسم *.traineddata.gz.wasm، نحمّلها بأنفسنا ونضعها
+    // في ذاكرة IndexedDB التي يقرأ منها المحرك أولًا (مفتاح idb-keyval الافتراضي: ./<lang>.traineddata)
+    prepare: async () => { for (const l of ["ara", "eng"]){
+      const r = await fetch(u(`${l}.traineddata.gz.wasm`)); if (!r.ok) throw new Error(`${l}.traineddata: ${r.status}`);
+      await idbPut(`./${l}.traineddata`, new Uint8Array(await r.arrayBuffer())); } } });
+}
+for (const base of CDNS) SOURCES.push({ name: new URL(base).host, script: `${base}/tesseract.js@5.1.1/dist/tesseract.min.js`, worker: `${base}/tesseract.js@5.1.1/dist/worker.min.js`,
+  core: `${base}/tesseract.js-core@5.1.1`, lang: l => `${base}/@tesseract.js-data/${l}@1.0.0/4.0.0_best_int` });
 let progressCb = null, engineErrors = [];
+function idbPut(key, val){ return new Promise((ok, no) => {
+  const r = indexedDB.open("keyval-store"); r.onupgradeneeded = () => r.result.createObjectStore("keyval");
+  r.onerror = () => no(r.error); r.onsuccess = () => { const db = r.result, tx = db.transaction("keyval", "readwrite");
+    tx.objectStore("keyval").put(val, key); tx.oncomplete = () => { db.close(); ok(); }; tx.onerror = () => no(tx.error); }; }); }
 const withTimeout = (pr, ms, what) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error(what + ": انتهت المهلة")), ms))]);
+const errText = e => e === undefined ? "تعذّر تشغيل المحرك في هذا المتصفح (Web Worker)" : (e && e.message) ? e.message : (typeof e === "string" ? e : JSON.stringify(e));
 async function getWorkers(){
   if (S.wa) return { wa: S.wa, we: S.we };
   engineErrors = [];
-  for (const base of CDNS){
-    const host = new URL(base).host;
-    let wa = null, we = null;
-    try {
-      if (!window.Tesseract){ busy(true, "جارٍ تحميل محرك التعرف…", 0.03, host); await withTimeout(loadScript(`${base}/tesseract.js@5.1.1/dist/tesseract.min.js`), 30000, "tesseract.js"); }
-      const mk = lang => Tesseract.createWorker(lang, 1, {
-        workerPath: `${base}/tesseract.js@5.1.1/dist/worker.min.js`,
-        corePath: `${base}/tesseract.js-core@5.1.1`,
-        langPath: `${base}/@tesseract.js-data/${lang}@1.0.0/4.0.0_best_int`,
-        logger: m => progressCb && progressCb(m, host),
-        errorHandler: e => console.warn("tesseract", host, e),
-      });
-      wa = await withTimeout(mk("ara"), 150000, "العربية");
-      we = await withTimeout(mk("eng"), 150000, "الإنجليزية");
-      S.wa = wa; S.we = we;
-      return { wa, we };
-    } catch (err){
-      console.warn("engine mirror failed", host, err);
-      engineErrors.push(`${host}: ${err && err.message ? err.message : err}`);
-      try { wa && wa.terminate(); we && we.terminate(); } catch (e) {}
+  for (const src of SOURCES){
+    // للمصدر المحلي نجرب تشغيل الـ Worker مباشرة من ملفه ثم عبر blob
+    for (const blob of src.sameOrigin ? [false, true] : [true]){
+      let wa = null, we = null;
+      try {
+        if (!window.Tesseract){ busy(true, "جارٍ تحميل محرك التعرف…", 0.03, src.name); await withTimeout(loadScript(src.script), 40000, "tesseract.js"); }
+        if (src.prepare && !src.prepared){ busy(true, "جارٍ تحميل بيانات اللغة العربية والإنجليزية (~5MB)…", 0.08, src.name); await withTimeout(src.prepare(), 120000, "بيانات اللغة"); src.prepared = true; }
+        const mk = lang => Tesseract.createWorker(lang, 1, {
+          workerPath: src.worker, corePath: src.core, langPath: src.lang(lang), workerBlobURL: blob,
+          logger: m => progressCb && progressCb(m, src.name),
+          errorHandler: e => console.warn("tesseract", src.name, e),
+        });
+        wa = await withTimeout(mk("ara"), 150000, "العربية");
+        we = await withTimeout(mk("eng"), 150000, "الإنجليزية");
+        S.wa = wa; S.we = we;
+        return { wa, we };
+      } catch (err){
+        console.warn("engine source failed", src.name, blob, err);
+        engineErrors.push(`${src.name}${blob ? "" : " (direct)"}: ${errText(err)}`);
+        try { wa && wa.terminate(); we && we.terminate(); } catch (e) {}
+      }
     }
   }
   throw new Error(engineErrors.join(" | "));
@@ -1115,8 +1134,9 @@ async function decodeImage(file){
   if (isHeic || !file.type){
     busy(true, "جارٍ تحويل صورة HEIC…", 0.05);
     for (const base of CDNS){ if (window.heic2any) break; try { await withTimeout(loadScript(`${base}/heic2any@0.0.4/dist/heic2any.min.js`), 40000, "heic2any"); } catch (e) {} }
+    if (!window.heic2any && /^https?:$/.test(location.protocol)) { try { await loadScript(new URL("heic2any.min.js", location.href).href); } catch (e) {} }
     if (!window.heic2any) throw new Error("heic2any");
-    let out = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
+    let out = await withTimeout(window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 }), 60000, "HEIC");
     if (Array.isArray(out)) out = out[0];
     try { return await createImageBitmap(out); } catch (e) { return await imgFromBlob(out); }
   }
@@ -1232,7 +1252,7 @@ async function detectAll(){
     if (S.engineFailed){
       const box = $("insp");
       box.innerHTML = `<div class="orig" style="color:var(--bad);line-height:1.9"><b>تعذّر تحميل محرك التعرف على النصوص.</b><br>
-        جُرّبت ٤ مرايا (jsDelivr و Fastly و Gcore و unpkg) ولم تنجح.<br>
+        جُرّبت كل مصادر التحميل ولم تنجح.<br>
         • إن كنت فتحت الملف من واتساب أو من معاينة الملفات: افتحه في Chrome أو Safari.<br>
         • جرّب شبكة أخرى (واي فاي بدل بيانات الجوال أو العكس)، أو أوقف مانع الإعلانات/الـ VPN.</div>
         <button class="btn primary" id="retryBtn" style="margin-top:12px;width:100%;justify-content:center">↻ إعادة المحاولة</button>
@@ -1313,18 +1333,43 @@ $("addBox").onclick = () => setAdd(!S.addMode);
 $("newBtn").onclick = () => { S.orig = null; S.blocks = []; S.edits = {}; S.sel = null; $("drop").style.display = "flex"; $("zoomBar").style.display = "none"; vctx.clearRect(0,0,view.width,view.height); $("overlay").innerHTML = ""; renderList(); renderInspector(); };
 $("theme").onclick = () => { const r = document.documentElement, dark = getComputedStyle(r).getPropertyValue("--bg").trim() === "#0b1020"; r.dataset.theme = dark ? "light" : "dark"; };
 $("findBtn").onclick = () => {
-  const f = prompt("ابحث عن:"); if (!f) return;
-  const rep = prompt(`استبدل «${f}» بـ:`, ""); if (rep === null) return;
-  const next = Object.assign({}, S.edits); let n = 0;
-  const re = new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-  for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text; const nw = toArabicDigits(cur.replace(re, () => rep));
-    if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
-  if (n){ commit(next); toast(`تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`); } else toast("لا توجد تطابقات");
+  S.sel = null; redraw();
+  const box = $("insp");
+  box.innerHTML = `<h3 style="margin:0 0 4px;font-size:15px">بحث واستبدال</h3>
+    <label class="lbl" for="frFind">ابحث عن</label><input class="field" id="frFind" dir="auto">
+    <label class="lbl" for="frRep">استبدل بـ</label><input class="field" id="frRep" dir="auto">
+    <p class="hint" style="font-size:12px;margin:8px 0 0">الأرقام في النص الجديد تتحول تلقائيًا إلى أرقام عربية.</p>
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="frGo" style="justify-content:center">استبدال الكل</button><button class="btn" id="frClose" style="justify-content:center">إغلاق</button></div>
+    <p class="hint" id="frMsg" style="margin-top:10px"></p>`;
+  $("frFind").focus();
+  $("frClose").onclick = () => renderInspector();
+  $("frGo").onclick = () => {
+    const f = $("frFind").value; if (!f){ $("frFind").focus(); return; }
+    const rep = $("frRep").value, next = Object.assign({}, S.edits); let n = 0;
+    const norm = t => t.replace(/[٠-٩]/g, d => String(AR_DIGITS.indexOf(d)));
+    const re = new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text;
+      let nw = cur.replace(re, () => rep);
+      if (nw === cur) { const re2 = new RegExp(norm(f).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"); nw = norm(cur) !== cur ? norm(cur).replace(re2, () => rep) : cur; }
+      nw = toArabicDigits(nw);
+      if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
+    if (n){ commit(next); $("frMsg").textContent = `تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`; } else $("frMsg").textContent = "لا توجد تطابقات";
+  };
 };
 $("exportBtn").onclick = () => {
   const out = document.createElement("canvas"); out.width = S.W; out.height = S.H; compose(out, S.edits);
   const fmt = $("fmt").value, mime = "image/" + fmt;
-  out.toBlob(blob => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${S.name}-edited.${fmt === "jpeg" ? "jpg" : fmt}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }, mime, 0.95);
+  const filename = `${S.name}-edited.${fmt === "jpeg" ? "jpg" : fmt}`;
+  out.toBlob(async blob => {
+    if (!blob){ toast("تعذّر إنشاء الصورة"); return; }
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl){
+      try { await dl.save({ filename, data: blob }); toast("تم حفظ الصورة"); }
+      catch (e){ if (e && e.code !== "declined") toast("تعذّر الحفظ: " + (e.message || e.code)); }
+      return;
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  }, mime, 0.95);
 };
 window.addEventListener("keydown", e => {
   const typing = e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement;
