@@ -98,10 +98,15 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
 .zoom{position:absolute;left:12px;bottom:12px;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .zoom button{border:0;background:none;padding:8px 11px;cursor:pointer}
 .zoom button:hover{background:var(--soft)}
+#sheet{position:fixed;inset:0;z-index:30;background:rgba(15,23,42,.45);display:flex;align-items:flex-end;justify-content:center;direction:rtl}
+#sheet .sheet-card{background:var(--panel);color:var(--ink);width:100%;max-width:560px;max-height:88%;overflow:auto;border-radius:18px 18px 0 0;
+  padding:18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+@media (min-width:801px){ #sheet{align-items:center} #sheet .sheet-card{border-radius:18px} }
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;display:none;z-index:20}
 .pill{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#fff;padding:6px 14px;border-radius:99px;display:none;direction:rtl}
 .fontopt{font-size:15px}
 @media (max-width:800px){
+  #insp{scroll-margin-top:calc(46vh + 8px)}
   body{overflow:auto}
   main{flex-direction:column;height:auto}
   #stage{height:46vh;flex:none;position:sticky;top:0;z-index:3;border-bottom:1px solid var(--line)}
@@ -153,6 +158,7 @@ summary{cursor:pointer;padding:8px 0;font-weight:600;color:var(--muted)}
     <div id="insp"><p class="hint">ارفع صورة لتبدأ. بعد الاكتشاف انقر على أي نص في الصورة أو في القائمة لتعديله.</p></div>
   </aside>
 </main>
+<div id="sheet" hidden><div class="sheet-card" role="dialog" aria-modal="true"><div id="sheetBody"></div></div></div>
 <div id="toast"></div>
 
 <script>
@@ -1107,7 +1113,13 @@ function patch(b, p, mergeKey){
 }
 
 /* ------------------------------------------------------------- لوحة التعديل */
-function select(id){ S.sel = id; renderInspector(); redraw(); }
+/* نافذة فوق كل شيء (تظهر دائمًا، حتى على الجوال حيث اللوحة الجانبية أسفل الصورة) */
+function openSheet(){ $("sheet").hidden = false; return $("sheetBody"); }
+function closeSheet(){ $("sheet").hidden = true; $("sheetBody").innerHTML = ""; }
+$("sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
+const isPhone = () => matchMedia("(max-width:800px)").matches;
+function select(id){ S.sel = id; renderInspector(); redraw();
+  if (id && isPhone()) requestAnimationFrame(() => $("insp").scrollIntoView({ behavior: "smooth", block: "start" })); }
 function renderInspector(){
   const box = $("insp"), b = S.blocks.find(k => k.id === S.sel);
   if (!b){ box.innerHTML = `<p class="hint">انقر على أي نص في الصورة أو في القائمة لتعديله.<br><small>على الصورة: اسحب النص لتحريكه · زوايا الإطار للحجم · الجانبان للعرض · الدائرة العلوية للتدوير · على الجوال: إصبعان للتكبير والتدوير<br>لوحة المفاتيح: الأسهم للتحريك · + و − للحجم · [ و ] للتدوير · Ctrl+Z تراجع</small></p>`; return; }
@@ -1376,7 +1388,7 @@ async function detectAll(){
     ["hold","addBox","findBtn","extractBtn","newBtn","fmt","exportBtn"].forEach(k => $(k).disabled = false);
     redraw(); renderInspector();
     if (S.engineFailed){
-      const box = $("insp");
+      const box = openSheet();
       box.innerHTML = `<div class="orig" style="color:var(--bad);line-height:1.9"><b>تعذّر تحميل محرك التعرف على النصوص.</b><br>
         جُرّبت كل مصادر التحميل ولم تنجح.<br>
         • إن كنت فتحت الملف من واتساب أو من معاينة الملفات: افتحه في Chrome أو Safari.<br>
@@ -1384,7 +1396,7 @@ async function detectAll(){
         <button class="btn primary" id="retryBtn" style="margin-top:12px;width:100%;justify-content:center">↻ إعادة المحاولة</button>
         <details style="margin-top:12px"><summary>تفاصيل الخطأ</summary><div class="hint" style="font-size:11px;direction:ltr;text-align:left;word-break:break-all"></div></details>`;
       box.querySelector("details .hint").textContent = S.engineFailed;
-      $("retryBtn").onclick = () => { S.engineFailed = null; detectAll(); };
+      $("retryBtn").onclick = () => { S.engineFailed = null; closeSheet(); detectAll(); };
     }
   }
 }
@@ -1513,8 +1525,7 @@ $("addBox").onclick = () => setAdd(!S.addMode);
 $("newBtn").onclick = () => { S.orig = null; S.blocks = []; S.edits = {}; S.sel = null; $("drop").style.display = "flex"; $("zoomBar").style.display = "none"; vctx.clearRect(0,0,view.width,view.height); $("overlay").innerHTML = ""; renderList(); renderInspector(); };
 $("theme").onclick = () => { const r = document.documentElement, dark = getComputedStyle(r).getPropertyValue("--bg").trim() === "#0b1020"; r.dataset.theme = dark ? "light" : "dark"; };
 $("findBtn").onclick = () => {
-  S.sel = null; redraw();
-  const box = $("insp");
+  const box = openSheet();
   box.innerHTML = `<h3 style="margin:0 0 4px;font-size:15px">بحث واستبدال</h3>
     <label class="lbl" for="frFind">ابحث عن</label><input class="field" id="frFind" dir="auto">
     <label class="lbl" for="frRep">استبدل بـ</label><input class="field" id="frRep" dir="auto">
@@ -1522,18 +1533,23 @@ $("findBtn").onclick = () => {
     <div class="row" style="margin-top:12px"><button class="btn primary" id="frGo" style="justify-content:center">استبدال الكل</button><button class="btn" id="frClose" style="justify-content:center">إغلاق</button></div>
     <p class="hint" id="frMsg" style="margin-top:10px"></p>`;
   $("frFind").focus();
-  $("frClose").onclick = () => renderInspector();
+  $("frClose").onclick = closeSheet;
   $("frGo").onclick = () => {
     const f = $("frFind").value; if (!f){ $("frFind").focus(); return; }
     const rep = $("frRep").value, next = Object.assign({}, S.edits); let n = 0;
     const norm = t => t.replace(/[٠-٩]/g, d => String(AR_DIGITS.indexOf(d)));
     const re = new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-    for (const b of S.blocks){ const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text;
-      let nw = cur.replace(re, () => rep);
-      if (nw === cur) { const re2 = new RegExp(norm(f).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"); nw = norm(cur) !== cur ? norm(cur).replace(re2, () => rep) : cur; }
+    for (const b of S.blocks){
+      if (b.isNum) continue;                       // الأرقام المنفصلة جزء من سطرها
+      const cur = next[b.id] && !next[b.id].remove ? next[b.id].text : b.text;
+      re.lastIndex = 0; const re2 = new RegExp(norm(f).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+      let nw = null;
+      if (re.test(cur)){ re.lastIndex = 0; nw = cur.replace(re, () => rep); }
+      else if (re2.test(norm(cur))){ re2.lastIndex = 0; nw = norm(cur).replace(re2, () => rep); }   // بحث بأرقام لاتينية عن أرقام عربية
+      if (nw === null) continue;                   // لا تطابق: لا نلمس السطر إطلاقًا
       nw = toArabicDigits(nw);
       if (nw !== cur){ next[b.id] = Object.assign({ id: b.id }, next[b.id] || {}, { text: nw, remove: false }); n++; } }
-    if (n){ commit(next); $("frMsg").textContent = `تم تعديل ${n} ${n > 2 && n <= 10 ? "نصوص" : "نص"}`; } else $("frMsg").textContent = "لا توجد تطابقات";
+    if (n){ commit(next); $("frMsg").textContent = n === 1 ? "تم تعديل سطر واحد" : n === 2 ? "تم تعديل سطرين" : `تم تعديل ${toArabicDigits(String(n))} ${n <= 10 ? "أسطر" : "سطرًا"}`; } else $("frMsg").textContent = "لا توجد تطابقات";
   };
 };
 /* استخراج النصوص: كل الأسطر بترتيب القراءة (من الأعلى للأسفل) كنص عادي للنسخ أو الحفظ */
@@ -1549,8 +1565,7 @@ function extractedText(useEdits){
   return lines.map(l => l.t).join("\n");
 }
 $("extractBtn").onclick = () => {
-  S.sel = null; redraw();
-  const box = $("insp"), hasEdits = Object.keys(S.edits).length > 0;
+  const box = openSheet(), hasEdits = Object.keys(S.edits).length > 0;
   box.innerHTML = `<h3 style="margin:0 0 4px;font-size:15px">النصوص المستخرجة من الصورة</h3>
     <p class="hint" style="font-size:12px;margin:0 0 8px">${S.blocks.filter(b => !b.isNum).length} سطر، بترتيب القراءة. يمكنك تصحيح أي كلمة هنا قبل النسخ.</p>
     ${hasEdits ? `<div class="seg" id="exWhich" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><button data-v="0" class="on">النص الأصلي</button><button data-v="1">بعد التعديل</button></div>` : ""}
@@ -1572,7 +1587,7 @@ $("extractBtn").onclick = () => {
     if (dl){ try { await dl.save({ filename, data }); $("exMsg").textContent = "تم حفظ الملف"; } catch (e) { if (e && e.code !== "declined") $("exMsg").textContent = "تعذّر الحفظ: " + (e.message || e.code); } return; }
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "text/plain;charset=utf-8" })); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
   };
-  $("exClose").onclick = () => renderInspector();
+  $("exClose").onclick = closeSheet;
 };
 $("exportBtn").onclick = () => {
   const out = document.createElement("canvas"); out.width = S.W; out.height = S.H; compose(out, S.edits);
@@ -1594,6 +1609,7 @@ window.addEventListener("keydown", e => {
   const mod = e.ctrlKey || e.metaKey;
   if (mod && e.key.toLowerCase() === "z" && !typing){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && e.key.toLowerCase() === "y" && !typing){ e.preventDefault(); redo(); }
+  else if (e.key === "Escape" && !$("sheet").hidden){ closeSheet(); }
   else if (e.key === "Escape"){ setAdd(false); S.sel = null; renderInspector(); redraw(); }
   else if (!typing && S.sel && ["+","=","-","_","[","]"].includes(e.key)){
     e.preventDefault(); const b = S.blocks.find(k => k.id === S.sel), cur = Object.assign({}, b.style, S.edits[S.sel] || {});
