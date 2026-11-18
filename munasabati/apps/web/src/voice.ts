@@ -46,3 +46,13 @@ export function speak(text: string, v: SpeechSynthesisVoice, opts: { onWord?: (i
 }
 
 export const stopSpeech = () => { try { synth()?.cancel(); } catch { /* */ } };
+
+/** طابور كلام: يقرأ الجمل ورا بعض بالخلفية بدون ما يوقف الواجهة. stopSpeech يمسحه. */
+export function sayQueue(lines: string[]) {
+  const s = synth(); if (!s || typeof window === "undefined" || window.__mnsMuted) return;
+  void arabicVoice().then((v) => {
+    if (!v) return;
+    s.cancel();
+    lines.forEach((t) => { const u = new SpeechSynthesisUtterance(clean(t)); u.voice = v; u.lang = v.lang; u.rate = 1.02; u.pitch = 1.04; s.speak(u); });
+  });
+}
