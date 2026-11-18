@@ -47,6 +47,12 @@ main{display:flex;height:calc(100% - 56px)}
 #overlay polygon.edited{stroke:var(--ok);stroke-dasharray:none}
 #overlay polygon.removed{stroke:var(--bad);stroke-dasharray:none}
 #overlay polygon.sel{stroke:var(--brand);stroke-width:2.5;stroke-dasharray:none;fill:rgba(59,110,245,.08)}
+#overlay .xf-box{fill:rgba(59,110,245,.06);stroke:var(--brand);stroke-width:1.5;stroke-dasharray:none;cursor:move;vector-effect:non-scaling-stroke}
+#overlay .xf-line{stroke:var(--brand);stroke-width:1.5;vector-effect:non-scaling-stroke}
+#overlay .xf-h{fill:#fff;stroke:var(--brand);stroke-width:2;vector-effect:non-scaling-stroke;touch-action:none}
+#overlay .xf-corner{cursor:nwse-resize}
+#overlay .xf-side{cursor:ew-resize;fill:var(--brand)}
+#overlay .xf-rot{cursor:grab;fill:var(--brand)}
 #overlay rect{fill:rgba(245,158,11,.1);stroke:#f59e0b;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;stroke-width:2}
 aside{width:370px;flex-shrink:0;border-inline-start:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
 .sec{padding:14px 16px;border-bottom:1px solid var(--line)}
@@ -71,6 +77,9 @@ textarea.field{min-height:72px;resize:vertical;font-size:16px;line-height:1.7;un
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--soft);padding:4px;border-radius:9px}
 .seg button{border:0;background:none;padding:6px;border-radius:7px;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sizebar{display:flex;align-items:center;gap:8px}
+.sizebar input[type=range]{flex:1;accent-color:var(--brand);min-width:0}
+.sizebar output{min-width:44px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
 .badge{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600}
 .b-ok{background:rgba(16,185,129,.15);color:#059669}.b-warn{background:rgba(245,158,11,.15);color:#b45309}.b-bad{background:rgba(244,63,94,.15);color:#e11d48}
 .hint{color:var(--muted);line-height:1.9}
@@ -196,7 +205,7 @@ const S = {
   img: null, W: 0, H: 0, orig: null, origData: null,
   blocks: [], edits: {}, past: [], future: [], sel: null,
   showOrig: false, addMode: false, worker: null, fontsReady: new Set(),
-  xf: { s: 1, x: 0, y: 0 },
+  xf: { s: 1, x: 0, y: 0 }, inkBox: {}, onion: false, pointers: new Map(),
 };
 
 /* ------------------------------------------------------------- Tesseract */
@@ -475,9 +484,9 @@ function frameCanvas(fr, srcCanvas){
   return c;
 }
 /* يرسم طبقة بحجم الإطار فوق سياق الصورة بنفس التحويل العكسي */
-function drawFrameLayer(ctx, fr, layer, ox=0, oy=0, rot=0, k=1){
+function drawFrameLayer(ctx, fr, layer, ox=0, oy=0, rot=0, k=1, px=0, py=0){
   ctx.save();
-  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a + rot*Math.PI/180); ctx.scale(1/(fr.sc*k), 1/(fr.sc*k)); ctx.translate(-fr.w*k/2, -fr.h*k/2);
+  ctx.translate(fr.cx + ox, fr.cy + oy); ctx.rotate(fr.a + rot*Math.PI/180); ctx.scale(1/(fr.sc*k), 1/(fr.sc*k)); ctx.translate(-(fr.w/2 + px)*k, -(fr.h/2 + py)*k);
   ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
@@ -803,21 +812,23 @@ async function analyzeLine(line){
   const baseline = text.trim() ? baseFor(font, size) : ib[3];
   Object.assign(res, { candidates: scores.slice(0,5), ink: ib, baseline, fill, glyphFS: glyph, data });
   res.style = { font, size: size / fr.sc, color: hex(...color), strokeW: strokeW / fr.sc, strokeColor: hex(...strokeRGB),
-                shadow: null, align, blur: 0, fit: "shrink", hscale: 1 };
+                shadow: null, align, blur: 0, fit: "none", hscale: 1 };
   // 7) ضبط دقيق للموضع: إزاحة ±3px تعظّم التطابق مع الأصل
   if (text.trim()) refine(res);
   return res;
 }
 
 function renderLayer(b, e, forMatch=false){
-  // يرسم نص الكتلة (مع التعديلات e) في طبقة بحجم الإطار. يرجع OffscreenCanvas
+  // يرسم نص الكتلة (مع التعديلات e) في طبقة بإحداثيات الإطار. للعرض النهائي نوسّع اللوحة حتى لا يُقص نص أطول أو أكبر.
   const fr = b.fr, st = Object.assign({}, b.style, e || {});
   const text = e && e.text !== undefined ? toArabicDigits(e.text) : b.text;
   const k = forMatch ? 1 : Math.max(1, 1 / fr.sc);   // دقة الرسم النهائي = دقة الصورة الأصلية على الأقل
-  const c = new OffscreenCanvas(Math.round(fr.w*k), Math.round(fr.h*k)), x = c.getContext("2d", { willReadFrequently: true });
+  const px = forMatch ? 0 : Math.round(fr.w * 1.5), py = forMatch ? 0 : Math.round(fr.h * 1.5);
+  const c = new OffscreenCanvas(Math.round((fr.w + 2*px)*k), Math.round((fr.h + 2*py)*k)), x = c.getContext("2d", { willReadFrequently: true });
   if (k !== 1) x.scale(k, k);
+  x.translate(px, py);
   const hs = st.hscale || 1;
-  if (!text.trim()) return { c, size: 0, k };
+  if (!text.trim()) return { c, size: 0, k, px, py, box: null };
   let size = st.size * fr.sc;
   const sw = (st.strokeW || 0) * fr.sc;
   const dir = hasAr(text) ? "rtl" : "ltr";
@@ -825,7 +836,7 @@ function renderLayer(b, e, forMatch=false){
   let m = x.measureText(text);
   const avail = (b.ink[2] - b.ink[0]) * (st.widthFactor || 1);
   let inkW = (m.actualBoundingBoxLeft + m.actualBoundingBoxRight) * hs, factor = 1;
-  const fit = (e && e.size !== undefined && !e.fit) ? "none" : (st.fit || "shrink");
+  const fit = st.fit || "none";   // الافتراضي: نفس حجم الأصل تمامًا
   if (!forMatch && fit !== "none" && inkW > 0){
     const r = avail / inkW;
     if (fit === "shrink" && r < 1) factor = Math.max(r, 0.3);
@@ -844,7 +855,10 @@ function renderLayer(b, e, forMatch=false){
     x.save(); x.globalCompositeOperation = "destination-out"; if (sw>0){ x.lineWidth = sw*2*factor; x.lineJoin="round"; x.strokeText(text, ox, oy);} x.fillText(text, ox, oy); x.restore(); }
   if (sw > 0){ x.lineWidth = sw*2*factor; x.lineJoin = "round"; x.strokeStyle = st.strokeColor; x.strokeText(text, ox, oy); }
   x.fillStyle = st.color; x.fillText(text, ox, oy);
-  return { c, size, k };
+  // صندوق حبر النص الجديد بإحداثيات الإطار (للمقابض والمقارنة بعرض الأصل)
+  const sx = v => anchor + (v - anchor) * hs, pad = sw;
+  const box = [sx(ox - L) - pad, oy - m.actualBoundingBoxAscent - pad, sx(ox + R) + pad, oy + m.actualBoundingBoxDescent + pad];
+  return { c, size, k, px, py, box, inkW: (L + R) * hs, availW: b.ink[2] - b.ink[0] };
 }
 
 function layerAlpha(b, e){
@@ -947,7 +961,8 @@ function compose(target, edits){
   const list = Object.values(edits);
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (b) drawFrameLayer(x, b.fr, cleanLayer(b)); }
   for (const e of list){ const b = S.blocks.find(k => k.id === e.id); if (!b || e.remove || !(e.text||"").trim()) continue;
-    const { c, k } = renderLayer(b, e); drawFrameLayer(x, b.fr, c, e.dx || 0, e.dy || 0, e.rot || 0, k); }
+    const r = renderLayer(b, e); S.inkBox[b.id] = r; drawFrameLayer(x, b.fr, r.c, e.dx || 0, e.dy || 0, e.rot || 0, r.k, r.px, r.py); }
+  if (S.onion){ x.save(); x.globalAlpha = 0.45; x.drawImage(S.orig, 0, 0); x.restore(); }
 }
 let raf = 0;
 function redraw(){ cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
@@ -961,6 +976,36 @@ function polyOf(b){
   return [[u0,v0],[u1,v0],[u1,v1],[u0,v1]].map(([u,v]) => { const [x,y] = frameToImage(fr,u,v), px = x-fr.cx, py = y-fr.cy;
     return [fr.cx + dx + px*c - py*s, fr.cy + dy + px*s + py*c]; });
 }
+/* صندوق التحويل للنص المحدد: نقاط بإحداثيات الصورة بعد الإزاحة والتدوير */
+function xfPoint(b, u, v){
+  const e = S.edits[b.id] || {}, fr = b.fr, [x, y] = frameToImage(fr, u, v), r = (e.rot || 0)*Math.PI/180, c = Math.cos(r), s2 = Math.sin(r);
+  const pxx = x - fr.cx, pyy = y - fr.cy; return [fr.cx + (e.dx||0) + pxx*c - pyy*s2, fr.cy + (e.dy||0) + pxx*s2 + pyy*c];
+}
+function selBox(b){ // صندوق النص الجديد إن وُجد، وإلا صندوق الأصل
+  const e = S.edits[b.id], r = S.inkBox[b.id];
+  const bx = e && !e.remove && r && r.box ? r.box : b.ink;
+  return { u0: bx[0], v0: bx[1], u1: bx[2], v1: bx[3] };
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function drawHandles(svg, b){
+  const { u0, v0, u1, v1 } = selBox(b), um = (u0+u1)/2, vm = (v0+v1)/2;
+  const P = (u, v) => xfPoint(b, u, v);
+  const corners = [P(u0,v0), P(u1,v0), P(u1,v1), P(u0,v1)];
+  const frame = document.createElementNS(SVGNS, "polygon");
+  frame.setAttribute("points", corners.map(q => q.join(",")).join(" ")); frame.setAttribute("class", "xf-box");
+  frame.addEventListener("pointerdown", ev => startDrag(ev, "move", b)); svg.appendChild(frame);
+  const r = 7 / S.xf.s, sideR = 6 / S.xf.s;
+  // مقبض التدوير فوق المنتصف
+  const top = P(um, v0), ctr = P(um, vm), dvx = top[0]-ctr[0], dvy = top[1]-ctr[1], dl = Math.hypot(dvx, dvy) || 1;
+  const rotP = [top[0] + dvx/dl*28/S.xf.s, top[1] + dvy/dl*28/S.xf.s];
+  const ln = document.createElementNS(SVGNS, "line"); ln.setAttribute("x1", top[0]); ln.setAttribute("y1", top[1]); ln.setAttribute("x2", rotP[0]); ln.setAttribute("y2", rotP[1]); ln.setAttribute("class", "xf-line"); svg.appendChild(ln);
+  const handle = (pt, cls, mode, title, rad) => { const h = document.createElementNS(SVGNS, "circle"); h.setAttribute("cx", pt[0]); h.setAttribute("cy", pt[1]); h.setAttribute("r", rad);
+    h.setAttribute("class", "xf-h " + cls); const t = document.createElementNS(SVGNS, "title"); t.textContent = title; h.appendChild(t);
+    h.addEventListener("pointerdown", ev => startDrag(ev, mode, b)); svg.appendChild(h); };
+  corners.forEach(q => handle(q, "xf-corner", "resize", "اسحب لتكبير/تصغير الخط", r));
+  handle(P(u0, vm), "xf-side", "hscale", "اسحب لتغيير عرض النص", sideR); handle(P(u1, vm), "xf-side", "hscale", "اسحب لتغيير عرض النص", sideR);
+  handle(rotP, "xf-rot", "rotate", "اسحب للتدوير", r);
+}
 function drawOverlay(){
   const svg = $("overlay"); svg.setAttribute("viewBox", `0 0 ${S.W} ${S.H}`);
   svg.innerHTML = "";
@@ -972,17 +1017,14 @@ function drawOverlay(){
     p.setAttribute("class", (b.id === S.sel ? "sel " : "") + (e ? (e.remove ? "removed" : "edited") : ""));
     const t = document.createElementNS("http://www.w3.org/2000/svg","title"); t.textContent = b.text; p.appendChild(t);
     p.addEventListener("pointerdown", ev => {
-      if (S.addMode) return; ev.stopPropagation();
-      if (b.id === S.sel){ // سحب النص المحدد لتحريكه
-        const e = S.edits[b.id] || {};
-        stage.setPointerCapture(ev.pointerId);
-        drag = { mode: "move", b, sx: ev.clientX, sy: ev.clientY, dx0: e.dx || 0, dy0: e.dy || 0 };
-        return;
-      }
-      select(b.id); });
-    if (b.id === S.sel) p.style.cursor = "move";
+      if (S.addMode) return;
+      if (b.id === S.sel){ startDrag(ev, "move", b); return; }
+      ev.stopPropagation(); select(b.id); });
+    if (b.id === S.sel) p.style.display = "none";
     svg.appendChild(p);
   }
+  const sb = S.blocks.find(k => k.id === S.sel);
+  if (sb) drawHandles(svg, sb);
 }
 function renderList(){
   $("countLbl").textContent = `النصوص (${S.blocks.length})`;
@@ -1013,7 +1055,7 @@ function patch(b, p, mergeKey){
   const next = Object.assign({}, S.edits);
   if (p === null) delete next[b.id];
   else next[b.id] = Object.assign({ id: b.id, text: b.text }, S.edits[b.id] || {}, p);
-  const now = Date.now(), merge = !!mergeKey && mergeKey === lastKey && now - lastT < 1200;
+  const now = Date.now(), merge = !!mergeKey && mergeKey === lastKey && (now - lastT < 1200 || /^(move|resize|hscale|rotate|pinch)/.test(mergeKey));
   lastKey = mergeKey || ""; lastT = now;
   commit(next, merge);
 }
@@ -1022,7 +1064,7 @@ function patch(b, p, mergeKey){
 function select(id){ S.sel = id; renderInspector(); redraw(); }
 function renderInspector(){
   const box = $("insp"), b = S.blocks.find(k => k.id === S.sel);
-  if (!b){ box.innerHTML = `<p class="hint">انقر على أي نص في الصورة أو في القائمة لتعديله.<br><small>اختصارات: Ctrl+Z تراجع · Ctrl+Shift+Z إعادة · Esc إلغاء التحديد</small></p>`; return; }
+  if (!b){ box.innerHTML = `<p class="hint">انقر على أي نص في الصورة أو في القائمة لتعديله.<br><small>على الصورة: اسحب النص لتحريكه · زوايا الإطار للحجم · الجانبان للعرض · الدائرة العلوية للتدوير · على الجوال: إصبعان للتكبير والتدوير<br>لوحة المفاتيح: الأسهم للتحريك · + و − للحجم · [ و ] للتدوير · Ctrl+Z تراجع</small></p>`; return; }
   const e = S.edits[b.id] || {}, st = Object.assign({}, b.style, e);
   const confPct = Math.round(b.conf);
   const cls = confPct >= 80 ? "b-ok" : confPct >= 55 ? "b-warn" : "b-bad";
@@ -1043,10 +1085,20 @@ function renderInspector(){
       <optgroup label="خطوط عربية">${FONT_LIST.filter(f=>f.script==="ar").map(opt).join("")}</optgroup>
       <optgroup label="خطوط لاتينية">${FONT_LIST.filter(f=>f.script==="la").map(opt).join("")}</optgroup>
     </select>
-    <div class="row">
-      <div><label class="lbl">الحجم (px)</label><input class="field" id="iSize" type="number" step="0.5" min="2" value="${(+st.size).toFixed(1)}" dir="ltr"></div>
-      <div><label class="lbl">اللون</label><div class="col"><input type="color" id="iColor" value="${st.color}"><input type="text" id="iColorT" value="${st.color}"></div></div>
+    <label class="lbl">حجم الخط <small style="font-weight:400">— ١٠٠٪ = نفس حجم النص الأصلي · اسحب زوايا الإطار على الصورة أو استخدم + و −</small></label>
+    <div class="sizebar">
+      <button class="btn ico" id="iSzM" title="تصغير ٢٪ (Shift: ١٠٪)">−</button>
+      <input type="range" id="iSzR" min="30" max="300" step="1" value="${Math.round(st.size / b.style.size * 100)}">
+      <button class="btn ico" id="iSzP" title="تكبير ٢٪ (Shift: ١٠٪)">+</button>
+      <output id="iSzV">${Math.round(st.size / b.style.size * 100)}٪</output>
     </div>
+    <div class="row" style="margin-top:6px">
+      <div class="col" title="الحجم بالبكسل"><span style="color:var(--muted);font-size:12px">px</span><input type="text" inputmode="decimal" id="iSize" value="${(+st.size).toFixed(1)}"></div>
+      <button class="btn" id="iSzReset" ${Math.abs(st.size - b.style.size) < 0.05 ? "disabled" : ""} style="justify-content:center">↺ حجم الأصل</button>
+    </div>
+    <div id="iFitNote"></div>
+    <label class="lbl">اللون</label><div class="col"><input type="color" id="iColor" value="${st.color}"><input type="text" id="iColorT" value="${st.color}"></div>
+    <button class="btn" id="iOnion" style="width:100%;justify-content:center;margin-top:12px">${S.onion ? "✓ " : ""}مقارنة شفافة مع الأصل</button>
     <label class="lbl">المحاذاة</label>
     <div class="seg" id="iAlign">${[["right","يمين"],["center","وسط"],["left","يسار"]].map(([a,l])=>`<button data-a="${a}" class="${st.align===a?"on":""}">${l}</button>`).join("")}</div>
     <label class="lbl">الموضع والتدوير <small style="font-weight:400">— اسحب النص المحدد بالماوس أو استخدم الأسهم (Shift = ١٠px)</small></label>
@@ -1063,7 +1115,7 @@ function renderInspector(){
     <label class="lbl">عرض النص (تمديد أفقي) <span id="iHsV">${Math.round((st.hscale||1)*100)}%</span></label>
     <input type="range" id="iHs" min="60" max="160" value="${Math.round((st.hscale||1)*100)}" style="width:100%;accent-color:var(--brand)">
     <label class="lbl">الملاءمة</label>
-    <select class="field" id="iFit"><option value="shrink">تصغير عند الحاجة</option><option value="fill">ملء نفس العرض</option><option value="none">حجم ثابت</option></select>
+    <select class="field" id="iFit"><option value="none">نفس حجم الأصل (افتراضي)</option><option value="shrink">تصغير تلقائي إن كان أطول</option><option value="fill">ملء نفس عرض الأصل</option></select>
     <details ${e.strokeW!==undefined||e.shadow||e.dx||e.dy||e.blur?"open":""}><summary>ضبط يدوي</summary>
       <div class="row">
         <div><label class="lbl">الحدود (px)</label><input class="field" id="iSW" type="number" step="0.5" min="0" value="${(+st.strokeW).toFixed(1)}" dir="ltr"></div>
@@ -1087,17 +1139,39 @@ function renderInspector(){
   ta.oninput = () => {
     const v = toArabicDigits(ta.value);
     if (v !== ta.value){ const pos = ta.selectionStart; ta.value = v; ta.setSelectionRange(pos, pos); }
-    patch(b, { text: v, remove: false }, "text" + b.id); };
+    patch(b, { text: v, remove: false }, "text" + b.id); updateFitNote(); };
   if (!matchMedia("(max-width:800px), (pointer:coarse)").matches) setTimeout(() => ta.focus(), 0);  // على الجوال لا نفتح لوحة المفاتيح تلقائيًا
   $("iErase").onclick = () => { patch(b, e.remove ? { remove: false } : { remove: true, text: "" }); renderInspector(); };
   $("iReset").onclick = () => { patch(b, null); renderInspector(); };
   $("iFont").onchange = async ev => { await ensureFont(ev.target.value, b.text); patch(b, { font: ev.target.value }); };
-  $("iSize").oninput = ev => { const v = parseFloat(ev.target.value); if (v > 0) patch(b, { size: v }, "size" + b.id); };
+  const num0 = v => parseFloat(String(v).replace(/[٠-٩]/g, d => AR_DIGITS.indexOf(d)).replace("٫",".")) || 0;
+  const setSize = (v, key) => { v = Math.round(clamp(v, 2, 2000)*10)/10; patch(b, { size: v, fit: "none" }, key);
+    const pct = Math.round(v / b.style.size * 100); $("iSzR").value = pct; $("iSzV").textContent = toArabicDigits(String(pct)) + "٪";
+    if (document.activeElement !== $("iSize")) $("iSize").value = v.toFixed(1); $("iSzReset").disabled = Math.abs(v - b.style.size) < 0.05; updateFitNote(); };
+  const curSize = () => Object.assign({}, b.style, S.edits[b.id] || {}).size;
+  $("iSize").oninput = ev => { const v = num0(ev.target.value); if (v > 0) setSize(v, "size" + b.id); };
+  $("iSzR").oninput = ev => setSize(b.style.size * ev.target.value / 100, "szr" + b.id);
+  $("iSzM").onclick = ev => setSize(curSize() / (ev.shiftKey ? 1.1 : 1.02), "szb" + b.id);
+  $("iSzP").onclick = ev => setSize(curSize() * (ev.shiftKey ? 1.1 : 1.02), "szb" + b.id);
+  $("iSzReset").onclick = () => setSize(b.style.size);
+  $("iOnion").onclick = () => { S.onion = !S.onion; $("iOnion").textContent = (S.onion ? "✓ " : "") + "مقارنة شفافة مع الأصل"; redraw(); };
+  function updateFitNote(){ requestAnimationFrame(() => requestAnimationFrame(() => {
+    const r = S.inkBox[b.id], box = $("iFitNote"); if (!box) return;
+    const ed = S.edits[b.id]; if (!ed || ed.remove || !r || !r.inkW){ box.innerHTML = ""; return; }
+    const ratio = r.inkW / Math.max(r.availW, 1);
+    if (ratio > 1.03 || ratio < 0.8){
+      box.innerHTML = `<div class="orig" style="margin-top:8px;font-size:12px;line-height:1.8">النص الجديد ${ratio > 1 ? "أطول" : "أقصر"} من الأصل بـ ${toArabicDigits(String(Math.round(Math.abs(ratio-1)*100)))}٪ بنفس الحجم.
+        <div class="row" style="margin-top:6px"><button class="btn" id="fnShrink" style="justify-content:center">${ratio > 1 ? "صغّر ليطابق العرض" : "كبّر ليطابق العرض"}</button><button class="btn" id="fnSqueeze" style="justify-content:center">${ratio > 1 ? "اضغط العرض فقط" : "مدّ العرض فقط"}</button></div></div>`;
+      $("fnShrink").onclick = () => setSize(curSize() / ratio, "fit" + b.id);
+      $("fnSqueeze").onclick = () => { const hs = clamp((Object.assign({}, b.style, S.edits[b.id]||{}).hscale || 1) / ratio, 0.3, 3); patch(b, { hscale: hs }); $("iHs").value = Math.round(hs*100); $("iHsV").textContent = Math.round(hs*100) + "%"; updateFitNote(); };
+    } else box.innerHTML = "";
+  })); }
+  updateFitNote();
   const colorPair = (a, t, key) => { const set = v => { if (/^#[0-9a-f]{6}$/i.test(v)){ $(a).value = v; $(t).value = v; patch(b, { [key]: v }, key + b.id); } };
     $(a).oninput = ev => set(ev.target.value); $(t).oninput = ev => set(ev.target.value); };
   colorPair("iColor", "iColorT", "color"); colorPair("iSC", "iSCT", "strokeColor");
   $("iAlign").querySelectorAll("button").forEach(btn => btn.onclick = () => { patch(b, { align: btn.dataset.a }); renderInspector(); });
-  $("iFit").value = st.fit || "shrink"; $("iFit").onchange = ev => patch(b, { fit: ev.target.value });
+  $("iFit").value = st.fit || "none"; $("iFit").onchange = ev => patch(b, { fit: ev.target.value });
   $("iSW").oninput = ev => patch(b, { strokeW: Math.max(0, parseFloat(ev.target.value) || 0) }, "sw" + b.id);
   const shadowNow = () => ({ dx: +$("iShX").value || 0, dy: +$("iShY").value || 0, blur: Math.max(0, +$("iShB").value || 0), color: $("iShCT").value });
   $("iSh").onchange = ev => { $("iShBox").style.display = ev.target.checked ? "" : "none"; patch(b, { shadow: ev.target.checked ? shadowNow() : null }); };
@@ -1288,25 +1362,79 @@ function zoomAt(f, cx, cy){ const r = stage.getBoundingClientRect(); const px = 
 const toImg = (cx, cy) => { const r = stage.getBoundingClientRect(); return [(cx - r.left - S.xf.x)/S.xf.s, (cy - r.top - S.xf.y)/S.xf.s]; };
 stage.addEventListener("wheel", e => { if (!S.orig) return; e.preventDefault(); zoomAt(Math.exp(-e.deltaY*(e.ctrlKey ? 0.01 : 0.0015)), e.clientX, e.clientY); }, { passive: false });
 let drag = null;
+/* بدء سحب مقبض: تحريك / تكبير / عرض / تدوير — كل حركة تُسجل خطوة تراجع واحدة */
+function startDrag(ev, mode, b){
+  ev.stopPropagation(); ev.preventDefault();
+  stage.setPointerCapture(ev.pointerId);
+  const e = S.edits[b.id] || {}, st = Object.assign({}, b.style, e), { u0, v0, u1, v1 } = selBox(b);
+  const center = xfPoint(b, (u0+u1)/2, (v0+v1)/2), [px, py] = toImg(ev.clientX, ev.clientY);
+  drag = { mode, b, sx: ev.clientX, sy: ev.clientY, dx0: e.dx || 0, dy0: e.dy || 0, size0: st.size, hs0: st.hscale || 1, rot0: e.rot || 0,
+           center, d0: Math.hypot(px - center[0], py - center[1]) || 1, a0: Math.atan2(py - center[1], px - center[0]), key: mode + b.id + Date.now() };
+  if (!S.edits[b.id]) patch(b, {}, drag.key);
+}
+function applyDrag(ev){
+  const d = drag, b = d.b, [px, py] = toImg(ev.clientX, ev.clientY);
+  if (d.mode === "move"){
+    const dx = Math.round((d.dx0 + (ev.clientX - d.sx)/S.xf.s)*2)/2, dy = Math.round((d.dy0 + (ev.clientY - d.sy)/S.xf.s)*2)/2;
+    patch(b, { dx, dy }, d.key);
+  } else if (d.mode === "resize"){
+    const f = Math.hypot(px - d.center[0], py - d.center[1]) / d.d0;
+    patch(b, { size: Math.round(clamp(d.size0 * f, 2, 2000)*10)/10 }, d.key);
+  } else if (d.mode === "hscale"){
+    // نسبة العرض على محور السطر
+    const a = b.fr.a + (d.rot0)*Math.PI/180, ux = Math.cos(a), uy = Math.sin(a);
+    const p0 = Math.abs(((d.sx0x ?? (d.sx0x = toImg(d.sx, d.sy)[0])) - d.center[0])*ux + ((d.sy0y ?? (d.sy0y = toImg(d.sx, d.sy)[1])) - d.center[1])*uy) || 1;
+    const p1 = Math.abs((px - d.center[0])*ux + (py - d.center[1])*uy);
+    patch(b, { hscale: Math.round(clamp(d.hs0 * p1 / p0, 0.3, 3)*1000)/1000 }, d.key);
+  } else if (d.mode === "rotate"){
+    let deg = d.rot0 + (Math.atan2(py - d.center[1], px - d.center[0]) - d.a0) * 180/Math.PI;
+    deg = ((deg + 540) % 360) - 180; if (!ev.shiftKey && Math.abs(deg) < 1.5) deg = 0; // التقاط عند الصفر
+    patch(b, { rot: Math.round(deg*10)/10 }, d.key);
+  }
+  syncPos();
+}
+function pinchState(){ const pts = [...S.pointers.values()]; const [a, b] = pts;
+  return { d: Math.hypot(a.x-b.x, a.y-b.y) || 1, ang: Math.atan2(b.y-a.y, b.x-a.x), mx: (a.x+b.x)/2, my: (a.y+b.y)/2 }; }
 stage.addEventListener("pointerdown", e => {
   if (!S.orig || e.target.closest(".zoom")) return;
+  S.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (S.pointers.size === 2){ // إصبعان (ولو بدأ أحدهما على مقبض): تكبير وتدوير وتحريك النص المحدد، أو تكبير الصورة
+    e.stopPropagation(); stage.setPointerCapture(e.pointerId);
+    const p0 = pinchState(), b = S.blocks.find(k => k.id === S.sel), ed = b ? (S.edits[b.id] || {}) : null;
+    drag = { mode: "pinch", b, p0, xf0: { ...S.xf }, size0: b ? Object.assign({}, b.style, ed).size : 0, rot0: ed ? ed.rot || 0 : 0, dx0: ed ? ed.dx || 0 : 0, dy0: ed ? ed.dy || 0 : 0, key: "pinch" + Date.now() };
+    if (b && !S.edits[b.id]) patch(b, {}, drag.key);
+  }
+}, true);
+stage.addEventListener("pointerdown", e => {
+  if (!S.orig || e.target.closest(".zoom") || (drag && drag.mode === "pinch")) return;
   stage.setPointerCapture(e.pointerId);
   if (S.addMode){ const [x,y] = toImg(e.clientX, e.clientY); drag = { mode: "draw", x, y }; return; }
   drag = { mode: "pan", sx: e.clientX, sy: e.clientY, ox: S.xf.x, oy: S.xf.y };
 });
 stage.addEventListener("pointermove", e => {
+  if (S.pointers.has(e.pointerId)) S.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (!drag) return;
+  if (drag.mode === "pinch"){
+    if (S.pointers.size < 2) return;
+    const p = pinchState(), d = drag, f = p.d / d.p0.d;
+    if (d.b){ patch(d.b, { size: Math.round(clamp(d.size0*f, 2, 2000)*10)/10, rot: Math.round((d.rot0 + (p.ang - d.p0.ang)*180/Math.PI)*10)/10,
+                           dx: d.dx0 + (p.mx - d.p0.mx)/S.xf.s, dy: d.dy0 + (p.my - d.p0.my)/S.xf.s }, d.key); syncPos(); }
+    else { const r = stage.getBoundingClientRect(), cx = d.p0.mx - r.left, cy = d.p0.my - r.top, s2 = clamp(d.xf0.s*f, 0.05, 16), k = s2/d.xf0.s;
+      S.xf = { s: s2, x: cx - (cx - d.xf0.x)*k + (p.mx - d.p0.mx), y: cy - (cy - d.xf0.y)*k + (p.my - d.p0.my) }; applyXf(); }
+    return;
+  }
+  if (["move","resize","hscale","rotate"].includes(drag.mode)){ applyDrag(e); return; }
   if (drag.mode === "pan"){ S.xf.x = drag.ox + e.clientX - drag.sx; S.xf.y = drag.oy + e.clientY - drag.sy; applyXf(); }
-  else if (drag.mode === "move"){
-    const dx = Math.round((drag.dx0 + (e.clientX - drag.sx)/S.xf.s)*2)/2, dy = Math.round((drag.dy0 + (e.clientY - drag.sy)/S.xf.s)*2)/2;
-    patch(drag.b, { dx, dy }, "move" + drag.b.id); syncPos(); }
+
   else { const [x,y] = toImg(e.clientX, e.clientY); drag.x1 = x; drag.y1 = y;
     let r = $("overlay").querySelector("rect"); if (!r){ r = document.createElementNS("http://www.w3.org/2000/svg","rect"); $("overlay").appendChild(r); }
     r.setAttribute("x", Math.min(drag.x,x)); r.setAttribute("y", Math.min(drag.y,y)); r.setAttribute("width", Math.abs(x-drag.x)); r.setAttribute("height", Math.abs(y-drag.y)); }
 });
+["pointerup","pointercancel"].forEach(t => stage.addEventListener(t, e => S.pointers.delete(e.pointerId), true));
 stage.addEventListener("pointerup", e => {
+  if (drag && drag.mode === "pinch" && S.pointers.size > 0) return;
   const d = drag; drag = null; if (!d) return;
-  if (d.mode === "move"){ lastKey = ""; return; }
+  if (["move","resize","hscale","rotate","pinch"].includes(d.mode)){ lastKey = ""; if (S.sel) renderInspector(); return; }
   if (d.mode === "pan" && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4 && !e.target.closest("polygon")){ S.sel = null; renderInspector(); redraw(); }
   if (d.mode === "draw" && d.x1 !== undefined){
     const x0 = clamp(Math.min(d.x,d.x1),0,S.W), x1 = clamp(Math.max(d.x,d.x1),0,S.W), y0 = clamp(Math.min(d.y,d.y1),0,S.H), y1 = clamp(Math.max(d.y,d.y1),0,S.H);
@@ -1377,6 +1505,11 @@ window.addEventListener("keydown", e => {
   if (mod && e.key.toLowerCase() === "z" && !typing){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
   else if (mod && e.key.toLowerCase() === "y" && !typing){ e.preventDefault(); redo(); }
   else if (e.key === "Escape"){ setAdd(false); S.sel = null; renderInspector(); redraw(); }
+  else if (!typing && S.sel && ["+","=","-","_","[","]"].includes(e.key)){
+    e.preventDefault(); const b = S.blocks.find(k => k.id === S.sel), cur = Object.assign({}, b.style, S.edits[S.sel] || {});
+    if ("+=-_".includes(e.key)){ const f = (e.key === "+" || e.key === "=") ? (e.shiftKey ? 1.1 : 1.02) : (e.shiftKey ? 1/1.1 : 1/1.02); patch(b, { size: Math.round(cur.size*f*10)/10 }, "kbsize" + b.id); }
+    else patch(b, { rot: Math.round(((S.edits[S.sel]||{}).rot || 0) + (e.key === "]" ? 1 : -1)) }, "kbrot" + b.id);
+    renderInspector(); }
   else if (!typing && S.sel && e.key.startsWith("Arrow")){ // تحريك بالأسهم: 1px، ومع Shift: 10px
     e.preventDefault(); const b = S.blocks.find(k => k.id === S.sel), cur = S.edits[S.sel] || {}, st = e.shiftKey ? 10 : 1;
     const dx = (cur.dx || 0) + (e.key === "ArrowLeft" ? -st : e.key === "ArrowRight" ? st : 0);
