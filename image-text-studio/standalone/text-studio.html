@@ -81,6 +81,21 @@ textarea.field{min-height:72px;resize:vertical;font-size:16px;line-height:1.7;un
 .sizebar{display:flex;align-items:center;gap:8px}
 .sizebar input[type=range]{flex:1;accent-color:var(--brand);min-width:0}
 .sizebar output{min-width:44px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.fontbtn{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:start;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer}
+.fontbtn:hover{border-color:var(--brand)}
+.fb-prev{font-size:22px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:plaintext}
+.fb-meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.fb-meta b{color:var(--brand);font-weight:600}
+.wchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wchips button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:4px 11px;font-size:12px;cursor:pointer}
+.wchips button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.fp-tabs{display:flex!important;overflow-x:auto;gap:4px;margin:10px 0 8px;white-space:nowrap}
+.fp-tabs button{flex:0 0 auto;padding:6px 12px}
+#fpList{display:flex;flex-direction:column;gap:6px;max-height:48vh;overflow-y:auto}
+.fontrow{display:flex;flex-direction:column;align-items:stretch;gap:2px;text-align:start;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 12px;cursor:pointer}
+.fontrow.on{border-color:var(--brand);box-shadow:0 0 0 2px rgba(59,110,245,.2)}
+.fr-prev{font-size:24px;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:plaintext}
+.fr-name{font-size:12px;color:var(--muted)}
 .badge{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600}
 .b-ok{background:rgba(16,185,129,.15);color:#059669}.b-warn{background:rgba(245,158,11,.15);color:#b45309}.b-bad{background:rgba(244,63,94,.15);color:#e11d48}
 .hint{color:var(--muted);line-height:1.9}
@@ -191,7 +206,42 @@ const FONTS = [
   ["Oswald",[300,400,500,600,700],"la"],["Playfair Display",[400,700,900],"la"],["Bebas Neue",[400],"la"],["Anton",[400],"la"],
   ["Raleway",[300,400,500,700,900],"la"],["Nunito",[300,400,600,700,900],"la"],["Archivo Black",[400],"la"],
 ];
+/* تصنيف الأنماط */
+const FONT_CAT = {
+  official: ["Noto Naskh Arabic","Amiri","Scheherazade New","Lateef","Markazi Text","Noto Sans Arabic","IBM Plex Sans Arabic","Tajawal","Almarai","Cairo","Noto Kufi Arabic","Readex Pro"],
+  modern: ["Cairo","Tajawal","Almarai","Alexandria","Vazirmatn","Rubik","Readex Pro","IBM Plex Sans Arabic","Noto Sans Arabic","Changa","Baloo Bhaijaan 2"],
+  kufi: ["Noto Kufi Arabic","Kufam","Reem Kufi","Changa","El Messiri","Lalezar","Rakkas","Lemonada","Marhey"],
+  hand: ["Aref Ruqaa","Mirza","Harmattan","Lateef"],
+};
+/* خطوط رسمية مثبتة على أجهزة كثيرة (ويندوز/آبل/أندرويد) — تظهر فقط إن وُجدت فعلًا على جهازك */
+const SYSTEM_OFFICIAL = [
+  ["Traditional Arabic","ar"],["Simplified Arabic","ar"],["Sakkal Majalla","ar"],["Arabic Typesetting","ar"],["Dubai","ar"],
+  ["Geeza Pro","ar"],["Al Nile","ar"],["Baghdad","ar"],["Damascus","ar"],["Al Bayan","ar"],["Diwan Kufi","ar"],["Kufi Standard GK","ar"],
+  ["Tahoma","ar"],["Arial","ar"],["Times New Roman","ar"],["Segoe UI","ar"],["Calibri","la"],["Helvetica","la"],
+];
 const FONT_LIST = FONTS.flatMap(([f,ws,s]) => ws.map(w => ({id:`${f}|${w}`, family:f, weight:w, script:s})));
+function fontAvailable(family){
+  try { const c = document.createElement("canvas").getContext("2d"), t = "خط رسمي ABC 123";
+    return ["monospace","serif","sans-serif"].some(fb => { c.font = `40px ${fb}`; const w0 = c.measureText(t).width; c.font = `40px "${family}", ${fb}`; return Math.abs(c.measureText(t).width - w0) > 0.5; });
+  } catch (e) { return false; } }
+let systemChecked = false;
+function addSystemFonts(){
+  if (systemChecked) return; systemChecked = true;
+  for (const [f, sc] of SYSTEM_OFFICIAL) if (fontAvailable(f)) for (const w of [400, 700]) FONT_LIST.push({ id: `${f}|${w}`, family: f, weight: w, script: sc, system: true });
+}
+const familyOf = id => id.split("|")[0], weightOf = id => +id.split("|")[1];
+const familyWeights = fam => FONT_LIST.filter(f => f.family === fam).map(f => f.weight).sort((a,b)=>a-b);
+const closestWeight = (fam, w) => familyWeights(fam).reduce((best, x) => Math.abs(x - w) < Math.abs(best - w) ? x : best, familyWeights(fam)[0] || 400);
+/* رفع خط من الجهاز (TTF/OTF/WOFF/WOFF2) */
+async function addCustomFont(file){
+  const buf = await file.arrayBuffer(), base = (file.name || "خطي").replace(/\.[^.]+$/, "").replace(/["|]/g, "").slice(0, 40);
+  let fam = base, i = 2; while (FONT_LIST.some(f => f.family === fam)) fam = `${base} ${i++}`;
+  const ff = new FontFace(fam, buf); await ff.load(); document.fonts.add(ff);
+  const c = document.createElement("canvas").getContext("2d"); c.font = `40px "${fam}", monospace`; const wa = c.measureText("ابتث").width; c.font = "40px monospace";
+  const script = Math.abs(wa - c.measureText("ابتث").width) > 0.5 ? "ar" : "la";
+  const info = { id: `${fam}|400`, family: fam, weight: 400, script, custom: true };
+  FONT_LIST.push(info); S.fontsReady.add(info.id); return info;
+}
 const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
 const hasAr = t => AR_RE.test(t || "");
 /* كل رقم في النص الجديد يتحول إجباريًا للأرقام العربية ٠١٢٣٤٥٦٧٨٩ (ومعه ٪ والفاصلة العشرية العربية) */
@@ -493,6 +543,7 @@ async function readLine(mask, w, h, hint){
 
 async function ensureFont(id, sample){
   if (S.fontsReady.has(id)) return;
+  const fi = FONT_LIST.find(f => f.id === id); if (fi && (fi.system || fi.custom)){ S.fontsReady.add(id); return; }
   try { await document.fonts.load(fontCss(id, 40), sample || "أبجد Abc"); } catch(e) {}
   S.fontsReady.add(id);
 }
@@ -787,7 +838,8 @@ async function analyzeLine(line){
   // 6) مطابقة الخط + الحجم + خط الأساس
   const ib = inkBox(fill, w, h); if (!ib) return res;
   const tgt = crop(fill, w, ib), Ht = tgt.h, Wt = tgt.w;
-  const cands = FONT_LIST.filter(f => hasAr(text) ? f.script === "ar" : true);
+  addSystemFonts();
+  const cands = FONT_LIST.filter(f => !f.custom && (hasAr(text) ? f.script === "ar" : true));
   const NH = 40, tw = Math.max(1, Math.round(Wt * NH / Ht));
   const tgtN = resizeMask(tgt.m, tgt.w, tgt.h, tw, NH), swT = strokeRatio(tgt.m, tgt.w, tgt.h);
   const scores = [];
@@ -1121,6 +1173,53 @@ $("sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSh
 const isPhone = () => matchMedia("(max-width:800px)").matches;
 function select(id){ S.sel = id; renderInspector(); redraw();
   if (id && isPhone()) requestAnimationFrame(() => $("insp").scrollIntoView({ behavior: "smooth", block: "start" })); }
+/* معرض الأنماط: كل خط يعرض نصك أنت، مصنّفًا (المطابِقة للصورة، الرسمية، الحديثة، الكوفية والعناوين، الرقعة واليدوي، اللاتينية، خطوطك) */
+function openFontPicker(b){
+  addSystemFonts();
+  const e = S.edits[b.id] || {}, st = Object.assign({}, b.style, e), curFam = familyOf(st.font), w0 = weightOf(st.font);
+  const sample = ((e.text !== undefined ? toArabicDigits(e.text) : b.text) || "نص تجريبي").slice(0, 34);
+  const ar = hasAr(sample);
+  const fams = [...new Set(FONT_LIST.map(f => f.family))];
+  const meta = fam => FONT_LIST.find(f => f.family === fam);
+  const row = (fam, extra = "") => { const m = meta(fam), w = closestWeight(fam, w0);
+    return `<button type="button" class="fontrow ${fam === curFam ? "on" : ""}" data-fam="${fam.replace(/"/g, "&quot;")}">
+      <span class="fr-prev" style="font-family:'${fam}', sans-serif;font-weight:${w}">${sample.replace(/</g, "&lt;")}</span>
+      <span class="fr-name">${fam}${m.system ? " · من جهازك" : m.custom ? " · مرفوع" : ""}${extra}</span></button>`; };
+  const cands = [...new Set(b.candidates.map(c => familyOf(c.id)))];
+  const pct = fam => { const c = b.candidates.find(k => familyOf(k.id) === fam); return c ? ` · تطابق ${Math.round(c.score*100)}٪` : ""; };
+  const sys = fams.filter(f => meta(f).system && (!ar || meta(f).script === "ar"));
+  const sections = [
+    ["مطابقة لنص الصورة", cands, true],
+    ["خطوط رسمية", [...FONT_CAT.official, ...sys]],
+    ["حديثة", FONT_CAT.modern], ["كوفية وعناوين", FONT_CAT.kufi], ["رقعة وخط يدوي", FONT_CAT.hand],
+    ["لاتينية (إنجليزي)", ar ? [] : fams.filter(f => meta(f).script === "la" && !meta(f).system && !meta(f).custom)],
+    ["خطوطي المرفوعة", fams.filter(f => meta(f).custom)],
+  ].filter(([, list]) => list.length);
+  const box = openSheet();
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0;font-size:15px">اختر نمط الخط</h3><button class="btn" id="fpClose">إغلاق</button></div>
+    <input class="field" id="fpSearch" placeholder="ابحث باسم الخط…" style="margin-top:10px" dir="auto">
+    <div class="seg fp-tabs" id="fpTabs">${sections.map(([t], i) => `<button type="button" data-i="${i}" class="${i===0?"on":""}">${t}</button>`).join("")}</div>
+    <div id="fpList"></div>
+    <label class="btn" style="width:100%;justify-content:center;margin-top:12px;cursor:pointer">⤒ رفع خط من جهازك (TTF / OTF / WOFF)
+      <input type="file" id="fpUpload" accept=".ttf,.otf,.woff,.woff2,font/*" class="visually-hidden"></label>
+    <p class="hint" style="font-size:12px;margin:8px 0 0">الخطوط الرسمية الشائعة مثل دبي وسكّال مجلّة والخط العربي التقليدي تظهر تلقائيًا إن كانت مثبتة على جهازك. لأي خط آخر (DIN Next، GE SS، 29LT Bukra…) ارفع ملفه هنا.</p>`;
+  let tab = 0;
+  const paint = () => { const q = $("fpSearch").value.trim().toLowerCase();
+    const list = q ? fams.filter(f => f.toLowerCase().includes(q) && (!ar || meta(f).script === "ar")) : sections[tab][1];
+    $("fpList").innerHTML = list.filter(f => meta(f)).map(f => row(f, sections[tab][2] && !q ? pct(f) : "")).join("") || `<p class="hint">لا توجد نتائج</p>`;
+    $("fpList").querySelectorAll(".fontrow").forEach(r => r.onclick = async () => { const fam = r.dataset.fam, id = `${fam}|${closestWeight(fam, w0)}`;
+      await ensureFont(id, sample); patch(b, { font: id }); closeSheet(); renderInspector(); });
+    // تحميل الخطوط الظاهرة لعرض المعاينة بشكلها الحقيقي
+    list.forEach(f => { const m = meta(f); if (m && !m.system && !m.custom) ensureFont(`${f}|${closestWeight(f, w0)}`, sample); }); };
+  $("fpTabs").querySelectorAll("button").forEach(bt => bt.onclick = () => { tab = +bt.dataset.i; $("fpSearch").value = ""; $("fpTabs").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === bt)); paint(); });
+  $("fpSearch").oninput = paint;
+  $("fpClose").onclick = closeSheet;
+  $("fpUpload").onchange = async ev => { const f = ev.target.files[0]; if (!f) return;
+    try { const info = await addCustomFont(f); patch(b, { font: info.id }); closeSheet(); renderInspector(); toast(`أُضيف الخط «${info.family}»`); }
+    catch (err){ console.error(err); toast("تعذّر قراءة ملف الخط. استخدم TTF أو OTF أو WOFF"); } };
+  paint();
+}
+
 function renderInspector(){
   const box = $("insp"), b = S.blocks.find(k => k.id === S.sel);
   if (!b){ box.innerHTML = `<p class="hint">انقر على أي نص في الصورة أو في القائمة لتعديله.<br><small>على الصورة: اسحب النص لتحريكه · زوايا الإطار للحجم · الجانبان للعرض · الدائرة العلوية للتدوير · على الجوال: إصبعان للتكبير والتدوير<br>لوحة المفاتيح: الأسهم للتحريك · + و − للحجم · [ و ] للتدوير · Ctrl+Z تراجع</small></p>`; return; }
@@ -1139,11 +1238,11 @@ function renderInspector(){
       <button class="btn" id="iReset" ${S.edits[b.id] ? "" : "disabled"}>⟲ إعادة للأصل</button>
     </div>
     <label class="lbl">الخط</label>
-    <select class="field" id="iFont">
-      ${sugg.length ? `<optgroup label="مقترحة (مطابقة بصرية)">${FONT_LIST.filter(f=>sugg.includes(f.id)).sort((a,b)=>sugg.indexOf(a.id)-sugg.indexOf(b.id)).map(opt).join("")}</optgroup>` : ""}
-      <optgroup label="خطوط عربية">${FONT_LIST.filter(f=>f.script==="ar").map(opt).join("")}</optgroup>
-      <optgroup label="خطوط لاتينية">${FONT_LIST.filter(f=>f.script==="la").map(opt).join("")}</optgroup>
-    </select>
+    <button class="fontbtn" id="iFontBtn" type="button">
+      <span class="fb-prev" style="font-family:'${familyOf(st.font)}', sans-serif;font-weight:${weightOf(st.font)}"></span>
+      <span class="fb-meta">${familyOf(st.font)}${sugg.includes(st.font) ? ` · تطابق ${Math.round(b.candidates.find(c=>c.id===st.font).score*100)}٪` : ""} <b>تغيير الخط ▾</b></span>
+    </button>
+    <div class="wchips" id="iWeights">${familyWeights(familyOf(st.font)).map(w => `<button type="button" data-w="${w}" class="${w===weightOf(st.font)?"on":""}" style="font-weight:${w}">${({300:"خفيف",400:"عادي",500:"متوسط",600:"شبه عريض",700:"عريض",800:"عريض جدًا",900:"أسود"})[w] || w}</button>`).join("")}</div>
     <label class="lbl">حجم الخط <small style="font-weight:400">— ١٠٠٪ = نفس حجم النص الأصلي · اسحب زوايا الإطار على الصورة أو استخدم + و −</small></label>
     <div class="sizebar">
       <button class="btn ico" id="iSzM" title="تصغير ٢٪ (Shift: ١٠٪)">−</button>
@@ -1207,7 +1306,9 @@ function renderInspector(){
   if (!matchMedia("(max-width:800px), (pointer:coarse)").matches) setTimeout(() => ta.focus(), 0);  // على الجوال لا نفتح لوحة المفاتيح تلقائيًا
   $("iErase").onclick = () => { patch(b, e.remove ? { remove: false } : { remove: true, text: "" }); renderInspector(); };
   $("iReset").onclick = () => { patch(b, null); renderInspector(); };
-  $("iFont").onchange = async ev => { await ensureFont(ev.target.value, b.text); patch(b, { font: ev.target.value }); };
+  { const prev = box.querySelector(".fb-prev"); prev.textContent = (e.text !== undefined ? toArabicDigits(e.text) : b.text).slice(0, 40) || "نص تجريبي";
+    $("iFontBtn").onclick = () => openFontPicker(b);
+    $("iWeights").querySelectorAll("button").forEach(bt => bt.onclick = async () => { const id = `${familyOf(st.font)}|${bt.dataset.w}`; await ensureFont(id, b.text); patch(b, { font: id }); renderInspector(); }); }
   const num0 = v => parseFloat(String(v).replace(/[٠-٩]/g, d => AR_DIGITS.indexOf(d)).replace("٫",".")) || 0;
   const setSize = (v, key) => { v = Math.round(clamp(v, 2, 2000)*10)/10; patch(b, { size: v, fit: "none" }, key);
     const pct = Math.round(v / b.style.size * 100); $("iSzR").value = pct; $("iSzV").textContent = toArabicDigits(String(pct)) + "٪";
@@ -1437,9 +1538,9 @@ async function addManual(x0,y0,x1,y1){
     const { data } = await wk.recognize(S.orig, { rectangle: rect });
     await wk.setParameters({ tessedit_pageseg_mode: "3" });
     const text = (data.text || "").replace(/\s+/g, " ").trim();
-    const n = S.blocks.reduce((m,b) => Math.max(m, +b.id.slice(1)), -1) + 1;
+    const n = S.blocks.reduce((m,b) => Math.max(m, parseInt(b.id.slice(1), 10) || 0), -1) + 1;   // "b1n0" -> 1
     const b = await analyzeLine({ id: "b" + n, text, conf: data.confidence || 0, cx: (x0+x1)/2, cy: (y0+y1)/2, L: x1-x0, T: y1-y0, a: 0 });
-    S.blocks.push(b); select(b.id);
+    S.blocks.push(b, ...numberBlocks(b)); select(b.id);
   } catch (err){ console.error(err); toast("تعذّر تحليل المنطقة"); }
   finally { busy(false); }
 }
