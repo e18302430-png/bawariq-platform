@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CITIES, OCCASIONS, TIERS, PLACE_LABEL, STYLES, createEvent, daysUntil, fmt, profileOf, splitBudget, suggestPlan, shiftDate, today,
+  CITIES, OCCASIONS, TIERS, PLACE_LABEL, STYLES, createEvent, daysUntil, fmt, profileOf, requestConcierge, splitBudget, suggestPlan, shiftDate, today,
   type OccasionId, type Place, type StyleId, type TierId,
 } from "@munasabati/core";
 import { Counter, Icon, LogoMark, Media, MeshGradient, PhoneAuth, apply, hasAccount, isCloud, repo, useDB } from "@munasabati/ui";
@@ -12,6 +12,10 @@ const CHEER: Record<OccasionId, string> = { wedding: "مبروك مقدماً �
 const PLACE_ICON: Record<Place, string> = { hall: "Building2", istiraha: "TreePalm", home: "Home" };
 const greeting = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? "صباح الخير" : h < 17 ? "نهارك سعيد" : "مساء الخير"; };
 const STEPS = 9;
+/** إجابات العميل من محادثة الصفحة الرئيسية (نفس الجهاز): ما نسأله مرة ثانية */
+type Brief = { occ?: OccasionId; guests?: number; when?: string; budget?: number; city?: string; name?: string; phone?: string; sentAt?: number };
+const readBrief = (): Brief | null => { try { const b = JSON.parse(localStorage.getItem("mns-brief") || "null") as Brief | null; return b && b.sentAt && Date.now() - b.sentAt < 30 * 864e5 ? b : null; } catch { return null; } };
+const WHEN_DAYS: Record<string, number> = { month: 30, "3m": 90, "6m": 180, later: 120 };
 
 /** مقاعد القاعة الحية: كل نقطة = 8 ضيوف */
 function Seats({ guests, menRatio }: { guests: number; menRatio: number }) {
@@ -36,13 +40,16 @@ function Seats({ guests, menRatio }: { guests: number; menRatio: number }) {
 
 export default function Onboarding({ preset, source }: { preset?: OccasionId; source?: "invite" } = {}) {
   const db = useDB();
-  const [step, setStep] = useState(0);
+  const [brief] = useState(readBrief);
+  // جاوب بالصفحة الرئيسية؟ نروح على الملخص مباشرة (خطوة وحدة بدل ٩)
+  const [step, setStep] = useState(brief ? 8 : 0);
   const [needAuth, setNeedAuth] = useState(false);
   const [login, setLogin] = useState(false);
   // البداية السريعة من الصفحة الرئيسية: ?occ=&date=&guests=&city= تعبّي الإجابات مسبقاً
   const q = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
   const qDate = q.get("date"), qGuests = +(q.get("guests") ?? 0), qCity = q.get("city");
-  const [f, setF] = useState({ occasion: (preset ?? "wedding") as OccasionId, place: profileOf(preset).places[0] as Place, style: [] as StyleId[], city: qCity || "الدمام", date: qDate && qDate >= today() ? qDate : shiftDate(today(), 75), guests: qGuests > 0 ? Math.min(3000, qGuests) : profileOf(preset).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
+  const bp = brief?.occ ? profileOf(brief.occ) : null;
+  const [f, setF] = useState(brief ? { occasion: brief.occ ?? "wedding", place: (bp ?? profileOf("wedding")).places[0] as Place, style: [] as StyleId[], city: brief.city || "الدمام", date: shiftDate(today(), WHEN_DAYS[brief.when ?? ""] ?? 90), guests: brief.guests || (bp ?? profileOf("wedding")).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: brief.budget ? String(brief.budget) : "", name: brief.name ?? "", phone: brief.phone ?? "" } : { occasion: (preset ?? "wedding") as OccasionId, place: profileOf(preset).places[0] as Place, style: [] as StyleId[], city: qCity || "الدمام", date: qDate && qDate >= today() ? qDate : shiftDate(today(), 75), guests: qGuests > 0 ? Math.min(3000, qGuests) : profileOf(preset).guests.def, menRatio: 0.5, tier: "mid" as TierId, budget: "", name: "", phone: "" });
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const occ = OCCASIONS.find((o) => o.id === f.occasion)!;
   const prof = profileOf(f.occasion);
@@ -54,7 +61,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
 
   useEffect(() => {
     if (step !== 7) return;
-    const t = setTimeout(() => setStep(8), 1900);
+    const t = setTimeout(() => setStep(8), 900);
     return () => clearTimeout(t);
   }, [step]);
 
@@ -64,7 +71,8 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
     if (isCloud && !hasAccount()) { setNeedAuth(true); return; }
     create(demo);
   };
-  const create = (demo: boolean) => apply(createEvent({ samples: !isCloud,
+  const create = (demo: boolean) => { doCreate(demo); if (brief?.sentAt && !demo) { apply(requestConcierge()); try { localStorage.removeItem("mns-brief"); } catch { /* */ } } };
+  const doCreate = (demo: boolean) => apply(createEvent({ samples: !isCloud,
     occasion: f.occasion, place: f.place, city: f.city, date: f.date, guests: f.guests, menRatio: f.menRatio, tier: f.tier, budget: budget || undefined, style: f.style.length ? f.style : undefined, source: source ?? "direct",
     title: `${occ.name} ${demo ? "عبدالله" : f.name.split(" ")[0]}`.trim(), hostName: demo ? "عبدالله" : f.name.trim() || "ضيفنا", phone: f.phone,
   }));
@@ -187,15 +195,15 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
                 <div className="plan-tile"><small>باقي على الموعد</small><b><Counter value={daysUntil(f.date)} /> يوم</b></div>
                 <div className="plan-tile"><small>ضيوفك</small><b><Counter value={f.guests} /></b></div>
               </div>
-              <span style={{ fontSize: 13, opacity: 0.85 }}>اخترنا لك على {f.style.length ? "ذوقك و" : ""}ميزانيتك في {f.city}</span>
-              <div className="stack" style={{ ["--gap" as string]: "8px" }}>
-                {preview.filter((l) => l.picks[0]).slice(0, 4).map((l) => (
-                  <div key={l.cat} className="match">
-                    <div className="th"><Media photos={l.picks[0].photos} seed={l.picks[0].id} hue={l.picks[0].hue} alt={l.picks[0].name} /></div>
-                    <div style={{ minWidth: 0 }}><span style={{ fontSize: 11.5, opacity: 0.75 }}>{l.label}</span><b className="display" style={{ display: "block", fontSize: 14.5 }}>{l.picks[0].name}</b><span style={{ fontSize: 12, opacity: 0.8 }}>{l.picks[0].reasons.slice(0, 2).join(" · ")}</span></div>
-                    {l.budget ? <div className="sc"><b className="num">{fmt(l.budget)}</b>مخصص</div> : null}
-                  </div>
+              {preview.some((l) => l.budget) && <div className="stack" style={{ ["--gap" as string]: "6px" }}>
+                <span style={{ fontSize: 13, opacity: 0.85 }}>توزيع ميزانيتك المقترح</span>
+                {preview.filter((l) => l.budget).slice(0, 4).map((l) => (
+                  <div key={l.cat} className="match" style={{ gridTemplateColumns: "1fr auto" }}><b className="display" style={{ fontSize: 14.5 }}>{l.label}</b><div className="sc"><b className="num">{fmt(l.budget)}</b>ر.س</div></div>
                 ))}
+              </div>}
+              <div className="match" style={{ gridTemplateColumns: "auto 1fr", alignItems: "center" }}>
+                <span className="th" style={{ display: "grid", placeItems: "center", background: "rgba(255,255,255,.18)" }}><Icon name="HeartHandshake" size={22} /></span>
+                <div><b className="display" style={{ display: "block", fontSize: 15 }}>{brief?.sentAt ? "طلبك وصل منسقتك ✓" : "الخطوة الجاية: منسقتك"}</b><span style={{ fontSize: 12.5, opacity: 0.85 }}>تتواصل معك واتساب خلال ساعتين، وترسل ٣ قاعات في {f.city} ضمن ميزانيتك خلال ٢٤ ساعة.</span></div>
               </div>
             </>}
           </motion.div>
@@ -216,7 +224,7 @@ export default function Onboarding({ preset, source }: { preset?: OccasionId; so
         {step !== 7 && step !== 1 && !needAuth && !login && (
           <div className="onb-foot">
             {step === 8
-              ? <button className="btn white lg" onClick={() => { finish(); location.hash = "plan"; }}>شوف اقتراحاتي <Icon name="ArrowLeft" size={18} /></button>
+              ? <button className="btn white lg" onClick={() => { finish(); location.hash = "home"; }}>{brief ? "ادخل لوحة مناسبتك" : "تمام، ادخل لوحة مناسبتك"} <Icon name="ArrowLeft" size={18} /></button>
               : <button className="btn white lg" onClick={next} disabled={!canNext}>{step === 0 ? "يلا نبدأ" : step === 6 ? "جهّز اقتراحاتي" : step === 5 && !f.style.length ? "تخطّ" : "التالي"} <Icon name="ArrowLeft" size={18} /></button>}
           </div>
         )}

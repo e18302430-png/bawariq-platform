@@ -71,6 +71,8 @@ export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
     setBusy(true); setErr("");
     try {
       await sendLead({ name: f.name.trim(), phone: ph, consent: true, marketing: f.mkt, consent_at: new Date().toISOString(), via: "concierge", occasion: f.occ || "other", guests: String(f.guests), city: f.city, when: WHEN.find((w) => w[0] === f.when)?.[1] ?? "", budget: String(f.budget), priority: "تنسيق كامل من الألف للياء", estimate: `${fmt(f.budget)} ريال` });
+      // نحفظ إجاباته عشان تطبيق العميل ما يسأله مرة ثانية (نفس الجهاز)
+      try { localStorage.setItem("mns-brief", JSON.stringify({ occ: f.occ, guests: f.guests, when: f.when, budget: f.budget, city: f.city, name: f.name.trim(), phone: ph, sentAt: Date.now() })); } catch { /* */ }
       const first = f.name.trim().split(" ")[0];
       say(`${f.name.trim()} · ${ph}`, [`تم يا ${first}! 🤍`, `منسقتك بتكلمك واتساب خلال ساعتين، وترسل لك ٣ قاعات ضمن ${fmt(f.budget)} ريال خلال ٢٤ ساعة.`, "وتدفع نفس السعر، ولا ريال زيادة. خلها علينا 💫"], "done");
     } catch { setErr("ما وصل الطلب، جرّب مرة ثانية أو كلمنا واتساب"); }
@@ -107,6 +109,10 @@ export function ConciergeChat({ onOcc }: { onOcc?: (id: OccasionId) => void }) {
           </div>}
         </motion.div>
       )}</AnimatePresence>
+      {step === "done" && ready && <motion.div className="ch-ctl" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <a className="ch-go big" href={(import.meta.env.VITE_CLIENT_URL as string | undefined) ?? "client/index.html"}>تابع مناسبتك في تطبيقك <Icon name="ArrowLeft" size={15} /></a>
+        <small style={{ display: "block", marginTop: 8, fontSize: 12.5, opacity: .8 }}>خطتك جاهزة فيه: الميزانية والضيوف والدعوات، وتشوف ردود منسقتك أول بأول.</small>
+      </motion.div>}
     </div>
   );
 }

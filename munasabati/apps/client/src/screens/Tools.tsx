@@ -18,7 +18,9 @@ export function Bookings() {
   return (
     <>
       <div className="row between wrap"><div><h1 className="page-title">حجوزاتي</h1><p className="page-sub">طلباتك مع القاعات والموردين وردودهم.</p></div><button className="btn primary" onClick={() => go("plan")}><Icon name="Sparkles" size={16} /> اقتراحاتي</button></div>
-      {!mine.length && <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">جهّزنا لك اقتراحات على ذوقك وميزانيتك. اختر اللي يعجبك وأرسله للإدارة.<button className="btn primary" style={{ marginTop: 6 }} onClick={() => go("plan")}>شوف اقتراحاتي</button></Empty></section>}
+      {!mine.length && (db.client.event?.concierge || db.client.event?.coordinator
+        ? <section className="card"><Empty icon="HeartHandshake" title="منسقتك تجهز خياراتك">أول ما ترسل لك القاعات الثلاث تلقاها هنا، بأسعارها وصورها، وتختار براحتك. وتوصلك رسالة واتساب.</Empty></section>
+        : <section className="card"><Empty icon="CalendarSearch" title="ما عندك طلبات للحين">خلّ منسقتك تختار لك ٣ قاعات ضمن ميزانيتك، أو تصفح بنفسك.<div className="row wrap" style={{ justifyContent: "center", marginTop: 6 }}><button className="btn primary" onClick={() => go("home")}>خلّها علينا</button><button className="btn" onClick={() => go("plan")}>أتصفح بنفسي</button></div></Empty></section>)}
       <div className="stack">
         {mine.map((b) => (
           <motion.section key={b.id} layout className="card stack" style={{ ["--gap" as string]: "12px" }}>
